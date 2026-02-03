@@ -211,13 +211,19 @@ std::vector<std::string> ArchiveManager::GetArchiveListInPaths(const std::vector
     for (const auto& archivePath : archivePaths) {
         if (archivePath.length() > 0) {
             if (std::filesystem::is_directory(archivePath)) {
-                for (const auto& p : std::filesystem::recursive_directory_iterator(archivePath)) {
+                bool hasAssetFiles = false;
+                for (const auto& p : std::filesystem::directory_iterator(archivePath)) {
                     if (StringHelper::IEquals(p.path().extension().string(), ".otr") ||
                         StringHelper::IEquals(p.path().extension().string(), ".zip") ||
                         StringHelper::IEquals(p.path().extension().string(), ".mpq") ||
                         StringHelper::IEquals(p.path().extension().string(), ".o2r")) {
                         fileList.push_back(std::filesystem::absolute(p).string());
+                        hasAssetFiles = true;
                     }
+                }
+
+                if (!hasAssetFiles) {
+                    fileList.push_back(std::filesystem::absolute(archivePath).string());
                 }
             } else if (std::filesystem::is_regular_file(archivePath)) {
                 fileList.push_back(std::filesystem::absolute(archivePath).string());
