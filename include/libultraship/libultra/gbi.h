@@ -2802,11 +2802,30 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPLoadShader(shader, type) gsDma1p(G_LOAD_SHADER, shader, 0, type)
-#define gsSPUnloadShader() gsDma1p(G_LOAD_SHADER, 0, 0, 0)
+#define gsSPPushShader(shader)                       \
+    { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (shader) }, { \
+        0, 0                                         \
+    }
 
-#define gSPLoadShader(pkt, shader, type) gDma1p(pkt, G_LOAD_SHADER, shader, 0, type)
-#define gSPUnloadShader(pkt) gDma1p(pkt, G_LOAD_SHADER, 0, 0, 0)
+#define gSPPushShader(pkt, shader)                     \
+    {                                                  \
+        Gfx* _g0 = (Gfx*)(pkt);                        \
+                                                       \
+        _g0->words.w0 = _SHIFTL(G_PUSH_SHADER, 24, 8); \
+        _g0->words.w1 = shader;                        \
+    }
+
+#define gsSPPopShader()                      \
+    { (_SHIFTL(G_POP_SHADER, 24, 8)), 0 }, { \
+        0, 0                                 \
+    }
+
+#define gSPPopShader(pkt)                             \
+    {                                                 \
+        Gfx* _g0 = (Gfx*)(pkt);                       \
+                                                      \
+        _g0->words.w0 = _SHIFTL(G_POP_SHADER, 24, 8); \
+    }
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \
     _DW({                                                                               \

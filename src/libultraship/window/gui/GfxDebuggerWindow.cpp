@@ -486,6 +486,19 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
+            case OTR_G_PUSH_SHADER: {
+                const char* shader = (const char*)cmd->words.w1;
+                nodeWithText(cmd0, fmt::format("G_PUSH_SHADER: {}", shader == nullptr ? "None" : shader));
+                cmd++;
+                break;
+            }
+
+            case OTR_G_POP_SHADER: {
+                nodeWithText(cmd0, fmt::format("G_POP_SHADER"));
+                cmd++;
+                break;
+            }
+
             case OTR_G_SETINTENSITY: {
                 nodeWithText(cmd0, fmt::format("G_SETINTENSITY: red {}, green {}, blue {}, alpha {}", C1(24, 8),
                                                C1(16, 8), C1(8, 8), C1(0, 8)));
