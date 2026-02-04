@@ -52,4 +52,4 @@ LUS makes use of the following third party libraries and resources:
 - [glob_match](https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c) (Dual MIT/GPL) Glob pattern matching.
 - [libgfxd](https://github.com/glankk/libgfxd/blob/master/LICENSE) (MIT) display list disassembler.
 - [metal-cpp](https://github.com/bkaradzic/metal-cpp/blob/metal-cpp_26/LICENSE.txt) (Apache 2.0) interface to the Apple Metal rendering backend.
-- [glew](https://github.com/nigels-com/glew?tab=License-1-ov-file#readme) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
+- [glew](https://github.com/nigels-com/glew/blob/master/LICENSE.txt) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
