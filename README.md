@@ -36,20 +36,20 @@ Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.
 
 LUS makes use of the following third party libraries and resources:
-- [Fast3D](https://github.com/Kenix3/libultraship/tree/main/src/graphic/Fast3D) (MIT) render display lists.
-- [ImGui](https://github.com/ocornut/imgui) (MIT)  display UI.
-- [StormLib](https://github.com/ladislav-zezula/StormLib) (MIT) create and read `.mpq` compatible archive files.
-- [StrHash64](https://github.com/Kenix3/libultraship/blob/main/extern/StrHash64/StrHash64.h) (MIT, zlib, BSD-3-Clause) provide crc64 implementation.
-- [ZAPD](https://github.com/zeldaret/ZAPD) (MIT) asset utilities.
-- [metal-cpp](https://github.com/bkaradzic/metal-cpp) (Apache 2.0) interface to the Apple Metal rendering backend.
-- [nlohmann-json](https://github.com/nlohmann/json) (MIT) json parsing and saving.
-- [spdlog](https://github.com/gabime/spdlog) (MIT) logging
-- [stb](https://github.com/nothings/stb) (MIT) image conversion
-- [thread-pool](https://github.com/bshoshany/thread-pool) (MIT) thread pool for the resource manager
-- [tinyxml2](https://github.com/leethomason/tinyxml2) (zlib) parse XML files for resource loaders
-- [zlib](https://github.com/madler/zlib) (zlib) compression used in StormLib
-- [bzip2](https://github.com/libarchive/bzip2) (bzip2) compression used in StormLib
-- [sdl2](https://github.com/libsdl-org/SDL) (zlib) window manager, controllers, and audio player
-- [glew](https://github.com/nigels-com/glew) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
-- [libzip](https://github.com/nih-at/) (BSD-3-Clause) read `.zip` compatible archives
+- [Fast3D](https://github.com/Kenix3/libultraship/blob/main/src/fast/LICENSE.txt) (MIT) render display lists.
+- [ImGui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt) (MIT)  display UI.
+- [StormLib](https://github.com/ladislav-zezula/StormLib/blob/master/LICENSE) (MIT) create and read `.mpq` compatible archive files.
+- [libzip](https://github.com/nih-at/libzip/blob/main/LICENSE) (BSD-3-Clause) create and read `.zip` compatible archives
+- [StrHash64](https://github.com/Kenix3/libultraship/blob/main/src/ship/utils/StrHash64.cpp) (MIT, zlib, BSD-3-Clause) provide crc64 implementation.
+- [nlohmann-json](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT) (MIT) json parsing and saving.
+- [spdlog](https://github.com/gabime/spdlog/blob/v1.x/LICENSE) (MIT) logging
+- [stb](https://github.com/nothings/stb/blob/master/LICENSE) (MIT) image conversion
+- [thread-pool](https://github.com/bshoshany/thread-pool/blob/master/LICENSE.txt) (MIT) thread pool for the resource manager
+- [tinyxml2](https://github.com/leethomason/tinyxml2/blob/master/LICENSE.txt) (zlib) parse XML files for resource loaders
+- [zlib](https://github.com/madler/zlib/blob/develop/LICENSE) (zlib) compression used in StormLib
+- [bzip2](https://github.com/libarchive/bzip2?tab=License-1-ov-file#readme) (bzip2) compression used in StormLib
+- [sdl2](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) window manager, controllers, and audio player
 - [glob_match](https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c) (Dual MIT/GPL) Glob pattern matching.
+- [libgfxd](https://github.com/glankk/libgfxd/blob/master/LICENSE) (MIT) display list disassembler.
+- [metal-cpp](https://github.com/bkaradzic/metal-cpp/blob/metal-cpp_26/LICENSE.txt) (Apache 2.0) interface to the Apple Metal rendering backend.
+- [glew](https://github.com/nigels-com/glew?tab=License-1-ov-file#readme) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
