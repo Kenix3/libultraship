@@ -37,6 +37,7 @@ LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main
 
 LUS makes use of the following third party libraries and resources:
 - [Fast3D](https://github.com/Kenix3/libultraship/blob/main/src/fast/LICENSE.txt) (MIT) render display lists.
+- [prism-processor](https://github.com/KiritoDv/prism-processor/blob/main/LICENSE) (MIT) shader preprocessor
 - [ImGui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt) (MIT)  display UI.
 - [StormLib](https://github.com/ladislav-zezula/StormLib/blob/master/LICENSE) (MIT) create and read `.mpq` compatible archive files.
 - [libzip](https://github.com/nih-at/libzip/blob/main/LICENSE) (BSD-3-Clause) create and read `.zip` compatible archives
