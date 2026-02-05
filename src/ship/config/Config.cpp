@@ -243,6 +243,10 @@ AudioBackend Config::GetCurrentAudioBackend() {
         return AudioBackend::SDL;
     }
 
+    if (backendName == "coreaudio") {
+        return AudioBackend::COREAUDIO;
+    }
+
     if (backendName == "sdl") {
         return AudioBackend::SDL;
     }
@@ -255,6 +259,10 @@ AudioBackend Config::GetCurrentAudioBackend() {
                  backendName);
 #ifdef _WIN32
     return AudioBackend::WASAPI;
+#endif
+
+#ifdef __APPLE__
+    return AudioBackend::COREAUDIO;
 #endif
 
     return AudioBackend::SDL;
@@ -279,6 +287,9 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:
             SetString("Window.AudioBackend", "wasapi");
+            break;
+        case AudioBackend::COREAUDIO:
+            SetString("Window.AudioBackend", "coreaudio");
             break;
         case AudioBackend::SDL:
             SetString("Window.AudioBackend", "sdl");
