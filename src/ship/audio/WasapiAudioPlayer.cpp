@@ -86,6 +86,7 @@ bool WasapiAudioPlayer::DoInit() {
 }
 
 void WasapiAudioPlayer::DoClose() {
+    std::lock_guard<std::mutex> lock(mMutex);
     if (mClient) {
         mClient->Stop();
     }
@@ -97,6 +98,7 @@ void WasapiAudioPlayer::DoClose() {
 }
 
 int WasapiAudioPlayer::Buffered() {
+    std::lock_guard<std::mutex> lock(mMutex);
     if (!mInitialized) {
         if (!SetupStream()) {
             return 0;
@@ -110,6 +112,7 @@ int WasapiAudioPlayer::Buffered() {
 }
 
 void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
+    std::lock_guard<std::mutex> lock(mMutex);
     if (!mInitialized) {
         if (!SetupStream()) {
             return;
@@ -155,8 +158,8 @@ HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDeviceRemoved(LPCWSTR pwstrDevice
 HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDefaultDeviceChanged(EDataFlow flow, ERole role,
                                                                     LPCWSTR pwstrDefaultDeviceId) {
     if (flow == eRender && role == eConsole) {
-        // This callback runs on a separate thread,
-        // but it's not important how fast this write takes effect.
+        // This callback runs on a separate thread, so we need to protect mInitialized
+        std::lock_guard<std::mutex> lock(mMutex);
         mInitialized = false;
     }
     return S_OK;
