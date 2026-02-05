@@ -3,6 +3,7 @@
 #import "ship/utils/macUtils.h"
 #import <SDL_syswm.h>
 #import <Cocoa/Cocoa.h>
+#include <sys/sysctl.h>
 
 //Just a simple function to toggle the native macOS fullscreen.
 void toggleNativeMacOSFullscreen(SDL_Window *window) {
@@ -23,6 +24,15 @@ bool isNativeMacOSFullscreenActive(SDL_Window *window) {
         NSWindow *nswindow = wmInfo.info.cocoa.window;
         return (([nswindow styleMask] & NSWindowStyleMaskFullScreen) == NSWindowStyleMaskFullScreen);
     }
+    return false;
+}
+
+//Whether the current process is running under Rosetta 2 translation.
+bool isRunningUnderRosetta() {
+    int translated = 0;
+    size_t size = sizeof(translated);
+    if (sysctlbyname("sysctl.proc_translated", &translated, &size, nullptr, 0) == 0)
+        return translated;
     return false;
 }
 #endif
