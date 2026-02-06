@@ -181,3 +181,12 @@ u64 CRC64(const char* t) {
     }
     return crc;
 }
+
+u32 CRC32(const char* t) {
+    u32 crc = 0xffffffff;
+    const u8* s = (const u8*)t;
+    while (*s) {
+        crc = (crc >> 8) ^ CRC64_Table[(u8)(crc ^ *s++) & 0xff];
+    }
+    return ~crc;
+}

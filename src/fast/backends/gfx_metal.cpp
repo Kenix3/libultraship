@@ -205,8 +205,14 @@ void GfxRenderingAPIMetal::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramMetal*)new_prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
-    CCFeatures cc_features;
+void GfxRenderingAPIMetal::ClearShaderCache() {
+    for (auto& [key, prg] : mShaderProgramPool) {
+        prg.markedForDeletion = true;
+    }
+}
+
+struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
+    CCFeatures cc_features = { .display_list = display_list };
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
 
     size_t numFloats = 0;
@@ -250,9 +256,10 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
         pipeline_descriptor->colorAttachments()->object(0)->setWriteMask(MTL::ColorWriteMaskAll);
     }
 
-    struct ShaderProgramMetal* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
+    struct ShaderProgramMetal* prg = &mShaderProgramPool[ShaderProgramKey{ shader_id0, shader_id1, display_list }];
     prg->shader_id0 = shader_id0;
     prg->shader_id1 = shader_id1;
+    prg->display_list = display_list;
     prg->usedTextures[0] = cc_features.usedTextures[0];
     prg->usedTextures[1] = cc_features.usedTextures[1];
     prg->usedTextures[2] = cc_features.used_masks[0];
@@ -293,9 +300,20 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     return (struct ShaderProgram*)prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIMetal::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
-    auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
-    return it == mShaderProgramPool.end() ? nullptr : (struct ShaderProgram*)&it->second;
+struct ShaderProgram* GfxRenderingAPIMetal::LookupShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
+    const auto it = mShaderProgramPool.find(ShaderProgramKey{ shader_id0, shader_id1, display_list });
+    if(it == mShaderProgramPool.end()) {
+        return nullptr;
+    }
+    
+    struct ShaderProgramMetal* prg = &it->second;
+
+    if (prg->markedForDeletion) {
+        mShaderProgramPool.erase(it);
+        return nullptr;
+    }
+
+    return reinterpret_cast<ShaderProgram*>(prg);
 }
 
 void GfxRenderingAPIMetal::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) {
@@ -350,9 +368,69 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
     autorelease_pool->release();
 }
 
+// Helper for variant visitation
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+void GfxRenderingAPIMetal::BindShaderUniforms() {
+    if (mShaderUniforms.empty()) return;
+
+    struct InternalLayout { size_t offset; size_t size; };
+    std::unordered_map<std::string, InternalLayout> tempReflection;
+    size_t currentOffset = 0;
+
+    for (const auto& [name, uniform] : mShaderUniforms) {
+        std::visit([&](auto&& val) {
+            using T = std::decay_t<decltype(val)>;
+            size_t size = 0;
+            size_t alignment = 4;
+
+            if constexpr (std::is_arithmetic_v<T>) {
+                size = sizeof(T);
+                alignment = size;
+            } else {
+                size = val.size() * sizeof(typename T::value_type);
+                alignment = (val.size() == 2) ? 8 : 16;
+            }
+
+            if (currentOffset % alignment != 0) {
+                currentOffset += (alignment - (currentOffset % alignment));
+            }
+
+            tempReflection[name] = { currentOffset, size };
+            currentOffset += size;
+        }, uniform);
+    }
+
+    size_t totalBufferSize = (currentOffset + 15) & ~15;
+
+    if (!mShaderUniformBuffer || mShaderUniformBuffer->length() < totalBufferSize) {
+        if (mShaderUniformBuffer) mShaderUniformBuffer->release();
+        mShaderUniformBuffer = mDevice->newBuffer(totalBufferSize, MTL::ResourceStorageModeShared);
+    }
+
+    uint8_t* pDest = static_cast<uint8_t*>(mShaderUniformBuffer->contents());
+
+    for (const auto& [name, uniform] : mShaderUniforms) {
+        const auto&[offset, size] = tempReflection[name];
+
+        std::visit(overloaded {
+            [&]<typename T0>(const T0& val) {
+                using T = std::decay_t<T0>;
+                if constexpr (std::is_arithmetic_v<T>) {
+                    std::memcpy(pDest + offset, &val, sizeof(T));
+                } else {
+                    std::memcpy(pDest + offset, val.data(), size);
+                }
+            }
+        }, uniform);
+    }
+}
+
 void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
     TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[tile]];
     texture_data->linear_filtering = linear_filter;
+    texture_data->filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
 
     // This function is called twice per texture, the first one only to set default values.
     // Maybe that could be skipped? Anyway, make sure to release the first default sampler
@@ -472,8 +550,11 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
 
     if (!current_framebuffer.mHasBoundFragShader) {
         current_framebuffer.mCommandEncoder->setFragmentBuffer(mFrameUniformBuffer, 0, 0);
+        current_framebuffer.mCommandEncoder->setFragmentBuffer(mShaderUniformBuffer, 0, 2);
         current_framebuffer.mHasBoundFragShader = true;
     }
+
+    bool textures_changed = false;
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mShaderProgram->usedTextures[i]) {
@@ -487,7 +568,19 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
                         mTextures[mCurrentTextureIds[i]].sampler, i);
                 }
             }
+
+            if(mCurrentFilterMode == FILTER_THREE_POINT) {
+                mDrawUniforms.textureFiltering[i] = mTextures[mCurrentTextureIds[i]].filtering;
+                mDrawUniforms.textureFiltering[i] = mTextures[mCurrentTextureIds[i]].filtering;
+                textures_changed = true;
+            }
         }
+    }
+
+    BindShaderUniforms();
+
+    if(textures_changed) {
+        current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
     }
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {

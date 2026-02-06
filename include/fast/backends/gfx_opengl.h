@@ -38,6 +38,7 @@ struct ShaderProgram {
     GLint texture_width_location;
     GLint texture_height_location;
     GLint texture_filtering_location;
+    bool markedForDeletion = false;
 };
 
 struct FramebufferOGL {
@@ -57,12 +58,14 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
-    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    void ClearShaderCache() override;
+    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) override;
+    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void BindShaderUniforms() override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetZmodeDecal(bool decal) override;
@@ -109,7 +112,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES];
     uint8_t mCurrentTile;
 
-    std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
+    std::unordered_map<ShaderProgramKey, ShaderProgram> mShaderProgramPool;
     ShaderProgram* mCurrentShaderProgram;
 
     GLuint mOpenglVbo = 0;

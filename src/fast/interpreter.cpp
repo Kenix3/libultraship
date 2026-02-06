@@ -38,6 +38,7 @@
 #include "libultraship/libultra/os.h"
 
 #include <spdlog/fmt/fmt.h>
+#include <ship/utils/StrHash64.h>
 
 std::stack<std::string> currentDir;
 
@@ -104,6 +105,11 @@ static std::string GetPathWithoutFileName(char* filePath) {
     return filePath;
 }
 
+template <typename Container, typename T>
+inline bool contains(const Container& c, const T& value) {
+    return std::find(c.begin(), c.end(), value) != c.end();
+}
+
 constexpr size_t MAX_TRI_BUFFER = 256;
 
 Interpreter::Interpreter() {
@@ -132,11 +138,11 @@ void Interpreter::Flush() {
     }
 }
 
-ShaderProgram* Interpreter::LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1) {
-    ShaderProgram* prg = mRapi->LookupShader(id0, id1);
+ShaderProgram* Interpreter::LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1, const char* display_list) {
+    ShaderProgram* prg = mRapi->LookupShader(id0, id1, display_list);
     if (prg == nullptr) {
         mRapi->UnloadShader(mRenderingState.mShaderProgram);
-        prg = mRapi->CreateAndLoadNewShader(id0, id1);
+        prg = mRapi->CreateAndLoadNewShader(id0, id1, display_list);
         mRenderingState.mShaderProgram = prg;
     }
     return prg;
@@ -188,6 +194,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     uint8_t c[2][2][4];
     uint64_t shaderId0 = 0;
     uint32_t shaderId1 = key.options;
+    const char* displayList = key.display_list;
     uint8_t shaderInputMapping[2][7] = { { 0 } };
     bool usedTextures[2]{};
     for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
@@ -385,6 +392,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     }
     comb->shader_id0 = shaderId0;
     comb->shader_id1 = shaderId1;
+    comb->display_list = displayList;
     comb->usedTextures[0] = usedTextures[0];
     comb->usedTextures[1] = usedTextures[1];
     // comb->prg = gfx_lookup_or_create_mShaderProgram(shader_id0, shader_id1);
@@ -411,6 +419,10 @@ void Interpreter::TextureCacheClear() {
     }
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
+}
+
+void Interpreter::ShaderCacheClear() {
+    mRapi->ClearShaderCache();
 }
 
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
@@ -1449,7 +1461,6 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     bool invisible =
         (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp->grayscale;
-    auto shader = mRdp->current_shader;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -1495,17 +1506,18 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     if (mRdp->loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
-    if (shader.enabled) {
-        cc_options |= SHADER_OPT(USE_SHADER);
-        cc_options |= (shader.id << 17);
-    }
 
     ColorCombinerKey key;
     key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
+    if (mCurrentDisplayList && contains(mShaderAwareDisplayLists, mCurrentDisplayList)) {
+        key.display_list = mCurrentDisplayList;
+    } else {
+        key.display_list = nullptr;
+    }
 
     // If we are not using alpha, clear the alpha components of the combiner as they have no effect
-    if (!use_alpha && !shader.enabled) {
+    if (!use_alpha) {
         key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
     }
 
@@ -1596,7 +1608,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     struct ShaderProgram* prg = comb->prg[tm];
     if (prg == NULL) {
         comb->prg[tm] = prg =
-            LookupOrCreateShaderProgram(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+            LookupOrCreateShaderProgram(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S), comb->display_list);
     }
     if (prg != mRenderingState.mShaderProgram) {
         Flush();
@@ -2710,6 +2722,9 @@ bool gfx_marker_handler_otr(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     (*cmd0)++;
     F3DGfx* cmd = (*cmd0);
+
+    uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
+    gfx->mCurrentDisplayList = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
     gfx->mMarkerOn = true;
     return false;
 }
@@ -4594,6 +4609,18 @@ void Interpreter::GetCurDimensions(uint32_t* width, uint32_t* height) {
     *height = mCurDimensions.height;
 }
 
+void Interpreter::RegisterShaderAwareDisplayList(const char* name) {
+    if (gfx_check_image_signature(name)) {
+        name += 7;
+    }
+
+    if(std::find(mShaderAwareDisplayLists.begin(), mShaderAwareDisplayLists.end(), name) !=
+       mShaderAwareDisplayLists.end()) {
+        return;
+    }
+
+    mShaderAwareDisplayLists.push_back(name);
+}
 } // namespace Fast
 
 void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features) {
@@ -4618,10 +4645,6 @@ void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeat
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
     cc_features->clamp[1][0] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_S);
     cc_features->clamp[1][1] = shader_id1 & SHADER_OPT(TEXEL1_CLAMP_T);
-
-    if (shader_id1 & SHADER_OPT(USE_SHADER)) {
-        cc_features->shader_id = (shader_id1 >> 17) & 0xFFFF;
-    }
 
     cc_features->usedTextures[0] = false;
     cc_features->usedTextures[1] = false;
@@ -4687,4 +4710,12 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 extern "C" void gfx_texture_cache_clear() {
     Fast::mInstance.lock().get()->TextureCacheClear();
+}
+
+extern "C" void gfx_shader_cache_clear() {
+    auto instance = Fast::mInstance.lock().get();
+    instance->mColorCombinerPool.clear();
+    instance->mPrevCombiner = Fast::mInstance.lock().get()->mColorCombinerPool.end();
+    instance->mRenderingState.mShaderProgram = nullptr;
+    instance->mRapi->ClearShaderCache();
 }

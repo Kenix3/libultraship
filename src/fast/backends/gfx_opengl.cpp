@@ -88,6 +88,10 @@ void GfxRenderingAPIOGL::LoadShader(ShaderProgram* new_prg) {
     SetUniforms(new_prg);
 }
 
+void GfxRenderingAPIOGL::ClearShaderCache() {
+    mShaderProgramPool.clear();
+}
+
 #define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noise_scale), float(frame_count))) + 1.0) / 2.0)"
 
 static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
@@ -372,7 +376,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     return result;
 }
 
-ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
+ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
     const auto fs_buf = BuildFsShader(cc_features);
@@ -416,7 +420,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
 
     size_t cnt = 0;
 
-    struct ShaderProgram* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
+    struct ShaderProgram* prg = &mShaderProgramPool[ShaderProgramKey{ shader_id0, shader_id1, display_list }];
     prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aVtxPos");
     prg->attribSizes[cnt] = 4;
     ++cnt;
@@ -507,8 +511,8 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     return prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIOGL::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
-    auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
+struct ShaderProgram* GfxRenderingAPIOGL::LookupShader(uint64_t shader_id0, uint32_t shader_id1, const char* display_list) {
+    auto it = mShaderProgramPool.find(ShaderProgramKey{ shader_id0, shader_id1, display_list });
     return it == mShaderProgramPool.end() ? nullptr : &it->second;
 }
 
@@ -539,6 +543,10 @@ void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
     textures[mCurrentTextureIds[mCurrentTile]].width = width;
     textures[mCurrentTextureIds[mCurrentTile]].height = height;
+}
+
+void GfxRenderingAPIOGL::BindShaderUniforms() {
+
 }
 
 #ifdef USE_OPENGLES

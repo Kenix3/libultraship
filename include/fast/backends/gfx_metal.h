@@ -46,23 +46,17 @@ static int cantor(uint64_t a, uint64_t b) {
     return (a + b + 1.0) * (a + b) / 2 + b;
 }
 
-struct hash_pair_shader_ids {
-    size_t operator()(const std::pair<uint64_t, uint32_t>& p) const {
-        auto value1 = p.first;
-        auto value2 = p.second;
-        return cantor(value1, value2);
-    }
-};
-
 namespace Fast {
 
 struct ShaderProgramMetal {
     uint64_t shader_id0;
     uint32_t shader_id1;
+    const char* display_list;
 
     uint8_t numInputs;
     uint8_t numFloats;
     bool usedTextures[SHADER_MAX_TEXTURES];
+    bool markedForDeletion = false;
 
     // hashed by msaa_level
     MTL::RenderPipelineState* pipeline_state_variants[9];
@@ -74,6 +68,7 @@ struct TextureDataMetal {
     MTL::SamplerState* sampler;
     uint32_t width;
     uint32_t height;
+    uint32_t filtering;
     bool linear_filtering;
 };
 
@@ -110,6 +105,10 @@ struct FrameUniforms {
     simd::float1 noiseScale;
 };
 
+struct DrawUniforms {
+    simd::int1 textureFiltering[SHADER_MAX_TEXTURES];
+};
+
 struct CoordUniforms {
     simd::uint2 coords[MAX_PIXEL_DEPTH_COORDS];
 };
@@ -122,12 +121,14 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
-    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    void ClearShaderCache() override;
+    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) override;
+    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void BindShaderUniforms() override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetZmodeDecal(bool decal) override;
@@ -167,6 +168,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
 
   private:
     bool NonUniformThreadGroupSupported();
+    void SetPerDrawUniforms();
     void SetupScreenFramebuffer(uint32_t width, uint32_t height);
     // Elements that only need to be setup once
     SDL_Renderer* mRenderer;
@@ -176,14 +178,16 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
 
     int mCurrentVertexBufferPoolIndex = 0;
     MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize];
-    std::unordered_map<std::pair<uint64_t, uint32_t>, struct ShaderProgramMetal, hash_pair_shader_ids>
+    std::unordered_map<ShaderProgramKey, ShaderProgramMetal>
         mShaderProgramPool;
 
     std::vector<struct TextureDataMetal> mTextures;
     std::vector<FramebufferMetal> mFramebuffers;
     FrameUniforms mFrameUniforms;
     CoordUniforms mCoordUniforms;
+    DrawUniforms mDrawUniforms;
     MTL::Buffer* mFrameUniformBuffer;
+    MTL::Buffer* mShaderUniformBuffer;
 
     uint32_t mMsaaNumQualityLevels[METAL_MAX_MULTISAMPLE_SAMPLE_COUNT];
 
