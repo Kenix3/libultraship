@@ -68,6 +68,11 @@ namespace Fast {
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
+// Cached culling constants (updated when ucode changes)
+static uint32_t cached_cull_both;
+static uint32_t cached_cull_front;
+static uint32_t cached_cull_back;
+
 const static uint32_t f3dex2AttrHandler[] = {
     F3DEX2_G_MTX_PROJECTION, F3DEX2_G_MTX_LOAD,  F3DEX2_G_MTX_PUSH,  F3DEX_G_MTX_NOPUSH,
     F3DEX2_G_CULL_FRONT,     F3DEX2_G_CULL_BACK, F3DEX2_G_CULL_BOTH,
@@ -92,6 +97,12 @@ static uint32_t get_attr(Attribute attr) {
     return (*ucode_map)[attr];
 }
 
+static void update_cached_cull_attrs() {
+    cached_cull_both = get_attr(CULL_BOTH);
+    cached_cull_front = get_attr(CULL_FRONT);
+    cached_cull_back = get_attr(CULL_BACK);
+}
+
 static std::string GetPathWithoutFileName(char* filePath) {
     size_t len = strlen(filePath);
 
@@ -105,6 +116,8 @@ static std::string GetPathWithoutFileName(char* filePath) {
 }
 
 constexpr size_t MAX_TRI_BUFFER = 256;
+static constexpr float INV_32 = 1.0f / 32.0f;
+static constexpr float INV_255 = 1.0f / 255.0f;
 
 Interpreter::Interpreter() {
     mRsp = new RSP();
@@ -1321,6 +1334,7 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         d->y = y;
         d->z = z;
         d->w = w;
+        d->inv_w = (fabsf(w) > 0.0001f) ? (1.0f / w) : 0.0f;
 
         if (mRsp->geometry_mode & G_FOG) {
             if (fabsf(w) < 0.001f) {
@@ -1366,15 +1380,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         return;
     }
 
-    const uint32_t cull_both = get_attr(CULL_BOTH);
-    const uint32_t cull_front = get_attr(CULL_FRONT);
-    const uint32_t cull_back = get_attr(CULL_BACK);
-
-    if ((mRsp->geometry_mode & cull_both) != 0) {
-        float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
-        float dy1 = v1->y / (v1->w) - v2->y / (v2->w);
-        float dx2 = v3->x / (v3->w) - v2->x / (v2->w);
-        float dy2 = v3->y / (v3->w) - v2->y / (v2->w);
+    if ((mRsp->geometry_mode & cached_cull_both) != 0) {
+        float dx1 = v1->x * v1->inv_w - v2->x * v2->inv_w;
+        float dy1 = v1->y * v1->inv_w - v2->y * v2->inv_w;
+        float dx2 = v3->x * v3->inv_w - v2->x * v2->inv_w;
+        float dy2 = v3->y * v3->inv_w - v2->y * v2->inv_w;
         float cross = dx1 * dy2 - dy1 * dx2;
 
         if ((v1->w < 0) ^ (v2->w < 0) ^ (v3->w < 0)) {
@@ -1389,24 +1399,27 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             cross = -cross;
         }
 
-        auto cull_type = mRsp->geometry_mode & cull_both;
+        auto cull_type = mRsp->geometry_mode & cached_cull_both;
 
-        if (cull_type == cull_front) {
+        if (cull_type == cached_cull_front) {
             if (cross <= 0) {
                 return;
             }
-        } else if (cull_type == cull_back) {
+        } else if (cull_type == cached_cull_back) {
             if (cross >= 0) {
                 return;
             }
-        } else if (cull_type == cull_both) {
+        } else if (cull_type == cached_cull_both) {
             // Why is this even an option?
             return;
         }
     }
 
+    // Cache other_mode_l to avoid repeated pointer dereferences
+    const uint32_t other_mode_l = mRdp->other_mode_l;
+
     bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER;
-    bool depth_mask = (mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    bool depth_mask = (other_mode_l & Z_UPD) == Z_UPD;
     uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
     if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
         Flush();
@@ -1414,7 +1427,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         mRenderingState.depth_test_and_mask = depth_test_and_mask;
     }
 
-    bool zmode_decal = (mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    bool zmode_decal = (other_mode_l & ZMODE_DEC) == ZMODE_DEC;
     if (zmode_decal != mRenderingState.decal_mode) {
         Flush();
         mRapi->SetZmodeDecal(zmode_decal);
@@ -1437,17 +1450,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     uint64_t cc_id = mRdp->combine_mode;
     uint64_t cc_options = 0;
-    bool use_alpha = ((mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
-                      (mRdp->other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
-                     ((mRdp->other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
-                      (mRdp->other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
-    bool use_fog = (mRdp->other_mode_l >> 30) == G_BL_CLR_FOG;
-    bool texture_edge = (mRdp->other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
-    bool use_noise = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_alpha =
+        ((other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) && (other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
+        ((other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) && (other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
+    bool use_fog = (other_mode_l >> 30) == G_BL_CLR_FOG;
+    bool texture_edge = (other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
+    bool use_noise = (other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
     bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
-    bool alpha_threshold = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
-    bool invisible =
-        (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
+    bool alpha_threshold = (other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
+    bool invisible = (other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp->grayscale;
     auto shader = mRdp->current_shader;
 
@@ -1513,6 +1524,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     uint32_t tm = 0;
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
+    float inv_tex_width[2], inv_tex_height[2];
 
     for (int i = 0; i < 2; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
@@ -1593,6 +1605,12 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
     }
 
+    // Precompute texture reciprocals for the vertex loop
+    for (int i = 0; i < 2; i++) {
+        inv_tex_width[i] = (tex_width[i] > 0) ? (1.0f / tex_width[i]) : 0.0f;
+        inv_tex_height[i] = (tex_height[i] > 0) ? (1.0f / tex_height[i]) : 0.0f;
+    }
+
     struct ShaderProgram* prg = comb->prg[tm];
     if (prg == NULL) {
         comb->prg[tm] = prg =
@@ -1631,8 +1649,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             if (!usedTextures[t]) {
                 continue;
             }
-            float u = v_arr[i]->u / 32.0f;
-            float v = v_arr[i]->v / 32.0f;
+            float u = v_arr[i]->u * INV_32;
+            float v = v_arr[i]->v * INV_32;
 
             int shifts = mRdp->texture_tile[mRdp->first_tile_index + t].shifts;
             int shiftt = mRdp->texture_tile[mRdp->first_tile_index + t].shiftt;
@@ -1662,33 +1680,33 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 }
             }
 
-            mBufVbo[mBufVboLen++] = u / tex_width[t];
-            mBufVbo[mBufVboLen++] = v / tex_height[t];
+            mBufVbo[mBufVboLen++] = u * inv_tex_width[t];
+            mBufVbo[mBufVboLen++] = v * inv_tex_height[t];
 
             bool clampS = tm & (1 << 2 * t);
             bool clampT = tm & (1 << 2 * t + 1);
 
             if (clampS) {
-                mBufVbo[mBufVboLen++] = (tex_width2[t] - 0.5f) / tex_width[t];
+                mBufVbo[mBufVboLen++] = (tex_width2[t] - 0.5f) * inv_tex_width[t];
             }
 
             if (clampT) {
-                mBufVbo[mBufVboLen++] = (tex_height2[t] - 0.5f) / tex_height[t];
+                mBufVbo[mBufVboLen++] = (tex_height2[t] - 0.5f) * inv_tex_height[t];
             }
         }
 
         if (use_fog) {
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.r * INV_255;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.g * INV_255;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.b * INV_255;
+            mBufVbo[mBufVboLen++] = v_arr[i]->color.a * INV_255; // fog factor (not alpha)
         }
 
         if (use_grayscale) {
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r * INV_255;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g * INV_255;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b * INV_255;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a * INV_255; // lerp interpolation factor (not alpha)
         }
 
         for (int j = 0; j < numInputs; j++) {
@@ -1723,7 +1741,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         break;
                     }
                     case G_CCMUX_LOD_FRACTION: {
-                        if (mRdp->other_mode_l & G_TL_LOD) {
+                        if (other_mode_l & G_TL_LOD) {
                             // "Hack" that works for Bowser - Peach painting
                             float distance_frac = (v1->w - 3000.0f) / 3000.0f;
                             if (distance_frac < 0.0f) {
@@ -1749,15 +1767,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         break;
                 }
                 if (k == 0) {
-                    mBufVbo[mBufVboLen++] = color->r / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->g / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->b / 255.0f;
+                    mBufVbo[mBufVboLen++] = color->r * INV_255;
+                    mBufVbo[mBufVboLen++] = color->g * INV_255;
+                    mBufVbo[mBufVboLen++] = color->b * INV_255;
                 } else {
                     if (use_fog && color == &v_arr[i]->color) {
                         // Shade alpha is 100% for fog
                         mBufVbo[mBufVboLen++] = 1.0f;
                     } else {
-                        mBufVbo[mBufVboLen++] = color->a / 255.0f;
+                        mBufVbo[mBufVboLen++] = color->a * INV_255;
                     }
                 }
             }
@@ -3371,18 +3389,12 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     (*cmd0)++;
     uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (uint64_t)(*cmd0)->words.w1;
 
-    const char* fileName = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    if (fileName == nullptr) {
-        (*cmd0)++;
-        return false;
-    }
-
+    // Use hash-based LoadResource to avoid string allocation from const char* -> std::string conversion
     std::shared_ptr<Fast::Texture> texture =
-        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-            Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash)));
+        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(hash));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3419,7 +3431,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
 
         if (tex != NULL) {
             Interpreter* gfx = mInstance.lock().get();
-            gfx->GfxDpSetTextureImage(fmt, size, width, fileName, texFlags, rawTexMetadata, tex);
+            gfx->GfxDpSetTextureImage(fmt, size, width, nullptr, texFlags, rawTexMetadata, tex);
         }
     } else {
         SPDLOG_ERROR("G_SETTIMG_OTR_HASH: Texture is null");
@@ -4136,25 +4148,32 @@ static void gfx_step() {
         // Instead of having a handler for each ucode for switching ucode, just check for it early and return.
     }
 
-    if (otrHandlers.contains(opcode)) {
-        if (otrHandlers.at(opcode).second(&cmd)) {
+    // Single lookup optimization: avoid double array access from contains() + at()
+    auto otrHandler = otrHandlers.at(opcode);
+    if (otrHandler.first != nullptr) {
+        if (otrHandler.second(&cmd)) {
             return;
-        }
-    } else if (rdpHandlers.contains(opcode)) {
-        if (rdpHandlers.at(opcode).second(&cmd)) {
-            return;
-        }
-    } else if (ucode_handler_index < ucode_handlers.size()) {
-        if (ucode_handlers[ucode_handler_index]->contains(opcode)) {
-            if (ucode_handlers[ucode_handler_index]->at(opcode).second(&cmd)) {
-                return;
-            }
-        } else {
-            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
-                            (uint32_t)ucode_handler_index);
         }
     } else {
-        SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode, (uint32_t)ucode_handler_index);
+        auto rdpHandler = rdpHandlers.at(opcode);
+        if (rdpHandler.first != nullptr) {
+            if (rdpHandler.second(&cmd)) {
+                return;
+            }
+        } else if (ucode_handler_index < ucode_handlers.size()) {
+            auto ucodeHandler = ucode_handlers[ucode_handler_index]->at(opcode);
+            if (ucodeHandler.first != nullptr) {
+                if (ucodeHandler.second(&cmd)) {
+                    return;
+                }
+            } else {
+                SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, for loaded ucode: {}", (uint8_t)opcode,
+                                (uint32_t)ucode_handler_index);
+            }
+        } else {
+            SPDLOG_CRITICAL("Unhandled OP code: 0x{:X}, invalid ucode: {}", (uint8_t)opcode,
+                            (uint32_t)ucode_handler_index);
+        }
     }
 
     ++cmd;
@@ -4185,6 +4204,7 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mWapi->Init(game_name, rapi->GetName(), start_in_fullscreen, width, height, posX, posY);
     mRapi->Init();
     mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
+    update_cached_cull_attrs(); // Initialize cached culling constants
     mCurDimensions.internal_mul =
         Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     mMsaaLevel = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
@@ -4415,6 +4435,7 @@ void Interpreter::EndFrame() {
 
 void gfx_set_target_ucode(UcodeHandlers ucode) {
     ucode_handler_index = ucode;
+    update_cached_cull_attrs();
 }
 
 int Interpreter::GetTargetFps() {
