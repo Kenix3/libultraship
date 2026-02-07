@@ -735,7 +735,7 @@ int GfxRenderingAPIOGL::CreateFramebuffer() {
 
 void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                     bool can_extract_depth) {
+                                                     bool can_extract_depth, FilteringMode upscale_method) {
     FramebufferOGL& fb = mFrameBuffers[fb_id];
 
     width = std::max(width, 1U);
@@ -745,10 +745,13 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
     if (fb_id != 0) {
-        if (fb.width != width || fb.height != height || fb.msaa_level != msaa_level) {
+        if (fb.width != width || fb.height != height || fb.msaa_level != msaa_level || fb.upscale_method != upscale_method) {
             if (msaa_level <= 1) {
                 glBindTexture(GL_TEXTURE_2D, fb.clrbuf);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                GLint glFilter = (upscale_method == FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST;
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter);
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
             } else {
@@ -782,6 +785,7 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
     fb.has_depth_buffer = has_depth_buffer;
     fb.msaa_level = msaa_level;
     fb.invertY = opengl_invertY;
+    fb.upscale_method = upscale_method;
 }
 
 void GfxRenderingAPIOGL::StartDrawToFramebuffer(int fb_id, float noise_scale) {

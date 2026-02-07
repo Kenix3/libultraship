@@ -56,7 +56,7 @@ class GfxRenderingAPI {
     virtual int CreateFramebuffer() = 0;
     virtual void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                              bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                             bool can_extract_depth) = 0;
+                                             bool can_extract_depth, FilteringMode upscale_method) = 0;
     virtual void StartDrawToFramebuffer(int fbId, float noiseScale) = 0;
     virtual void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
                                  int dstY0, int dstX1, int dstY1) = 0;

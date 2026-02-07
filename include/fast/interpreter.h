@@ -388,6 +388,9 @@ class Interpreter {
     void SetMsaaLevel(uint32_t level);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
 
+    void SetUpscaleFilter(FilteringMode mode);
+    FilteringMode GetUpscaleFilter() const;
+
     // private: TODO make these private
     void Flush();
     ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1);
@@ -504,6 +507,8 @@ class Interpreter {
     bool mRendersToFb{}; // game_renders_to_framebuffer;
     std::map<int, FBInfo>::iterator mActiveFrameBuffer;
     std::map<int, FBInfo> mFrameBuffers;
+
+    FilteringMode mUpscaleFilter = FILTER_LINEAR;
 
     int mGameFb{};             // game_framebuffer;
     int mGameFbMsaaResolved{}; // game_framebuffer_msaa_resolved;

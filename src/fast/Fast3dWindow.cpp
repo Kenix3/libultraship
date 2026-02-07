@@ -100,6 +100,8 @@ void Fast3dWindow::Init() {
 
     SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
         CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
+    SetUpscaleFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        CVAR_UPSCALE_FILTER, FILTER_LINEAR));
 }
 
 int32_t Fast3dWindow::GetTargetFps() {
@@ -152,6 +154,12 @@ void Fast3dWindow::InitWindowManager() {
 
 void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
     mInterpreter->GetCurrentRenderingAPI()->SetTextureFilter(filteringMode);
+}
+
+void Fast3dWindow::SetUpscaleFilter(FilteringMode filteringMode) {
+    if (mInterpreter) {
+        mInterpreter->SetUpscaleFilter(filteringMode);
+    }
 }
 
 void Fast3dWindow::EnableSRGBMode() {
