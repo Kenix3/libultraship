@@ -28,31 +28,31 @@ bool WasapiAudioPlayer::SetupStream() {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
         ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
 
-        auto audioSurround = this->GetAudioChannels();
-        if (audioSurround == AudioChannelsSetting::audioStereo) {
-            mNumChannels = 2;
+        // Use GetNumOutputChannels() to determine stereo vs surround
+        mNumChannels = this->GetNumOutputChannels();
+
+        if (mNumChannels == 2) {
             WAVEFORMATEX desired;
             desired.wFormatTag = WAVE_FORMAT_PCM;
             desired.nChannels = mNumChannels; // Stereo audio
             desired.wBitsPerSample = 16;      // 16-bit audio
             desired.nSamplesPerSec = this->GetSampleRate();
             desired.nBlockAlign = desired.nChannels * desired.wBitsPerSample / 8;
-            desired.nAvgBytesPerSec = desired.nSamplesPerSec * desired.nBlockAlign; // 2 bytes per sample (16-bit audio)
+            desired.nAvgBytesPerSec = desired.nSamplesPerSec * desired.nBlockAlign;
             desired.cbSize = 0;
 
             ThrowIfFailed(mClient->Initialize(
                 AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
                 2000000, 0, &desired, nullptr));
-        } else if (audioSurround == AudioChannelsSetting::audioSurround51) {
-            mNumChannels = 6;
+        } else if (mNumChannels == 6) {
+            // 5.1 surround (6 channels)
             WAVEFORMATEXTENSIBLE desired;
             desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
             desired.Format.nChannels = mNumChannels; // 6 channels for 5.1 audio
             desired.Format.wBitsPerSample = 16;      // 16-bit audio
             desired.Format.nSamplesPerSec = this->GetSampleRate();
             desired.Format.nBlockAlign = desired.Format.nChannels * desired.Format.wBitsPerSample / 8;
-            desired.Format.nAvgBytesPerSec =
-                desired.Format.nSamplesPerSec * desired.Format.nBlockAlign; // 2 bytes per sample (16-bit audio)
+            desired.Format.nAvgBytesPerSec = desired.Format.nSamplesPerSec * desired.Format.nBlockAlign;
             desired.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
             desired.dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
             desired.Samples.wValidBitsPerSample = 16;
@@ -75,13 +75,25 @@ bool WasapiAudioPlayer::SetupStream() {
 
 bool WasapiAudioPlayer::DoInit() {
     try {
-        ThrowIfFailed(
-            CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&mDeviceEnumerator)));
+        if (!mDeviceEnumerator) {
+            ThrowIfFailed(
+                CoCreateInstance(CLSID_MMDeviceEnumerator, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&mDeviceEnumerator)));
+            ThrowIfFailed(mDeviceEnumerator->RegisterEndpointNotificationCallback(this));
+        }
     } catch (HRESULT res) { return false; }
 
-    ThrowIfFailed(mDeviceEnumerator->RegisterEndpointNotificationCallback(this));
-
     return true;
+}
+
+void WasapiAudioPlayer::DoClose() {
+    if (mClient) {
+        mClient->Stop();
+    }
+    mRenderClient.Reset();
+    mClient.Reset();
+    mDevice.Reset();
+    mInitialized = false;
+    mStarted = false;
 }
 
 int WasapiAudioPlayer::Buffered() {
@@ -97,7 +109,7 @@ int WasapiAudioPlayer::Buffered() {
     } catch (HRESULT res) { return 0; }
 }
 
-void WasapiAudioPlayer::Play(const uint8_t* buf, size_t len) {
+void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     if (!mInitialized) {
         if (!SetupStream()) {
             return;

@@ -163,8 +163,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
     struct ShaderProgramD3D11* mShaderProgram;
 
-    // uint32_t current_width, current_height;
-    uint32_t mRenderTargetHeight;
+    int32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     FilteringMode mCurrentFilterMode = FILTER_NONE;
 

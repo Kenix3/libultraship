@@ -5,6 +5,7 @@
 namespace Ship {
 WheelHandler::WheelHandler() {
     mDirections = { LUS_WHEEL_NONE, LUS_WHEEL_NONE };
+    mBufferedCoords = { 0.0f, 0.0f };
 }
 
 WheelHandler::~WheelHandler() {
