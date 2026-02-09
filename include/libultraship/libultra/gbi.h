@@ -190,8 +190,7 @@
 #define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
 #define G_LOAD_SHADER 0x43
-#define G_SETTILESIZE_INTERP 0x44
-#define G_SETTARGETINTERPINDEX 0x45
+#define G_SCROLL_TEXTURE 0x44
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -3221,16 +3220,27 @@ typedef union Gfx {
             _SHIFTL(tile, 24, 3) | _SHIFTL(lrs, 12, 12) | _SHIFTL(lrt, 0, 12) \
     }
 
-#define gDPSetInterpolation(pkt, index)              \
-    _DW({                                            \
-        Gfx* _g = (Gfx*)(pkt);                       \
-                                                     \
-        _g->words.w0 = G_SETTARGETINTERPINDEX << 24; \
-        _g->words.w1 = index;                        \
+#define gDPScrollTexture(pkt, t, uls, ult, lrs, lrt, stepX, stepY)                \
+    _DW({                                                                         \
+        Gfx* _g = (Gfx*)(pkt);                                                    \
+        if (pkt)                                                                  \
+            ;                                                                     \
+        _g->words.w0 = (_SHIFTL(G_SCROLL_TEXTURE, 24, 8) | _SHIFTL(tile, 0, 12)); \
+        _g->words.w1 = (_SHIFTL(stepX, 32, 32) | _SHIFTL(stepY, 0, 32));          \
+        _g++;                                                                     \
+        _g->words.w0 = (_SHIFTL(uls, 32, 32) | _SHIFTL(ult, 0, 32));              \
+        _g->words.w1 = (_SHIFTL(lrs, 32, 32) | _SHIFTL(lrt, 0, 32));              \
     })
 
-#define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) \
-    gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
+#define gsDPScrollTexture(t, uls, ult, lrs, lrt, stepX, stepY)                                      \
+    {                                                                                               \
+        (_SHIFTL(G_SCROLL_TEXTURE, 24, 8) | _SHIFTL(tile, 0, 12)),                                  \
+        (_SHIFTL(stepX, 32, 32) | _SHIFTL(stepY, 0, 32)),                                           \
+    },                                                                                              \
+    {                                                                                               \
+        (_SHIFTL(uls, 32, 32) | _SHIFTL(ult, 0, 32)), (_SHIFTL(lrs, 32, 32) | _SHIFTL(lrt, 0, 32)), \
+    }
+
 #define gDPSetTileSize(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gDPLoadTile(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_LOADTILE, t, uls, ult, lrs, lrt)
