@@ -735,6 +735,8 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
     FramebufferDX11& data = mFrameBuffers.back();
     data.texture_id = texture_id;
 
+    data.upscale_method = FILTER_LINEAR;
+
     uint32_t tile = 0;
     uint32_t saved = mCurrentTextureIds[tile];
     mCurrentTextureIds[tile] = texture_id;
@@ -746,7 +748,7 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
 
 void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                       bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                      bool can_extract_depth) {
+                                                      bool can_extract_depth, FilteringMode upscale_method) {
     FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& tex = mTextures[fb.texture_id];
 
@@ -758,7 +760,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
         --msaa_level;
     }
 
-    bool diff = tex.width != width || tex.height != height || fb.msaa_level != msaa_level;
+    bool diff = tex.width != width || tex.height != height || fb.msaa_level != msaa_level || fb.upscale_method != upscale_method;
 
     if (diff || (fb.render_target_view.Get() != nullptr) != render_target) {
         if (fb_id != 0) {
@@ -775,6 +777,8 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
             texture_desc.MipLevels = 1;
             texture_desc.SampleDesc.Count = msaa_level;
             texture_desc.SampleDesc.Quality = 0;
+            texture_desc.Filter = upscale_method == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
+                                                                  : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
             ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
 
@@ -816,6 +820,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
 
     fb.has_depth_buffer = has_depth_buffer;
     fb.msaa_level = msaa_level;
+    fb.upscale_method = upscale_method;
 }
 
 void GfxRenderingAPIDX11::StartDrawToFramebuffer(int fb_id, float noise_scale) {
