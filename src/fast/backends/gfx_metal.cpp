@@ -694,11 +694,19 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         tex_descriptor->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
         tex_descriptor->setUsage((render_target ? MTL::TextureUsageRenderTarget : 0) | MTL::TextureUsageShaderRead);
         
+        // apply upscaling method
+        tex->linear_filtering = (upscale_method == FILTER_LINEAR);
+        MTL::SamplerDescriptor* sampler_descriptor = MTL::SamplerDescriptor::alloc()->init();
         MTL::SamplerMinMagFilter filter = upscale_method == FILTER_LINEAR
                                           ? MTL::SamplerMinMagFilterLinear
                                           : MTL::SamplerMinMagFilterNearest;
-        tex_descriptor->setMinFilter(filter);
-        tex_descriptor->setMagFilter(filter);
+        sampler_descriptor->setMinFilter(filter);
+        sampler_descriptor->setMagFilter(filter);
+        //sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
+        //sampler_descriptor->setTAddressMode(gfx_cm_to_metal(cmt));
+        //sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
+        tex->sampler = mDevice->newSamplerState(sampler_descriptor);
+        sampler_descriptor->release();
 
         if (tex.texture != nullptr)
             tex.texture->release();
