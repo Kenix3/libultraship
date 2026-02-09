@@ -697,8 +697,8 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         MTL::SamplerMinMagFilter filter = upscale_method == FILTER_LINEAR
                                           ? MTL::SamplerMinMagFilterLinear
                                           : MTL::SamplerMinMagFilterNearest;
-        sampler_descriptor->setMinFilter(filter);
-        sampler_descriptor->setMagFilter(filter);
+        tex_descriptor->setMinFilter(filter);
+        tex_descriptor->setMagFilter(filter);
 
         if (tex.texture != nullptr)
             tex.texture->release();
