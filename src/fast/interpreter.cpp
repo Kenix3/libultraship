@@ -2607,20 +2607,23 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
 }
 
 void* Interpreter::SegAddr(uintptr_t w1) {
-    // Segmented?
-    if (w1 & 1) {
-        uint32_t segNum = (uint32_t)(w1 >> 24);
-
-        uint32_t offset = w1 & 0x00FFFFFE;
-
-        if (mSegmentPointers[segNum] != 0) {
-            return (void*)(mSegmentPointers[segNum] + offset);
-        } else {
-            return (void*)w1;
-        }
-    } else {
+    // If high address then it's a raw arm64 ptr, return immediately
+    // N64 segments only exist in 0x00 - 0x0F
+    if (w1 > 0x0FFFFFFF) {
         return (void*)w1;
     }
+
+    // Segmented address
+    // The math uses the lower 32 bits, but keeping it as uintptr_t
+    // prevents C++20 compilers from getting too optimal
+    uintptr_t segNum = (w1 >> 24) & 0xF;
+    uintptr_t offset = w1 & 0x00FFFFFF;
+
+    if (mSegmentPointers[segNum] !=0) {
+        return (void*)(mSegmentPointers[segNum] + offset);
+    }
+
+    return (void*)w1;
 }
 
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
