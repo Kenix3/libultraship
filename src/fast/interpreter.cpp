@@ -2607,20 +2607,25 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
 }
 
 void* Interpreter::SegAddr(uintptr_t w1) {
-    // Segmented?
-    if (w1 & 1) {
-        uint32_t segNum = (uint32_t)(w1 >> 24);
-
-        uint32_t offset = w1 & 0x00FFFFFE;
-
-        if (mSegmentPointers[segNum] != 0) {
-            return (void*)(mSegmentPointers[segNum] + offset);
-        } else {
-            return (void*)w1;
-        }
-    } else {
+    // If the address exceeds the N64's maximum addressable range (0x0FFFFFFF),
+    // it is a native 64-bit host pointer. Return it directly to avoid 
+    // truncation or corruption of the memory address.
+    if (w1 > 0x0FFFFFFF) {
         return (void*)w1;
     }
+
+    // Process as a legacy N64 segmented address.
+    // We use uintptr_t for all calculations to ensure the full pointer width 
+    // is preserved, preventing compilers from performing aggressive 32-bit 
+    // optimizations or narrowing that lead to UB on 64-bit systems.
+    uintptr_t segNum = (w1 >> 24) & 0xF;
+    uintptr_t offset = w1 & 0x00FFFFFF;
+
+    if (mSegmentPointers[segNum] !=0) {
+        return (void*)(mSegmentPointers[segNum] + offset);
+    }
+
+    return (void*)w1;
 }
 
 #define C0(pos, width) ((cmd->words.w0 >> (pos)) & ((1U << width) - 1))
@@ -3350,7 +3355,8 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
                 return false;
             }
 
-            i = (uintptr_t) reinterpret_cast<char*>(tex->ImageData);
+            i = (uintptr_t)tex->ImageData;
+            imgData = (char*)i;
             texFlags = tex->Flags;
             rawTexMetdata.width = tex->Width;
             rawTexMetdata.height = tex->Height;
