@@ -49,6 +49,12 @@ struct FramebufferOGL {
     GLuint fbo, clrbuf, clrbufMsaa, rbo;
 };
 
+struct TextureInfo {
+    uint16_t width;
+    uint16_t height;
+    uint16_t filtering;
+};
+
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   public:
     ~GfxRenderingAPIOGL() override = default;
@@ -100,12 +106,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     std::string BuildFsShader(const CCFeatures& cc_features);
     void SetPerDrawUniforms();
 
-    struct TextureInfo {
-        uint16_t width;
-        uint16_t height;
-        uint16_t filtering;
-    } textures[1024];
-
+    std::vector<TextureInfo> textures;
     GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES];
     uint8_t mCurrentTile;
 
