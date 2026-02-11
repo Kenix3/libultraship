@@ -2607,15 +2607,17 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
 }
 
 void* Interpreter::SegAddr(uintptr_t w1) {
-    // If high address then it's a raw arm64 ptr, return immediately
-    // N64 segments only exist in 0x00 - 0x0F
+    // If the address exceeds the N64's maximum addressable range (0x0FFFFFFF),
+    // it is a native 64-bit host pointer. Return it directly to avoid 
+    // truncation or corruption of the memory address.
     if (w1 > 0x0FFFFFFF) {
         return (void*)w1;
     }
 
-    // Segmented address
-    // The math uses the lower 32 bits, but keeping it as uintptr_t
-    // prevents C++20 compilers from getting too optimal
+    // Process as a legacy N64 segmented address.
+    // We use uintptr_t for all calculations to ensure the full pointer width 
+    // is preserved, preventing compilers from performing aggressive 32-bit 
+    // optimizations or narrowing that lead to UB on 64-bit systems.
     uintptr_t segNum = (w1 >> 24) & 0xF;
     uintptr_t offset = w1 & 0x00FFFFFF;
 
