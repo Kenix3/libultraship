@@ -521,6 +521,7 @@ void GfxRenderingAPIOGL::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numIn
 GLuint GfxRenderingAPIOGL::NewTexture() {
     GLuint ret;
     glGenTextures(1, &ret);
+    textures.resize(std::max(textures.size(), (size_t)ret + 1));
     return ret;
 }
 
