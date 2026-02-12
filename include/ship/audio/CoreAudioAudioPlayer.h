@@ -12,11 +12,12 @@ class CoreAudioAudioPlayer : public AudioPlayer {
     CoreAudioAudioPlayer(AudioSettings settings);
     ~CoreAudioAudioPlayer();
 
-    int Buffered();
-    void Play(const uint8_t* buf, size_t len);
+    int Buffered() override;
 
   protected:
-    bool DoInit();
+    bool DoInit() override;
+    void DoClose() override;
+    void DoPlay(const uint8_t* buf, size_t len) override;
 
   private:
     static OSStatus CoreAudioRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags,

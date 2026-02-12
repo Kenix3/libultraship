@@ -11,24 +11,28 @@ CoreAudioAudioPlayer::CoreAudioAudioPlayer(AudioSettings settings) : AudioPlayer
 
 CoreAudioAudioPlayer::~CoreAudioAudioPlayer() {
     SPDLOG_TRACE("destruct CoreAudio audio player");
+    DoClose();
+    pthread_mutex_destroy(&mMutex);
+}
 
+void CoreAudioAudioPlayer::DoClose() {
     if (mInitialized) {
         AudioOutputUnitStop(mAudioUnit);
         AudioUnitUninitialize(mAudioUnit);
         AudioComponentInstanceDispose(mAudioUnit);
+        mInitialized = false;
     }
 
     if (mRingBuffer) {
         delete[] mRingBuffer;
+        mRingBuffer = nullptr;
     }
-
-    pthread_mutex_destroy(&mMutex);
 }
 
 bool CoreAudioAudioPlayer::DoInit() {
     OSStatus status;
 
-    mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::audioSurround51 ? 6 : 2;
+    mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::audioStereo ? 2 : 6;
 
     const size_t bytesPerSample = sizeof(int16_t);
     const size_t bytesPerFrame = bytesPerSample * mNumChannels;
@@ -126,7 +130,7 @@ int CoreAudioAudioPlayer::Buffered() {
     return samples;
 }
 
-void CoreAudioAudioPlayer::Play(const uint8_t* buf, size_t len) {
+void CoreAudioAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     pthread_mutex_lock(&mMutex);
 
     const size_t bytesPerFrame = sizeof(int16_t) * mNumChannels;
