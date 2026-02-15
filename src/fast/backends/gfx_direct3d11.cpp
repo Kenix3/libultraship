@@ -735,6 +735,8 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
     FramebufferDX11& data = mFrameBuffers.back();
     data.texture_id = texture_id;
 
+    data.upscale_method = FILTER_LINEAR;
+
     uint32_t tile = 0;
     uint32_t saved = mCurrentTextureIds[tile];
     mCurrentTextureIds[tile] = texture_id;
@@ -746,7 +748,7 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
 
 void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                       bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                      bool can_extract_depth) {
+                                                      bool can_extract_depth, FilteringMode upscale_method) {
     FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& tex = mTextures[fb.texture_id];
 
@@ -758,7 +760,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
         --msaa_level;
     }
 
-    bool diff = tex.width != width || tex.height != height || fb.msaa_level != msaa_level;
+    bool diff = tex.width != width || tex.height != height || fb.msaa_level != msaa_level || fb.upscale_method != upscale_method;
 
     if (diff || (fb.render_target_view.Get() != nullptr) != render_target) {
         if (fb_id != 0) {
@@ -777,6 +779,28 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
             texture_desc.SampleDesc.Quality = 0;
 
             ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, tex.texture.ReleaseAndGetAddressOf()));
+
+            // Update sampler state as well since it uses the upscale method
+            D3D11_SAMPLER_DESC sampler_desc;
+            ZeroMemory(&sampler_desc, sizeof(D3D11_SAMPLER_DESC));
+
+            sampler_desc.Filter = (upscale_method == FILTER_LINEAR) ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
+                                                                  : D3D11_FILTER_MIN_MAG_MIP_POINT;
+
+            sampler_desc.AddressU = gfx_cm_to_d3d11(G_TX_WRAP);
+            sampler_desc.AddressV = gfx_cm_to_d3d11(G_TX_WRAP);
+            sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+            sampler_desc.MinLOD = 0;
+            sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+            tex.linear_filtering = (upscale_method == FILTER_LINEAR);
+
+            // This function is called twice per texture, the first one only to set default values.
+            // Maybe that could be skipped? Anyway, make sure to release the first default sampler
+            // state before setting the actual one.
+            tex.sampler_state.Reset();
+
+            ThrowIfFailed(mDevice->CreateSamplerState(&sampler_desc, tex.sampler_state.GetAddressOf()));
 
             if (msaa_level <= 1) {
                 ThrowIfFailed(mDevice->CreateShaderResourceView(tex.texture.Get(), nullptr,
@@ -816,6 +840,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
 
     fb.has_depth_buffer = has_depth_buffer;
     fb.msaa_level = msaa_level;
+    fb.upscale_method = upscale_method;
 }
 
 void GfxRenderingAPIDX11::StartDrawToFramebuffer(int fb_id, float noise_scale) {

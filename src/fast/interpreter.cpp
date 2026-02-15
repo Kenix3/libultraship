@@ -4184,7 +4184,8 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mRapi = rapi;
     mWapi->Init(game_name, rapi->GetName(), start_in_fullscreen, width, height, posX, posY);
     mRapi->Init();
-    mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
+    mUpscaleFilter = (FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_UPSCALE_FILTER, FILTER_LINEAR);
+    mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true, mUpscaleFilter);
     mCurDimensions.internal_mul =
         Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
     mMsaaLevel = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
@@ -4268,7 +4269,7 @@ void Interpreter::StartFrame() {
                 AdjustWidthHeightForScale(width, height, fb.second.native_width, fb.second.native_height);
             }
             if (width != fb.second.applied_width || height != fb.second.applied_height) {
-                mRapi->UpdateFramebufferParameters(fb.first, width, height, 1, true, true, true, true);
+                mRapi->UpdateFramebufferParameters(fb.first, width, height, 1, true, true, true, true, mUpscaleFilter);
                 fb.second.applied_width = width;
                 fb.second.applied_height = height;
             }
@@ -4281,16 +4282,16 @@ void Interpreter::StartFrame() {
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
-                                               true, true, true);
+                                               true, true, true, mUpscaleFilter);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
             // match the window size
             mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
+                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true, mUpscaleFilter);
         }
         if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
-                                               false, false, false, false);
+                                               false, false, false, false, mUpscaleFilter);
         }
     } else {
         mRendersToFb = false;
@@ -4308,7 +4309,7 @@ void Interpreter::RunGuiOnly() {
     mGetPixelDepthCached.clear();
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
-                                       false, true, true, !mRendersToFb);
+                                       false, true, true, !mRendersToFb, mUpscaleFilter);
     mRapi->StartFrame();
     mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(false, true);
@@ -4350,7 +4351,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mCurMtxReplacements = &mtx_replacements;
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
-                                       false, true, true, !mRendersToFb);
+                                       false, true, true, !mRendersToFb, mUpscaleFilter);
     mRapi->StartFrame();
     mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(false, true);
@@ -4429,6 +4430,14 @@ void Interpreter::SetMaxFrameLatency(int latency) {
     mWapi->SetMaxFrameLatency(latency);
 }
 
+void Interpreter::SetUpscaleFilter(FilteringMode mode) {
+    mUpscaleFilter = mode;
+}
+
+FilteringMode Interpreter::GetUpscaleFilter() const {
+    return mUpscaleFilter;
+}
+
 int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                    uint8_t resize) {
     uint32_t orig_width = width, orig_height = height;
@@ -4437,7 +4446,7 @@ int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t nat
     }
 
     int fb = mRapi->CreateFramebuffer();
-    mRapi->UpdateFramebufferParameters(fb, width, height, 1, true, true, true, true);
+    mRapi->UpdateFramebufferParameters(fb, width, height, 1, true, true, true, true, mUpscaleFilter);
 
     mFrameBuffers[fb] = {
         orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize)

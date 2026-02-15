@@ -87,6 +87,7 @@ struct FramebufferMetal {
     uint32_t mTextureId;
     bool mHasDepthBuffer;
     uint32_t mMsaaLevel;
+    uint32_t mUpscaleMethod;
     bool mRenderTarget;
 
     // State
@@ -143,7 +144,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     int CreateFramebuffer() override;
     void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                     bool can_extract_depth) override;
+                                     bool can_extract_depth, FilteringMode upscale_method) override;
     void StartDrawToFramebuffer(int fbId, float noiseScale) override;
     void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
                          int dstX1, int dstY1) override;
