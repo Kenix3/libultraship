@@ -140,11 +140,11 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     } catch (HRESULT res) {}
 }
 
-void SetMuted(bool muted) {
+void WasapiAudioPlayer::SetMuted(bool muted) {
     // not implemented
 }
 
-bool IsMuted() const {
+bool WasapiAudioPlayer::IsMuted() const {
     return false;
 }
 
