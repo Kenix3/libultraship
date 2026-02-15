@@ -140,6 +140,14 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     } catch (HRESULT res) {}
 }
 
+void SetMuted(bool muted) {
+    // not implemented
+}
+
+bool IsMuted() {
+    return false;
+}
+
 HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) {
     return S_OK;
 }
