@@ -702,9 +702,9 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
                                           : MTL::SamplerMinMagFilterNearest;
         sampler_descriptor->setMinFilter(filter);
         sampler_descriptor->setMagFilter(filter);
-        //sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
-        //sampler_descriptor->setTAddressMode(gfx_cm_to_metal(cmt));
-        //sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
+        sampler_descriptor->setSAddressMode(gfx_cm_to_metal(G_TX_WRAP));
+        sampler_descriptor->setTAddressMode(gfx_cm_to_metal(G_TX_WRAP));
+        sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
         tex.sampler = mDevice->newSamplerState(sampler_descriptor);
         sampler_descriptor->release();
 
