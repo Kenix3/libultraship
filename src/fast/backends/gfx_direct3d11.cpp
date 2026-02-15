@@ -784,7 +784,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
             D3D11_SAMPLER_DESC sampler_desc;
             ZeroMemory(&sampler_desc, sizeof(D3D11_SAMPLER_DESC));
 
-            sampler_desc.Filter = upscale_method == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
+            sampler_desc.Filter = (upscale_method == FILTER_LINEAR) ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
                                                                   : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
             sampler_desc.AddressU = gfx_cm_to_d3d11(G_TX_WRAP);
@@ -793,7 +793,7 @@ void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width,
             sampler_desc.MinLOD = 0;
             sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
 
-            tex.linear_filtering = linear_filter;
+            tex.linear_filtering = (upscale_method == FILTER_LINEAR);
 
             // This function is called twice per texture, the first one only to set default values.
             // Maybe that could be skipped? Anyway, make sure to release the first default sampler
