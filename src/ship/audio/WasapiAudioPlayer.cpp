@@ -144,7 +144,7 @@ void SetMuted(bool muted) {
     // not implemented
 }
 
-bool IsMuted() {
+bool IsMuted() const {
     return false;
 }
 
