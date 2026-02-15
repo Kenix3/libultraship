@@ -592,6 +592,18 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
                     SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
                     break;
+                    case SDL_WINDOWEVENT_FOCUS_GAINED: {
+                        if( Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MUTE_BACKGROUND_AUDIO, 1) ) {
+                            Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer()->SetMuted(false);
+                        }
+                        break;
+                    }
+                    case SDL_WINDOWEVENT_FOCUS_LOST: {
+                        if( Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MUTE_BACKGROUND_AUDIO, 1) ) {
+                            Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer()->SetMuted(true);
+                        }
+                        break;
+                    }
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(mWnd)) {
                         // We listen specifically for main window close because closing main window
