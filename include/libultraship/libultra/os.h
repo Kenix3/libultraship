@@ -16,6 +16,13 @@
 #define MAXCONTROLLERS 6
 #endif
 
+/* Stack size for I/O device managers */
+#define OS_PIM_STACKSIZE	4096
+#define OS_VIM_STACKSIZE	4096
+#define OS_SIM_STACKSIZE	4096
+
+#define	OS_MIN_STACKSIZE	72
+
 /* controller errors */
 #define CONT_NO_RESPONSE_ERROR 0x8
 #define CONT_OVERRUN_ERROR 0x4
@@ -97,6 +104,12 @@
 #define EEPROM_MAXBLOCKS 64
 #define EEP16K_MAXBLOCKS 256
 #define EEPROM_BLOCK_SIZE 8
+
+// transfer mode
+
+#define LEO_BLOCK_MODE	1
+#define LEO_TRACK_MODE	2
+#define LEO_SECTOR_MODE	3
 
 #ifdef __cplusplus
 extern "C" {
