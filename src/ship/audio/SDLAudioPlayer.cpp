@@ -54,18 +54,19 @@ int SDLAudioPlayer::Buffered() {
 }
 
 void SDLAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
-    if (mDevice == 0 ) return;
-
-    if (IsMuted()) {
-        // Buffer silence
-        std::vector<uint8_t> silence(len, 0);
-        SDL_QueueAudio(mDevice, silence.data(), silence.size());
-        return;
-    }
+    if (mDevice == 0) return;
 
     if (Buffered() < 6000) {
-        // Don't fill the audio buffer too much in case this happens
-        SDL_QueueAudio(mDevice, buf, len);
+        if (IsMuted()) {
+            // Buffer silence
+            std::vector<uint8_t> silence(len, 0);
+            SDL_QueueAudio(mDevice, silence.data(), silence.size());
+        }
+        else
+        {
+            // Don't fill the audio buffer too much in case this happens
+            SDL_QueueAudio(mDevice, buf, len);
+        }
     }
 }
 
@@ -78,6 +79,7 @@ void SDLAudioPlayer::SetMuted(bool muted) {
     else
     {
         mMuted = false;
+        SDL_ClearQueuedAudio(mDevice);
     }
 }
 
