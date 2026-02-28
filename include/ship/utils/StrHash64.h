@@ -91,3 +91,4 @@
 extern uint64_t update_crc64(const void* buf, uint32_t len, uint64_t crc);
 extern uint64_t crc64(const void* buf, uint32_t len);
 extern uint64_t CRC64(const char* t);
+extern uint32_t CRC32(const char* t);
