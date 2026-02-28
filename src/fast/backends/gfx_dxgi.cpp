@@ -24,13 +24,15 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
+#include "ship/window/FileDropMgr.h"
+
+#include "libultraship/bridge/controllerbridge.h"
 
 #include "fast/backends/gfx_window_manager_api.h"
 #include "fast/backends/gfx_rendering_api.h"
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_screen_config.h"
 #include "fast/interpreter.h"
-#include "ship/window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "fast/backends/gfx_dxgi.h"
@@ -51,6 +53,8 @@
 #define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
 #endif
 using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
+
+#define ALLOW_BACKGROUND_INPUTS_BLOCK_ID 95237930
 
 namespace Fast {
 
@@ -486,11 +490,15 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_SETFOCUS:
             self->mInFocus = true;
+            ControllerUnblockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
             if (self->mIsMouseCaptured) {
                 self->ApplyMouseCaptureClip();
             }
             break;
         case WM_KILLFOCUS:
+            if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+            }
             self->mInFocus = false;
             break;
         default:
