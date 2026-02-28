@@ -10,6 +10,9 @@ class NullAudioPlayer final : public AudioPlayer {
 
     int Buffered() override;
 
+    void SetMuted(bool muted) override;
+    bool IsMuted() const override;
+
   protected:
     bool DoInit() override;
     void DoClose() override;

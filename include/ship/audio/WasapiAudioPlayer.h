@@ -18,6 +18,9 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
 
     int Buffered() override;
 
+    void SetMuted(bool muted);
+    bool IsMuted() const override;
+
   protected:
     bool DoInit() override;
     void DoClose() override;

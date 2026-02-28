@@ -11,6 +11,9 @@ class SDLAudioPlayer final : public AudioPlayer {
 
     int Buffered() override;
 
+    void SetMuted(bool muted) override;
+    bool IsMuted() const override;
+
   protected:
     bool DoInit() override;
     void DoClose() override;
@@ -19,5 +22,6 @@ class SDLAudioPlayer final : public AudioPlayer {
   private:
     SDL_AudioDeviceID mDevice = 0;
     int32_t mNumChannels = 2;
+    bool mMuted = false;
 };
 } // namespace Ship

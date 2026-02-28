@@ -53,6 +53,9 @@ class AudioPlayer {
     // Get the number of output channels (2 for stereo, 6 for surround)
     int32_t GetNumOutputChannels() const;
 
+    virtual void SetMuted(bool muted) = 0;
+    virtual bool IsMuted() const = 0;
+
   protected:
     // Initialize the audio device.
     virtual bool DoInit() = 0;

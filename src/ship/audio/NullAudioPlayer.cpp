@@ -21,4 +21,12 @@ int NullAudioPlayer::Buffered() {
 
 void NullAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
 }
+
+void NullAudioPlayer::SetMuted(bool muted) {
+}
+
+bool NullAudioPlayer::IsMuted() const {
+    return false;
+}
+
 } // namespace Ship
