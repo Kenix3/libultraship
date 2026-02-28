@@ -19,7 +19,8 @@ namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) : Ship::Window(gui) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager)
+    : Ship::Window(gui, mouseStateManager) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mInterpreter = std::make_shared<Interpreter>();
@@ -34,6 +35,10 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui) : Ship::Window(gui) {
     }
 #endif
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+}
+
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
+    : Fast3dWindow(gui, std::make_shared<FastMouseStateManager>()) {
 }
 
 Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows)
@@ -191,6 +196,8 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
     }
 
     auto gui = wnd->GetGui();
+    // Setup mouse state manager
+    wnd->GetMouseStateManager()->StartFrame();
     // Setup of the backend frames and draw initial Window and GUI menus
     gui->StartDraw();
     // Setup game framebuffers to match available window space
@@ -337,8 +344,7 @@ bool Fast3dWindow::KeyUp(int32_t scancode) {
     }
 
     if (scancode == Ship::Context::GetInstance()->GetWindow()->GetMouseCaptureScancode()) {
-        bool captureState = Ship::Context::GetInstance()->GetWindow()->IsMouseCaptured();
-        Ship::Context::GetInstance()->GetWindow()->SetMouseCapture(!captureState);
+        Ship::Context::GetInstance()->GetWindow()->GetMouseStateManager()->ToggleMouseCaptureOverride();
     }
 
     Ship::Context::GetInstance()->GetWindow()->SetLastScancode(-1);

@@ -2,6 +2,7 @@
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "FastMouseStateManager.h"
 
 union Gfx;
 #include "interpreter.h"
@@ -12,6 +13,7 @@ class Fast3dWindow : public Ship::Window {
     Fast3dWindow();
     Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows);
     Fast3dWindow(std::shared_ptr<Ship::Gui> gui);
+    Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager);
     ~Fast3dWindow();
 
     void Init() override;
