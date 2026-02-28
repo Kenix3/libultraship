@@ -486,6 +486,12 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureRgba16: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -528,6 +534,12 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureRgba32: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -545,6 +557,12 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureIA4: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -577,6 +595,12 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureIA8: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -607,6 +631,12 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureIA16: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -649,6 +679,12 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureI4: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -693,6 +729,12 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureI8: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t full_image_line_size_bytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -720,6 +762,12 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureCi4: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     uint32_t palIdx = mRdp->texture_tile[tile].palette; // 0-15
@@ -764,6 +812,12 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureCi8: null texture address for tile {}", tile);
+        return;
+    }
+
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
@@ -803,6 +857,11 @@ void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
 
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureImg: null texture address for tile {}", tile);
+        return;
+    }
+
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
     mRapi->UploadTexture(addr, width, height);
@@ -814,6 +873,11 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr;
+
+    if (addr == nullptr) {
+        SPDLOG_ERROR("ImportTextureRaw: null texture address for tile {}", tile);
+        return;
+    }
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
@@ -896,6 +960,11 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[tmemIdex].addr;
+
+    if (origAddr == nullptr) {
+        SPDLOG_ERROR("ImportTexture: null texture address for tile {}", tile);
+        return;
+    }
 
     TextureCacheKey key;
     if (fmt == G_IM_FMT_CI) {
