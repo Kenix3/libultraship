@@ -408,6 +408,29 @@ size_t ResourceManager::UnloadResource(const std::string& filePath) {
     return UnloadResource({ filePath, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
+bool ResourceManager::WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data,
+                                    bool unloadFile) {
+    std::shared_ptr<Archive> archive = identifier.Parent;
+
+    if (!archive) {
+        archive = mArchiveManager->GetArchiveFromFile(identifier.Path);
+    }
+
+    if (!archive) {
+        return false;
+    }
+
+    if (!mArchiveManager->WriteFile(archive, identifier.Path, data)) {
+        return false;
+    }
+
+    if (unloadFile) {
+        UnloadResource(identifier);
+    }
+
+    return true;
+}
+
 bool ResourceManager::OtrSignatureCheck(const char* fileName) {
     static const char* sOtrSignature = "__OTR__";
     return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;

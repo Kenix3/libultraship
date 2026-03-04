@@ -86,6 +86,7 @@ class ResourceManager {
                       BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
     size_t UnloadResource(const ResourceIdentifier& identifier);
     size_t UnloadResource(const std::string& filePath);
+    bool WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data, bool unloadFile);
 
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const ResourceFilter& filter);
