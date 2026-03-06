@@ -249,15 +249,19 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
     auto guiTexture = std::static_pointer_cast<GuiTexture>(
         Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
 
+    LoadTextureFromResource(name, guiTexture);
+}
+
+void Gui::LoadTextureFromResource(const std::string& name, std::shared_ptr<GuiTexture> texture) {
     Fast::GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
 
     // TODO: Nothing ever unloads the texture from Fast3D here.
-    guiTexture->Metadata.RendererTextureId = api->NewTexture();
-    api->SelectTexture(0, guiTexture->Metadata.RendererTextureId);
+    texture->Metadata.RendererTextureId = api->NewTexture();
+    api->SelectTexture(0, texture->Metadata.RendererTextureId);
     api->SetSamplerParameters(0, false, 0, 0);
-    api->UploadTexture(guiTexture->Data, guiTexture->Metadata.Width, guiTexture->Metadata.Height);
+    api->UploadTexture(texture->Data, texture->Metadata.Width, texture->Metadata.Height);
 
-    mGuiTextures[name] = guiTexture->Metadata;
+    mGuiTextures[name] = texture->Metadata;
 }
 
 bool Gui::SupportsViewports() {

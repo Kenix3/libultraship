@@ -92,6 +92,7 @@ class Gui {
     ImTextureID GetTextureByName(const std::string& name);
     ImVec2 GetTextureSize(const std::string& name);
     void LoadTextureFromRawImage(const std::string& name, const std::string& path);
+    void LoadTextureFromResource(const std::string& name, std::shared_ptr<GuiTexture> texture);
 
     std::shared_ptr<GameOverlay> GetGameOverlay();
     void SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar);
