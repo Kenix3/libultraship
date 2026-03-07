@@ -18,7 +18,6 @@
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
 
-// TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
@@ -517,6 +516,12 @@ class Interpreter {
     std::vector<std::string> shader_ids;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
+
+    // When true, GfxDpSetTile will derive loaded_texture[1] from loaded_texture[0]
+    // for tiles at tmem != 0 when no separate texture has been loaded there.
+    // Needed for games that load a single texture block at TMEM 0 and reference
+    // sub-regions via tile descriptors at different TMEM offsets.
+    bool mDeriveTmemFromLoadedTexture{};
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
