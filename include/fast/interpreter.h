@@ -86,6 +86,7 @@ enum class ShaderOpts {
 struct ColorCombinerKey {
     uint64_t combine_mode;
     uint64_t options;
+    const char* display_list;
 
 #ifdef __cplusplus
     auto operator<=>(const ColorCombinerKey&) const = default;
@@ -116,7 +117,7 @@ struct CCFeatures {
     bool do_multiply[2][2];
     bool do_mix[2][2];
     bool color_alpha_same[2];
-    int16_t shader_id;
+    const char* display_list;
 };
 
 void gfx_cc_get_features(uint64_t shader_id0, uint32_t shader_id1, struct CCFeatures* cc_features);
@@ -326,6 +327,7 @@ struct GfxTextureCache {
 struct ColorCombiner {
     uint64_t shader_id0;
     uint32_t shader_id1;
+    const char* display_list;
     bool usedTextures[2];
     struct ShaderProgram* prg[16];
     uint8_t shader_input_mapping[2][7];
@@ -387,11 +389,13 @@ class Interpreter {
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
+    void RegisterShaderAwareDisplayList(const char* path);
 
     // private: TODO make these private
     void Flush();
-    ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1);
+    ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1, const char* path);
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
+    void ShaderCacheClear();
     void TextureCacheClear();
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
@@ -500,6 +504,7 @@ class Interpreter {
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
 
+    const char* mCurrentDisplayList = nullptr;
     bool mFbActive{};
     bool mRendersToFb{}; // game_renders_to_framebuffer;
     std::map<int, FBInfo>::iterator mActiveFrameBuffer;
@@ -513,6 +518,7 @@ class Interpreter {
     std::map<std::string, MaskedTextureEntry> mMaskedTextures;
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
+    std::vector<std::string> mShaderAwareDisplayLists;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
     std::vector<std::string> shader_ids;
     int mInterpolationIndex;
@@ -527,5 +533,6 @@ const char* GfxGetOpcodeName(int8_t opcode);
 } // namespace Fast
 
 extern "C" void gfx_texture_cache_clear();
+extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
