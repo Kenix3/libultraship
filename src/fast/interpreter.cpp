@@ -1126,20 +1126,22 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
     }
 
     // Include palette in cache key when fmt is CI (including TLUT-overridden).
-    // CI4: only include the relevant palette half to avoid spurious cache invalidation.
+    // Use palette_dram_addr (the original DRAM source) instead of palettes[] (which always
+    // points to the staging buffer). This ensures that the same texture drawn with different
+    // palettes produces distinct cache keys.
     TextureCacheKey key;
     if (fmt == G_IM_FMT_CI) {
         if (siz == G_IM_SIZ_4b) {
             uint8_t palSlot = paletteIndex / 8;
             key = { origAddr,
-                    { palSlot == 0 ? mRdp->palettes[0] : nullptr, palSlot == 1 ? mRdp->palettes[1] : nullptr },
+                    { palSlot == 0 ? mRdp->palette_dram_addr[0] : nullptr, palSlot == 1 ? mRdp->palette_dram_addr[1] : nullptr },
                     fmt,
                     siz,
                     paletteIndex,
                     origSizeBytes };
         } else {
             // CI8 uses both palette halves
-            key = { origAddr, { mRdp->palettes[0], mRdp->palettes[1] }, fmt, siz, paletteIndex, origSizeBytes };
+            key = { origAddr, { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] }, fmt, siz, paletteIndex, origSizeBytes };
         }
     } else {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
@@ -2298,12 +2300,14 @@ void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
             uint32_t copyLen = (paletteByteOffset + byteCount <= 256) ? byteCount : (256 - paletteByteOffset);
             memcpy(mRdp->palette_staging[0] + paletteByteOffset, src, copyLen);
             mRdp->palettes[0] = mRdp->palette_staging[0];
+            mRdp->palette_dram_addr[0] = src;
         } else {
             // Palettes 8-15 range
             uint32_t offset = paletteByteOffset - 256;
             uint32_t copyLen = (offset + byteCount <= 256) ? byteCount : (256 - offset);
             memcpy(mRdp->palette_staging[1] + offset, src, copyLen);
             mRdp->palettes[1] = mRdp->palette_staging[1];
+            mRdp->palette_dram_addr[1] = src;
         }
 
         // CI8: full 256-entry palette spanning both halves
@@ -2312,10 +2316,13 @@ void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
             memcpy(mRdp->palette_staging[1], src + 256, 256);
             mRdp->palettes[0] = mRdp->palette_staging[0];
             mRdp->palettes[1] = mRdp->palette_staging[1];
+            mRdp->palette_dram_addr[0] = src;
+            mRdp->palette_dram_addr[1] = src + 256;
         }
     } else {
         // tmem < 256: non-standard location, fall back to direct pointer
         mRdp->palettes[1] = src;
+        mRdp->palette_dram_addr[1] = src;
     }
 }
 

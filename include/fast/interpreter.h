@@ -257,6 +257,9 @@ struct RSP {
 
 struct RDP {
     const uint8_t* palettes[2];
+    // Original DRAM source address of the most recent TLUT load per palette half.
+    // Used in texture cache keys instead of palettes[] (which always points to staging).
+    const uint8_t* palette_dram_addr[2];
     // CI4 palette staging buffer: N64 TMEM holds up to 16 CI4 palettes (16 entries x 2 bytes each = 32 bytes per
     // palette). palettes[0] covers indices 0-7 (256 bytes), palettes[1] covers 8-15 (256 bytes). GfxDpLoadTlut copies
     // TLUT data here at the correct offset so multi-palette CI4 models work.
