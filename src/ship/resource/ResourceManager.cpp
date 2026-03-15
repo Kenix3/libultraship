@@ -31,15 +31,40 @@ bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
 }
 
 size_t ResourceIdentifier::CalculateHash() {
-    size_t hash = Math::HashCombine(std::hash<std::string>{}(Path), std::hash<std::uintptr_t>{}(Owner));
+    // Use string_view hash to match ResourceLookupKey hashing for heterogeneous lookup correctness.
+    size_t hash = Math::HashCombine(std::hash<std::string_view>{}(Path), std::hash<std::uintptr_t>{}(Owner));
     if (Parent != nullptr) {
-        hash = Math::HashCombine(hash, std::hash<std::string>{}(Parent->GetPath()));
+        hash = Math::HashCombine(hash, std::hash<std::string_view>{}(Parent->GetPath()));
     }
     return hash;
 }
 
+ResourceLookupKey::ResourceLookupKey(std::string_view path, uintptr_t owner, const std::shared_ptr<Archive>& parent)
+    : Path(path), Owner(owner), ParentRaw(parent.get()) {
+    Hash = Math::HashCombine(std::hash<std::string_view>{}(Path), std::hash<std::uintptr_t>{}(Owner));
+    if (ParentRaw != nullptr) {
+        Hash = Math::HashCombine(Hash, std::hash<std::string_view>{}(parent->GetPath()));
+    }
+}
+
 size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
     return rcd.GetHash();
+}
+
+size_t ResourceIdentifierHash::operator()(const ResourceLookupKey& key) const {
+    return key.Hash;
+}
+
+bool ResourceIdentifierEqual::operator()(const ResourceIdentifier& a, const ResourceIdentifier& b) const {
+    return a == b;
+}
+
+bool ResourceIdentifierEqual::operator()(const ResourceIdentifier& a, const ResourceLookupKey& b) const {
+    return a.Owner == b.Owner && a.Path == b.Path && a.Parent.get() == b.ParentRaw;
+}
+
+bool ResourceIdentifierEqual::operator()(const ResourceLookupKey& a, const ResourceIdentifier& b) const {
+    return b.Owner == a.Owner && b.Path == a.Path && b.Parent.get() == a.ParentRaw;
 }
 
 ResourceManager::ResourceManager() {
@@ -257,7 +282,12 @@ ResourceManager::CheckCache(const ResourceIdentifier& identifier) {
 
 const std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>*
 ResourceManager::CheckCache(const std::string& filePath) {
-    return CheckCache({ filePath, mDefaultCacheOwner, mDefaultCacheArchive });
+    const std::lock_guard<std::mutex> lock(mMutex);
+    auto cacheFind = mResourceCache.find(ResourceLookupKey{ filePath, mDefaultCacheOwner, mDefaultCacheArchive });
+    if (cacheFind == mResourceCache.end()) {
+        return nullptr;
+    }
+    return &cacheFind->second;
 }
 
 std::shared_ptr<IResource> ResourceManager::GetCachedResource(const ResourceIdentifier& identifier, bool loadExact) {
@@ -424,8 +454,9 @@ bool ResourceManager::WriteResource(const ResourceIdentifier& identifier, const 
 }
 
 bool ResourceManager::OtrSignatureCheck(const char* fileName) {
-    static const char* sOtrSignature = "__OTR__";
-    return strncmp(fileName, sOtrSignature, strlen(sOtrSignature)) == 0;
+    static constexpr char sOtrSignature[] = "__OTR__";
+    static constexpr size_t sOtrSignatureLen = sizeof(sOtrSignature) - 1;
+    return strncmp(fileName, sOtrSignature, sOtrSignatureLen) == 0;
 }
 
 bool ResourceManager::IsAltAssetsEnabled() {

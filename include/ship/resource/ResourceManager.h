@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include <string_view>
 #include <list>
 #include <vector>
 #include <mutex>
@@ -47,8 +48,28 @@ struct ResourceIdentifier {
     size_t mHash;
 };
 
+// Lightweight non-owning key for cache lookups — avoids copying the path string.
+// Used with heterogeneous unordered_map::find() to skip ResourceIdentifier construction.
+struct ResourceLookupKey {
+    std::string_view Path;
+    uintptr_t Owner = 0;
+    const Archive* ParentRaw = nullptr;
+    size_t Hash = 0;
+
+    ResourceLookupKey(std::string_view path, uintptr_t owner, const std::shared_ptr<Archive>& parent);
+};
+
 struct ResourceIdentifierHash {
+    using is_transparent = void;
     size_t operator()(const ResourceIdentifier& rcd) const;
+    size_t operator()(const ResourceLookupKey& key) const;
+};
+
+struct ResourceIdentifierEqual {
+    using is_transparent = void;
+    bool operator()(const ResourceIdentifier& a, const ResourceIdentifier& b) const;
+    bool operator()(const ResourceIdentifier& a, const ResourceLookupKey& b) const;
+    bool operator()(const ResourceLookupKey& a, const ResourceIdentifier& b) const;
 };
 
 class ResourceManager {
@@ -131,7 +152,7 @@ class ResourceManager {
 
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
-                       ResourceIdentifierHash>
+                       ResourceIdentifierHash, ResourceIdentifierEqual>
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
