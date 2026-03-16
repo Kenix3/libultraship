@@ -1013,48 +1013,51 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
     FramebufferDX11& fb = mFrameBuffers[fb_id];
     TextureData& td = mTextures[fb.texture_id];
 
-    ID3D11Texture2D* staging = nullptr;
+    // Query actual texture dimensions — CopyResource requires matching sizes
+    D3D11_TEXTURE2D_DESC srcDesc;
+    td.texture->GetDesc(&srcDesc);
 
-    // Create an staging texture with cpu read access
-    D3D11_TEXTURE2D_DESC texture_desc;
-    texture_desc.Width = width;
-    texture_desc.Height = height;
-    texture_desc.Usage = D3D11_USAGE_STAGING;
-    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    texture_desc.BindFlags = 0;
-    texture_desc.MiscFlags = 0;
-    texture_desc.ArraySize = 1;
-    texture_desc.MipLevels = 1;
-    texture_desc.SampleDesc.Count = 1;
-    texture_desc.SampleDesc.Quality = 0;
+    // Reuse cached staging texture when dimensions match — avoids per-frame CreateTexture2D
+    if (!mReadbackStaging || mReadbackStagingW != srcDesc.Width || mReadbackStagingH != srcDesc.Height) {
+        mReadbackStaging.Reset();
 
-    ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, &staging));
+        D3D11_TEXTURE2D_DESC texture_desc;
+        texture_desc.Width = srcDesc.Width;
+        texture_desc.Height = srcDesc.Height;
+        texture_desc.Usage = D3D11_USAGE_STAGING;
+        texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        texture_desc.BindFlags = 0;
+        texture_desc.MiscFlags = 0;
+        texture_desc.ArraySize = 1;
+        texture_desc.MipLevels = 1;
+        texture_desc.SampleDesc.Count = 1;
+        texture_desc.SampleDesc.Quality = 0;
+
+        ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, mReadbackStaging.GetAddressOf()));
+        mReadbackStagingW = srcDesc.Width;
+        mReadbackStagingH = srcDesc.Height;
+    }
 
     // Copy the framebuffer texture to the staging texture
-    mContext->CopyResource(staging, td.texture.Get());
+    mContext->CopyResource(mReadbackStaging.Get(), td.texture.Get());
 
     // Map the staging texture to a resource that we can read
     D3D11_MAPPED_SUBRESOURCE resource = {};
-    ThrowIfFailed(mContext->Map(staging, 0, D3D11_MAP_READ, 0, &resource));
+    ThrowIfFailed(mContext->Map(mReadbackStaging.Get(), 0, D3D11_MAP_READ, 0, &resource));
 
     if (!resource.pData) {
         return;
     }
 
-    // Copy the mapped values to a temp array that we can process later
-    uint32_t* temp = new uint32_t[width * height]();
-    for (size_t i = 0; i < height; i++) {
-        memcpy((uint8_t*)temp + (resource.RowPitch * i), (uint8_t*)resource.pData + (resource.RowPitch * i),
-               resource.RowPitch);
-    }
-
-    mContext->Unmap(staging, 0);
-
-    // Convert the RGBA32 values to RGBA16
-    for (size_t i = 0; i < width; i++) {
-        for (size_t j = 0; j < height; j++) {
-            uint32_t pixel = temp[i + (j * width)];
+    // Convert RGBA32 → RGBA16 with nearest-neighbor scaling from actual texture
+    // dimensions to requested output dimensions, respecting RowPitch for row stride
+    for (uint32_t j = 0; j < height; j++) {
+        uint32_t srcY = j * srcDesc.Height / height;
+        uint8_t* srcRow = (uint8_t*)resource.pData + srcY * resource.RowPitch;
+        for (uint32_t i = 0; i < width; i++) {
+            uint32_t srcX = i * srcDesc.Width / width;
+            uint32_t pixel = ((uint32_t*)srcRow)[srcX];
             uint8_t r = (((pixel & 0xFF) + 4) * 0x1F) / 0xFF;
             uint8_t g = ((((pixel >> 8) & 0xFF) + 4) * 0x1F) / 0xFF;
             uint8_t b = ((((pixel >> 16) & 0xFF) + 4) * 0x1F) / 0xFF;
@@ -1064,11 +1067,7 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
         }
     }
 
-    // Cleanup
-    staging->Release();
-    staging = nullptr;
-
-    delete[] temp;
+    mContext->Unmap(mReadbackStaging.Get(), 0);
 }
 
 void GfxRenderingAPIDX11::SetTextureFilter(FilteringMode mode) {

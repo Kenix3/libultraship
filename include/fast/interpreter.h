@@ -9,6 +9,7 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <functional>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -383,6 +384,12 @@ class Interpreter {
     void RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement);
     void UnregisterBlendedTexture(const char* name);
 
+    // Callback fired when gDPSetColorImage changes the target address.
+    // Parameters: (oldAddress, newAddress). Ports can use this to implement
+    // render-to-texture readback for auxiliary color buffers.
+    void SetColorImageChangeCallback(std::function<void(void*, void*)> cb);
+    void TextureCacheDeleteRange(const uint8_t* start, size_t byteLen);
+
     void SetNativeDimensions(float width, float height);
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
@@ -511,6 +518,8 @@ class Interpreter {
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;
     std::map<std::string, MaskedTextureEntry> mMaskedTextures;
+
+    std::function<void(void*, void*)> mColorImageChangeCb;
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?

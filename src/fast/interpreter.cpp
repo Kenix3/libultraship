@@ -2540,7 +2540,13 @@ void Interpreter::GfxDpSetZImage(void* zBufAddr) {
 }
 
 void Interpreter::GfxDpSetColorImage(uint32_t format, uint32_t size, uint32_t width, void* address) {
+    void* oldAddr = mRdp->color_image_address;
     mRdp->color_image_address = address;
+
+    if (address != oldAddr && mColorImageChangeCb) {
+        Flush();
+        mColorImageChangeCb(oldAddr, address);
+    }
 }
 
 void Interpreter::GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t mode) {
@@ -4563,6 +4569,24 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
 
 void Interpreter::ResetFrameBuffer() {
     mRapi->StartDrawToFramebuffer(0, (float)mCurDimensions.height / mNativeDimensions.height);
+}
+
+void Interpreter::SetColorImageChangeCallback(std::function<void(void*, void*)> cb) {
+    mColorImageChangeCb = std::move(cb);
+}
+
+void Interpreter::TextureCacheDeleteRange(const uint8_t* start, size_t byteLen) {
+    const uint8_t* end = start + byteLen;
+    auto& cmap = mTextureCache.map;
+    for (auto it = cmap.begin(); it != cmap.end(); ) {
+        if (it->first.texture_addr >= start && it->first.texture_addr < end) {
+            mTextureCache.lru.erase(it->second.lru_location);
+            mTextureCache.free_texture_ids.push_back(it->second.texture_id);
+            it = cmap.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void Interpreter::AdjustPixelDepthCoordinates(float& x, float& y) {
