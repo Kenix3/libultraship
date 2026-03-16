@@ -411,6 +411,9 @@ void Interpreter::TextureCacheClear() {
     }
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
+    // Pre-allocate buckets so the map never rehashes during normal operation.
+    // Rehashing invalidates all iterators, including those stored in LRU entries.
+    mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
 }
 
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
@@ -4566,6 +4569,9 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     }
 
     ucode_handler_index = UcodeHandlers::ucode_f3dex2;
+
+    // Pre-allocate texture cache buckets to prevent rehash-induced iterator invalidation.
+    mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
 }
 
 void Interpreter::Destroy() {
