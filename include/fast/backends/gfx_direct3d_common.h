@@ -155,7 +155,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
     std::vector<struct TextureData> mTextures;
     int mCurrentTile;
-    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
+    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES]{};
 
     std::vector<FramebufferDX11> mFrameBuffers;
 

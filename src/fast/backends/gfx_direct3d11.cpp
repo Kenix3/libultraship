@@ -712,6 +712,10 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mShaderProgram->usedTextures[i]) {
+            // Guard against stale/invalid texture IDs
+            if (mCurrentTextureIds[i] >= mTextures.size()) {
+                continue;
+            }
             if (mLastResourceViews[i].Get() != mTextures[mCurrentTextureIds[i]].resource_view.Get()) {
                 mLastResourceViews[i] = mTextures[mCurrentTextureIds[i]].resource_view.Get();
                 mContext->PSSetShaderResources(i, 1, mTextures[mCurrentTextureIds[i]].resource_view.GetAddressOf());
