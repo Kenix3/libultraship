@@ -28,7 +28,7 @@ void StatsWindow::DrawElement() {
 #else
     ImGui::Text("Platform: Unknown");
 #endif
-    ImGui::Text("Status: %.3f ms/frame (%.1f FPS)", deltatime * 1000.0f, framerate);
+    ImGui::Text("Status: %0.3f ms/frame (%0.1f FPS)", deltatime * 1000.0f, framerate);
     ImGui::PopStyleColor();
 }
 
