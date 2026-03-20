@@ -952,7 +952,8 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
 
     QueryPerformanceCounter(&t2);
 
-    mZeroLatency = mPendingFrameStats.rbegin()->first == stats.PresentCount;
+    mZeroLatency =
+        !mPendingFrameStats.empty() && mPendingFrameStats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
@@ -1068,7 +1069,12 @@ bool GfxWindowBackendDXGI::CanDisableVsync() {
 }
 
 void GfxWindowBackendDXGI::Destroy() {
-    // TODO: destroy _any_ resources used by dxgi, including the window handle
+    // Iteratively clear frame-stat containers to avoid MSVC's recursive _Erase_tree
+    // stack overflow on deep std::set/std::map trees during destruction.
+    while (!mPendingFrameStats.empty()) {
+        mPendingFrameStats.erase(mPendingFrameStats.begin());
+    }
+    mFrameStats.clear();
 }
 
 bool GfxWindowBackendDXGI::IsFullscreen() {
