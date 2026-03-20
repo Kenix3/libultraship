@@ -9,6 +9,7 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <string_view>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -466,7 +467,7 @@ class Interpreter {
     static const char* CCMUXtoStr(uint32_t ccmux);
     static const char* ACMUXtoStr(uint32_t acmux);
     static void GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key);
-    static std::string GetBaseTexturePath(const std::string& path);
+    static std::string_view GetBaseTexturePath(std::string_view path);
     static void NormalizeVector(float v[3]);
     static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
     static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
@@ -510,7 +511,7 @@ class Interpreter {
 
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;
-    std::map<std::string, MaskedTextureEntry> mMaskedTextures;
+    std::map<std::string, MaskedTextureEntry, std::less<>> mMaskedTextures;
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?

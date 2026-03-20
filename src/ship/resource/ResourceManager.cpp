@@ -26,6 +26,11 @@ ResourceIdentifier::ResourceIdentifier(const std::string& path, const uintptr_t 
     mHash = CalculateHash();
 }
 
+ResourceIdentifier::ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent)
+    : Path(std::move(path)), Owner(owner), Parent(parent) {
+    mHash = CalculateHash();
+}
+
 bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
     return Owner == rhs.Owner && Path == rhs.Path && Parent == rhs.Parent;
 }
@@ -108,8 +113,10 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
     if (shouldCheckAlt) {
-        const auto altPath = IResource::gAltAssetPrefix + identifier.Path;
-        auto altResource = LoadResourceProcess({ altPath, identifier.Owner, identifier.Parent }, loadExact, initData);
+        std::string altPath = IResource::gAltAssetPrefix;
+        altPath += identifier.Path;
+        auto altResource =
+            LoadResourceProcess({ std::move(altPath), identifier.Owner, identifier.Parent }, loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;

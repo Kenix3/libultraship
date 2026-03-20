@@ -34,6 +34,7 @@ struct ResourceIdentifier {
     friend struct ResourceIdentifierHash;
 
     ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
+    ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
     bool operator==(const ResourceIdentifier& rhs) const;
 
     // Must be an exact path. Passing a path with a wildcard will return a fail state
