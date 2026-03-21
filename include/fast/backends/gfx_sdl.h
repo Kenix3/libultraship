@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(__OpenBSD__) || defined(__APPLE__)
+#define BSD_TICKS_ENABLED 1
+#endif
+
 #include "gfx_window_manager_api.h"
 namespace Fast {
 class GfxWindowBackendSDL2 final : public GfxWindowBackend {
@@ -57,6 +61,9 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     int mSdlToLusTable[512];
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
+#ifdef BSD_TICKS_ENABLED
+    int mBsdTick; // store kern.clockrate's tick (microseconds) to adjust sleep timing
+#endif
     // OTRTODO: These are redundant. Info can be queried from SDL.
     int mWindowWidth = 640;
     int mWindowHeight = 480;
