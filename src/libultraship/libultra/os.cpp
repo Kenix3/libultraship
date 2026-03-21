@@ -1,4 +1,5 @@
 #include "libultraship/libultraship.h"
+#include "libultraship/bridge/audiobridge.h"
 #include <SDL2/SDL.h>
 #include <ratio>
 
@@ -76,12 +77,20 @@ int32_t osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, int32_t direction) {
 }
 
 uint32_t osAiGetLength() {
-    // TODO: Implement
-    return 0;
+    const int channels = GetNumAudioChannels();
+    if (channels <= 0) {
+        return 0;
+    }
+
+    return static_cast<uint32_t>(AudioPlayerBuffered() * channels * sizeof(int16_t));
 }
 
 int32_t osAiSetNextBuffer(void* buff, size_t len) {
-    // TODO: Implement
+    if (buff == nullptr || len == 0) {
+        return -1;
+    }
+
+    AudioPlayerPlayFrame(static_cast<const uint8_t*>(buff), len);
     return 0;
 }
 
