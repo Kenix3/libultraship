@@ -354,7 +354,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 #endif
 
     char title[512];
-    int len = sprintf(title, "%s (%s)", gameName, gfxApiName);
+    int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;

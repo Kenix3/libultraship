@@ -432,14 +432,14 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     for (int i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             char name[32];
-            sprintf(name, "aTexCoord%d", i);
+            snprintf(name, sizeof(name), "aTexCoord%d", i);
             prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
             prg->attribSizes[cnt] = 2;
             ++cnt;
 
             for (int j = 0; j < 2; j++) {
                 if (cc_features.clamp[i][j]) {
-                    sprintf(name, "aTexClamp%s%d", j == 0 ? "S" : "T", i);
+                    snprintf(name, sizeof(name), "aTexClamp%s%d", j == 0 ? "S" : "T", i);
                     prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
                     prg->attribSizes[cnt] = 1;
                     ++cnt;
@@ -462,7 +462,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
 
     for (int i = 0; i < cc_features.numInputs; i++) {
         char name[16];
-        sprintf(name, "aInput%d", i + 1);
+        snprintf(name, sizeof(name), "aInput%d", i + 1);
         prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
         prg->attribSizes[cnt] = cc_features.opt_alpha ? 4 : 3;
         ++cnt;
