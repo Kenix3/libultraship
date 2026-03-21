@@ -547,7 +547,7 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
 
     char title[512];
     wchar_t w_title[512];
-    int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
+    int len = snprintf(title, sizeof(title), "%s (%s)", game_name, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
 
     // Create window
@@ -1087,7 +1087,7 @@ void ThrowIfFailed(HRESULT res) {
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
     if (FAILED(res)) {
         char full_message[256];
-        sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
+        snprintf(full_message, sizeof(full_message), "%s\n\nHRESULT: 0x%08X", message, res);
         MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
         throw res;
     }

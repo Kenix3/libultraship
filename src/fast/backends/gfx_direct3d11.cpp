@@ -147,15 +147,15 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
     if (FAILED(res)) {
         CreationFailed = true;
         SPDLOG_WARN("Failed to create a D3D device. HRESULT: 0x{0:08x}", res);
-        sprintf(error_message, "Failed to create a D3D device on %s\nHRESULT: 0x%08X%s", adapterNameCStr, res,
-                SoftwareRenderer ? SoftwareText : HardwareText);
+        snprintf(error_message, sizeof(error_message), "Failed to create a D3D device on %s\nHRESULT: 0x%08X%s",
+                 adapterNameCStr, res, SoftwareRenderer ? SoftwareText : HardwareText);
     }
 
     else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_0) {
         CreationFailed = true;
         SPDLOG_WARN("D3D adapter doesn't support D3D feature level 10_0 or greater.");
-        sprintf(error_message, "%s doesn't support D3D feature level 10_0 or greater.%s", adapterNameCStr,
-                SoftwareRenderer ? SoftwareText : HardwareText);
+        snprintf(error_message, sizeof(error_message), "%s doesn't support D3D feature level 10_0 or greater.%s",
+                 adapterNameCStr, SoftwareRenderer ? SoftwareText : HardwareText);
     }
 
     else if (self->mFeatureLevel < D3D_FEATURE_LEVEL_10_1) {
@@ -170,8 +170,8 @@ static bool CreateDeviceFunc(class GfxRenderingAPIDX11* self, bool SoftwareRende
             if (features.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x == false) {
                 CreationFailed = true;
                 SPDLOG_WARN("D3D adapter doesn't support compute shaders.");
-                sprintf(error_message, "%s doesn't support compute shaders.%s", adapterNameCStr,
-                        SoftwareRenderer ? SoftwareText : HardwareText);
+                snprintf(error_message, sizeof(error_message), "%s doesn't support compute shaders.%s", adapterNameCStr,
+                         SoftwareRenderer ? SoftwareText : HardwareText);
             }
         }
     }
