@@ -2506,12 +2506,17 @@ void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int3
     }
     uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
-    // OTRTODO: This is a bit of a hack for widescreen screen fades, but it'll work for now...
-    if (ulx == 0 && uly == 0 && lrx == (319 * 4) && lry == (239 * 4)) {
-        ulx = -1024;
-        uly = -1024;
-        lrx = 2048;
-        lry = 2048;
+    // Expand fullscreen fill rects to cover widescreen viewports.
+    // Without this, screen clears and fades only cover the native 4:3 area.
+    if (ulx == 0 && uly == 0) {
+        bool isFullScreen = (lrx == ((int32_t)(mNativeDimensions.width - 1) * 4) &&
+                             lry == ((int32_t)(mNativeDimensions.height - 1) * 4));
+        if (isFullScreen) {
+            ulx = -1024;
+            uly = -1024;
+            lrx = 2048;
+            lry = 2048;
+        }
     }
 
     if (mode == G_CYC_COPY || mode == G_CYC_FILL) {
@@ -2540,7 +2545,13 @@ void Interpreter::GfxDpSetZImage(void* zBufAddr) {
 }
 
 void Interpreter::GfxDpSetColorImage(uint32_t format, uint32_t size, uint32_t width, void* address) {
+    void* oldAddr = mRdp->color_image_address;
     mRdp->color_image_address = address;
+
+    if (address != oldAddr && mColorImageChangeCb) {
+        Flush();
+        mColorImageChangeCb(oldAddr, address);
+    }
 }
 
 void Interpreter::GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t mode) {
@@ -4563,6 +4574,24 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
 
 void Interpreter::ResetFrameBuffer() {
     mRapi->StartDrawToFramebuffer(0, (float)mCurDimensions.height / mNativeDimensions.height);
+}
+
+void Interpreter::SetColorImageChangeCallback(std::function<void(void*, void*)> cb) {
+    mColorImageChangeCb = std::move(cb);
+}
+
+void Interpreter::TextureCacheDeleteRange(const uint8_t* start, size_t byteLen) {
+    const uint8_t* end = start + byteLen;
+    auto& cmap = mTextureCache.map;
+    for (auto it = cmap.begin(); it != cmap.end(); ) {
+        if (it->first.texture_addr >= start && it->first.texture_addr < end) {
+            mTextureCache.lru.erase(it->second.lru_location);
+            mTextureCache.free_texture_ids.push_back(it->second.texture_id);
+            it = cmap.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void Interpreter::AdjustPixelDepthCoordinates(float& x, float& y) {

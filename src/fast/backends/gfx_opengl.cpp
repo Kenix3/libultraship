@@ -940,8 +940,23 @@ void GfxRenderingAPIOGL::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_
         return;
     }
 
+    // Read as RGBA8 (GL_UNSIGNED_BYTE) then convert to RGBA16 (5551).
+    // GL_RGBA + GL_UNSIGNED_SHORT_5_5_5_1 writes 4 separate u16 components per pixel
+    // (8 bytes) on some drivers (NVIDIA), not the packed 2 bytes the spec implies.
+    // Reading as RGBA8 and converting matches the DX11 path's approach.
     glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[fb_id].fbo);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (void*)rgba16_buf);
+
+    std::vector<uint8_t> rgba8(width * height * 4);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba8.data());
+
+    for (uint32_t i = 0; i < width * height; i++) {
+        uint8_t r = (rgba8[i * 4 + 0] >> 3) & 0x1F;
+        uint8_t g = (rgba8[i * 4 + 1] >> 3) & 0x1F;
+        uint8_t b = (rgba8[i * 4 + 2] >> 3) & 0x1F;
+        uint8_t a = rgba8[i * 4 + 3] ? 1 : 0;
+        rgba16_buf[i] = (r << 11) | (g << 6) | (b << 1) | a;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
 }
 
