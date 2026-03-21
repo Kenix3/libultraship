@@ -296,7 +296,7 @@ struct RDP {
     ShaderMod current_shader;
 
     uint8_t prim_lod_fraction;
-    struct RGBA env_color, prim_color, fog_color, fill_color, grayscale_color;
+    struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;
     void* z_buf_address;
