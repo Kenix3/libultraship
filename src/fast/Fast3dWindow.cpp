@@ -52,7 +52,6 @@ Fast3dWindow::~Fast3dWindow() {
     SPDLOG_DEBUG("destruct fast3dwindow");
     mInterpreter->Destroy();
     delete mRenderingApi;
-    mWindowManagerApi->Destroy();
     delete mWindowManagerApi;
 }
 
