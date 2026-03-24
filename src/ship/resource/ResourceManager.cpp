@@ -119,21 +119,19 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // While waiting in the queue, another thread could have loaded the resource.
     // In a last attempt to avoid doing work that will be discarded, let's check if the cached version exists.
     auto cacheLine = CheckCache(identifier);
-    if (cacheLine != nullptr) {
-        auto cachedResource = GetCachedResource(*cacheLine);
-        if (cachedResource != nullptr) {
-            return cachedResource;
-        }
+    auto cachedResource = GetCachedResource(cacheLine);
+    if (cachedResource != nullptr) {
+        return cachedResource;
+    }
 
-        // Check for resource load errors which can indicate an alternate asset.
-        // If we are attempting to load an alternate asset, we can return null
-        if (!loadExact && mAltAssetsEnabled && isAltPath) {
-            if (auto* loadError = std::get_if<ResourceLoadError>(cacheLine)) {
-                // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
-                // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
-                if (*loadError != ResourceLoadError::NotCached) {
-                    return nullptr;
-                }
+    // Check for resource load errors which can indicate an alternate asset.
+    // If we are attempting to load an alternate asset, we can return null
+    if (!loadExact && mAltAssetsEnabled && isAltPath) {
+        if (auto* loadError = std::get_if<ResourceLoadError>(&cacheLine)) {
+            // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
+            // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
+            if (*loadError != ResourceLoadError::NotCached) {
+                return nullptr;
             }
         }
     }
@@ -243,30 +241,35 @@ std::shared_ptr<IResource> ResourceManager::LoadResource(uint64_t crc, bool load
     return LoadResource(*hashStr, loadExact, initData);
 }
 
-const std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>*
+std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
 ResourceManager::CheckCache(const ResourceIdentifier& identifier) {
     const std::lock_guard<std::mutex> lock(mMutex);
 
     auto cacheFind = mResourceCache.find(identifier);
     if (cacheFind == mResourceCache.end()) {
-        return nullptr;
+        return ResourceLoadError::NotCached;
     }
 
-    return &cacheFind->second;
+    return cacheFind->second;
 }
 
-const std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>*
+std::variant<ResourceManager::ResourceLoadError, std::shared_ptr<IResource>>
 ResourceManager::CheckCache(const std::string& filePath) {
     return CheckCache({ filePath, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
 std::shared_ptr<IResource> ResourceManager::GetCachedResource(const ResourceIdentifier& identifier, bool loadExact) {
     // Gets the cached resource based on filePath.
-    auto cacheLine = CheckCache(identifier);
-    if (cacheLine == nullptr) {
-        return nullptr;
+    // When not loading exact, check the alt-asset path first so callers (including LoadResourceAsync's fast path)
+    // can find texture-pack resources without going through the thread pool.
+    if (!loadExact && mAltAssetsEnabled && !identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
+        const auto altPath = IResource::gAltAssetPrefix + identifier.Path;
+        auto altResource = GetCachedResource(CheckCache({ altPath, identifier.Owner, identifier.Parent }));
+        if (altResource != nullptr) {
+            return altResource;
+        }
     }
-    return GetCachedResource(*cacheLine);
+    return GetCachedResource(CheckCache(identifier));
 }
 
 std::shared_ptr<IResource> ResourceManager::GetCachedResource(const std::string& filePath, bool loadExact) {
