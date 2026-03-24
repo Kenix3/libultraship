@@ -18,9 +18,8 @@ ResourceFactoryBinaryTextureV0::ReadResource(std::shared_ptr<Ship::File> file,
     texture->Width = reader->ReadUInt32();
     texture->Height = reader->ReadUInt32();
     texture->ImageDataSize = reader->ReadUInt32();
-    texture->ImageData = new uint8_t[texture->ImageDataSize];
-
-    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    texture->mImageBuffer = file->Buffer;
+    texture->ImageData = reinterpret_cast<uint8_t*>(file->Buffer->data() + reader->GetBaseAddress());
 
     return texture;
 }
@@ -42,9 +41,8 @@ ResourceFactoryBinaryTextureV1::ReadResource(std::shared_ptr<Ship::File> file,
     texture->HByteScale = reader->ReadFloat();
     texture->VPixelScale = reader->ReadFloat();
     texture->ImageDataSize = reader->ReadUInt32();
-    texture->ImageData = new uint8_t[texture->ImageDataSize];
-
-    reader->Read((char*)texture->ImageData, texture->ImageDataSize);
+    texture->mImageBuffer = file->Buffer;
+    texture->ImageData = reinterpret_cast<uint8_t*>(file->Buffer->data() + reader->GetBaseAddress());
 
     return texture;
 }
