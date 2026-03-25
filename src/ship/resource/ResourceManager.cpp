@@ -123,16 +123,11 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && mAltAssetsEnabled && identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
-        if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
-            try {
-                // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
-                // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
-                auto loadError = std::get<ResourceLoadError>(cacheLine);
-                if (loadError != ResourceLoadError::NotCached) {
-                    return nullptr;
-                }
-            } catch (std::bad_variant_access const& e) {
-                // Ignore the exception. This should never happen. The last check should've returned the resource.
+        if (auto* loadError = std::get_if<ResourceLoadError>(&cacheLine)) {
+            // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
+            // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
+            if (*loadError != ResourceLoadError::NotCached) {
+                return nullptr;
             }
         }
     }
