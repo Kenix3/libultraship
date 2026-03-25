@@ -128,7 +128,8 @@ class ResourceManager {
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const std::string& filePath,
                                                                            bool loadExact = false);
 
-    std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
+    std::shared_ptr<IResource>
+    GetCachedResource(const std::variant<ResourceLoadError, std::shared_ptr<IResource>>& cacheLine);
 
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,

@@ -277,24 +277,18 @@ std::shared_ptr<IResource> ResourceManager::GetCachedResource(const std::string&
 }
 
 std::shared_ptr<IResource>
-ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine) {
+ResourceManager::GetCachedResource(const std::variant<ResourceLoadError, std::shared_ptr<IResource>>& cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
-    if (std::holds_alternative<std::shared_ptr<IResource>>(cacheLine)) {
-        try {
-            auto resource = std::get<std::shared_ptr<IResource>>(cacheLine);
-
-            if (resource.use_count() <= 0) {
-                return nullptr;
-            }
-
-            if (resource->IsDirty()) {
-                return nullptr;
-            }
-
-            return resource;
-        } catch (std::bad_variant_access const& e) {
-            // Ignore the exception
+    if (auto* resource = std::get_if<std::shared_ptr<IResource>>(&cacheLine)) {
+        if (resource->use_count() <= 0) {
+            return nullptr;
         }
+
+        if ((*resource)->IsDirty()) {
+            return nullptr;
+        }
+
+        return *resource;
     }
 
     return nullptr;
