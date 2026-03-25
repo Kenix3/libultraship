@@ -65,3 +65,10 @@ endif()
 
 # =========== Sources =============
 add_subdirectory("src")
+
+# =========== Tests =============
+option(LUS_BUILD_TESTS "Build unit tests" OFF)
+if(LUS_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory("tests")
+endif()
