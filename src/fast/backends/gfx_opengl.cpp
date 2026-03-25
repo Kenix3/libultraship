@@ -755,6 +755,15 @@ int GfxRenderingAPIOGL::CreateFramebuffer() {
     return i;
 }
 
+void GfxRenderingAPIOGL::DeleteFramebuffer(int fbId) {
+    FramebufferOGL& fb = mFrameBuffers[fbId];
+    glDeleteFramebuffers(1, &fb.fbo);
+    glDeleteTextures(1, &fb.clrbuf);
+    glDeleteRenderbuffers(1, &fb.clrbufMsaa);
+    glDeleteRenderbuffers(1, &fb.rbo);
+    fb = {};
+}
+
 void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                      bool can_extract_depth) {

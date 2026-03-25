@@ -54,6 +54,7 @@ class GfxRenderingAPI {
     virtual void EndFrame() = 0;
     virtual void FinishRender() = 0;
     virtual int CreateFramebuffer() = 0;
+    virtual void DeleteFramebuffer(int fbId) = 0;
     virtual void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                              bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                              bool can_extract_depth) = 0;

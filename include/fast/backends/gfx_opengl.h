@@ -82,6 +82,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void EndFrame() override;
     void FinishRender() override;
     int CreateFramebuffer() override;
+    void DeleteFramebuffer(int fbId) override;
     void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                      bool can_extract_depth) override;

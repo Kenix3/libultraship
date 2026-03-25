@@ -814,6 +814,17 @@ int GfxRenderingAPIDX11::CreateFramebuffer() {
     return (int)index;
 }
 
+void GfxRenderingAPIDX11::DeleteFramebuffer(int fbId) {
+    FramebufferDX11& fb = mFrameBuffers[fbId];
+    TextureData& tex = mTextures[fb.texture_id];
+    tex.texture.Reset();
+    tex.resource_view.Reset();
+    tex.sampler_state.Reset();
+    fb.render_target_view.Reset();
+    fb.depth_stencil_view.Reset();
+    fb.depth_stencil_srv.Reset();
+}
+
 void GfxRenderingAPIDX11::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                       bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                                       bool can_extract_depth) {

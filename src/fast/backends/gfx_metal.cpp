@@ -607,6 +607,10 @@ int GfxRenderingAPIMetal::CreateFramebuffer() {
     return (int)index;
 }
 
+void GfxRenderingAPIMetal::DeleteFramebuffer(int fbId) {
+    // TODO: release Metal textures and depth buffers for mFramebuffers[fbId]
+}
+
 void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
     mCurrentDrawable = nullptr;
     mCurrentDrawable = mLayer->nextDrawable();
