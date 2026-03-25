@@ -4501,12 +4501,13 @@ static void gfx_step() {
     }
 
     if (otrHandlers.contains(opcode)) {
-        // OTR filepath handlers expect w1 to be a valid __OTR__ string pointer.
-        // If w1 is not a valid OTR path, skip to avoid crashing in strlen/strncmp.
+        // OTR filepath handlers expect w1 to be a valid string pointer (bare path or __OTR__ path).
+        // Guard against null/N64-segment addresses to avoid crashing in strlen/strncmp.
         if (opcode == OTR_G_VTX_OTR_FILEPATH || opcode == OTR_G_SETTIMG_OTR_FILEPATH ||
             opcode == OTR_G_DL_OTR_FILEPATH || opcode == OTR_G_PUSHCD || opcode == OTR_G_MTX_OTR_FILEPATH ||
             opcode == OTR_G_LOAD_SHADER) {
-            if (!gfx_check_image_signature((const char*)cmd->words.w1)) {
+            uintptr_t w1 = (uintptr_t)cmd->words.w1;
+            if (w1 < 0x10000 || w1 > 0x00007FFFFFFFFFFFull) {
                 ++g_exec_stack.currCmd();
                 return;
             }
@@ -4927,8 +4928,8 @@ int32_t gfx_check_image_signature(const char* imgData) {
         return 0;
     }
 #if UINTPTR_MAX > 0xFFFFFFFFu
-    // On 64-bit: filter truncated 32-bit pointers AND kernel/sentinel addresses
-    if (i < 0x100000000ull || i > 0x00007FFFFFFFFFFFull) {
+    // Filter kernel/sentinel addresses
+    if (i > 0x00007FFFFFFFFFFFull) {
         return 0;
     }
 #endif
