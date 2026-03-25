@@ -144,17 +144,19 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Transform the raw data into a resource
     auto resource = GetResourceLoader()->LoadResource(identifier.Path, file, initData);
 
-    // Another thread could have loaded the resource while we were processing, so we want to check before setting to
-    // the cache.
-    cachedResource = GetCachedResource(identifier, true);
-
+    // Another thread could have loaded the resource while we were processing. Check and update the cache under the
+    // same lock to avoid a redundant second lookup.
     {
         const std::lock_guard<std::mutex> lock(mMutex);
 
-        if (cachedResource != nullptr) {
-            // If another thread has already loaded this resource, discard the work we already did and return from
-            // cache.
-            resource = cachedResource;
+        auto existingIt = mResourceCache.find(identifier);
+        if (existingIt != mResourceCache.end()) {
+            if (auto* cached = std::get_if<std::shared_ptr<IResource>>(&existingIt->second)) {
+                if (cached->use_count() > 0 && !(*cached)->IsDirty()) {
+                    // Another thread already loaded this resource; discard our work and return from cache.
+                    return *cached;
+                }
+            }
         }
 
         // Set the cache to the loaded resource
