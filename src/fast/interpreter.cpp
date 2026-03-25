@@ -4585,6 +4585,10 @@ void Interpreter::TextureCacheDeleteRange(const uint8_t* start, size_t byteLen) 
     auto& cmap = mTextureCache.map;
     for (auto it = cmap.begin(); it != cmap.end(); ) {
         if (it->first.texture_addr >= start && it->first.texture_addr < end) {
+            for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+                if (mRenderingState.mTextures[j] == &*it)
+                    mRenderingState.mTextures[j] = nullptr;
+            }
             mTextureCache.lru.erase(it->second.lru_location);
             mTextureCache.free_texture_ids.push_back(it->second.texture_id);
             it = cmap.erase(it);
