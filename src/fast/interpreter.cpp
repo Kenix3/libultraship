@@ -1803,15 +1803,18 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             uint8_t cms = mRdp->texture_tile[tile].cms;
             uint8_t cmt = mRdp->texture_tile[tile].cmt;
 
-            uint32_t tex_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
             uint32_t loaded_line_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
             uint32_t loaded_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
             uint32_t loaded_full_line = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+            uint32_t tex_size_bytes;
             uint32_t line_size;
             if ((loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0) {
+                // Use loaded sizes together — they're consistently scaled (e.g. HD replacements).
                 line_size = loaded_line_size;
+                tex_size_bytes = loaded_size;
             } else {
                 line_size = mRdp->texture_tile[tile].line_size_bytes;
+                tex_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
                 // RGBA32: texture_tile stores TMEM-interleaved stride (half of actual DRAM stride).
                 // Normalize to actual DRAM stride so the switch below can uniformly divide by bytes-per-pixel.
                 if (mRdp->texture_tile[tile].siz == G_IM_SIZ_32b) {
