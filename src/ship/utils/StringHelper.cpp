@@ -103,12 +103,9 @@ std::string StringHelper::Sprintf(const char* format, ...) {
 }
 
 std::string StringHelper::Implode(std::vector<std::string>& elements, const char* const separator) {
-    return "";
-
-    // return std::accumulate(std::begin(elements), std::end(elements), std::string(),
-    //[separator](std::string& ss, std::string& s) {
-    // return ss.empty() ? s : ss + separator + s;
-    //});
+    return std::accumulate(
+        std::begin(elements), std::end(elements), std::string(),
+        [separator](const std::string& ss, const std::string& s) { return ss.empty() ? s : ss + separator + s; });
 }
 
 int64_t StringHelper::StrToL(const std::string& str, int32_t base) {
