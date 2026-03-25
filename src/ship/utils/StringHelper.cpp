@@ -45,7 +45,7 @@ std::string StringHelper::Strip(std::string s, const std::string& delimiter) {
 
     while ((pos = s.find(delimiter)) != std::string::npos) {
         token = s.substr(0, pos);
-        s.erase(pos, pos + delimiter.length());
+        s.erase(pos, delimiter.length());
     }
 
     return s;
