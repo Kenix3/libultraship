@@ -136,6 +136,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     auto file = LoadFileProcess(identifier.Path);
     if (file == nullptr) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
+        const std::lock_guard<std::mutex> lock(mMutex);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;
     }
