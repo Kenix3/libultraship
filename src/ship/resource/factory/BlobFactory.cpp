@@ -15,11 +15,17 @@ ResourceFactoryBinaryBlobV0::ReadResource(std::shared_ptr<Ship::File> file,
 
     uint32_t dataSize = reader->ReadUInt32();
 
-    blob->Data.reserve(dataSize);
+    // Small zero-pad for N64 code that overreads by a few bytes
+    // (e.g. compressed MIDI parser). Large audio DMA overreads are handled by
+    // AudioDma_Clamp in osPiStartDma instead.
+    constexpr uint32_t kBlobPadding = 16;
+    blob->Data.reserve(dataSize + kBlobPadding);
 
     for (uint32_t i = 0; i < dataSize; i++) {
         blob->Data.push_back(reader->ReadUByte());
     }
+
+    blob->Data.resize(dataSize + kBlobPadding, 0);
 
     return blob;
 }
