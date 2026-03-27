@@ -473,7 +473,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     if (char* fpath = std::getenv("SHIP_HOME")) {
         const char* appBundleID = strrchr(fpath, '/');
         if (appBundleID != nullptr) {
-            foldermanager.createAppSupportDirectory(appBundleID+1);
+            foldermanager.createAppSupportDirectory(appBundleID + 1);
         }
         if (fpath[0] == '~') {
             const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;
