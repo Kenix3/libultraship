@@ -14,7 +14,7 @@
 #include "ship/window/FileDropMgr.h"
 #include "fast/backends/gfx_sdl.h"
 
-#ifdef BSD_TICKS_ENABLED
+#ifdef __OpenBSD__
 #include <sys/sysctl.h>
 #include <sys/time.h>
 #endif
@@ -358,7 +358,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     }
 #endif
 
-#ifdef BSD_TICKS_ENABLED
+#ifdef __OpenBSD__
     int sysctlname[2] = { CTL_KERN, KERN_CLOCKRATE };
     struct clockinfo clockinfo;
     size_t clockinfo_size = sizeof(struct clockinfo);
@@ -663,7 +663,10 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 #ifdef _WIN32
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
-#elif BSD_TICKS_ENABLED
+#elif defined(__APPLE__)
+    // Use macOS scheduler interval on macOS. Don't trust sysctl on macOS
+    left -= 10000UL;
+#elif defined(__OpenBSD__)
     left -= mBsdTick * 10;
 #endif
     if (left > 0) {
