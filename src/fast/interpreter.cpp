@@ -961,6 +961,18 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[tmemIdex].addr;
 
+    // Check if this texture address is a registered GPU framebuffer mirror.
+    // If so, bind the GPU FB directly — full resolution, no CPU readback needed.
+    if (origAddr != nullptr && !importReplacement) {
+        auto fbIt = mFbTextures.find((uintptr_t)origAddr);
+        if (fbIt != mFbTextures.end()) {
+            Flush();
+            mRapi->SelectTextureFb(fbIt->second);
+            mRdp->textures_changed[i] = false;
+            return;
+        }
+    }
+
     if (origAddr == nullptr) {
         SPDLOG_ERROR("ImportTexture: null texture address for tile {}", tile);
         return;
@@ -4257,6 +4269,14 @@ void Interpreter::SpReset() {
     CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
 }
 
+void Interpreter::RegisterFbTexture(const void* cpuAddr, int fbId) {
+    mFbTextures[(uintptr_t)cpuAddr] = fbId;
+}
+
+void Interpreter::UnregisterFbTexture(const void* cpuAddr) {
+    mFbTextures.erase((uintptr_t)cpuAddr);
+}
+
 void Interpreter::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     mWapi->GetDimensions(width, height, posX, posY);
 }
@@ -4770,4 +4790,12 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 extern "C" void gfx_texture_cache_clear() {
     Fast::mInstance.lock().get()->TextureCacheClear();
+}
+
+extern "C" void gfx_register_fb_texture(const void* cpuAddr, int fbId) {
+    Fast::mInstance.lock().get()->RegisterFbTexture(cpuAddr, fbId);
+}
+
+extern "C" void gfx_unregister_fb_texture(const void* cpuAddr) {
+    Fast::mInstance.lock().get()->UnregisterFbTexture(cpuAddr);
 }
