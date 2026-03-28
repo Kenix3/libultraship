@@ -390,6 +390,12 @@ class Interpreter {
     void RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement);
     void UnregisterBlendedTexture(const char* name);
 
+    // Register a CPU address as a mirror of a GPU framebuffer texture.
+    // When ImportTexture encounters this address, it uses SelectTextureFb instead
+    // of reading from CPU memory — giving full GPU resolution with no readback.
+    void RegisterFbTexture(const void* cpuAddr, int fbId);
+    void UnregisterFbTexture(const void* cpuAddr);
+
     void SetNativeDimensions(float width, float height);
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
@@ -518,6 +524,7 @@ class Interpreter {
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;
     std::map<std::string, MaskedTextureEntry> mMaskedTextures;
+    std::unordered_map<uintptr_t, int> mFbTextures; // CPU addr -> GPU FB id
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
