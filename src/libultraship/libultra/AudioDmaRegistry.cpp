@@ -20,7 +20,7 @@ extern "C" void AudioDma_Register(const void* base, size_t size) {
         return;
     }
     auto b = reinterpret_cast<uintptr_t>(base);
-    sAudioBlobs[sAudioBlobCount++] = {b, b + size};
+    sAudioBlobs[sAudioBlobCount++] = { b, b + size };
 }
 
 extern "C" size_t AudioDma_Clamp(uintptr_t addr, size_t nbytes) {
