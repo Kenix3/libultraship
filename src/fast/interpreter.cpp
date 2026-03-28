@@ -1147,14 +1147,16 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         if (siz == G_IM_SIZ_4b) {
             uint8_t palSlot = paletteIndex / 8;
             key = { origAddr,
-                    { palSlot == 0 ? mRdp->palette_dram_addr[0] : nullptr, palSlot == 1 ? mRdp->palette_dram_addr[1] : nullptr },
+                    { palSlot == 0 ? mRdp->palette_dram_addr[0] : nullptr,
+                      palSlot == 1 ? mRdp->palette_dram_addr[1] : nullptr },
                     fmt,
                     siz,
                     paletteIndex,
                     origSizeBytes };
         } else {
             // CI8 uses both palette halves
-            key = { origAddr, { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] }, fmt, siz, paletteIndex, origSizeBytes };
+            key = { origAddr,     { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] }, fmt, siz, paletteIndex,
+                    origSizeBytes };
         }
     } else {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
@@ -1805,7 +1807,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
             uint32_t loaded_line_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
             uint32_t loaded_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
-            uint32_t loaded_full_line = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+            uint32_t loaded_full_line =
+                mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
             uint32_t tex_size_bytes;
             uint32_t line_size;
             if ((loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0) {
