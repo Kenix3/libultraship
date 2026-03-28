@@ -20,6 +20,14 @@ endif()
 source_group("audio" FILES ${Source_Files__Audio})
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
+#=================== Audio / KissFFT ===================
+
+file(GLOB Source_Files__Audio__KissFFT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "audio/kissfft/*.c")
+
+source_group("audio/kissfft" FILES ${Source_Files__Audio__KissFFT})
+target_sources(libultraship PRIVATE ${Source_Files__Audio__KissFFT})
+target_include_directories(libultraship PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/audio)
+
 #=================== Controller ===================
 
 file(GLOB_RECURSE Source_Files__Controller RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "controller/*.cpp")
