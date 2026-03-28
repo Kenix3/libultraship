@@ -1025,34 +1025,37 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
     D3D11_TEXTURE2D_DESC srcDesc;
     td.texture->GetDesc(&srcDesc);
 
-    ID3D11Texture2D* staging = nullptr;
+    // Reuse cached staging texture when dimensions match — avoids per-frame CreateTexture2D
+    if (!mReadbackStaging || mReadbackStagingW != srcDesc.Width || mReadbackStagingH != srcDesc.Height) {
+        mReadbackStaging.Reset();
 
-    // Create staging texture matching the SOURCE texture dimensions
-    D3D11_TEXTURE2D_DESC texture_desc;
-    texture_desc.Width = srcDesc.Width;
-    texture_desc.Height = srcDesc.Height;
-    texture_desc.Usage = D3D11_USAGE_STAGING;
-    texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    texture_desc.BindFlags = 0;
-    texture_desc.MiscFlags = 0;
-    texture_desc.ArraySize = 1;
-    texture_desc.MipLevels = 1;
-    texture_desc.SampleDesc.Count = 1;
-    texture_desc.SampleDesc.Quality = 0;
+        D3D11_TEXTURE2D_DESC texture_desc;
+        texture_desc.Width = srcDesc.Width;
+        texture_desc.Height = srcDesc.Height;
+        texture_desc.Usage = D3D11_USAGE_STAGING;
+        texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        texture_desc.BindFlags = 0;
+        texture_desc.MiscFlags = 0;
+        texture_desc.ArraySize = 1;
+        texture_desc.MipLevels = 1;
+        texture_desc.SampleDesc.Count = 1;
+        texture_desc.SampleDesc.Quality = 0;
 
-    ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, &staging));
+        ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, mReadbackStaging.GetAddressOf()));
+        mReadbackStagingW = srcDesc.Width;
+        mReadbackStagingH = srcDesc.Height;
+    }
 
     // Copy the framebuffer texture to the staging texture
-    mContext->CopyResource(staging, td.texture.Get());
+    mContext->CopyResource(mReadbackStaging.Get(), td.texture.Get());
 
     // Map the staging texture to a resource that we can read
     D3D11_MAPPED_SUBRESOURCE resource = {};
-    ThrowIfFailed(mContext->Map(staging, 0, D3D11_MAP_READ, 0, &resource));
+    ThrowIfFailed(mContext->Map(mReadbackStaging.Get(), 0, D3D11_MAP_READ, 0, &resource));
 
     if (!resource.pData) {
-        mContext->Unmap(staging, 0);
-        staging->Release();
+        mContext->Unmap(mReadbackStaging.Get(), 0);
         return;
     }
 
@@ -1073,9 +1076,7 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
         }
     }
 
-    // Cleanup
-    mContext->Unmap(staging, 0);
-    staging->Release();
+    mContext->Unmap(mReadbackStaging.Get(), 0);
 }
 
 void GfxRenderingAPIDX11::SetTextureFilter(FilteringMode mode) {

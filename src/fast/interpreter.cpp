@@ -2791,12 +2791,17 @@ void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int3
     }
     uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
-    // OTRTODO: This is a bit of a hack for widescreen screen fades, but it'll work for now...
-    if (ulx == 0 && uly == 0 && lrx == (319 * 4) && lry == (239 * 4)) {
-        ulx = -1024;
-        uly = -1024;
-        lrx = 2048;
-        lry = 2048;
+    // Expand fullscreen fill rects to cover widescreen viewports.
+    // Without this, screen clears and fades only cover the native 4:3 area.
+    if (ulx == 0 && uly == 0) {
+        bool isFullScreen = (lrx == ((int32_t)(mNativeDimensions.width - 1) * 4) &&
+                             lry == ((int32_t)(mNativeDimensions.height - 1) * 4));
+        if (isFullScreen) {
+            ulx = -1024;
+            uly = -1024;
+            lrx = 2048;
+            lry = 2048;
+        }
     }
 
     if (mode == G_CYC_COPY || mode == G_CYC_FILL) {
