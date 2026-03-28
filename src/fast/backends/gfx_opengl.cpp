@@ -860,7 +860,14 @@ void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
 void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
     int tile = 0;
-    SelectTexture(tile, mFrameBuffers[fb_id].clrbuf);
+    GLuint texId = mFrameBuffers[fb_id].clrbuf;
+    // Ensure the textures metadata vector can hold this FB texture handle.
+    // FB color buffers are created outside NewTexture(), so the vector may
+    // not have been resized for them yet.
+    if (texId >= textures.size()) {
+        textures.resize((size_t)texId + 1);
+    }
+    SelectTexture(tile, texId);
 }
 
 void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
