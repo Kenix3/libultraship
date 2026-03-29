@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ship/resource/Resource.h"
+#include <memory>
+#include <vector>
 
 #define TEX_FLAG_LOAD_AS_RAW (1 << 0)
 #define TEX_FLAG_LOAD_AS_IMG (1 << 1)
@@ -35,6 +37,8 @@ class Texture final : public Ship::Resource<uint8_t> {
     float VPixelScale = 1.0;
     uint32_t ImageDataSize;
     uint8_t* ImageData = nullptr;
+    // When set, ImageData points into this buffer and must not be delete[]-ed.
+    std::shared_ptr<std::vector<char>> mImageBuffer;
 
     ~Texture();
 };
