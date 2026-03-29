@@ -8,7 +8,7 @@ class StatsWindow : public GuiWindow {
     using GuiWindow::GuiWindow;
     virtual ~StatsWindow();
 
-  private:
+  protected:
     void InitElement() override;
     void DrawElement() override;
     void UpdateElement() override;
