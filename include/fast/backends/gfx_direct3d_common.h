@@ -155,7 +155,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 
     std::vector<struct TextureData> mTextures;
     int mCurrentTile;
-    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
+    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES]{};
 
     std::vector<FramebufferDX11> mFrameBuffers;
 
@@ -176,6 +176,11 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     Microsoft::WRL::ComPtr<ID3D11SamplerState> mLastSamplerStates[SHADER_MAX_TEXTURES] = { nullptr, nullptr };
 
     D3D_PRIMITIVE_TOPOLOGY mLastPrimitaveTopology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+
+    // Cached staging texture for ReadFramebufferToCPU — avoids CreateTexture2D/Release per frame
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> mReadbackStaging;
+    uint32_t mReadbackStagingW = 0;
+    uint32_t mReadbackStagingH = 0;
 };
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,

@@ -257,6 +257,13 @@ struct RSP {
 
 struct RDP {
     const uint8_t* palettes[2];
+    // Original DRAM source address of the most recent TLUT load per palette half.
+    // Used in texture cache keys instead of palettes[] (which always points to staging).
+    const uint8_t* palette_dram_addr[2];
+    // CI4 palette staging buffer: N64 TMEM holds up to 16 CI4 palettes (16 entries x 2 bytes each = 32 bytes per
+    // palette). palettes[0] covers indices 0-7 (256 bytes), palettes[1] covers 8-15 (256 bytes). GfxDpLoadTlut copies
+    // TLUT data here at the correct offset so multi-palette CI4 models work.
+    uint8_t palette_staging[2][256];
     struct {
         const uint8_t* addr;
         uint8_t siz;
@@ -382,6 +389,12 @@ class Interpreter {
     uint16_t GetPixelDepth(float x, float y);
     void RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement);
     void UnregisterBlendedTexture(const char* name);
+
+    // Register a CPU address as a mirror of a GPU framebuffer texture.
+    // When ImportTexture encounters this address, it uses SelectTextureFb instead
+    // of reading from CPU memory — giving full GPU resolution with no readback.
+    void RegisterFbTexture(const void* cpuAddr, int fbId);
+    void UnregisterFbTexture(const void* cpuAddr);
 
     void SetNativeDimensions(float width, float height);
     void SetResolutionMultiplier(float multiplier);
@@ -511,6 +524,7 @@ class Interpreter {
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;
     std::map<std::string, MaskedTextureEntry> mMaskedTextures;
+    std::unordered_map<uintptr_t, int> mFbTextures; // CPU addr -> GPU FB id
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?

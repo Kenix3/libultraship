@@ -357,7 +357,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     char fileName[256];
     Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    auto ctx = Ship::Context::GetInstance();
+    if (ctx && ctx->GetWindow() && ctx->GetWindow()->GetGui()) {
+        ctx->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
     switch (message) {
@@ -496,8 +499,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_KILLFOCUS:
-            if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
-                ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+            if (auto ctx = Ship::Context::GetInstance(); ctx && ctx->GetConsoleVariables()) {
+                if (!ctx->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                    ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+                }
             }
             self->mInFocus = false;
             break;
@@ -952,7 +957,7 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
 
     QueryPerformanceCounter(&t2);
 
-    mZeroLatency = mPendingFrameStats.rbegin()->first == stats.PresentCount;
+    mZeroLatency = !mPendingFrameStats.empty() && mPendingFrameStats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
@@ -1068,7 +1073,12 @@ bool GfxWindowBackendDXGI::CanDisableVsync() {
 }
 
 void GfxWindowBackendDXGI::Destroy() {
-    // TODO: destroy _any_ resources used by dxgi, including the window handle
+    // Iteratively clear frame-stat containers to avoid MSVC's recursive _Erase_tree
+    // stack overflow on deep std::set/std::map trees during destruction.
+    while (!mPendingFrameStats.empty()) {
+        mPendingFrameStats.erase(mPendingFrameStats.begin());
+    }
+    mFrameStats.clear();
 }
 
 bool GfxWindowBackendDXGI::IsFullscreen() {
