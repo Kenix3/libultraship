@@ -1739,6 +1739,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         use_alpha = true;
     }
 
+    // N64 coverage simulation: When ALPHA_CVG_SEL is set, the RDP blender uses
+    // coverage as its alpha input instead of the combiner output. On N64, coverage
+    // for textured pixels is derived from texture alpha — zero-alpha texels produce
+    // zero coverage and are never written, regardless of OPA/XLU blender mode.
+    if (!use_alpha && (mRdp->other_mode_l & ALPHA_CVG_SEL)) {
+        use_alpha = true;
+        alpha_threshold = true;
+    }
+
     if (use_alpha) {
         cc_options |= SHADER_OPT(ALPHA);
     }
