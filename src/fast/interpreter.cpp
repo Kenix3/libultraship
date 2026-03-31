@@ -2837,14 +2837,38 @@ void Interpreter::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_
 void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
     if (mRdp->color_image_address == mRdp->z_buf_address) {
         // Fullscreen Z clears are redundant — already done by glClear at frame start.
-        // But partial Z clears (e.g. HUD model scissor regions) must go through so
-        // overlay models can use DEPTH_FULL without clipping behind world geometry.
         bool isFullScreen = (ulx <= 0 && uly <= 0 &&
                              lrx >= (int32_t)(mNativeDimensions.width - 1) * 4 &&
                              lry >= (int32_t)(mNativeDimensions.height - 1) * 4);
         if (isFullScreen) {
             return;
         }
+
+        // Partial depth clear (e.g. HUD model regions): clear the actual depth buffer
+        // via a scissored depth clear instead of drawing a colored rect to the color buffer.
+        Flush();
+
+        // Convert U10.2 coords to pixel coords and add +1 pixel for fill mode
+        int32_t expanded_lrx = lrx + (1 << 2);
+        int32_t expanded_lry = lry + (1 << 2);
+        float x = ulx / 4.0f;
+        float y = expanded_lry / 4.0f;
+        float w = (expanded_lrx - ulx) / 4.0f;
+        float h = (expanded_lry - uly) / 4.0f;
+
+        struct XYWidthHeight area;
+        area.x = (int16_t)x;
+        area.y = (int16_t)y;
+        area.width = (uint32_t)w;
+        area.height = (uint32_t)h;
+        AdjustVIewportOrScissor(&area);
+
+        mRapi->ClearDepthRegion(area.x, area.y, area.width, area.height);
+
+        // Invalidate cached scissor so it gets restored on next draw
+        mRenderingState.scissor = {};
+        mRdp->viewport_or_scissor_changed = true;
+        return;
     }
     uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
