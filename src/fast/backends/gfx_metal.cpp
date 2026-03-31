@@ -1112,40 +1112,36 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     auto command_buffer = mCommandQueue->commandBuffer();
     command_buffer->setLabel(NS::String::string("Read Pixels Shader Command Buffer", NS::UTF8StringEncoding));
 
-    NS::Error* error = nullptr;
-    MTL::ComputePipelineState* compute_pipeline_state =
-        mDevice->newComputePipelineState(mConvertToRgb5a1Function, &error);
-
     // Use a compute encoder to convert the pixel data to rgba16 and transfer to a cpu readable buffer
+    NS::Error* pso_error = nullptr;
+    MTL::ComputePipelineState* convert_pipeline =
+        mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
-    compute_encoder->setComputePipelineState(compute_pipeline_state);
+    compute_encoder->setComputePipelineState(convert_pipeline);
     compute_encoder->setTexture(texture, 0);
     compute_encoder->setBuffer(output_buffer, 0, 0);
 
-    // Use a thread group size and count that covers the whole copy area
-    MTL::Size thread_group_size = MTL::Size::Make(1, 1, 1);
-    MTL::Size thread_group_count = MTL::Size::Make(width, height, 1);
+    MTL::Size thread_group_size = MTL::Size::Make(8, 8, 1);
+    MTL::Size total_threads = MTL::Size::Make(width, height, 1);
 
-    // We validate if the device supports non-uniform threadgroup sizes
     if (mNonUniformThreadgroupSupported) {
-        compute_encoder->dispatchThreads(thread_group_count, thread_group_size);
+        compute_encoder->dispatchThreads(total_threads, thread_group_size);
     } else {
+        MTL::Size thread_group_count = MTL::Size::Make((width + 7) / 8, (height + 7) / 8, 1);
         compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
     }
     compute_encoder->endEncoding();
 
-    // Use a completion handler to wait for the GPU to be done without blocking the thread
-    command_buffer->addCompletedHandler([=](MTL::CommandBuffer* cmd_buffer) {
-        // Now the converted pixel values can be copied from the buffer
-        uint16_t* values = (uint16_t*)output_buffer->contents();
-        memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
-
-        output_buffer->release();
-    });
-
+    // Block until the GPU finishes — the caller expects rgba16_buf to be
+    // filled when this function returns (same as OpenGL's glReadPixels).
     command_buffer->commit();
+    command_buffer->waitUntilCompleted();
 
-    compute_pipeline_state->release();
+    uint16_t* values = (uint16_t*)output_buffer->contents();
+    memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
+
+    output_buffer->release();
+    convert_pipeline->release();
     autorelease_pool->release();
 }
 
