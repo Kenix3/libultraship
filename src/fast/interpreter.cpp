@@ -34,6 +34,7 @@
 #include "ship/utils/Utils.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
+#include "libultraship/bridge/consolevariablebridge.h"
 
 #include "libultraship/libultra/os.h"
 
@@ -923,6 +924,17 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes * 2;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
 
+    // Clamp to tile dimensions from SetTileSize — the TMEM line stride can be
+    // larger than the actual texture width (e.g. 32-wide CI4 with line=4).
+    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
+    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    if (tile_w > 0 && tile_w < width) {
+        width = tile_w;
+    }
+    if (tile_h > 0 && tile_h < height) {
+        height = tile_h;
+    }
+
     if (fullImageLineSizeBytes == sizeBytes) {
         fullImageLineSizeBytes = resultLineSizeBytes;
     }
@@ -1001,6 +1013,17 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
 
     uint32_t width = resultLineSizeBytes;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
+
+    // Clamp to tile dimensions from SetTileSize — the TMEM line stride can be
+    // larger than the actual texture width.
+    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
+    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    if (tile_w > 0 && tile_w < width) {
+        width = tile_w;
+    }
+    if (tile_h > 0 && tile_h < height) {
+        height = tile_h;
+    }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
