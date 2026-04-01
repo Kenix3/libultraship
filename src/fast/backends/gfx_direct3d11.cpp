@@ -547,6 +547,10 @@ static D3D11_TEXTURE_ADDRESS_MODE gfx_cm_to_d3d11(uint32_t val) {
 }
 
 void GfxRenderingAPIDX11::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
     // Create texture
 
     TextureData* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
