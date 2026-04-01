@@ -2278,8 +2278,35 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     }
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes = orig_size_bytes;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes = size_bytes;
-    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes = size_bytes;
-    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes = size_bytes;
+    // Compute actual per-line DRAM stride from SetTextureImage width when available.
+    // The standard gDPLoadTextureBlock macro sets width=1, but manually-built DL
+    // commands may set the real pixel width.
+    uint32_t actual_line_bytes = size_bytes;
+    if (mRdp->texture_to_load.width > 1) {
+        uint32_t candidate;
+        switch (mRdp->texture_to_load.siz) {
+            case G_IM_SIZ_4b:
+                candidate = (mRdp->texture_to_load.width + 1) / 2;
+                break;
+            case G_IM_SIZ_8b:
+                candidate = mRdp->texture_to_load.width;
+                break;
+            case G_IM_SIZ_16b:
+                candidate = mRdp->texture_to_load.width * 2;
+                break;
+            case G_IM_SIZ_32b:
+                candidate = mRdp->texture_to_load.width * 4;
+                break;
+            default:
+                candidate = mRdp->texture_to_load.width;
+                break;
+        }
+        if (candidate > 0 && candidate < size_bytes && size_bytes % candidate == 0) {
+            actual_line_bytes = candidate;
+        }
+    }
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes = actual_line_bytes;
+    mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes = actual_line_bytes;
     // assert(size_bytes <= 4096 && "bug: too big texture");
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
