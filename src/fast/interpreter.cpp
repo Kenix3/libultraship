@@ -1135,8 +1135,11 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
 
     // Check TLUT mode early — before cache lookup — so the fmt override
     // affects both the cache key and the decode path.
+    // Only override to CI for 4-bit and 8-bit texels, which are valid CI sizes.
+    // 16-bit and 32-bit texels are full-color formats that the N64 RDP decodes
+    // natively regardless of TLUT mode — forcing them through CI produces garbage.
     uint32_t tlutMode = mRdp->other_mode_h & (3U << G_MDSFT_TEXTLUT);
-    if (tlutMode != G_TT_NONE && fmt != G_IM_FMT_CI) {
+    if (tlutMode != G_TT_NONE && fmt != G_IM_FMT_CI && (siz == G_IM_SIZ_4b || siz == G_IM_SIZ_8b)) {
         fmt = G_IM_FMT_CI;
     }
 
@@ -1248,8 +1251,15 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
                 ImportTextureCi4(tile, importReplacement);
             } else if (siz == G_IM_SIZ_8b) {
                 ImportTextureCi8(tile, importReplacement);
+            } else if (siz == G_IM_SIZ_16b) {
+                // CI+16b is hardware-invalid on N64. The tile's fmt is likely
+                // stale from a prior draw. Decode as RGBA16 to avoid a garbage
+                // cache entry and produce visible output.
+                ImportTextureRgba16(tile, importReplacement);
+            } else if (siz == G_IM_SIZ_32b) {
+                ImportTextureRgba32(tile, importReplacement);
             } else {
-                SPDLOG_ERROR("CI Texture that isn't 4 or 8 bit. Size = {}", siz);
+                SPDLOG_ERROR("CI Texture with unexpected size = {}", siz);
             }
             break;
         case G_IM_FMT_I:
