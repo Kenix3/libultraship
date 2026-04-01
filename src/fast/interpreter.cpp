@@ -1127,6 +1127,13 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         return;
     }
 
+    // Guard against zero-sized textures that would cause divide-by-zero
+    // or GPU API errors in UploadTexture.
+    if (mRdp->texture_tile[tile].line_size_bytes == 0 || mRdp->loaded_texture[tmemIdex].size_bytes == 0 ||
+        origAddr == nullptr) {
+        return;
+    }
+
     if ((texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
         ImportTextureImg(tile, importReplacement);
         return;
@@ -1167,8 +1174,14 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
                 ImportTextureCi4(tile, importReplacement);
             } else if (siz == G_IM_SIZ_8b) {
                 ImportTextureCi8(tile, importReplacement);
+            } else if (siz == G_IM_SIZ_16b) {
+                // CI+16b is hardware-invalid on N64. The tile's fmt is likely
+                // stale from a prior draw. Decode as RGBA16 instead.
+                ImportTextureRgba16(tile, importReplacement);
+            } else if (siz == G_IM_SIZ_32b) {
+                ImportTextureRgba32(tile, importReplacement);
             } else {
-                SPDLOG_ERROR("CI Texture that isn't 4 or 8 bit. Size = {}", siz);
+                SPDLOG_ERROR("CI Texture with unexpected size = {}", siz);
             }
             break;
         case G_IM_FMT_I:
