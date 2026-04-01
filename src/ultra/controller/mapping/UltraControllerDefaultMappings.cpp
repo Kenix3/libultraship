@@ -1,8 +1,8 @@
-#include "libultraship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "ultra/controller/mapping/UltraControllerDefaultMappings.h"
 #include "libultraship/libultra/controller.h"
 
-namespace LUS {
-ControllerDefaultMappings::ControllerDefaultMappings(
+namespace Ultra {
+UltraControllerDefaultMappings::UltraControllerDefaultMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<Ship::KbScancode>> defaultKeyboardKeyToButtonMappings,
     std::unordered_map<Ship::StickIndex, std::vector<std::pair<Ship::Direction, Ship::KbScancode>>>
         defaultKeyboardKeyToAxisDirectionMappings,
@@ -24,8 +24,8 @@ ControllerDefaultMappings::ControllerDefaultMappings(
     SetDefaultSDLAxisDirectionToButtonMappings(defaultSDLAxisDirectionToButtonMappings);
 }
 
-ControllerDefaultMappings::ControllerDefaultMappings()
-    : ControllerDefaultMappings(
+UltraControllerDefaultMappings::UltraControllerDefaultMappings()
+    : UltraControllerDefaultMappings(
           std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<Ship::KbScancode>>(),
           std::unordered_map<Ship::StickIndex, std::vector<std::pair<Ship::Direction, Ship::KbScancode>>>(),
           std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>(),
@@ -35,10 +35,10 @@ ControllerDefaultMappings::ControllerDefaultMappings()
                              std::vector<std::pair<Ship::Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>()) {
 }
 
-ControllerDefaultMappings::~ControllerDefaultMappings() {
+UltraControllerDefaultMappings::~UltraControllerDefaultMappings() {
 }
 
-void ControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(
+void UltraControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<Ship::KbScancode>> defaultKeyboardKeyToButtonMappings) {
     if (!defaultKeyboardKeyToButtonMappings.empty()) {
         Ship::ControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(defaultKeyboardKeyToButtonMappings);
@@ -63,7 +63,7 @@ void ControllerDefaultMappings::SetDefaultKeyboardKeyToButtonMappings(
     });
 }
 
-void ControllerDefaultMappings::SetDefaultSDLButtonToButtonMappings(
+void UltraControllerDefaultMappings::SetDefaultSDLButtonToButtonMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<SDL_GameControllerButton>>
         defaultSDLButtonToButtonMappings) {
     if (!defaultSDLButtonToButtonMappings.empty()) {
@@ -83,7 +83,7 @@ void ControllerDefaultMappings::SetDefaultSDLButtonToButtonMappings(
     });
 }
 
-void ControllerDefaultMappings::SetDefaultSDLAxisDirectionToButtonMappings(
+void UltraControllerDefaultMappings::SetDefaultSDLAxisDirectionToButtonMappings(
     std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
         defaultSDLAxisDirectionToButtonMappings) {
     if (!defaultSDLAxisDirectionToButtonMappings.empty()) {

@@ -12,10 +12,10 @@
 #include <unordered_map>
 #include "ship/controller/controldevice/controller/Controller.h"
 
-namespace LUS {
-class Controller : public Ship::Controller {
+namespace Ultra {
+class UltraController : public Ship::Controller {
   public:
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
+    UltraController(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
 
     void ReadToPad(void* pad) override;
 
@@ -24,4 +24,4 @@ class Controller : public Ship::Controller {
 
     std::deque<OSContPad> mPadBuffer;
 };
-} // namespace LUS
+} // namespace Ultra

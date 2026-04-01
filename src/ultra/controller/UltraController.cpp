@@ -14,16 +14,16 @@
 #define M_TAU 6.2831853071795864769252867665590057 // 2 * pi
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
-namespace LUS {
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks)
+namespace Ultra {
+UltraController::UltraController(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks)
     : Ship::Controller(portIndex, bitmasks) {
 }
 
-void Controller::ReadToPad(void* pad) {
+void UltraController::ReadToPad(void* pad) {
     ReadToOSContPad((OSContPad*)pad);
 }
 
-void Controller::ReadToOSContPad(OSContPad* pad) {
+void UltraController::ReadToOSContPad(OSContPad* pad) {
     OSContPad padToBuffer = { 0 };
 
     // Button Inputs
@@ -72,4 +72,4 @@ void Controller::ReadToOSContPad(OSContPad* pad) {
         mPadBuffer.pop_back();
     }
 }
-} // namespace LUS
+} // namespace Ultra

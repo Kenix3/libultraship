@@ -2,11 +2,11 @@
 
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 
-namespace LUS {
+namespace Ultra {
 
-class ControllerDefaultMappings : public Ship::ControllerDefaultMappings {
+class UltraControllerDefaultMappings : public Ship::ControllerDefaultMappings {
   public:
-    ControllerDefaultMappings(
+    UltraControllerDefaultMappings(
         std::unordered_map<CONTROLLERBUTTONS_T, std::unordered_set<Ship::KbScancode>>
             defaultKeyboardKeyToButtonMappings,
         std::unordered_map<Ship::StickIndex, std::vector<std::pair<Ship::Direction, Ship::KbScancode>>>
@@ -20,8 +20,8 @@ class ControllerDefaultMappings : public Ship::ControllerDefaultMappings {
         std::unordered_map<Ship::StickIndex,
                            std::vector<std::pair<Ship::Direction, std::pair<SDL_GameControllerAxis, int32_t>>>>
             defaultSDLAxisDirectionToAxisDirectionMappings);
-    ControllerDefaultMappings();
-    ~ControllerDefaultMappings();
+    UltraControllerDefaultMappings();
+    ~UltraControllerDefaultMappings();
 
   private:
     void
@@ -36,4 +36,4 @@ class ControllerDefaultMappings : public Ship::ControllerDefaultMappings {
         std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::pair<SDL_GameControllerAxis, int32_t>>>
             defaultSDLAxisDirectionToButtonMappings) override;
 };
-} // namespace LUS
+} // namespace Ultra
