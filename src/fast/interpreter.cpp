@@ -1734,9 +1734,17 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     uint32_t tm = 0;
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
+    uint32_t effective_tile[2];
 
     for (int i = 0; i < 2; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
+
+        // No LOD support: force both slots to the base mip level.
+        if (i == 1 && mRdp->first_tile_index >= 2) {
+            tile = mRdp->first_tile_index;
+        }
+        effective_tile[i] = tile;
+
         if (comb->usedTextures[i]) {
             if (mRdp->textures_changed[i]) {
                 Flush();
@@ -1753,8 +1761,23 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             uint8_t cms = mRdp->texture_tile[tile].cms;
             uint8_t cmt = mRdp->texture_tile[tile].cmt;
 
-            uint32_t tex_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
-            uint32_t line_size = mRdp->texture_tile[tile].line_size_bytes;
+            uint32_t loaded_line_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
+            uint32_t loaded_size = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
+            uint32_t loaded_full_line =
+                mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
+            uint32_t tex_size_bytes;
+            uint32_t line_size;
+            if ((loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0) {
+                line_size = loaded_line_size;
+                tex_size_bytes = loaded_size;
+            } else {
+                line_size = mRdp->texture_tile[tile].line_size_bytes;
+                tex_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
+                // RGBA32: texture_tile stores TMEM-interleaved stride (half of actual DRAM stride).
+                if (mRdp->texture_tile[tile].siz == G_IM_SIZ_32b) {
+                    line_size *= 2;
+                }
+            }
 
             if (line_size == 0) {
                 line_size = 1;
@@ -1771,14 +1794,21 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                     line_size /= G_IM_SIZ_16b_LINE_BYTES;
                     break;
                 case G_IM_SIZ_32b:
-                    line_size /= G_IM_SIZ_32b_LINE_BYTES; // this is 2!
-                    tex_height[i] /= 2;
+                    line_size /= 4; // RGBA32: 4 bytes per pixel (line_size is now actual DRAM stride)
                     break;
             }
             tex_width[i] = line_size;
 
             tex_width2[i] = (mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4;
             tex_height2[i] = (mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4;
+
+            // Clamp to tile bounds (mipmap loads include all levels).
+            if (tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+                tex_width[i] = tex_width2[i];
+            }
+            if (tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+                tex_height[i] = tex_height2[i];
+            }
 
             uint32_t tex_width1 = tex_width[i] << (cms & G_TX_MIRROR);
             uint32_t tex_height1 = tex_height[i] << (cmt & G_TX_MIRROR);
@@ -1855,8 +1885,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             float u = v_arr[i]->u / 32.0f;
             float v = v_arr[i]->v / 32.0f;
 
-            int shifts = mRdp->texture_tile[mRdp->first_tile_index + t].shifts;
-            int shiftt = mRdp->texture_tile[mRdp->first_tile_index + t].shiftt;
+            uint32_t uv_tile = effective_tile[t];
+            int shifts = mRdp->texture_tile[uv_tile].shifts;
+            int shiftt = mRdp->texture_tile[uv_tile].shiftt;
             if (shifts != 0) {
                 if (shifts <= 10) {
                     u /= 1 << shifts;
@@ -1872,8 +1903,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 }
             }
 
-            u -= mRdp->texture_tile[mRdp->first_tile_index + t].uls / 4.0f;
-            v -= mRdp->texture_tile[mRdp->first_tile_index + t].ult / 4.0f;
+            u -= mRdp->texture_tile[uv_tile].uls / 4.0f;
+            v -= mRdp->texture_tile[uv_tile].ult / 4.0f;
 
             if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
                 // Linear filter adds 0.5f to the coordinates
