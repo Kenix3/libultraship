@@ -499,8 +499,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_KILLFOCUS:
-            if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
-                ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+            if (auto ctx = Ship::Context::GetInstance(); ctx && ctx->GetConsoleVariables()) {
+                if (!ctx->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                    ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+                }
             }
             self->mInFocus = false;
             break;
