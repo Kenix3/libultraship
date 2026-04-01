@@ -480,6 +480,18 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
     }
 }
 
+// Pick the per-line byte width for texture decode. Prefer the DRAM stride from
+// loaded_texture when it looks like real per-line info (differs from total size).
+// Fall back to the TMEM tile stride when loaded sizes match total (LoadBlock with
+// width=1, where line_size == full_image_line_size == size).
+static uint32_t GetEffectiveLineSize(uint32_t lineSizeBytes, uint32_t fullImageLineSizeBytes, uint32_t sizeBytes,
+                                     uint32_t tileLineSizeBytes) {
+    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
+        return lineSizeBytes;
+    }
+    return tileLineSizeBytes;
+}
+
 void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
@@ -497,14 +509,8 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    // Prefer the per-line DRAM stride when available, as TMEM tile line size
-    // is 8-byte aligned and may overstate the actual pixel width.
-    uint32_t widthBytes;
-    if ((line_size_bytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && line_size_bytes > 0) {
-        widthBytes = line_size_bytes;
-    } else {
-        widthBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t widthBytes = GetEffectiveLineSize(line_size_bytes, fullImageLineSizeBytes, sizeBytes,
+                                               mRdp->texture_tile[tile].line_size_bytes);
     uint32_t width = widthBytes / 2;
     uint32_t height = widthBytes > 0 ? sizeBytes / widthBytes : 0;
 
@@ -563,14 +569,8 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    // Use loaded_texture DRAM stride (4 bytes/pixel for RGBA32), not the TMEM-interleaved
-    // texture_tile line_size (which uses G_IM_SIZ_32b_LINE_BYTES=2).
-    uint32_t widthBytes;
-    if ((line_size_bytes != size_bytes || full_image_line_size_bytes != size_bytes) && line_size_bytes > 0) {
-        widthBytes = line_size_bytes;
-    } else {
-        widthBytes = mRdp->texture_tile[tile].line_size_bytes * 2;
-    }
+    uint32_t widthBytes = GetEffectiveLineSize(line_size_bytes, full_image_line_size_bytes, size_bytes,
+                                               mRdp->texture_tile[tile].line_size_bytes * 2);
     uint32_t width = widthBytes / 4;
     uint32_t height = widthBytes > 0 ? size_bytes / widthBytes : 0;
 
@@ -621,13 +621,8 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    // IA4: 2 pixels per byte, so width in pixels = line_size_bytes * 2
-    uint32_t widthBytes;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        widthBytes = lineSizeBytes;
-    } else {
-        widthBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t widthBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                               mRdp->texture_tile[tile].line_size_bytes);
     uint32_t width = widthBytes * 2;
     uint32_t height = widthBytes > 0 ? sizeBytes / widthBytes : 0;
 
@@ -671,14 +666,9 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t width, height;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        width = lineSizeBytes;
-        height = sizeBytes / lineSizeBytes;
-    } else {
-        width = mRdp->texture_tile[tile].line_size_bytes;
-        height = width > 0 ? sizeBytes / width : 0;
-    }
+    uint32_t width = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                          mRdp->texture_tile[tile].line_size_bytes);
+    uint32_t height = width > 0 ? sizeBytes / width : 0;
 
     if (fullImageLineSizeBytes == sizeBytes) {
         fullImageLineSizeBytes = width;
@@ -718,12 +708,8 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t line_size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t widthBytes;
-    if (line_size_bytes != size_bytes && line_size_bytes > 0) {
-        widthBytes = line_size_bytes;
-    } else {
-        widthBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t widthBytes = GetEffectiveLineSize(line_size_bytes, full_image_line_size_bytes, size_bytes,
+                                               mRdp->texture_tile[tile].line_size_bytes);
     uint32_t width = widthBytes / 2;
     uint32_t height = widthBytes > 0 ? size_bytes / widthBytes : 0;
 
@@ -772,12 +758,8 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t widthBytes;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        widthBytes = lineSizeBytes;
-    } else {
-        widthBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t widthBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                               mRdp->texture_tile[tile].line_size_bytes);
     uint32_t width = widthBytes * 2;
     uint32_t height = widthBytes > 0 ? sizeBytes / widthBytes : 0;
 
@@ -828,14 +810,9 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    uint32_t width, height;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        width = lineSizeBytes;
-        height = sizeBytes / lineSizeBytes;
-    } else {
-        width = mRdp->texture_tile[tile].line_size_bytes;
-        height = width > 0 ? sizeBytes / width : 0;
-    }
+    uint32_t width = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                          mRdp->texture_tile[tile].line_size_bytes);
+    uint32_t height = width > 0 ? sizeBytes / width : 0;
 
     if (fullImageLineSizeBytes == sizeBytes) {
         fullImageLineSizeBytes = width;
@@ -882,12 +859,8 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     }
     palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
-    uint32_t baseLineSizeBytes;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        baseLineSizeBytes = lineSizeBytes;
-    } else {
-        baseLineSizeBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                                     mRdp->texture_tile[tile].line_size_bytes);
     uint32_t resultLineSizeBytes = baseLineSizeBytes;
 
     if (metadata->h_byte_scale != 1) {
@@ -973,12 +946,8 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         }
     }
 
-    uint32_t baseLineSizeBytes;
-    if ((lineSizeBytes != sizeBytes || fullImageLineSizeBytes != sizeBytes) && lineSizeBytes > 0) {
-        baseLineSizeBytes = lineSizeBytes;
-    } else {
-        baseLineSizeBytes = mRdp->texture_tile[tile].line_size_bytes;
-    }
+    uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
+                                                     mRdp->texture_tile[tile].line_size_bytes);
     uint32_t resultLineSizeBytes = baseLineSizeBytes;
     if (metadata->h_byte_scale != 1) {
         resultLineSizeBytes *= metadata->h_byte_scale;
