@@ -190,9 +190,6 @@ void GfxRenderingAPIMetal::Init() {
     mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
     mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
 
-    NS::Error* pso_error = nullptr;
-    mConvertToRgb5a1PipelineState = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
-
     library->release();
     autorelease_pool->release();
 }
@@ -1120,8 +1117,10 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     command_buffer->setLabel(NS::String::string("Read Pixels Shader Command Buffer", NS::UTF8StringEncoding));
 
     // Use a compute encoder to convert the pixel data to rgba16 and transfer to a cpu readable buffer
+    NS::Error* pso_error = nullptr;
+    MTL::ComputePipelineState* convert_pipeline = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
-    compute_encoder->setComputePipelineState(mConvertToRgb5a1PipelineState);
+    compute_encoder->setComputePipelineState(convert_pipeline);
     compute_encoder->setTexture(texture, 0);
     compute_encoder->setBuffer(output_buffer, 0, 0);
 
@@ -1145,6 +1144,7 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
 
     output_buffer->release();
+    convert_pipeline->release();
     autorelease_pool->release();
 }
 
