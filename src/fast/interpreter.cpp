@@ -4626,11 +4626,20 @@ int32_t gfx_check_image_signature(const char* imgData) {
         return 0;
     }
 
-    if (i != 0) {
-        return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+    // Filter addresses that are obviously not valid string pointers before
+    // attempting to dereference for the "__OTR__" check.
+    if (i == 0 || i < 0x10000) {
+        return 0;
     }
+#if UINTPTR_MAX > 0xFFFFFFFFu
+    // On 64-bit Windows, user-space addresses are below this limit.
+    // Anything above is kernel memory or a sentinel value.
+    if (i > 0x00007FFFFFFFFFFFull) {
+        return 0;
+    }
+#endif
 
-    return 0;
+    return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
 }
 
 void Interpreter::RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement) {
