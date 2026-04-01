@@ -962,8 +962,18 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             : mRdp->loaded_texture[tmemIdex].addr;
 
     if (origAddr == nullptr) {
-        SPDLOG_ERROR("ImportTexture: null texture address for tile {}", tile);
-        return;
+        // Try the other TMEM slot -- some multi-tile setups only load one slot
+        // and expect both tiles to reference it.
+        uint32_t otherTmem = tmemIdex ^ 1;
+        origAddr = mRdp->loaded_texture[otherTmem].addr;
+        if (origAddr == nullptr) {
+            SPDLOG_WARN("ImportTexture: null texture address for tile {} (both TMEM slots empty)", tile);
+            return;
+        }
+        SPDLOG_WARN("ImportTexture: tile {} TMEM slot {} empty, falling back to slot {}", tile, tmemIdex, otherTmem);
+        tmemIdex = otherTmem;
+        origSizeBytes = mRdp->loaded_texture[otherTmem].orig_size_bytes;
+        texFlags = mRdp->loaded_texture[otherTmem].tex_flags;
     }
 
     TextureCacheKey key;
