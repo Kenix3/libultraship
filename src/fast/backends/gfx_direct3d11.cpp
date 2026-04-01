@@ -727,8 +727,8 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
                     mLastSamplerStates[i] = mTextures[mCurrentTextureIds[i]].sampler_state.Get();
                 }
             }
+            mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIds[i]].sampler_state.GetAddressOf());
         }
-        mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIds[i]].sampler_state.GetAddressOf());
     }
 
     // Set per-draw constant buffer
