@@ -1112,12 +1112,14 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     auto command_buffer = mCommandQueue->commandBuffer();
     command_buffer->setLabel(NS::String::string("Read Pixels Shader Command Buffer", NS::UTF8StringEncoding));
 
-    // Use a compute encoder to convert the pixel data to rgba16 and transfer to a cpu readable buffer
-    NS::Error* pso_error = nullptr;
-    MTL::ComputePipelineState* convert_pipeline =
-        mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
+    // Lazily create and cache the compute pipeline state on first use.
+    // newComputePipelineState compiles the shader — expensive per frame, free to reuse.
+    if (!mConvertToRgb5a1PipelineState) {
+        NS::Error* pso_error = nullptr;
+        mConvertToRgb5a1PipelineState = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
+    }
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
-    compute_encoder->setComputePipelineState(convert_pipeline);
+    compute_encoder->setComputePipelineState(mConvertToRgb5a1PipelineState);
     compute_encoder->setTexture(texture, 0);
     compute_encoder->setBuffer(output_buffer, 0, 0);
 
@@ -1141,7 +1143,6 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
 
     output_buffer->release();
-    convert_pipeline->release();
     autorelease_pool->release();
 }
 
