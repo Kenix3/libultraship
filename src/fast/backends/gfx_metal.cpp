@@ -1118,7 +1118,8 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
 
     // Use a compute encoder to convert the pixel data to rgba16 and transfer to a cpu readable buffer
     NS::Error* pso_error = nullptr;
-    MTL::ComputePipelineState* convert_pipeline = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
+    MTL::ComputePipelineState* convert_pipeline =
+        mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
     compute_encoder->setComputePipelineState(convert_pipeline);
     compute_encoder->setTexture(texture, 0);
