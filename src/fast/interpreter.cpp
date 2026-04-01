@@ -2553,10 +2553,6 @@ void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int3
         AdjustVIewportOrScissor(&area);
 
         mRapi->ClearDepthRegion(area.x, area.y, area.width, area.height);
-
-        // Invalidate cached scissor so it gets restored on next draw
-        mRenderingState.scissor = {};
-        mRdp->viewport_or_scissor_changed = true;
         return;
     }
     uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
