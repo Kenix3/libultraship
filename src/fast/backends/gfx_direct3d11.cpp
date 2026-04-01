@@ -1047,6 +1047,8 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
     ThrowIfFailed(mContext->Map(staging, 0, D3D11_MAP_READ, 0, &resource));
 
     if (!resource.pData) {
+        mContext->Unmap(staging, 0);
+        staging->Release();
         return;
     }
 
