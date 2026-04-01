@@ -2127,7 +2127,15 @@ void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
         // N64 TMEM palette area starts at tmem word 256. Each CI4 palette = 16 entries = 16 tmem words.
         uint32_t paletteByteOffset = (tmem - 256) * 2;
 
-        if (paletteByteOffset < 256) {
+        if (high_index == 255 && paletteByteOffset == 0) {
+            // CI8: full 256-entry palette spanning both halves
+            memcpy(mRdp->palette_staging[0], src, 256);
+            memcpy(mRdp->palette_staging[1], src + 256, 256);
+            mRdp->palettes[0] = mRdp->palette_staging[0];
+            mRdp->palettes[1] = mRdp->palette_staging[1];
+            mRdp->palette_dram_addr[0] = src;
+            mRdp->palette_dram_addr[1] = src + 256;
+        } else if (paletteByteOffset < 256) {
             // Palettes 0-7 range
             uint32_t copyLen = (paletteByteOffset + byteCount <= 256) ? byteCount : (256 - paletteByteOffset);
             memcpy(mRdp->palette_staging[0] + paletteByteOffset, src, copyLen);
@@ -2140,16 +2148,6 @@ void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
             memcpy(mRdp->palette_staging[1] + offset, src, copyLen);
             mRdp->palettes[1] = mRdp->palette_staging[1];
             mRdp->palette_dram_addr[1] = src;
-        }
-
-        // CI8: full 256-entry palette spanning both halves
-        if (high_index == 255 && paletteByteOffset == 0) {
-            memcpy(mRdp->palette_staging[0], src, 256);
-            memcpy(mRdp->palette_staging[1], src + 256, 256);
-            mRdp->palettes[0] = mRdp->palette_staging[0];
-            mRdp->palettes[1] = mRdp->palette_staging[1];
-            mRdp->palette_dram_addr[0] = src;
-            mRdp->palette_dram_addr[1] = src + 256;
         }
     } else {
         // tmem < 256: non-standard location, fall back to direct pointer
