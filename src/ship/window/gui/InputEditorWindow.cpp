@@ -75,7 +75,7 @@ void InputEditorWindow::UpdateElement() {
     }
 }
 
-void InputEditorWindow::DrawAnaloguePreview(const char* label, ImVec2 stick, float deadzone, bool gyro) {
+void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone, bool gyro) {
     ImGui::BeginChild(label, ImVec2(gyro ? SCALE_IMGUI_SIZE(78) : SCALE_IMGUI_SIZE(96), SCALE_IMGUI_SIZE(85)), false);
     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + gyro ? SCALE_IMGUI_SIZE(10) : SCALE_IMGUI_SIZE(18),
                                ImGui::GetCursorPos().y + gyro ? SCALE_IMGUI_SIZE(10) : 0));
@@ -614,7 +614,7 @@ void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id
         controllerStick = Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick();
     }
     controllerStick->Process(sX, sY);
-    DrawAnaloguePreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
+    DrawAnalogPreview(StringHelper::Sprintf("##AnalogPreview%d", id).c_str(), ImVec2(sX, sY));
 
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -1103,7 +1103,7 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
         // the max I found for both pitch and yaw was ~21
         // the preview window expects values in an n64 analogue stick range (-85 to 85)
         // so I decided to multiply these by 85/21
-        DrawAnaloguePreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
+        DrawAnalogPreview(StringHelper::Sprintf("###GyroPreview%s", id.c_str()).c_str(),
                           ImVec2(sYaw * (85.0f / 21.0f), sPitch * (85.0f / 21.0f)), 0.0f, true);
         ImGui::SameLine();
         ImGui::SetCursorPos(
