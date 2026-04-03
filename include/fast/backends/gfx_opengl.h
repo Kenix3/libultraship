@@ -107,7 +107,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void SetPerDrawUniforms();
 
     std::vector<TextureInfo> textures;
-    GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES]{};
+    GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};
     GLuint mLastBoundTextures[SHADER_MAX_TEXTURES] = {};
     uint8_t mCurrentTile;
     int8_t mLastActiveTexture = -1;

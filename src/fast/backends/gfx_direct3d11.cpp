@@ -712,7 +712,9 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mShaderProgram->usedTextures[i]) {
-            // Guard against stale/invalid texture IDs
+            // mTextures is append-only (NewTexture just resizes +1, DeleteTexture is a no-op),
+            // so this is really just catching stale IDs left over from before we zero-initialized
+            // mCurrentTextureIds. No entries are ever removed, so gaps aren't a concern.
             if (mCurrentTextureIds[i] >= mTextures.size()) {
                 continue;
             }
