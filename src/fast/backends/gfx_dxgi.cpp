@@ -957,8 +957,7 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
 
     QueryPerformanceCounter(&t2);
 
-    mZeroLatency =
-        !mPendingFrameStats.empty() && mPendingFrameStats.rbegin()->first == stats.PresentCount;
+    mZeroLatency = !mPendingFrameStats.empty() && mPendingFrameStats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
