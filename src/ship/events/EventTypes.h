@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 typedef int32_t EventID;
 typedef uint32_t ListenerID;
 

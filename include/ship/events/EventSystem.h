@@ -10,9 +10,9 @@
 namespace Ship {
 
 struct EventRegistration {
-    const char* name;
-    std::unordered_map<const char*, EventMetadata> callers;
-    std::vector<EventListener> listeners;
+    const char* Name;
+    std::unordered_map<const char*, EventMetadata> Callers;
+    std::vector<EventListener> Listeners;
 };
 
 class EventSystem {
@@ -20,7 +20,7 @@ class EventSystem {
     EventID RegisterEvent(const char* name = nullptr);
     ListenerID RegisterListener(EventID id, EventCallback callback, EventPriority priority = EVENT_PRIORITY_NORMAL,
                                 const char* file = nullptr, int line = 0);
-    void UnregisterListener(EventID ev, ListenerID id);
+    void UnregisterListener(EventID id, ListenerID listenerId);
     void CallEvent(EventID id, IEvent* event, const char* file = nullptr, int line = 0, const char* key = nullptr);
 
     EventRegistration* GetEventRegistration(EventID id) {
