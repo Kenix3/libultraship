@@ -127,4 +127,4 @@ void EventDebuggerWindow::InitElement() {
     hookOptCollapseAll = false;
 }
 
-}
+} // namespace Ship

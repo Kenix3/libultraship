@@ -57,4 +57,4 @@ void EventSystem::CallEvent(const EventID id, IEvent* event, const char* file, c
     info.count++;
 }
 
-}
+} // namespace Ship
