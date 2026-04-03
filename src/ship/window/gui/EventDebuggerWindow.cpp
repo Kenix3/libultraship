@@ -31,10 +31,10 @@ void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
             ImGui::Text("%d", i++);
 
             ImGui::TableNextColumn();
-            ImGui::TextWrapped("%s:%d ", caller.path, caller.line);
+            ImGui::TextWrapped("%s:%d ", caller.Path, caller.Line);
 
             ImGui::TableNextColumn();
-            ImGui::Text("%llu", caller.count);
+            ImGui::Text("%llu", caller.Count);
         }
         ImGui::EndTable();
     }
@@ -59,10 +59,10 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
             ImGui::Text("%d", i++);
 
             ImGui::TableNextColumn();
-            ImGui::TextWrapped("%s:%d ", listener.metadata.path, listener.metadata.line);
+            ImGui::TextWrapped("%s:%d ", listener.Metadata.Path, listener.Metadata.Line);
 
             ImGui::TableNextColumn();
-            switch (listener.priority) {
+            switch (listener.Priority) {
                 case EVENT_PRIORITY_LOW:
                     ImGui::TextColored(ImVec4(0.75, 0.75, 0.75, 1), "Low");
                     break;
