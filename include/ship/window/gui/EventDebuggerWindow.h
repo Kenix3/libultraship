@@ -14,4 +14,4 @@ class EventDebuggerWindow final : public GuiWindow {
     void UpdateElement() override{};
 };
 
-} // namespace Ship
+}

@@ -8,8 +8,7 @@ extern "C" {
 #endif
 
 extern EventID EventSystemRegisterEvent(const char* name);
-extern ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority,
-                                              const char* file, int line);
+extern ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file, int line);
 extern void EventSystemUnregisterListener(EventID ev, ListenerID id);
 extern void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key);
 
