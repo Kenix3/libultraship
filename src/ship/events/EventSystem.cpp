@@ -21,7 +21,7 @@ ListenerID EventSystem::RegisterListener(EventID id, EventCallback callback, Eve
     auto& registry = this->mEventRegistry[id];
 
     if (std::find_if(registry.Listeners.begin(), registry.Listeners.end(), [callback](const EventListener listener) {
-            return listener.function == callback;
+            return listener.Function == callback;
         }) != registry.Listeners.end()) {
         throw std::runtime_error("Listener already registered");
     }
@@ -29,7 +29,7 @@ ListenerID EventSystem::RegisterListener(EventID id, EventCallback callback, Eve
     registry.Listeners.push_back({ priority, callback, { file, line, 0 } });
 
     std::sort(registry.Listeners.begin(), registry.Listeners.end(),
-              [](const EventListener a, const EventListener b) { return a.priority < b.priority; });
+              [](const EventListener a, const EventListener b) { return a.Priority < b.Priority; });
 
     return registry.Listeners.size() - 1;
 }
@@ -49,12 +49,12 @@ void EventSystem::CallEvent(const EventID id, IEvent* event, const char* file, c
 
     auto& info = registry.Callers[key];
 
-    if (info.path == nullptr) {
-        info.path = file;
-        info.line = line;
+    if (info.Path == nullptr) {
+        info.Path = file;
+        info.Line = line;
     }
 
-    info.count++;
+    info.Count++;
 }
 
 } // namespace Ship

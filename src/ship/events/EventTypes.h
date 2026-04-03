@@ -12,21 +12,21 @@ typedef enum {
 } EventPriority;
 
 typedef struct {
-    bool cancelled;
+    bool Cancelled;
 } IEvent;
 
 typedef void (*EventCallback)(IEvent*);
 
 typedef struct EventMetadata {
-    const char* path;
-    int line;
-    uint64_t count;
+    const char* Path;
+    int Line;
+    uint64_t Count;
 } EventMetadata;
 
 typedef struct EventListener {
-    EventPriority priority;
-    EventCallback function;
-    EventMetadata metadata;
+    EventPriority Priority;
+    EventCallback Function;
+    EventMetadata Metadata;
 } EventListener;
 
 #ifndef __cplusplus
@@ -50,7 +50,7 @@ typedef struct EventListener {
 
 #define DEFINE_EVENT(eventName, ...) \
     typedef struct {                 \
-        IEvent event;                \
+        IEvent Event;                \
         __VA_ARGS__                  \
     } eventName;                     \
                                      \
@@ -63,14 +63,14 @@ typedef struct EventListener {
 #define CALL_CANCELLABLE_EVENT(eventType, ...)                                             \
     eventType eventType##_ = { { false }, __VA_ARGS__ };                                   \
     EventSystemCallEvent(eventType##ID, &eventType##_, __FILE__, __LINE__, FILE_AND_LINE); \
-    if (!eventType##_.event.cancelled)
+    if (!eventType##_.Event.Cancelled)
 
-#define CHECK_IF_NOT_CANCELLED(eventType) if (!eventType##_.event.cancelled)
+#define CHECK_IF_NOT_CANCELLED(eventType) if (!eventType##_.Event.Cancelled)
 
 #define CALL_CANCELLABLE_RETURN_EVENT(eventType, ...)                                      \
     eventType eventType##_ = { { false }, __VA_ARGS__ };                                   \
     EventSystemCallEvent(eventType##ID, &eventType##_, __FILE__, __LINE__, FILE_AND_LINE); \
-    if (eventType##_.event.cancelled) {                                                    \
+    if (eventType##_.Event.Cancelled) {                                                    \
         return;                                                                            \
     }
 
