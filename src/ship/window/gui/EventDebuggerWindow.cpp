@@ -12,12 +12,8 @@ namespace Ship {
 static bool hookOptCollapseAll;
 static bool hookOptExpandAll;
 
-const ImVec4 grey = ImVec4(0.75, 0.75, 0.75, 1);
-const ImVec4 yellow = ImVec4(1, 1, 0, 1);
-const ImVec4 red = ImVec4(1, 0, 0, 1);
-
 void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
-    ImGui::Text("Total Callers Registered: %d", registry.callers.size());
+    ImGui::Text("Total Callers Registered: %zu", registry.Callers.size());
 
     if (ImGui::BeginTable(("Table##" + std::string(name)).c_str(), 4,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |
@@ -28,7 +24,7 @@ void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
         ImGui::TableHeadersRow();
 
         int i = 0;
-        for (auto& [_, caller] : registry.callers) {
+        for (auto& [_, caller] : registry.Callers) {
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
@@ -44,8 +40,8 @@ void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
     }
 }
 
-void DrawEventListenerInfo(std::string& name, EventRegistration& registry) {
-    ImGui::Text("Total Listeners Registered: %d", registry.listeners.size());
+void DrawEventListenerInfo(std::string& name, const EventRegistration& registry) {
+    ImGui::Text("Total Listeners Registered: %zu", registry.Listeners.size());
 
     if (ImGui::BeginTable(("Table##" + std::string(name)).c_str(), 4,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |
@@ -56,7 +52,7 @@ void DrawEventListenerInfo(std::string& name, EventRegistration& registry) {
         ImGui::TableHeadersRow();
 
         int i = 0;
-        for (auto& listener : registry.listeners) {
+        for (auto& listener : registry.Listeners) {
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
@@ -68,13 +64,13 @@ void DrawEventListenerInfo(std::string& name, EventRegistration& registry) {
             ImGui::TableNextColumn();
             switch (listener.priority) {
                 case EVENT_PRIORITY_LOW:
-                    ImGui::TextColored(grey, "Low");
+                    ImGui::TextColored(ImVec4(0.75, 0.75, 0.75, 1), "Low");
                     break;
                 case EVENT_PRIORITY_NORMAL:
-                    ImGui::TextColored(yellow, "Normal");
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "Normal");
                     break;
                 case EVENT_PRIORITY_HIGH:
-                    ImGui::TextColored(red, "High");
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "High");
                     break;
             }
         }
@@ -98,7 +94,7 @@ void EventDebuggerWindow::DrawElement() {
     }
 
     for (auto& [id, registry] : events) {
-        auto name = StringHelper::Sprintf("%s (ID: %d) [%d]", registry.name, id, registry.listeners.size());
+        auto name = StringHelper::Sprintf("%s (ID: %d) [%d]", registry.Name, id, registry.Listeners.size());
 
         if (doingCollapseOrExpand) {
             if (hookOptExpandAll) {
