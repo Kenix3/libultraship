@@ -860,7 +860,7 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
     uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
-                                                     mRdp->texture_tile[tile].line_size_bytes);
+                                                      mRdp->texture_tile[tile].line_size_bytes);
     uint32_t resultLineSizeBytes = baseLineSizeBytes;
 
     if (metadata->h_byte_scale != 1) {
@@ -947,7 +947,7 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     }
 
     uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
-                                                     mRdp->texture_tile[tile].line_size_bytes);
+                                                      mRdp->texture_tile[tile].line_size_bytes);
     uint32_t resultLineSizeBytes = baseLineSizeBytes;
     if (metadata->h_byte_scale != 1) {
         resultLineSizeBytes *= metadata->h_byte_scale;
