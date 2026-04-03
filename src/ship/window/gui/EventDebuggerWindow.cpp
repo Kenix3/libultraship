@@ -1,0 +1,130 @@
+#include "ship/window/gui/EventDebuggerWindow.h"
+
+#include <string>
+#include <version>
+
+#include "ship/utils/StringHelper.h"
+#include "ship/events/EventSystem.h"
+#include "ship/Context.h"
+
+namespace Ship {
+
+static bool hookOptCollapseAll;
+static bool hookOptExpandAll;
+
+const ImVec4 grey = ImVec4(0.75, 0.75, 0.75, 1);
+const ImVec4 yellow = ImVec4(1, 1, 0, 1);
+const ImVec4 red = ImVec4(1, 0, 0, 1);
+
+void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
+    ImGui::Text("Total Callers Registered: %d", registry.callers.size());
+
+    if (ImGui::BeginTable(("Table##" + std::string(name)).c_str(), 4,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |
+                              ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Registration Info", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("# Calls", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableHeadersRow();
+
+        int i = 0;
+        for (auto& [_, caller] : registry.callers) {
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", i++);
+
+            ImGui::TableNextColumn();
+            ImGui::TextWrapped("%s:%d ", caller.path, caller.line);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu", caller.count);
+        }
+        ImGui::EndTable();
+    }
+}
+
+void DrawEventListenerInfo(std::string& name, EventRegistration& registry) {
+    ImGui::Text("Total Listeners Registered: %d", registry.listeners.size());
+
+    if (ImGui::BeginTable(("Table##" + std::string(name)).c_str(), 4,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |
+                              ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Listener Info", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Priority", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableHeadersRow();
+
+        int i = 0;
+        for (auto& listener : registry.listeners) {
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", i++);
+
+            ImGui::TableNextColumn();
+            ImGui::TextWrapped("%s:%d ", listener.metadata.path, listener.metadata.line);
+
+            ImGui::TableNextColumn();
+            switch (listener.priority) {
+                case EVENT_PRIORITY_LOW:
+                    ImGui::TextColored(grey, "Low");
+                    break;
+                case EVENT_PRIORITY_NORMAL:
+                    ImGui::TextColored(yellow, "Normal");
+                    break;
+                case EVENT_PRIORITY_HIGH:
+                    ImGui::TextColored(red, "High");
+                    break;
+            }
+        }
+        ImGui::EndTable();
+    }
+}
+
+void EventDebuggerWindow::DrawElement() {
+    bool collapseLogic = false;
+    auto events = Ship::Context::GetInstance()->GetEventSystem()->GetEventRegistrations();
+    bool doingCollapseOrExpand = hookOptExpandAll || hookOptCollapseAll;
+
+    if (ImGui::Button("Expand All")) {
+        hookOptCollapseAll = false;
+        hookOptExpandAll = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Collapse All")) {
+        hookOptExpandAll = false;
+        hookOptCollapseAll = true;
+    }
+
+    for (auto& [id, registry] : events) {
+        auto name = StringHelper::Sprintf("%s (ID: %d) [%d]", registry.name, id, registry.listeners.size());
+
+        if (doingCollapseOrExpand) {
+            if (hookOptExpandAll) {
+                collapseLogic = true;
+            } else if (hookOptCollapseAll) {
+                collapseLogic = false;
+            }
+            ImGui::SetNextItemOpen(collapseLogic, ImGuiCond_Always);
+        }
+
+        if (ImGui::TreeNode(name.c_str())) {
+            DrawEventCallerInfo(name, registry);
+            DrawEventListenerInfo(name, registry);
+            ImGui::TreePop();
+        }
+    }
+
+    if (doingCollapseOrExpand) {
+        hookOptExpandAll = false;
+        hookOptCollapseAll = false;
+    }
+}
+
+void EventDebuggerWindow::InitElement() {
+    hookOptExpandAll = false;
+    hookOptCollapseAll = false;
+}
+
+}
