@@ -16,9 +16,10 @@ struct EventRegistration {
 };
 
 class EventSystem {
-public:
+  public:
     EventID RegisterEvent(const char* name = nullptr);
-    ListenerID RegisterListener(EventID id, EventCallback callback, EventPriority priority = EVENT_PRIORITY_NORMAL, const char* file = nullptr, int line = 0);
+    ListenerID RegisterListener(EventID id, EventCallback callback, EventPriority priority = EVENT_PRIORITY_NORMAL,
+                                const char* file = nullptr, int line = 0);
     void UnregisterListener(EventID ev, ListenerID id);
     void CallEvent(EventID id, IEvent* event, const char* file = nullptr, int line = 0, const char* key = nullptr);
 
@@ -32,9 +33,10 @@ public:
     std::unordered_map<EventID, EventRegistration>& GetEventRegistrations() {
         return this->mEventRegistry;
     }
-private:
+
+  private:
     std::unordered_map<EventID, EventRegistration> mEventRegistry;
     EventID mInternalEventID = 0;
 };
 
-}
+} // namespace Ship
