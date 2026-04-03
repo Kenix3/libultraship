@@ -992,11 +992,7 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
                     origSizeBytes };
         } else {
             // CI8 uses both palette halves
-            key = { origAddr,
-                    { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] },
-                    fmt,
-                    siz,
-                    paletteIndex,
+            key = { origAddr,     { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] }, fmt, siz, paletteIndex,
                     origSizeBytes };
         }
     } else {
