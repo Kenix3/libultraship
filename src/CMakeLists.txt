@@ -76,9 +76,6 @@ target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
 find_package(spdlog REQUIRED)
 target_link_libraries(libultraship PUBLIC spdlog::spdlog)
 
-find_package(libtcc REQUIRED)
-target_link_libraries(libultraship PUBLIC libtcc)
-
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
@@ -111,6 +108,7 @@ if (USE_OPENGLES)
 endif()
 
 target_link_libraries(libultraship PUBLIC prism)
+target_link_libraries(libultraship PUBLIC libtcc)
 
 #=================== Compile Options & Defs ===================
 

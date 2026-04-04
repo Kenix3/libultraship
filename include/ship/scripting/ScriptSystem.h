@@ -12,17 +12,16 @@ enum class SafeLevel { ONLY_TRUSTED_SCRIPTS, WARN_UNTRUSTED_SCRIPTS, ALLOW_ALL_S
 
 class ScriptSystem {
   public:
-    ScriptSystem(std::unordered_map<std::string, std::string> compileDefines, int codeVersion)
-        : mCompileDefines(compileDefines), mCodeVersion(codeVersion) {
+    ScriptSystem(const std::unordered_map<std::string, std::string>& compileDefines, const uint32_t codeVersion)
+        : mCodeVersion(codeVersion), mCompileDefines(compileDefines) {
     }
-    ~ScriptSystem();
 
     void Load(const std::shared_ptr<Archive>& archive);
     void UnloadAll();
     void* GetFunction(const std::string& name, const std::string& function);
 
   private:
-    int mCodeVersion;
+    uint32_t mCodeVersion;
     std::unordered_map<std::string, std::string> mCompileDefines;
     std::unordered_map<std::string, ScriptLoader> mLoadedScripts;
 };

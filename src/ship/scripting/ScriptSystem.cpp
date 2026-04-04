@@ -1,19 +1,18 @@
 #include "ship/scripting/ScriptSystem.h"
 
 #include "ship/resource/archive/Archive.h"
+#include "ship/resource/File.h"
 #include "ship/Context.h"
 #include "spdlog/spdlog.h"
 #include <optional>
 #include <fstream>
 #include <libtcc.h>
 
-#ifdef __APPLE__
-#include <TargetConditionals.h>
-#endif
+#include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
 std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
-                                                const std::shared_ptr<Ship::Archive>& archive = nullptr) {
+                                                const std::shared_ptr<Archive>& archive = nullptr) {
     const auto file = archive->LoadFile(path);
     if (file == nullptr || !file->IsLoaded) {
         SPDLOG_ERROR("Failed to load script file: {}", path);
@@ -23,51 +22,51 @@ std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
     return std::vector<uint8_t>(file->Buffer->begin(), file->Buffer->end());
 }
 
-std::string_view trim(std::string_view v) {
-    v.remove_prefix(std::min(v.find_first_not_of(" \t\r\n"), v.size()));
-    auto last = v.find_last_not_of(" \t\r\n");
-    if (last != std::string_view::npos) {
-        v.remove_suffix(v.size() - last - 1);
-    } else {
-        v = "";
+constexpr std::string_view trim(const std::string_view v) {
+    constexpr std::string_view whitespace = " \t\r\n";
+
+    const auto start = v.find_first_not_of(whitespace);
+    if (start == std::string_view::npos) {
+        return {};
     }
-    return v;
+
+    const auto end = v.find_last_not_of(whitespace);
+    return v.substr(start, end - start + 1);
 }
 
-std::string GetPlatform() {
+constexpr std::string GetPlatform() {
 #if defined(_WIN32) || defined(_WIN64)
 #if defined(_M_ARM64) || defined(__aarch64__)
-    const std::string target = "windows_arm64";
+    constexpr std::string target = "windows_arm64";
 #else
-    const std::string target = "windows_x64";
+    constexpr std::string target = "windows_x64";
 #endif
 #elif defined(__APPLE__) || defined(__MACH__)
 #if TARGET_OS_IPHONE
-    const std::string target = "ios";
+    constexpr std::string target = "ios";
 #elif TARGET_OS_MAC
-    const std::string target = "darwin";
+    constexpr std::string target = "darwin";
 #endif
 
 #elif defined(__ANDROID__)
-    const std::string target = "android";
+    constexpr std::string target = "android";
 
 #elif defined(__linux__)
 #if defined(__x86_64__) || defined(_M_X64)
-    const std::string target = "linux_x64";
+    constexpr std::string target = "linux_x64";
 #elif defined(__i386__) || defined(_M_IX86)
-    const std::string target = "linux_x86";
+    constexpr std::string target = "linux_x86";
 #elif defined(__aarch64__) || defined(_M_ARM64)
-    const std::string target = "linux_arm64";
+    constexpr std::string target = "linux_arm64";
 #else
-    const std::string target = "linux_generic";
+    constexpr std::string target = "linux_generic";
 #endif
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-    const std::string target = "bsd";
+    constexpr std::string target = "bsd";
 #else
 #error "Unsupported Operating System"
 #endif
-
     return target;
 }
 
@@ -79,9 +78,9 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
     }
 
     const SafeLevel lvl =
-        (SafeLevel)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0);
+        static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
     const ArchiveMetadata& meta = archive->GetMetadata();
-    const std::string platform = GetPlatform();
+    constexpr std::string platform = GetPlatform();
     const bool isCodeMod = !meta.Main.empty() || !meta.Binaries.empty();
 
     if (!isCodeMod) {
@@ -114,7 +113,6 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
     ScriptLoader loader;
 
     const auto& binaries = meta.Binaries;
-    const std::string platform = GetPlatform();
     const std::string temp = loader.GenerateTempFile();
 
     if (binaries.contains(platform)) {
@@ -181,7 +179,7 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
 
         if (tcc_output_file(s, temp.c_str()) == -1) {
             tcc_delete(s);
-            throw std::runtime_error("Failed to output compiled code for " + path);
+            throw std::runtime_error("Failed to output compiled code for " + temp);
         }
     }
 
