@@ -5,6 +5,8 @@
 #include <string>
 #include <stdint.h>
 #include <string>
+#include <mutex>
+#include <vector>
 
 #include "zip.h"
 
@@ -28,6 +30,10 @@ class O2rArchive final : virtual public Archive {
     std::shared_ptr<File> LoadFile(uint64_t hash);
 
   private:
+    zip_t* GetZipHandle();
+    void ReleaseZipHandle(zip_t* handle);
     zip_t* mZipArchive;
+    std::mutex mPoolMutex;
+    std::vector<zip_t*> mZipArchivePool;
 };
 } // namespace Ship
