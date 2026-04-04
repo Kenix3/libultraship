@@ -411,6 +411,11 @@ void Interpreter::TextureCacheClear() {
     }
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
+    // Pre-allocate buckets so the map never rehashes during normal operation.
+    // Rehashing invalidates all iterators, including those stored in LRU entries.
+    mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
+    // Null rendering-state pointers — they pointed into map nodes that are now freed.
+    std::fill(std::begin(mRenderingState.mTextures), std::end(mRenderingState.mTextures), nullptr);
 }
 
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
@@ -429,6 +434,10 @@ bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
         // Remove the texture that was least recently used
         it = mTextureCache.lru.front().it;
         mTextureCache.free_texture_ids.push_back(it->second.texture_id);
+        for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+            if (mRenderingState.mTextures[j] == &*it)
+                mRenderingState.mTextures[j] = nullptr;
+        }
         mTextureCache.map.erase(it);
         mTextureCache.lru.pop_front();
     }
@@ -467,6 +476,10 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
         bool again = false;
         for (auto it = mTextureCache.map.begin(bucket); it != mTextureCache.map.end(bucket); ++it) {
             if (it->first.texture_addr == origAddr) {
+                for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+                    if (mRenderingState.mTextures[j] == &*it)
+                        mRenderingState.mTextures[j] = nullptr;
+                }
                 mTextureCache.lru.erase(it->second.lru_location);
                 mTextureCache.free_texture_ids.push_back(it->second.texture_id);
                 mTextureCache.map.erase(it->first);
@@ -4379,6 +4392,9 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     }
 
     ucode_handler_index = UcodeHandlers::ucode_f3dex2;
+
+    // Pre-allocate texture cache buckets to prevent rehash-induced iterator invalidation.
+    mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
 }
 
 void Interpreter::Destroy() {
