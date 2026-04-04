@@ -6,6 +6,7 @@
 #include "spdlog/spdlog.h"
 #include <optional>
 #include <fstream>
+#include <string_view>
 #include <libtcc.h>
 
 #include "ship/config/ConsoleVariable.h"
@@ -34,40 +35,41 @@ constexpr std::string_view trim(const std::string_view v) {
     return v.substr(start, end - start + 1);
 }
 
-constexpr std::string GetPlatform() {
+constexpr std::string_view GetPlatform() {
 #if defined(_WIN32) || defined(_WIN64)
 #if defined(_M_ARM64) || defined(__aarch64__)
-    constexpr std::string target = "windows_arm64";
+    return "windows_arm64";
 #else
-    constexpr std::string target = "windows_x64";
+    return "windows_x64";
 #endif
+
 #elif defined(__APPLE__) || defined(__MACH__)
+#include <TargetConditionals.h>
 #if TARGET_OS_IPHONE
-    constexpr std::string target = "ios";
+    return "ios";
 #elif TARGET_OS_MAC
-    constexpr std::string target = "darwin";
+    return "darwin";
 #endif
 
 #elif defined(__ANDROID__)
-    constexpr std::string target = "android";
+    return "android";
 
 #elif defined(__linux__)
 #if defined(__x86_64__) || defined(_M_X64)
-    constexpr std::string target = "linux_x64";
+    return "linux_x64";
 #elif defined(__i386__) || defined(_M_IX86)
-    constexpr std::string target = "linux_x86";
+    return "linux_x86";
 #elif defined(__aarch64__) || defined(_M_ARM64)
-    constexpr std::string target = "linux_arm64";
+    return "linux_arm64";
 #else
-    constexpr std::string target = "linux_generic";
+    return "linux_generic";
 #endif
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-    constexpr std::string target = "bsd";
+    return "bsd";
 #else
 #error "Unsupported Operating System"
 #endif
-    return target;
 }
 
 void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
@@ -80,7 +82,7 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
     const SafeLevel lvl =
         static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
     const ArchiveMetadata& meta = archive->GetMetadata();
-    constexpr std::string platform = GetPlatform();
+    constexpr std::string_view platform = GetPlatform();
     const bool isCodeMod = !meta.Main.empty() || !meta.Binaries.empty();
 
     if (!isCodeMod) {
@@ -115,8 +117,8 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
     const auto& binaries = meta.Binaries;
     const std::string temp = loader.GenerateTempFile();
 
-    if (binaries.contains(platform)) {
-        const std::string& path = binaries.at(platform);
+    if (binaries.contains(std::string(platform))) {
+        const std::string& path = binaries.at(std::string(platform));
         auto data = LoadFromO2R(path, archive);
         if (!data.has_value()) {
             throw std::runtime_error("Failed to load platform-specific binary: " + path);
