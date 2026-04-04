@@ -43,9 +43,9 @@ std::string ScriptLoader::GenerateTempFile() {
     return std::string(tempFileName);
 
 #elif defined(__APPLE__) || defined(__linux__)
-    char path_template[] = "/tmp/mod_lib_XXXXXX";
+    char pathTemplate[] = "/tmp/mod_lib_XXXXXX";
 
-    int fd = mkstemp(path_template);
+    int fd = mkstemp(pathTemplate);
     if (fd == -1) {
         throw std::runtime_error("Failed to create temporary file: " + std::to_string(errno));
     }
@@ -57,7 +57,7 @@ std::string ScriptLoader::GenerateTempFile() {
     // mkstemp creates a physical file on the hard drive.
     // We can safely close the FD now; the file will remain on disk for you to open later.
     close(fd);
-    return std::string(path_template);
+    return std::string(pathTemplate);
 
 #else
 #error "Unsupported Operating System"
@@ -68,19 +68,22 @@ std::string ScriptLoader::GenerateTempFile() {
 void FixELFHeader(const std::string& path) {
     // 1. Read the file into a buffer
     std::ifstream in(path, std::ios::binary | std::ios::ate);
-    if (!in.is_open())
+    if (!in.is_open()) {
         return;
+    }
 
     std::streamsize size = in.tellg();
     in.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
-    if (!in.read(reinterpret_cast<char*>(buffer.data()), size))
+    if (!in.read(reinterpret_cast<char*>(buffer.data()), size)) {
         return;
+    }
     in.close();
 
-    if (buffer.size() < sizeof(Elf64_Ehdr))
+    if (buffer.size() < sizeof(Elf64_Ehdr)) {
         return;
+    }
 
     // 2. ELF Surgery
     Elf64_Ehdr* header = reinterpret_cast<Elf64_Ehdr*>(buffer.data());
@@ -116,8 +119,9 @@ void FixELFHeader(const std::string& path) {
 
     // 3. Write it back
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-    if (!out.is_open())
+    if (!out.is_open()) {
         return;
+    }
     out.write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
     out.close();
 
@@ -156,8 +160,9 @@ void ScriptLoader::Init(const std::string& path) {
 }
 
 void* ScriptLoader::GetFunction(const std::string& name) {
-    if (!mHandle)
+    if (!mHandle) {
         return nullptr;
+    }
 #if defined(_WIN32) || defined(__CYGWIN__)
     return (void*)GetProcAddress((HMODULE)mHandle, name.c_str());
 #else
