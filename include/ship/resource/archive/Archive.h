@@ -17,6 +17,26 @@ namespace Ship {
 struct File;
 struct ResourceInitData;
 
+struct ArchiveMetadata {
+    std::string Name;
+    std::string Icon;
+    std::string Author;
+    std::string Version;
+    std::string Website;
+    std::string Description;
+    std::string License;
+
+    uint32_t CodeVersion;
+    uint32_t GameVersion;
+
+    std::string Main;
+    std::unordered_map<std::string, std::string> Binaries;
+    std::vector<std::string> Dependencies;
+
+    std::string Checksum;
+    std::string Signature;
+};
+
 class Archive : public std::enable_shared_from_this<Archive> {
     friend class ArchiveManager;
 
@@ -37,6 +57,9 @@ class Archive : public std::enable_shared_from_this<Archive> {
     bool HasFile(uint64_t hash);
     bool HasGameVersion();
     uint32_t GetGameVersion();
+    const ArchiveMetadata& GetMetadata();
+    const bool IsSigned();
+    const bool IsChecksumValid();
     const std::string& GetPath();
     bool IsLoaded();
 
@@ -51,8 +74,11 @@ class Archive : public std::enable_shared_from_this<Archive> {
 
   private:
     bool mIsLoaded;
+    bool mIsSigned;
+    bool mIsChecksumValid;
     bool mHasGameVersion;
     uint32_t mGameVersion;
+    ArchiveMetadata mMetadata;
     std::string mPath;
     std::shared_ptr<std::unordered_map<uint64_t, std::string>> mHashes;
 };
