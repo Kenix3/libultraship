@@ -146,14 +146,20 @@ if(NOT TARGET libtcc)
     if(CMAKE_CROSSCOMPILING)
         find_program(HOST_C_COMPILER NAMES cc clang gcc REQUIRED)
         set(C2STR_EXE "${tinycc_BINARY_DIR}/tcc_c2str_host")
-
         if(CMAKE_HOST_WIN32)
             set(C2STR_EXE "${C2STR_EXE}.exe")
         endif()
 
+        set(SIGN_COMMAND "")
+        if(CMAKE_HOST_APPLE)
+            set(SIGN_COMMAND COMMAND codesign -f -s - "${C2STR_EXE}")
+        endif()
+
         add_custom_command(
             OUTPUT "${C2STR_EXE}"
-            COMMAND ${HOST_C_COMPILER} -DC2STR -o "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/conftest.c"
+            COMMAND ${CMAKE_COMMAND} -E env --unset=SDKROOT --unset=IPHONEOS_DEPLOYMENT_TARGET --unset=TVOS_DEPLOYMENT_TARGET
+                    ${HOST_C_COMPILER} -DC2STR -o "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/conftest.c"
+            ${SIGN_COMMAND}
             DEPENDS "${tinycc_SOURCE_DIR}/conftest.c"
             COMMENT "Compiling host tool c2str natively..."
         )
