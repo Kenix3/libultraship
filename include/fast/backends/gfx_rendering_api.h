@@ -4,6 +4,7 @@
 
 #include <unordered_map>
 #include <set>
+#include <map>
 #include "imconfig.h"
 
 namespace Fast {
@@ -12,6 +13,14 @@ struct ShaderProgram;
 struct GfxClipParameters {
     bool z_is_from_0_to_1;
     bool invertY;
+};
+
+struct ShaderProgramKey {
+    uint64_t shader_id0;
+    uint32_t shader_id1;
+    const char* display_list;
+
+    bool operator==(const ShaderProgramKey&) const noexcept = default;
 };
 
 enum FilteringMode { FILTER_THREE_POINT, FILTER_LINEAR, FILTER_NONE };
@@ -27,6 +36,31 @@ struct hash_pair_ff {
     }
 };
 
+template<typename T, size_t N> using Vector = std::array<T, N>;
+template<typename T, size_t C, size_t R> using Matrix = std::array<T, C * R>;
+
+using ShaderPrimitiveType = std::variant<
+    bool,
+    int32_t,
+    uint32_t,
+    uint64_t,
+    float,
+    double,
+
+    Vector<float, 2>,    Vector<float, 3>,    Vector<float, 4>,
+    Vector<int32_t, 2>,  Vector<int32_t, 3>,  Vector<int32_t, 4>,
+    Vector<uint32_t, 2>, Vector<uint32_t, 3>, Vector<uint32_t, 4>,
+    Vector<bool, 2>,     Vector<bool, 3>,     Vector<bool, 4>,
+
+    Matrix<float, 2, 2>, Matrix<float, 3, 3>, Matrix<float, 4, 4>,
+    Matrix<float, 3, 2>, Matrix<float, 4, 3>
+>;
+
+struct ShaderPrimitive {
+    std::string Key;
+    ShaderPrimitiveType Value;
+};
+
 class GfxRenderingAPI {
   public:
     virtual ~GfxRenderingAPI() = default;
@@ -35,12 +69,17 @@ class GfxRenderingAPI {
     virtual GfxClipParameters GetClipParameters() = 0;
     virtual void UnloadShader(ShaderProgram* oldPrg) = 0;
     virtual void LoadShader(ShaderProgram* newPrg) = 0;
-    virtual ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) = 0;
-    virtual ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) = 0;
+    virtual void ClearShaderCache() = 0;
+    virtual ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) = 0;
+    virtual ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1, const char* display_list) = 0;
     virtual void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) = 0;
     virtual uint32_t NewTexture() = 0;
     virtual void SelectTexture(int tile, uint32_t textureId) = 0;
     virtual void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) = 0;
+    void SetShaderUniforms(const std::vector<ShaderPrimitive>& uniforms) {
+        mShaderUniforms = uniforms;
+    }
+    virtual void BindShaderUniforms() = 0;
     virtual void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) = 0;
     virtual void SetDepthTestAndMask(bool depth_test, bool z_upd) = 0;
     virtual void SetZmodeDecal(bool decal) = 0;
@@ -81,5 +120,22 @@ class GfxRenderingAPI {
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
     bool mSrgbMode = false;
+
+    std::vector<ShaderPrimitive> mShaderUniforms;
 };
 } // namespace Fast
+
+namespace std {
+    template <>
+    struct hash<Fast::ShaderProgramKey> {
+        size_t operator()(const Fast::ShaderProgramKey& k) const noexcept {
+            const size_t m = 0x9e3779b97f4a7c15; 
+            size_t seed = 0;
+            seed ^= k.shader_id0 + m + (seed << 6) + (seed >> 2);
+            seed ^= k.shader_id1 + m + (seed << 6) + (seed >> 2);
+            seed ^= k.display_list != nullptr ? std::hash<const char*>{}(k.display_list) : 0 + m + (seed << 6) + (seed >> 2);
+
+            return seed;
+        }
+    };
+}
