@@ -42,8 +42,8 @@ namespace NS {
 class AutoreleasePool;
 }
 
-static int cantor(uint64_t a, uint64_t b) {
-    return (a + b + 1.0) * (a + b) / 2 + b;
+static size_t cantor(uint64_t a, uint64_t b) {
+    return (a + b) * (a + b + 1) / 2 + b;
 }
 
 struct hash_pair_shader_ids {
