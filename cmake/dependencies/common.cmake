@@ -112,6 +112,27 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(prism)
 
+#=========== monocypher ===========
+FetchContent_Declare(
+    monocypher
+    GIT_REPOSITORY https://github.com/LoupVaillant/Monocypher.git
+    GIT_TAG 0d85f98c9d9b0227e42cf795cb527dff372b40a4
+)
+FetchContent_MakeAvailable(monocypher)
+
+add_library(monocypher STATIC)
+set_property(TARGET monocypher PROPERTY C_STANDARD 11)
+
+target_sources(monocypher PRIVATE
+    ${monocypher_SOURCE_DIR}/src/monocypher.c
+    ${monocypher_SOURCE_DIR}/src/optional/monocypher-ed25519.c
+)
+
+target_include_directories(monocypher PUBLIC 
+    ${monocypher_SOURCE_DIR}/src
+    ${monocypher_SOURCE_DIR}/src/optional
+)
+
 #=========== libtcc ===========
 FetchContent_Declare(
     tinycc
