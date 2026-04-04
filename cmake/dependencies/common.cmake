@@ -147,7 +147,20 @@ if(NOT TARGET libtcc)
         "${tinycc_SOURCE_DIR}/libtcc.c"
     )
 
-    target_include_directories(libtcc PUBLIC ${tinycc_SOURCE_DIR})
+    set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
+
+    configure_file(
+        "${tinycc_SOURCE_DIR}/libtcc.h"
+        "${TCC_SAFE_INCLUDE_DIR}/libtcc.h"
+        COPYONLY
+    )
+
+    target_include_directories(libtcc PRIVATE
+        "${tinycc_SOURCE_DIR}"
+    )
+    target_include_directories(libtcc PUBLIC
+        $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
+    )
 
     if(UNIX AND NOT APPLE)
         target_link_libraries(libtcc PRIVATE dl m pthread)
