@@ -57,7 +57,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     bool HasFile(uint64_t hash);
     bool HasGameVersion();
     uint32_t GetGameVersion();
-    const ArchiveManifest& GetMetadata();
+    const ArchiveManifest& GetManifest();
     bool IsSigned();
     bool IsChecksumValid();
     const std::string& GetPath();

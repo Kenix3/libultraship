@@ -139,7 +139,7 @@ uint32_t Archive::GetGameVersion() {
     return mGameVersion;
 }
 
-const ArchiveManifest& Archive::GetMetadata() {
+const ArchiveManifest& Archive::GetManifest() {
     return mManifest;
 }
 
