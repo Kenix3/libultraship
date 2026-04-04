@@ -143,12 +143,23 @@ if(NOT TARGET libtcc)
         endif()
     endif()
 
+    add_executable(tcc_c2str "${tinycc_SOURCE_DIR}/conftest.c")
+    target_compile_definitions(tcc_c2str PRIVATE C2STR)
+    target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
+
+    add_custom_command(
+        OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
+        COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
+        DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h"
+        COMMENT "Generating tccdefs_.h for TinyCC..."
+    )
+
     add_library(libtcc STATIC
         "${tinycc_SOURCE_DIR}/libtcc.c"
+        "${tinycc_BINARY_DIR}/tccdefs_.h"
     )
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
-
     configure_file(
         "${tinycc_SOURCE_DIR}/libtcc.h"
         "${TCC_SAFE_INCLUDE_DIR}/libtcc.h"
@@ -157,6 +168,7 @@ if(NOT TARGET libtcc)
 
     target_include_directories(libtcc PRIVATE
         "${tinycc_SOURCE_DIR}"
+        "${tinycc_BINARY_DIR}"
     )
     target_include_directories(libtcc PUBLIC
         $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
