@@ -1073,6 +1073,7 @@ bool GfxWindowBackendDXGI::CanDisableVsync() {
 }
 
 void GfxWindowBackendDXGI::Destroy() {
+    // During messy teardowns, it doesn't take a huge tree to eat through the stack.
     // Iteratively clear frame-stat containers to avoid MSVC's recursive _Erase_tree
     // stack overflow on deep std::set/std::map trees during destruction.
     while (!mPendingFrameStats.empty()) {
