@@ -81,17 +81,17 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
 
     const SafeLevel lvl =
         static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
-    const ArchiveMetadata& meta = archive->GetMetadata();
+    const ArchiveManifest& info = archive->GetMetadata();
     constexpr std::string_view platform = GetPlatform();
-    const bool isCodeMod = !meta.Main.empty() || !meta.Binaries.empty();
+    const bool isCodeMod = !info.Main.empty() || !info.Binaries.empty();
 
     if (!isCodeMod) {
         return;
     }
 
-    if (meta.CodeVersion != mCodeVersion) {
+    if (info.CodeVersion != mCodeVersion) {
         SPDLOG_ERROR("Incompatible code version for archive {}: expected {}, got {}", archive->GetPath(), mCodeVersion,
-                     meta.CodeVersion);
+                     info.CodeVersion);
         return;
     }
 
@@ -114,7 +114,7 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
 
     ScriptLoader loader;
 
-    const auto& binaries = meta.Binaries;
+    const auto& binaries = info.Binaries;
     const std::string temp = loader.GenerateTempFile();
 
     if (binaries.contains(std::string(platform))) {
@@ -130,10 +130,10 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
         }
         out.write(reinterpret_cast<const char*>(data->data()), data->size());
         out.close();
-    } else if (!meta.Main.empty()) {
-        const auto data = LoadFromO2R(meta.Main, archive);
+    } else if (!info.Main.empty()) {
+        const auto data = LoadFromO2R(info.Main, archive);
         if (!data.has_value()) {
-            throw std::runtime_error("Failed to load main script: " + meta.Main);
+            throw std::runtime_error("Failed to load main script: " + info.Main);
         }
 
         TCCState* s = tcc_new();
@@ -190,7 +190,7 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
 
     if (init) {
         init();
-        mLoadedScripts[meta.Name] = loader;
+        mLoadedScripts[info.Name] = loader;
     }
 };
 

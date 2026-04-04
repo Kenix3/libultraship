@@ -20,7 +20,7 @@
 namespace Ship {
 Archive::Archive(const std::string& path)
     : mIsLoaded(false), mIsSigned(false), mIsChecksumValid(false), mHasGameVersion(false), mGameVersion(0xFFFFFFFF),
-      mMetadata(), mPath(path) {
+      mManifest(), mPath(path) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 
@@ -52,26 +52,26 @@ void Archive::Load() {
         }
     }
 
-    auto m = LoadFile("metadata.json");
+    auto m = LoadFile("manifest.json");
     if (m != nullptr && m->IsLoaded) {
         try {
             auto json = nlohmann::json::parse(m->Buffer->begin(), m->Buffer->end());
-            mMetadata.Name = json["name"].get<std::string>();
-            mMetadata.Icon = json.value("icon", "");
-            mMetadata.Author = json.value("author", "Unknown");
-            mMetadata.Version = json.value("version", "1.0");
-            mMetadata.Website = json.value("website", "https://github.com/Kenix3/libultraship");
-            mMetadata.Description = json.value("description", "No description provided.");
-            mMetadata.License = json.value("license", "MIT");
-            mMetadata.CodeVersion = json.value("code_version", 1);
-            mMetadata.GameVersion = json.value("game_version", 0xFFFFFFFF);
-            mMetadata.Main = json.value("main", "");
-            mMetadata.Binaries = json.value("binaries", std::unordered_map<std::string, std::string>{});
-            mMetadata.Dependencies = json.value("dependencies", std::vector<std::string>{});
+            mManifest.Name = json["name"].get<std::string>();
+            mManifest.Icon = json.value("icon", "");
+            mManifest.Author = json.value("author", "Unknown");
+            mManifest.Version = json.value("version", "1.0");
+            mManifest.Website = json.value("website", "https://github.com/Kenix3/libultraship");
+            mManifest.Description = json.value("description", "No description provided.");
+            mManifest.License = json.value("license", "MIT");
+            mManifest.CodeVersion = json.value("code_version", 1);
+            mManifest.GameVersion = json.value("game_version", 0xFFFFFFFF);
+            mManifest.Main = json.value("main", "");
+            mManifest.Binaries = json.value("binaries", std::unordered_map<std::string, std::string>{});
+            mManifest.Dependencies = json.value("dependencies", std::vector<std::string>{});
 
-            if (mMetadata.GameVersion != 0xFFFFFFFF) {
+            if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
-                SetGameVersion(mMetadata.GameVersion);
+                SetGameVersion(mManifest.GameVersion);
                 isGameVersionValid =
                     Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(
                         GetGameVersion());
@@ -137,8 +137,8 @@ uint32_t Archive::GetGameVersion() {
     return mGameVersion;
 }
 
-const ArchiveMetadata& Archive::GetMetadata() {
-    return mMetadata;
+const ArchiveManifest& Archive::GetMetadata() {
+    return mManifest;
 }
 
 bool Archive::IsSigned() {
@@ -175,7 +175,7 @@ void Archive::IndexFile(const std::string& filePath) {
 }
 
 void Archive::Validate() {
-    if (mMetadata.Checksum.empty()) {
+    if (mManifest.Checksum.empty()) {
         SPDLOG_WARN("Archive {} does not have a checksum in its metadata, skipping validation", GetPath());
         return;
     }
@@ -215,22 +215,22 @@ void Archive::Validate() {
         hex_ss << std::setw(2) << static_cast<int>(hash[i]);
     }
 
-    if (hex_ss.str() != mMetadata.Checksum) {
-        SPDLOG_ERROR("Checksum validation failed for archive {}. Expected {}, got {}", GetPath(), mMetadata.Checksum,
+    if (hex_ss.str() != mManifest.Checksum) {
+        SPDLOG_ERROR("Checksum validation failed for archive {}. Expected {}, got {}", GetPath(), mManifest.Checksum,
                      hex_ss.str());
         return;
     }
 
     mIsChecksumValid = true;
 
-    if (mMetadata.Signature.empty()) {
+    if (mManifest.Signature.empty()) {
         SPDLOG_WARN("Archive {} is marked as signed but does not have a signature in its metadata, skipping signature "
                     "validation",
                     GetPath());
         return;
     }
 
-    std::vector<uint8_t> signature = HexToBytes(mMetadata.Signature);
+    std::vector<uint8_t> signature = HexToBytes(mManifest.Signature);
 
     if (signature.size() != 64) {
         SPDLOG_ERROR("Invalid signature size for archive {}. Expected 64 bytes, got {}", GetPath(), signature.size());
