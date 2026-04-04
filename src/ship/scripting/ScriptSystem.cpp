@@ -81,7 +81,7 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
 
     const SafeLevel lvl =
         static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
-    const ArchiveManifest& info = archive->GetMetadata();
+    const ArchiveManifest& info = archive->GetManifest();
     constexpr std::string_view platform = GetPlatform();
     const bool isCodeMod = !info.Main.empty() || !info.Binaries.empty();
 
