@@ -209,15 +209,15 @@ void Archive::Validate() {
     std::vector<uint8_t> hash(64);
     crypto_blake2b_final(&ctx, hash.data());
 
-    std::stringstream hex_ss;
-    hex_ss << std::hex << std::setfill('0');
+    std::stringstream hexSs;
+    hexSs << std::hex << std::setfill('0');
     for (int i = 0; i < 64; ++i) {
-        hex_ss << std::setw(2) << static_cast<int>(hash[i]);
+        hexSs << std::setw(2) << static_cast<int>(hash[i]);
     }
 
-    if (hex_ss.str() != mManifest.Checksum) {
+    if (hexSs.str() != mManifest.Checksum) {
         SPDLOG_ERROR("Checksum validation failed for archive {}. Expected {}, got {}", GetPath(), mManifest.Checksum,
-                     hex_ss.str());
+                     hexSs.str());
         return;
     }
 
