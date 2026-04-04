@@ -29,6 +29,7 @@ class Device;
 class Function;
 class Buffer;
 class RenderPipelineState;
+class ComputePipelineState;
 class CommandQueue;
 class Viewport;
 } // namespace MTL
