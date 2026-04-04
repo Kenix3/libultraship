@@ -831,6 +831,25 @@ void GfxRenderingAPIOGL::ClearFramebuffer(bool color, bool depth) {
     }
 }
 
+void GfxRenderingAPIOGL::ClearDepthRegion(int x, int y, int w, int h) {
+    // Save current scissor state so callers don't need to manually invalidate.
+    GLint prevScissor[4];
+    GLboolean scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    glGetIntegerv(GL_SCISSOR_BOX, prevScissor);
+
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x, y, w, h);
+    glDepthMask(GL_TRUE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glDepthMask(mCurrentDepthMask ? GL_TRUE : GL_FALSE);
+
+    // Restore previous scissor state.
+    glScissor(prevScissor[0], prevScissor[1], prevScissor[2], prevScissor[3]);
+    if (!scissorWasEnabled) {
+        glDisable(GL_SCISSOR_TEST);
+    }
+}
+
 void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
     FramebufferOGL& fb_dst = mFrameBuffers[fb_id_target];
     FramebufferOGL& fb_src = mFrameBuffers[fb_id_source];
@@ -860,7 +879,14 @@ void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
 void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
     int tile = 0;
-    SelectTexture(tile, mFrameBuffers[fb_id].clrbuf);
+    GLuint texId = mFrameBuffers[fb_id].clrbuf;
+    // Ensure the textures metadata vector can hold this FB texture handle.
+    // FB color buffers are created outside NewTexture(), so the vector may
+    // not have been resized for them yet.
+    if (texId >= textures.size()) {
+        textures.resize((size_t)texId + 1);
+    }
+    SelectTexture(tile, texId);
 }
 
 void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,

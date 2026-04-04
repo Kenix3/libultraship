@@ -961,6 +961,18 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
             : mRdp->loaded_texture[tmemIdex].addr;
 
+    // Check if this texture address is a registered GPU framebuffer mirror.
+    // If so, bind the GPU FB directly — full resolution, no CPU readback needed.
+    if (origAddr != nullptr && !importReplacement) {
+        auto fbIt = mFbTextures.find((uintptr_t)origAddr);
+        if (fbIt != mFbTextures.end()) {
+            Flush();
+            mRapi->SelectTextureFb(fbIt->second);
+            mRdp->textures_changed[i] = false;
+            return;
+        }
+    }
+
     if (origAddr == nullptr) {
         // Try the other TMEM slot -- some multi-tile setups only load one slot
         // and expect both tiles to reference it.
@@ -1212,7 +1224,10 @@ void Interpreter::GfxSpPopMatrix(uint32_t count) {
 }
 
 float Interpreter::AdjXForAspectRatio(float x) const {
-    if (mFbActive) {
+    // Skip widescreen adjustment for fixed-size off-screen FBs (HUD elements,
+    // small capture buffers). But resizable FBs (resize=true) are capturing
+    // the main scene and should match the window's aspect ratio.
+    if (mFbActive && mActiveFrameBuffer != mFrameBuffers.end() && !mActiveFrameBuffer->second.resize) {
         return x;
     } else {
         return x * (4.0f / 3.0f) / ((float)mCurDimensions.width / (float)mCurDimensions.height);
@@ -1520,9 +1535,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                       (mRdp->other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
                      ((mRdp->other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
                       (mRdp->other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
-    uint8_t blend_src = mRdp->other_mode_l >> 30;
-    bool use_blend_color = blend_src == G_BL_CLR_BL;
-    bool use_fog = blend_src == G_BL_CLR_FOG || use_blend_color;
+    bool use_fog = (mRdp->other_mode_l >> 30) == G_BL_CLR_FOG;
     bool texture_edge = (mRdp->other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
     bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
@@ -1538,6 +1551,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             texture_edge = false;
         }
         use_alpha = true;
+    }
+
+    // N64 coverage simulation: When ALPHA_CVG_SEL is set, the RDP blender uses
+    // coverage as its alpha input instead of the combiner output. On N64, coverage
+    // for textured pixels is derived from texture alpha — zero-alpha texels produce
+    // zero coverage and are never written, regardless of OPA/XLU blender mode.
+    if (!use_alpha && (mRdp->other_mode_l & ALPHA_CVG_SEL)) {
+        use_alpha = true;
+        alpha_threshold = true;
     }
 
     if (use_alpha) {
@@ -1759,18 +1781,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
 
         if (use_fog) {
-            if (use_blend_color) {
-                // Shroud/blend mode: blend toward blend_color using fog alpha as factor
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.a / 255.0f;
-            } else {
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
-            }
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
+            mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
         }
 
         if (use_grayscale) {
@@ -1842,9 +1856,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                     mBufVbo[mBufVboLen++] = color->g / 255.0f;
                     mBufVbo[mBufVboLen++] = color->b / 255.0f;
                 } else {
-                    if (use_fog && !use_blend_color && color == &v_arr[i]->color) {
-                        // Shade alpha is 100% for standard fog, blend color mode preserves
-                        // it since fog alpha is the blend factor
+                    if (use_fog && color == &v_arr[i]->color) {
+                        // Shade alpha is 100% for fog
                         mBufVbo[mBufVboLen++] = 1.0f;
                     } else {
                         mBufVbo[mBufVboLen++] = color->a / 255.0f;
@@ -2314,10 +2327,7 @@ void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    mRdp->blend_color.r = r;
-    mRdp->blend_color.g = g;
-    mRdp->blend_color.b = b;
-    mRdp->blend_color.a = a;
+    // TODO: Implement this command.
 }
 
 void Interpreter::GfxDpSetFillColor(uint32_t packed_color) {
@@ -2525,17 +2535,48 @@ void Interpreter::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_
 
 void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
     if (mRdp->color_image_address == mRdp->z_buf_address) {
-        // Don't clear Z buffer here since we already did it with glClear
+        // Fullscreen Z clears are redundant — already done by glClear at frame start.
+        bool isFullScreen = (ulx <= 0 && uly <= 0 && lrx >= (int32_t)(mNativeDimensions.width - 1) * 4 &&
+                             lry >= (int32_t)(mNativeDimensions.height - 1) * 4);
+        if (isFullScreen) {
+            return;
+        }
+
+        // Partial depth clear (e.g. HUD model regions): clear the actual depth buffer
+        // via a scissored depth clear instead of drawing a colored rect to the color buffer.
+        Flush();
+
+        // Convert U10.2 coords to pixel coords and add +1 pixel for fill mode
+        int32_t expanded_lrx = lrx + (1 << 2);
+        int32_t expanded_lry = lry + (1 << 2);
+        float x = ulx / 4.0f;
+        float y = expanded_lry / 4.0f;
+        float w = (expanded_lrx - ulx) / 4.0f;
+        float h = (expanded_lry - uly) / 4.0f;
+
+        struct XYWidthHeight area;
+        area.x = (int16_t)x;
+        area.y = (int16_t)y;
+        area.width = (uint32_t)w;
+        area.height = (uint32_t)h;
+        AdjustVIewportOrScissor(&area);
+
+        mRapi->ClearDepthRegion(area.x, area.y, area.width, area.height);
         return;
     }
     uint32_t mode = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
-    // OTRTODO: This is a bit of a hack for widescreen screen fades, but it'll work for now...
-    if (ulx == 0 && uly == 0 && lrx == (319 * 4) && lry == (239 * 4)) {
-        ulx = -1024;
-        uly = -1024;
-        lrx = 2048;
-        lry = 2048;
+    // Expand fullscreen fill rects to cover widescreen viewports.
+    // Without this, screen clears and fades only cover the native 4:3 area.
+    if (ulx == 0 && uly == 0) {
+        bool isFullScreen = (lrx == ((int32_t)(mNativeDimensions.width - 1) * 4) &&
+                             lry == ((int32_t)(mNativeDimensions.height - 1) * 4));
+        if (isFullScreen) {
+            ulx = -1024;
+            uly = -1024;
+            lrx = 2048;
+            lry = 2048;
+        }
     }
 
     if (mode == G_CYC_COPY || mode == G_CYC_FILL) {
@@ -4290,6 +4331,14 @@ void Interpreter::SpReset() {
     CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
 }
 
+void Interpreter::RegisterFbTexture(const void* cpuAddr, int fbId) {
+    mFbTextures[(uintptr_t)cpuAddr] = fbId;
+}
+
+void Interpreter::UnregisterFbTexture(const void* cpuAddr) {
+    mFbTextures.erase((uintptr_t)cpuAddr);
+}
+
 void Interpreter::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
     mWapi->GetDimensions(width, height, posX, posY);
 }
@@ -4812,4 +4861,12 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 extern "C" void gfx_texture_cache_clear() {
     Fast::mInstance.lock().get()->TextureCacheClear();
+}
+
+extern "C" void gfx_register_fb_texture(const void* cpuAddr, int fbId) {
+    Fast::mInstance.lock().get()->RegisterFbTexture(cpuAddr, fbId);
+}
+
+extern "C" void gfx_unregister_fb_texture(const void* cpuAddr) {
+    Fast::mInstance.lock().get()->UnregisterFbTexture(cpuAddr);
 }
