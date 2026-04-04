@@ -68,6 +68,8 @@ void Archive::Load() {
             mManifest.Main = json.value("main", "");
             mManifest.Binaries = json.value("binaries", std::unordered_map<std::string, std::string>{});
             mManifest.Dependencies = json.value("dependencies", std::vector<std::string>{});
+            mManifest.Checksum = json.value("checksum", "");
+            mManifest.Signature = json.value("signature", "");
 
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
@@ -183,17 +185,20 @@ void Archive::Validate() {
     std::vector<std::tuple<std::string, std::shared_ptr<File>>> files;
 
     for (const auto& [hash, filePath] : *mHashes) {
-        if (filePath == "metadata.json" || filePath == "version") {
+        std::string normalizedPath = filePath;
+        std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+        if (normalizedPath == "manifest.json" || normalizedPath.back() == '/') {
             continue;
         }
 
-        auto file = LoadFile(hash);
+        auto file = LoadFile(filePath);
         if (file == nullptr || !file->IsLoaded) {
             SPDLOG_ERROR("Failed to load file {} from archive {} during validation", filePath, GetPath());
             return;
         }
 
-        files.emplace_back(filePath, file);
+        files.emplace_back(normalizedPath, file);
     }
 
     std::sort(files.begin(), files.end(),
@@ -202,8 +207,12 @@ void Archive::Validate() {
 
     crypto_blake2b_ctx ctx;
     crypto_blake2b_init(&ctx, 64);
-    for (const auto& [filePath, file] : files) {
-        crypto_blake2b_update(&ctx, reinterpret_cast<const uint8_t*>(file->Buffer->data()), file->Buffer->size());
+
+    for (const auto& [normalizedPath, file] : files) {
+        crypto_blake2b_update(&ctx, reinterpret_cast<const uint8_t*>(normalizedPath.c_str()), normalizedPath.length());
+        if (file->Buffer->size() > 0) {
+            crypto_blake2b_update(&ctx, reinterpret_cast<const uint8_t*>(file->Buffer->data()), file->Buffer->size());
+        }
     }
 
     std::vector<uint8_t> hash(64);
@@ -215,9 +224,11 @@ void Archive::Validate() {
         hexSs << std::setw(2) << static_cast<int>(hash[i]);
     }
 
-    if (hexSs.str() != mManifest.Checksum) {
+    std::string calculatedChecksumHex = hexSs.str();
+
+    if (calculatedChecksumHex != mManifest.Checksum) {
         SPDLOG_ERROR("Checksum validation failed for archive {}. Expected {}, got {}", GetPath(), mManifest.Checksum,
-                     hexSs.str());
+                     calculatedChecksumHex);
         return;
     }
 
@@ -240,7 +251,10 @@ void Archive::Validate() {
     bool validSignature = false;
 
     for (const auto& key : Context::GetInstance()->GetKeystoreSystem()->GetAllKeys()) {
-        const int status = crypto_ed25519_check(signature.data(), key.data(), hash.data(), hash.size());
+        const int status = crypto_ed25519_check(signature.data(), key.data(),
+                                                reinterpret_cast<const uint8_t*>(calculatedChecksumHex.data()),
+                                                calculatedChecksumHex.length());
+
         if (status == 0) {
             validSignature = true;
             break;
@@ -255,6 +269,7 @@ void Archive::Validate() {
     }
 
     mIsSigned = true;
+    SPDLOG_INFO("Archive {} successfully authenticated.", GetPath());
 }
 
 std::vector<uint8_t> Archive::HexToBytes(const std::string& hex) {
