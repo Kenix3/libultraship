@@ -23,7 +23,7 @@ std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
     return std::vector<uint8_t>(file->Buffer->begin(), file->Buffer->end());
 }
 
-constexpr std::string_view trim(const std::string_view v) {
+constexpr std::string_view Trim(const std::string_view v) {
     constexpr std::string_view whitespace = " \t\r\n";
 
     const auto start = v.find_first_not_of(whitespace);
@@ -164,18 +164,18 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
                 continue;
             }
 
-            std::string safe_path = line;
+            std::string safePath = line;
 
-            auto buf = LoadFromO2R(safe_path, archive);
+            auto buf = LoadFromO2R(safePath, archive);
             if (!buf.has_value()) {
                 tcc_delete(s);
-                throw std::runtime_error("Failed to load script file: '" + safe_path + "'");
+                throw std::runtime_error("Failed to load script file: '" + safePath + "'");
             }
 
             std::string sourceCode(reinterpret_cast<const char*>(buf->data()), buf->size());
             if (tcc_compile_string(s, sourceCode.c_str()) == -1) {
                 tcc_delete(s);
-                throw std::runtime_error("TCC Error in " + safe_path);
+                throw std::runtime_error("TCC Error in " + safePath);
             }
         }
 
