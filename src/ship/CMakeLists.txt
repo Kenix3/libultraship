@@ -82,6 +82,12 @@ file(GLOB_RECURSE Source_Files__Scripting RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "
 source_group("scripting" FILES ${Source_Files__Scripting})
 target_sources(libultraship PRIVATE ${Source_Files__Scripting})
 
+#=================== Security ===================
+
+file(GLOB_RECURSE Source_Files__Security RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "security/*.cpp")
+source_group("security" FILES ${Source_Files__Security})
+target_sources(libultraship PRIVATE ${Source_Files__Security})
+
 #=================== Port ===================
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Android" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")

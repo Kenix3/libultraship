@@ -11,6 +11,7 @@
 #include "ship/window/FileDropMgr.h"
 #include "ship/events/EventSystem.h"
 #include "ship/scripting/ScriptSystem.h"
+#include "ship/security/KeystoreSystem.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -206,6 +207,8 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
         return true;
     }
 
+    InitKeystoreSystem();
+
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
     if (archivePaths.empty()) {
@@ -368,6 +371,19 @@ bool Context::InitScriptSystem(std::unordered_map<std::string, std::string> comp
     return true;
 }
 
+bool Context::InitKeystoreSystem() {
+    if (GetKeystoreSystem() != nullptr) {
+        return true;
+    }
+
+    mKeystoreSystem = std::make_shared<KeystoreSystem>();
+    if (GetKeystoreSystem() == nullptr) {
+        SPDLOG_ERROR("Failed to initialize keystore system");
+        return false;
+    }
+    return true;
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -418,6 +434,10 @@ std::shared_ptr<EventSystem> Context::GetEventSystem() {
 
 std::shared_ptr<ScriptSystem> Context::GetScriptSystem() {
     return mScriptSystem;
+}
+
+std::shared_ptr<KeystoreSystem> Context::GetKeystoreSystem() {
+    return mKeystoreSystem;
 }
 
 std::string Context::GetName() {
