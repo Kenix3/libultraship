@@ -1,0 +1,215 @@
+#include "ship/scripting/ScriptSystem.h"
+
+#include "ship/resource/archive/Archive.h"
+#include "ship/Context.h"
+#include "spdlog/spdlog.h"
+#include <optional>
+#include <fstream>
+#include <libtcc.h>
+
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
+namespace Ship {
+std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
+                                                const std::shared_ptr<Ship::Archive>& archive = nullptr) {
+    const auto file = archive->LoadFile(path);
+    if (file == nullptr || !file->IsLoaded) {
+        SPDLOG_ERROR("Failed to load script file: {}", path);
+        return std::nullopt;
+    }
+
+    return std::vector<uint8_t>(file->Buffer->begin(), file->Buffer->end());
+}
+
+std::string_view trim(std::string_view v) {
+    v.remove_prefix(std::min(v.find_first_not_of(" \t\r\n"), v.size()));
+    auto last = v.find_last_not_of(" \t\r\n");
+    if (last != std::string_view::npos) {
+        v.remove_suffix(v.size() - last - 1);
+    } else {
+        v = "";
+    }
+    return v;
+}
+
+std::string GetPlatform() {
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(_M_ARM64) || defined(__aarch64__)
+    const std::string target = "windows_arm64";
+#else
+    const std::string target = "windows_x64";
+#endif
+#elif defined(__APPLE__) || defined(__MACH__)
+#if TARGET_OS_IPHONE
+    const std::string target = "ios";
+#elif TARGET_OS_MAC
+    const std::string target = "darwin";
+#endif
+
+#elif defined(__ANDROID__)
+    const std::string target = "android";
+
+#elif defined(__linux__)
+#if defined(__x86_64__) || defined(_M_X64)
+    const std::string target = "linux_x64";
+#elif defined(__i386__) || defined(_M_IX86)
+    const std::string target = "linux_x86";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    const std::string target = "linux_arm64";
+#else
+    const std::string target = "linux_generic";
+#endif
+
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+    const std::string target = "bsd";
+#else
+#error "Unsupported Operating System"
+#endif
+
+    return target;
+}
+
+void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
+    auto scriptDataOpt = LoadFromO2R("main.o2r", archive);
+    if (!scriptDataOpt.has_value()) {
+        SPDLOG_ERROR("Failed to load main.o2r from archive: {}", archive->GetPath());
+        return;
+    }
+
+    const SafeLevel lvl =
+        (SafeLevel)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0);
+    const ArchiveMetadata& meta = archive->GetMetadata();
+    const std::string platform = GetPlatform();
+    const bool isCodeMod = !meta.Main.empty() || !meta.Binaries.empty();
+
+    if (!isCodeMod) {
+        return;
+    }
+
+    if (meta.CodeVersion != mCodeVersion) {
+        SPDLOG_ERROR("Incompatible code version for archive {}: expected {}, got {}", archive->GetPath(), mCodeVersion,
+                     meta.CodeVersion);
+        return;
+    }
+
+    const bool isTrusted = archive->IsSigned() && archive->IsChecksumValid();
+
+    if (lvl == SafeLevel::ONLY_TRUSTED_SCRIPTS && !isTrusted) {
+        SPDLOG_ERROR("Script loading is disabled for untrusted scripts. Failed to load script from archive: {}",
+                     archive->GetPath());
+        return;
+    } else if (lvl == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
+        if (isTrusted) {
+            SPDLOG_INFO("Loaded trusted script from archive: {}", archive->GetPath());
+        } else {
+            SPDLOG_WARN(
+                "Loaded untrusted script from archive: {}. This script is not signed or has an invalid checksum. "
+                "This may be a security risk if you do not trust the source of this script.",
+                archive->GetPath());
+        }
+    }
+
+    ScriptLoader loader;
+
+    const auto& binaries = meta.Binaries;
+    const std::string platform = GetPlatform();
+    const std::string temp = loader.GenerateTempFile();
+
+    if (binaries.contains(platform)) {
+        const std::string& path = binaries.at(platform);
+        auto data = LoadFromO2R(path, archive);
+        if (!data.has_value()) {
+            throw std::runtime_error("Failed to load platform-specific binary: " + path);
+        }
+
+        std::ofstream out(temp, std::ios::binary | std::ios::trunc);
+        if (!out.is_open()) {
+            throw std::runtime_error("Failed to create temporary file for platform-specific binary: " + temp);
+        }
+        out.write(reinterpret_cast<const char*>(data->data()), data->size());
+        out.close();
+    } else if (!meta.Main.empty()) {
+        const auto data = LoadFromO2R(meta.Main, archive);
+        if (!data.has_value()) {
+            throw std::runtime_error("Failed to load main script: " + meta.Main);
+        }
+
+        TCCState* s = tcc_new();
+        if (!s) {
+            throw std::runtime_error("Failed to create TCCState");
+        }
+
+        for (const auto& [key, value] : mCompileDefines) {
+            tcc_define_symbol(s, key.c_str(), value.c_str());
+        }
+
+        tcc_set_output_type(s, TCC_OUTPUT_DLL);
+
+        const std::vector<uint8_t>& raw = data.value();
+        std::string content(raw.begin(), raw.end());
+        std::istringstream stream(content);
+        std::string line;
+
+        while (std::getline(stream, line)) {
+            if (line.empty()) {
+                continue;
+            }
+
+            line.erase(line.find_last_not_of(" \r\n\t") + 1);
+            line.erase(0, line.find_first_not_of(" \r\n\t"));
+
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
+
+            std::string safe_path = line;
+
+            auto buf = LoadFromO2R(safe_path, archive);
+            if (!buf.has_value()) {
+                tcc_delete(s);
+                throw std::runtime_error("Failed to load script file: '" + safe_path + "'");
+            }
+
+            std::string sourceCode(reinterpret_cast<const char*>(buf->data()), buf->size());
+            if (tcc_compile_string(s, sourceCode.c_str()) == -1) {
+                tcc_delete(s);
+                throw std::runtime_error("TCC Error in " + safe_path);
+            }
+        }
+
+        if (tcc_output_file(s, temp.c_str()) == -1) {
+            tcc_delete(s);
+            throw std::runtime_error("Failed to output compiled code for " + path);
+        }
+    }
+
+    loader.Init(temp);
+    const ScriptFunc_t init = (ScriptFunc_t)loader.GetFunction("ModInit");
+
+    if (init) {
+        init();
+        mLoadedScripts[meta.Name] = loader;
+    }
+};
+
+void ScriptSystem::UnloadAll() {
+    for (auto& [_, loader] : mLoadedScripts) {
+        const ScriptFunc_t exit = (ScriptFunc_t)loader.GetFunction("ModExit");
+        if (exit) {
+            exit();
+        }
+        loader.Unload();
+    }
+    mLoadedScripts.clear();
+};
+
+void* ScriptSystem::GetFunction(const std::string& name, const std::string& function) {
+    if (mLoadedScripts.contains(name)) {
+        return mLoadedScripts.at(name).GetFunction(function);
+    }
+    return nullptr;
+};
+
+} // namespace Ship

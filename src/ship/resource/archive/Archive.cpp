@@ -47,6 +47,40 @@ void Archive::Load() {
         }
     }
 
+    auto m = LoadFile("metadata.json");
+    if (m != nullptr && m->IsLoaded) {
+        try {
+            auto json = nlohmann::json::parse(m->Buffer->begin(), m->Buffer->end());
+            mMetadata.Name = json["name"].get<std::string>();
+            mMetadata.Icon = json.value("icon", "");
+            mMetadata.Author = json.value("author", "Unknown");
+            mMetadata.Version = json.value("version", "1.0");
+            mMetadata.Website = json.value("website", "https://github.com/Kenix3/libultraship");
+            mMetadata.Description = json.value("description", "No description provided.");
+            mMetadata.License = json.value("license", "MIT");
+            mMetadata.CodeVersion = json.value("code_version", 1);
+            mMetadata.GameVersion = json.value("game_version", 0xFFFFFFFF);
+            mMetadata.Main = json.value("main", "");
+            mMetadata.Binaries = json.value("binaries", std::unordered_map<std::string, std::string>{});
+            mMetadata.Dependencies = json.value("dependencies", std::vector<std::string>{});
+
+            if (mMetadata.GameVersion != 0xFFFFFFFF) {
+                mHasGameVersion = true;
+                SetGameVersion(mMetadata.GameVersion);
+                isGameVersionValid =
+                    Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(
+                        GetGameVersion());
+
+                if (!isGameVersionValid) {
+                    SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(),
+                                GetGameVersion());
+                }
+            }
+        } catch (const std::exception& e) {
+            SPDLOG_ERROR("Failed to parse metadata.json for archive {}: {}", GetPath(), e.what());
+        }
+    }
+
     SetLoaded(opened && (!mHasGameVersion || isGameVersionValid));
 
     if (!IsLoaded()) {
@@ -92,6 +126,10 @@ uint32_t Archive::GetGameVersion() {
 
 const std::string& Archive::GetPath() {
     return mPath;
+}
+
+const ArchiveMetadata& Archive::GetMetadata() {
+    return mMetadata;
 }
 
 bool Archive::IsLoaded() {

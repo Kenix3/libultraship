@@ -21,6 +21,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 include(cmake/Utils.cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 set(ADDITIONAL_LIB_INCLUDES "")
 
 # ========= Configuration Options =========

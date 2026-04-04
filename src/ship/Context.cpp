@@ -93,7 +93,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
-           InitEventSystem() && InitFileDropMgr();
+           InitEventSystem() && InitFileDropMgr() && InitScriptSystem();
 }
 
 bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
@@ -354,6 +354,23 @@ bool Context::InitEventSystem() {
     return true;
 }
 
+bool Context::InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines, int codeVersion) {
+    if (GetScriptSystem() != nullptr) {
+        return true;
+    }
+
+    mScriptSystem = std::make_shared<ScriptSystem>(compileDefines, codeVersion);
+    if (GetScriptSystem() == nullptr) {
+        SPDLOG_ERROR("Failed to initialize script system");
+        return false;
+    }
+    return true;
+}
+
+std::shared_ptr<ScriptSystem> Context::GetScriptSystem() {
+    return mScriptSystem;
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -400,6 +417,10 @@ std::shared_ptr<FileDropMgr> Context::GetFileDropMgr() {
 
 std::shared_ptr<EventSystem> Context::GetEventSystem() {
     return mEventSystem;
+}
+
+std::shared_ptr<ScriptSystem> Context::GetScriptSystem() {
+    return mScriptSystem;
 }
 
 std::string Context::GetName() {

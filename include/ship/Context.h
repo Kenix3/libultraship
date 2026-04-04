@@ -27,6 +27,7 @@ class Config;
 class ResourceManager;
 class FileDropMgr;
 class EventSystem;
+class ScriptSystem;
 
 class Context {
   public:
@@ -65,6 +66,7 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
     std::shared_ptr<FileDropMgr> GetFileDropMgr();
     std::shared_ptr<EventSystem> GetEventSystem();
+    std::shared_ptr<ScriptSystem> GetScriptSystem();
 
     std::string GetName();
     std::string GetShortName();
@@ -84,6 +86,7 @@ class Context {
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
     bool InitEventSystem();
+    bool InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1);
 
   protected:
     Context() = default;
@@ -103,6 +106,7 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
+    std::shared_ptr<ScriptSystem> mScriptSystem;
 
     std::string mConfigFilePath;
     std::string mMainPath;
