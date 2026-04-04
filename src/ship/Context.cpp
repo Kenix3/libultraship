@@ -10,6 +10,7 @@
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 #include "ship/events/EventSystem.h"
+#include "ship/scripting/ScriptSystem.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -365,10 +366,6 @@ bool Context::InitScriptSystem(std::unordered_map<std::string, std::string> comp
         return false;
     }
     return true;
-}
-
-std::shared_ptr<ScriptSystem> Context::GetScriptSystem() {
-    return mScriptSystem;
 }
 
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {

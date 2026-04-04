@@ -111,3 +111,45 @@ FetchContent_Declare(
     GIT_TAG 1de054450e7b3c5f777d2e3dfcb228ad120c329d
 )
 FetchContent_MakeAvailable(prism)
+
+#=========== libtcc ===========
+FetchContent_Declare(
+    tinycc
+    GIT_REPOSITORY https://github.com/TinyCC/tinycc.git
+    GIT_TAG        mob
+)
+
+FetchContent_MakeAvailable(tinycc)
+
+if(NOT TARGET libtcc)
+    if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
+        message(STATUS "Configuring TinyCC to generate config.h...")
+        if(WIN32)
+            execute_process(
+                COMMAND cmd /c build-tcc.bat -c cl
+                WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
+                RESULT_VARIABLE tcc_config_result
+            )
+        else()
+            execute_process(
+                COMMAND ./configure
+                WORKING_DIRECTORY "${tinycc_SOURCE_DIR}"
+                RESULT_VARIABLE tcc_config_result
+            )
+        endif()
+
+        if(NOT tcc_config_result EQUAL 0)
+            message(WARNING "TinyCC configuration script returned non-zero. The build might fail.")
+        endif()
+    endif()
+
+    add_library(libtcc STATIC
+        "${tinycc_SOURCE_DIR}/libtcc.c"
+    )
+
+    target_include_directories(libtcc PUBLIC ${tinycc_SOURCE_DIR})
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(libtcc PRIVATE dl m pthread)
+    endif()
+endif()
