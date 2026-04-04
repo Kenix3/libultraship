@@ -123,16 +123,11 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
     if (!loadExact && mAltAssetsEnabled && identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
-        if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
-            try {
-                // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
-                // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
-                auto loadError = std::get<ResourceLoadError>(cacheLine);
-                if (loadError != ResourceLoadError::NotCached) {
-                    return nullptr;
-                }
-            } catch (std::bad_variant_access const& e) {
-                // Ignore the exception. This should never happen. The last check should've returned the resource.
+        if (auto* loadError = std::get_if<ResourceLoadError>(&cacheLine)) {
+            // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
+            // calling function to return a regular asset. If we have NOT attempted load already, attempt the load.
+            if (*loadError != ResourceLoadError::NotCached) {
+                return nullptr;
             }
         }
     }
@@ -141,6 +136,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     auto file = LoadFileProcess(identifier.Path);
     if (file == nullptr) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
+        const std::lock_guard<std::mutex> lock(mMutex);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;
     }
@@ -148,17 +144,19 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     // Transform the raw data into a resource
     auto resource = GetResourceLoader()->LoadResource(identifier.Path, file, initData);
 
-    // Another thread could have loaded the resource while we were processing, so we want to check before setting to
-    // the cache.
-    cachedResource = GetCachedResource(identifier, true);
-
+    // Another thread could have loaded the resource while we were processing. Check and update the cache under the
+    // same lock to avoid a redundant second lookup.
     {
         const std::lock_guard<std::mutex> lock(mMutex);
 
-        if (cachedResource != nullptr) {
-            // If another thread has already loaded this resource, discard the work we already did and return from
-            // cache.
-            resource = cachedResource;
+        auto existingIt = mResourceCache.find(identifier);
+        if (existingIt != mResourceCache.end()) {
+            if (auto* cached = std::get_if<std::shared_ptr<IResource>>(&existingIt->second)) {
+                if (cached->use_count() > 0 && !(*cached)->IsDirty()) {
+                    // Another thread already loaded this resource; discard our work and return from cache.
+                    return *cached;
+                }
+            }
         }
 
         // Set the cache to the loaded resource
@@ -277,24 +275,18 @@ std::shared_ptr<IResource> ResourceManager::GetCachedResource(const std::string&
 }
 
 std::shared_ptr<IResource>
-ResourceManager::GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine) {
+ResourceManager::GetCachedResource(const std::variant<ResourceLoadError, std::shared_ptr<IResource>>& cacheLine) {
     // Gets the cached resource based on a cache line std::variant from the cache map.
-    if (std::holds_alternative<std::shared_ptr<IResource>>(cacheLine)) {
-        try {
-            auto resource = std::get<std::shared_ptr<IResource>>(cacheLine);
-
-            if (resource.use_count() <= 0) {
-                return nullptr;
-            }
-
-            if (resource->IsDirty()) {
-                return nullptr;
-            }
-
-            return resource;
-        } catch (std::bad_variant_access const& e) {
-            // Ignore the exception
+    if (auto* resource = std::get_if<std::shared_ptr<IResource>>(&cacheLine)) {
+        if (resource->use_count() <= 0) {
+            return nullptr;
         }
+
+        if ((*resource)->IsDirty()) {
+            return nullptr;
+        }
+
+        return *resource;
     }
 
     return nullptr;
