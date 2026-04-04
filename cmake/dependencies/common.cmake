@@ -143,16 +143,39 @@ if(NOT TARGET libtcc)
         endif()
     endif()
 
-    add_executable(tcc_c2str "${tinycc_SOURCE_DIR}/conftest.c")
-    target_compile_definitions(tcc_c2str PRIVATE C2STR)
-    target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
+    if(CMAKE_CROSSCOMPILING)
+        find_program(HOST_C_COMPILER NAMES cc clang gcc REQUIRED)
+        set(C2STR_EXE "${tinycc_BINARY_DIR}/tcc_c2str_host")
 
-    add_custom_command(
-        OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
-        COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
-        DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h"
-        COMMENT "Generating tccdefs_.h for TinyCC..."
-    )
+        if(CMAKE_HOST_WIN32)
+            set(C2STR_EXE "${C2STR_EXE}.exe")
+        endif()
+
+        add_custom_command(
+            OUTPUT "${C2STR_EXE}"
+            COMMAND ${HOST_C_COMPILER} -DC2STR -o "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/conftest.c"
+            DEPENDS "${tinycc_SOURCE_DIR}/conftest.c"
+            COMMENT "Compiling host tool c2str natively..."
+        )
+
+        add_custom_command(
+            OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
+            COMMAND "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
+            DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${C2STR_EXE}"
+            COMMENT "Generating tccdefs_.h for TinyCC (Cross-compiling)..."
+        )
+    else()
+        add_executable(tcc_c2str "${tinycc_SOURCE_DIR}/conftest.c")
+        target_compile_definitions(tcc_c2str PRIVATE C2STR)
+        target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
+
+        add_custom_command(
+            OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
+            COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
+            DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h" tcc_c2str
+            COMMENT "Generating tccdefs_.h for TinyCC..."
+        )
+    endif()
 
     add_library(libtcc STATIC
         "${tinycc_SOURCE_DIR}/libtcc.c"
