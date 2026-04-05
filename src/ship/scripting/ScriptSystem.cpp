@@ -73,8 +73,8 @@ constexpr std::string_view GetPlatform() {
 }
 
 void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
-    const SafeLevel lvl =
-        static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
+    const SafeLevel lvl = static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        CVAR_SCRIPT_SAFE_LEVEL, static_cast<int>(SafeLevel::WARN_UNTRUSTED_SCRIPTS)));
     const ArchiveManifest& info = archive->GetManifest();
     constexpr std::string_view platform = GetPlatform();
     const bool isCodeMod = !info.Main.empty() || !info.Binaries.empty();
@@ -95,7 +95,9 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
         SPDLOG_ERROR("Script loading is disabled for untrusted scripts. Failed to load script from archive: {}",
                      archive->GetPath());
         return;
-    } else if (lvl == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
+    }
+
+    if (lvl == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
         if (isTrusted) {
             SPDLOG_INFO("Loaded trusted script from archive: {}", archive->GetPath());
         } else {
