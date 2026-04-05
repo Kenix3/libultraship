@@ -6,6 +6,7 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <string_view>
 
 namespace Ship {
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
@@ -64,6 +65,18 @@ class ConsoleVariable {
     void LoadLegacy();
 
   private:
-    std::unordered_map<std::string, std::shared_ptr<CVar>> mVariables;
+    struct TransparentStringHash {
+        using is_transparent = void;
+        size_t operator()(std::string_view sv) const noexcept {
+            return std::hash<std::string_view>{}(sv);
+        }
+    };
+    struct TransparentStringEqual {
+        using is_transparent = void;
+        bool operator()(std::string_view a, std::string_view b) const noexcept {
+            return a == b;
+        }
+    };
+    std::unordered_map<std::string, std::shared_ptr<CVar>, TransparentStringHash, TransparentStringEqual> mVariables;
 };
 } // namespace Ship

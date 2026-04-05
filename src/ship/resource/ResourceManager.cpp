@@ -26,6 +26,11 @@ ResourceIdentifier::ResourceIdentifier(const std::string& path, const uintptr_t 
     mHash = CalculateHash();
 }
 
+ResourceIdentifier::ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent)
+    : Path(std::move(path)), Owner(owner), Parent(parent) {
+    mHash = CalculateHash();
+}
+
 bool ResourceIdentifier::operator==(const ResourceIdentifier& rhs) const {
     return Owner == rhs.Owner && Path == rhs.Path && Parent == rhs.Parent;
 }
@@ -101,11 +106,17 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         return LoadResourceProcess({ newFilePath, identifier.Owner, identifier.Parent }, false, initData);
     }
 
+    // Cache the starts_with check to avoid repeated string comparisons
+    const bool isAltPath = identifier.Path.starts_with(IResource::gAltAssetPrefix);
+    const bool shouldCheckAlt = !loadExact && mAltAssetsEnabled && !isAltPath;
+
     // Attempt to load the alternate version of the asset, if we fail then we continue trying to load the standard
     // asset.
-    if (!loadExact && mAltAssetsEnabled && !identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
-        const auto altPath = IResource::gAltAssetPrefix + identifier.Path;
-        auto altResource = LoadResourceProcess({ altPath, identifier.Owner, identifier.Parent }, loadExact, initData);
+    if (shouldCheckAlt) {
+        std::string altPath = IResource::gAltAssetPrefix;
+        altPath += identifier.Path;
+        auto altResource =
+            LoadResourceProcess({ std::move(altPath), identifier.Owner, identifier.Parent }, loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;
@@ -122,7 +133,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
 
     // Check for resource load errors which can indicate an alternate asset.
     // If we are attempting to load an alternate asset, we can return null
-    if (!loadExact && mAltAssetsEnabled && identifier.Path.starts_with(IResource::gAltAssetPrefix)) {
+    if (!loadExact && mAltAssetsEnabled && isAltPath) {
         if (std::holds_alternative<ResourceLoadError>(cacheLine)) {
             try {
                 // If we have attempted to cache an alternate asset, but failed, we return nullptr and rely on the
