@@ -358,7 +358,9 @@ void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, ui
     // This function is called twice per texture, the first one only to set default values.
     // Maybe that could be skipped? Anyway, make sure to release the first default sampler
     // state before setting the actual one.
-    texture_data->sampler->release();
+    if (texture_data->sampler != nullptr) {
+        texture_data->sampler->release();
+    }
 
     MTL::SamplerDescriptor* sampler_descriptor = MTL::SamplerDescriptor::alloc()->init();
     MTL::SamplerMinMagFilter filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR
@@ -778,7 +780,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         }
     }
 
-    if (has_depth_buffer) {
+    if (has_depth_buffer && fb.mRenderPassDescriptor != nullptr) {
         if (msaa_level > 1) {
             fb.mRenderPassDescriptor->depthAttachment()->setTexture(fb.mMsaaDepthTexture);
             fb.mRenderPassDescriptor->depthAttachment()->setResolveTexture(fb.mDepthTexture);
@@ -791,7 +793,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
             fb.mRenderPassDescriptor->depthAttachment()->setStoreAction(MTL::StoreActionStore);
             fb.mRenderPassDescriptor->depthAttachment()->setClearDepth(1);
         }
-    } else {
+    } else if (fb.mRenderPassDescriptor != nullptr) {
         fb.mRenderPassDescriptor->setDepthAttachment(nullptr);
     }
 
@@ -809,7 +811,8 @@ void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) 
     mCurrentFramebuffer = fb_id;
     mDrawnFramebuffers.insert(fb_id);
 
-    if (fb.mRenderTarget && fb.mCommandBuffer == nullptr && fb.mCommandEncoder == nullptr) {
+    if (fb.mRenderTarget && fb.mCommandBuffer == nullptr && fb.mCommandEncoder == nullptr &&
+        fb.mRenderPassDescriptor != nullptr) {
         fb.mCommandBuffer = mCommandQueue->commandBuffer();
         std::string fbcb_label = fmt::format("FrameBuffer {} Command Buffer", fb_id);
         fb.mCommandBuffer->setLabel(NS::String::string(fbcb_label.c_str(), NS::UTF8StringEncoding));
@@ -958,8 +961,8 @@ GfxRenderingAPIMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, f
     // map coordinates to right y axis
     size_t i = 0;
     for (const auto& coord : coordinates) {
-        mCoordUniforms.coords[i].x = coord.first;
-        mCoordUniforms.coords[i].y = framebuffer.mDepthTexture->height() - 1 - coord.second;
+        mCoordUniforms.coords[i].x = (uint32_t)(int32_t)coord.first;
+        mCoordUniforms.coords[i].y = (uint32_t)(int32_t)(framebuffer.mDepthTexture->height() - 1 - coord.second);
         ++i;
     }
 

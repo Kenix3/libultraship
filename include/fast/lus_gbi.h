@@ -513,7 +513,7 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
 #define G_BL_1 2
 #define G_BL_0 3
 
-#define GBL_c1(m1a, m1b, m2a, m2b) (m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
+#define GBL_c1(m1a, m1b, m2a, m2b) (uint32_t)(m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
 #define GBL_c2(m1a, m1b, m2a, m2b) (m1a) << 28 | (m1b) << 24 | (m2a) << 20 | (m2b) << 16
 
 #define RM_AA_ZB_OPA_SURF(clk)                                                  \
