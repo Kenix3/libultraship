@@ -178,6 +178,7 @@
 #define G_FILLWIDERECT 0x38
 #define G_REGBLENDEDTEX 0x3f
 #define G_MOVEMEM_OTR 0x42
+#define G_LOADBLOCK_WIDE 0x46
 
 /* GFX Effects */
 
@@ -3296,6 +3297,21 @@ typedef union Gfx {
     {                                                                                                      \
         (_SHIFTL(G_LOADBLOCK, 24, 8) | _SHIFTL(uls, 12, 12) | _SHIFTL(ult, 0, 12)),                        \
             (_SHIFTL(tile, 24, 3) | _SHIFTL((MIN(lrs, G_TX_LDBLK_MAX_TXL)), 12, 12) | _SHIFTL(dxt, 0, 12)) \
+    }
+
+#define gDPLoadBlockWide(pkt, tile, uls, ult, lrs, dxt)                           \
+    {                                                                             \
+        Gfx* _g0 = (Gfx*)(pkt);                                                   \
+        Gfx* _g1 = (Gfx*)(pkt) + 1;                                               \
+        _g0->words.w0 = _SHIFTL(G_LOADBLOCK_WIDE, 24, 8) | _SHIFTL((tile), 0, 3); \
+        _g0->words.w1 = (uint32_t)(lrs);                                          \
+        _g1->words.w0 = _SHIFTL((uls), 16, 16) | _SHIFTL((ult), 0, 16);           \
+        _g1->words.w1 = _SHIFTL((dxt), 0, 12);                                    \
+    }
+
+#define gsDPLoadBlockWide(tile, uls, ult, lrs, dxt)                                  \
+    { _SHIFTL(G_LOADBLOCK_WIDE, 24, 8) | _SHIFTL((tile), 0, 3), (uint32_t)(lrs) }, { \
+        _SHIFTL((uls), 16, 16) | _SHIFTL((ult), 0, 16), _SHIFTL((dxt), 0, 12)        \
     }
 
 #define gDPLoadTLUTCmd(pkt, tile, count)                                  \
