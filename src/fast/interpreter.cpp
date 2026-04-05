@@ -4502,8 +4502,8 @@ static void gfx_step() {
             uintptr_t w1 = (uintptr_t)cmd->words.w1;
             if (w1 < 0x10000
 #if UINTPTR_MAX > 0xFFFFFFFFu
-                // On 64-bit Windows, user-space tops out here.
-                || w1 > 0x00007FFFFFFFFFFFull
+                // On 64-bit: filter kernel/sentinel addresses.
+                || w1 > 0x0000FFFFFFFFFFFFull
 #endif
             ) {
                 ++g_exec_stack.currCmd();
@@ -4925,9 +4925,9 @@ int32_t gfx_check_image_signature(const char* imgData) {
         return 0;
     }
 #if UINTPTR_MAX > 0xFFFFFFFFu
-    // On 64-bit Windows, user-space addresses are below this limit.
-    // Anything above is kernel memory or a sentinel value.
-    if (i > 0x00007FFFFFFFFFFFull) {
+    // On 64-bit: filter kernel/sentinel addresses. Upper bound covers all
+    // user-space layouts (x86_64 47-bit canonical, ARM64 48-bit VA, etc.).
+    if (i > 0x0000FFFFFFFFFFFFull) {
         return 0;
     }
 #endif
