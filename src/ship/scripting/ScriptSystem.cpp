@@ -73,12 +73,6 @@ constexpr std::string_view GetPlatform() {
 }
 
 void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
-    auto scriptDataOpt = LoadFromO2R("main.o2r", archive);
-    if (!scriptDataOpt.has_value()) {
-        SPDLOG_ERROR("Failed to load main.o2r from archive: {}", archive->GetPath());
-        return;
-    }
-
     const SafeLevel lvl =
         static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SCRIPT_SAFE_LEVEL, 0));
     const ArchiveManifest& info = archive->GetManifest();
