@@ -56,6 +56,7 @@ class FolderManager {
     FolderManager();
     ~FolderManager();
 
+    void createAppSupportDirectory(const char* appName);
     const char* getMainBundlePath();
     const char* pathForDirectory(SearchPathDirectory directory, SearchPathDomainMask domainMask);
     const char* pathForDirectoryAppropriateForItemAtPath(SearchPathDirectory directory, SearchPathDomainMask domainMask,
