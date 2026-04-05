@@ -17,6 +17,7 @@ class ScriptSystem {
     }
 
     void Load(const std::shared_ptr<Archive>& archive);
+    void LoadAll();
     void UnloadAll();
     void* GetFunction(const std::string& name, const std::string& function);
 
