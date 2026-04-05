@@ -70,6 +70,12 @@ endif()
 source_group("utils" FILES ${Source_Files__Utils})
 target_sources(libultraship PRIVATE ${Source_Files__Utils})
 
+#=================== Events ===================
+
+file(GLOB_RECURSE Source_Files__Events RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "events/*.cpp")
+source_group("events" FILES ${Source_Files__Events})
+target_sources(libultraship PRIVATE ${Source_Files__Events})
+
 #=================== Port ===================
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Android" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
