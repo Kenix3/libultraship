@@ -29,6 +29,7 @@ class Device;
 class Function;
 class Buffer;
 class RenderPipelineState;
+class ComputePipelineState;
 class CommandQueue;
 class Viewport;
 } // namespace MTL
@@ -199,6 +200,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     size_t mCoordBufferSize;
     MTL::Function* mDepthComputeFunction;
     MTL::Function* mConvertToRgb5a1Function;
+    MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
 
     // Current state
     struct ShaderProgramMetal* mShaderProgram;
