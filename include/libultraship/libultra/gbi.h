@@ -1851,11 +1851,11 @@ typedef union Gfx {
 #define __gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #else
-#define __gSPVertex(pkt, v, n, v0)                                                              \
-    _DW({                                                                                       \
-        Gfx* _g = (Gfx*)(pkt);                                                                  \
+#define __gSPVertex(pkt, v, n, v0)                                                                   \
+    _DW({                                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                                       \
         _g->words.w0 = _SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
-        _g->words.w1 = (uintptr_t)(v);                                                          \
+        _g->words.w1 = (uintptr_t)(v);                                                               \
     })
 #define gsSPVertex(v, n, v0) \
     { (_SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
@@ -2078,12 +2078,12 @@ typedef union Gfx {
 /***
  ***  1 Triangle
  ***/
-#define gSP1Triangle(pkt, v0, v1, v2, flag)                                            \
-    _DW({                                                                              \
-        Gfx* _g = (Gfx*)(pkt);                                                         \
-                                                                                       \
+#define gSP1Triangle(pkt, v0, v1, v2, flag)                                                      \
+    _DW({                                                                                        \
+        Gfx* _g = (Gfx*)(pkt);                                                                   \
+                                                                                                 \
         _g->words.w0 = _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag); \
-        _g->words.w1 = 0;                                                              \
+        _g->words.w1 = 0;                                                                        \
     })
 #define gsSP1Triangle(v0, v1, v2, flag) \
     { _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag), 0 }
