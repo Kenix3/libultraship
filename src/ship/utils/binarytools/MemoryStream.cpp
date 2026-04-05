@@ -24,6 +24,12 @@ Ship::MemoryStream::MemoryStream(std::shared_ptr<std::vector<char>> buffer) : Me
     mBaseAddress = 0;
 }
 
+Ship::MemoryStream::MemoryStream(std::shared_ptr<std::vector<char>> buffer, size_t offset) : MemoryStream() {
+    mBuffer = buffer;
+    mBufferSize = buffer->size();
+    mBaseAddress = offset;
+}
+
 Ship::MemoryStream::~MemoryStream() {
 }
 

@@ -10,6 +10,7 @@ class MemoryStream final : public Stream {
     MemoryStream();
     MemoryStream(char* nBuffer, size_t nBufferSize);
     MemoryStream(std::shared_ptr<std::vector<char>> buffer);
+    MemoryStream(std::shared_ptr<std::vector<char>> buffer, size_t offset);
     ~MemoryStream();
 
     uint64_t GetLength() override;
