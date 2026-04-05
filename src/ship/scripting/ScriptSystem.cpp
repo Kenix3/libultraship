@@ -1,5 +1,6 @@
 #include "ship/scripting/ScriptSystem.h"
 
+#include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/File.h"
 #include "ship/Context.h"
@@ -8,6 +9,9 @@
 #include <fstream>
 #include <string_view>
 #include <libtcc.h>
+#include <memory>
+#include <queue>
+#include <unordered_map>
 
 #include "ship/config/ConsoleVariable.h"
 
@@ -189,6 +193,68 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
         mLoadedScripts[info.Name] = loader;
     }
 };
+
+void ScriptSystem::LoadAll() {
+    auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto list = archive->GetArchives();
+    std::vector<std::shared_ptr<Archive>> loadOrder;
+    std::unordered_map<std::string, std::shared_ptr<Archive>> archiveMap;
+    std::unordered_map<std::string, int> inDegree;
+    std::unordered_map<std::string, std::vector<std::string>> dependents;
+
+    for (const auto& entry : *list) {
+        const auto& info = entry->GetManifest();
+        if (info.Main.empty()) {
+            continue;
+        }
+
+        archiveMap[info.Name] = entry;
+        inDegree[info.Name] = 0;
+    }
+
+    for (const auto& [name, entry] : archiveMap) {
+        const auto& deps = entry->GetManifest().Dependencies;
+        for (const std::string& depName : deps) {
+            if (archiveMap.contains(depName)) {
+                dependents[depName].push_back(name);
+                inDegree[name]++;
+            } else {
+                throw std::runtime_error("Archive " + name + " depends on missing archive: " + depName);
+            }
+        }
+    }
+
+    std::queue<std::string> readyQueue;
+
+    for (const auto& [name, degree] : inDegree) {
+        if (degree == 0) {
+            readyQueue.push(name);
+        }
+    }
+
+    while (!readyQueue.empty()) {
+        std::string current = readyQueue.front();
+        readyQueue.pop();
+
+        loadOrder.push_back(archiveMap[current]);
+
+        for (const std::string& dependentName : dependents[current]) {
+            inDegree[dependentName]--;
+
+            if (inDegree[dependentName] == 0) {
+                readyQueue.push(dependentName);
+            }
+        }
+    }
+
+    if (loadOrder.size() != archiveMap.size()) {
+        throw std::runtime_error("Circular dependency detected among script archives. Failed to resolve load order.");
+    }
+
+    for (const auto& entry : loadOrder) {
+        Load(entry);
+    }
+}
 
 void ScriptSystem::UnloadAll() {
     for (auto& [_, loader] : mLoadedScripts) {
