@@ -179,6 +179,8 @@
 #define G_REGBLENDEDTEX 0x3f
 #define G_MOVEMEM_OTR 0x42
 #define G_LOADBLOCK_WIDE 0x46
+#define G_VTX_WIDE 0x47
+#define G_TRI1_WIDE 0x48
 
 /* GFX Effects */
 
@@ -1849,8 +1851,14 @@ typedef union Gfx {
 #define __gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #else
-#define __gSPVertex(pkt, v, n, v0) gDma1p(pkt, G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
-#define gsSPVertex(v, n, v0) gsDma1p(G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
+#define __gSPVertex(pkt, v, n, v0)                                                              \
+    _DW({                                                                                       \
+        Gfx* _g = (Gfx*)(pkt);                                                                  \
+        _g->words.w0 = _SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
+        _g->words.w1 = (uintptr_t)(v);                                                          \
+    })
+#define gsSPVertex(v, n, v0) \
+    { (_SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
 #endif
 
 #ifdef F3DEX_GBI_2
@@ -1996,6 +2004,11 @@ typedef union Gfx {
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((v2)*10, 0, 8))
 #define __gsSPLine3D_w1f(v0, v1, wd, flag) \
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((wd), 0, 8))
+#define __gsSP1Triangle_w1_wide(v0, v1, v2) (_SHIFTL((v0)*2, 16, 8) | _SHIFTL((v1)*2, 8, 8) | _SHIFTL((v2)*2, 0, 8))
+#define __gsSP1Triangle_w1f_wide(v0, v1, v2, flag)         \
+    (((flag) == 0)   ? __gsSP1Triangle_w1_wide(v0, v1, v2) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1_wide(v1, v2, v0) \
+                     : __gsSP1Triangle_w1_wide(v2, v0, v1))
 #endif
 
 #ifdef F3DEX_GBI_2
@@ -2065,15 +2078,15 @@ typedef union Gfx {
 /***
  ***  1 Triangle
  ***/
-#define gSP1Triangle(pkt, v0, v1, v2, flag)                   \
-    {                                                         \
-        Gfx* _g = (Gfx*)(pkt);                                \
-                                                              \
-        _g->words.w0 = _SHIFTL(G_TRI1, 24, 8);                \
-        _g->words.w1 = __gsSP1Triangle_w1f(v0, v1, v2, flag); \
-    }
+#define gSP1Triangle(pkt, v0, v1, v2, flag)                                            \
+    _DW({                                                                              \
+        Gfx* _g = (Gfx*)(pkt);                                                         \
+                                                                                       \
+        _g->words.w0 = _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag); \
+        _g->words.w1 = 0;                                                              \
+    })
 #define gsSP1Triangle(v0, v1, v2, flag) \
-    { _SHIFTL(G_TRI1, 24, 8), __gsSP1Triangle_w1f(v0, v1, v2, flag) }
+    { _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag), 0 }
 
 /***
  ***  Line
