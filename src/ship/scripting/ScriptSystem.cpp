@@ -172,7 +172,8 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
                 throw std::runtime_error("Failed to load script file: '" + safePath + "'");
             }
 
-            std::string sourceCode(reinterpret_cast<const char*>(buf->data()), buf->size());
+            std::string lineFixer = "#line 1 \"[" + info.Name + "]:" + safePath + "\"\n";
+            std::string sourceCode = lineFixer + std::string(buf->begin(), buf->end());
             if (tcc_compile_string(s, sourceCode.c_str()) == -1) {
                 tcc_delete(s);
                 throw std::runtime_error("TCC Error in " + safePath);
