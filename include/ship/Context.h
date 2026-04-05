@@ -26,6 +26,9 @@ class Window;
 class Config;
 class ResourceManager;
 class FileDropMgr;
+class EventSystem;
+class ScriptSystem;
+class KeystoreSystem;
 
 class Context {
   public:
@@ -63,6 +66,9 @@ class Context {
     std::shared_ptr<Audio> GetAudio();
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
     std::shared_ptr<FileDropMgr> GetFileDropMgr();
+    std::shared_ptr<EventSystem> GetEventSystem();
+    std::shared_ptr<ScriptSystem> GetScriptSystem();
+    std::shared_ptr<KeystoreSystem> GetKeystoreSystem();
 
     std::string GetName();
     std::string GetShortName();
@@ -81,6 +87,9 @@ class Context {
     bool InitConsole();
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
+    bool InitEventSystem();
+    bool InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1);
+    bool InitKeystoreSystem();
 
   protected:
     Context() = default;
@@ -99,6 +108,9 @@ class Context {
     std::shared_ptr<Audio> mAudio;
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
+    std::shared_ptr<EventSystem> mEventSystem;
+    std::shared_ptr<ScriptSystem> mScriptSystem;
+    std::shared_ptr<KeystoreSystem> mKeystoreSystem;
 
     std::string mConfigFilePath;
     std::string mMainPath;

@@ -418,6 +418,16 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             uint32_t dxt = child->IntAttribute("Dxt");
 
             g = gsDPLoadBlock(tile, uls, ult, lrs, dxt);
+        } else if (childName == "LoadBlockWide") {
+            uint32_t tile = child->IntAttribute("Tile");
+            uint32_t uls = child->IntAttribute("Uls");
+            uint32_t ult = child->IntAttribute("Ult");
+            uint32_t lrs = child->IntAttribute("Lrs");
+            uint32_t dxt = child->IntAttribute("Dxt");
+
+            Gfx g2[2] = { gsDPLoadBlockWide(tile, uls, ult, lrs, dxt) };
+            dl->Instructions.push_back(g2[0]);
+            g = g2[1];
         } else if (childName == "Triangle1") {
             int v00 = child->IntAttribute("V00");
             int v01 = child->IntAttribute("V01");

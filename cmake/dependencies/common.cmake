@@ -111,3 +111,125 @@ FetchContent_Declare(
     GIT_TAG 1de054450e7b3c5f777d2e3dfcb228ad120c329d
 )
 FetchContent_MakeAvailable(prism)
+
+#=========== monocypher ===========
+FetchContent_Declare(
+    monocypher
+    GIT_REPOSITORY https://github.com/LoupVaillant/Monocypher.git
+    GIT_TAG 0d85f98c9d9b0227e42cf795cb527dff372b40a4
+)
+FetchContent_MakeAvailable(monocypher)
+
+add_library(monocypher STATIC)
+set_property(TARGET monocypher PROPERTY C_STANDARD 11)
+
+target_sources(monocypher PRIVATE
+    ${monocypher_SOURCE_DIR}/src/monocypher.c
+    ${monocypher_SOURCE_DIR}/src/optional/monocypher-ed25519.c
+)
+
+target_include_directories(monocypher PUBLIC 
+    ${monocypher_SOURCE_DIR}/src
+    ${monocypher_SOURCE_DIR}/src/optional
+)
+
+#=========== libtcc ===========
+FetchContent_Declare(
+    tinycc
+    GIT_REPOSITORY https://github.com/TinyCC/tinycc.git
+    GIT_TAG        mob
+)
+
+FetchContent_MakeAvailable(tinycc)
+
+if(NOT TARGET libtcc)
+    if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
+        message(STATUS "Configuring TinyCC to generate config.h...")
+        if(WIN32)
+            execute_process(
+                COMMAND cmd /c build-tcc.bat -c cl
+                WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
+                RESULT_VARIABLE tcc_config_result
+            )
+        else()
+            execute_process(
+                COMMAND ./configure
+                WORKING_DIRECTORY "${tinycc_SOURCE_DIR}"
+                RESULT_VARIABLE tcc_config_result
+            )
+        endif()
+
+        if(NOT tcc_config_result EQUAL 0)
+            message(WARNING "TinyCC configuration script returned non-zero. The build might fail.")
+        endif()
+
+        if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+            message(STATUS "iOS target detected: Disabling CONFIG_CODESIGN...")
+            file(APPEND "${tinycc_SOURCE_DIR}/config.h" "\n/* Force disable code signing for iOS cross-compilation */\n#undef CONFIG_CODESIGN\n")
+        endif()
+    endif()
+
+    if(CMAKE_CROSSCOMPILING)
+        find_program(HOST_C_COMPILER NAMES cc clang gcc REQUIRED)
+        set(C2STR_EXE "${tinycc_BINARY_DIR}/tcc_c2str_host")
+        if(CMAKE_HOST_WIN32)
+            set(C2STR_EXE "${C2STR_EXE}.exe")
+        endif()
+
+        set(SIGN_COMMAND "")
+        if(CMAKE_HOST_APPLE)
+            set(SIGN_COMMAND COMMAND codesign -f -s - "${C2STR_EXE}")
+        endif()
+
+        add_custom_command(
+            OUTPUT "${C2STR_EXE}"
+            COMMAND ${CMAKE_COMMAND} -E env --unset=SDKROOT --unset=IPHONEOS_DEPLOYMENT_TARGET --unset=TVOS_DEPLOYMENT_TARGET
+                    ${HOST_C_COMPILER} -DC2STR -o "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/conftest.c"
+            ${SIGN_COMMAND}
+            DEPENDS "${tinycc_SOURCE_DIR}/conftest.c"
+            COMMENT "Compiling host tool c2str natively..."
+        )
+
+        add_custom_command(
+            OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
+            COMMAND "${C2STR_EXE}" "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
+            DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${C2STR_EXE}"
+            COMMENT "Generating tccdefs_.h for TinyCC (Cross-compiling)..."
+        )
+    else()
+        add_executable(tcc_c2str "${tinycc_SOURCE_DIR}/conftest.c")
+        target_compile_definitions(tcc_c2str PRIVATE C2STR)
+        target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
+
+        add_custom_command(
+            OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
+            COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
+            DEPENDS "${tinycc_SOURCE_DIR}/include/tccdefs.h" tcc_c2str
+            COMMENT "Generating tccdefs_.h for TinyCC..."
+        )
+    endif()
+
+    add_library(libtcc STATIC
+        "${tinycc_SOURCE_DIR}/libtcc.c"
+        "${tinycc_BINARY_DIR}/tccdefs_.h"
+    )
+
+    set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
+    configure_file(
+        "${tinycc_SOURCE_DIR}/libtcc.h"
+        "${TCC_SAFE_INCLUDE_DIR}/libtcc.h"
+        COPYONLY
+    )
+
+    target_include_directories(libtcc PRIVATE
+        "${tinycc_SOURCE_DIR}"
+        "${tinycc_BINARY_DIR}"
+    )
+    target_include_directories(libtcc PUBLIC
+        $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
+    )
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(libtcc PRIVATE dl m pthread)
+    endif()
+endif()

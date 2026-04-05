@@ -8,3 +8,4 @@
 #include "libultraship/bridge/crashhandlerbridge.h"
 #include "libultraship/bridge/gfxdebuggerbridge.h"
 #include "libultraship/bridge/gfxbridge.h"
+#include "libultraship/bridge/eventsbridge.h"
