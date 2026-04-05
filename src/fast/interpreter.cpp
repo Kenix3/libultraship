@@ -3675,6 +3675,24 @@ bool gfx_load_block_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_load_block_wide_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint32_t tile = cmd->words.w0 & 0x7;
+    uint32_t lrs = cmd->words.w1;
+
+    (*cmd0)++;
+    cmd = *cmd0;
+
+    uint32_t uls = (cmd->words.w0 >> 16) & 0xFFFF;
+    uint32_t ult = (cmd->words.w0 >> 0) & 0xFFFF;
+    uint32_t dxt = (cmd->words.w1 >> 0) & 0xFFF;
+
+    gfx->GfxDpLoadBlock(tile, uls, ult, lrs, dxt);
+    return false;
+}
+
 bool gfx_load_tile_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -4058,6 +4076,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_LOAD_SHADER, { "G_LOAD_SHADER", gfx_set_shader_custom } },
+    { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {

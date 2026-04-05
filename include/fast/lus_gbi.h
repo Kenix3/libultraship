@@ -70,6 +70,7 @@ constexpr int8_t OTR_G_MOVEMEM_HASH = OPCODE(0x42);
 constexpr int8_t OTR_G_LOAD_SHADER = OPCODE(0x43);
 constexpr int8_t RDP_G_SETTILESIZE_INTERP = OPCODE(0x44);
 constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
+constexpr int8_t RDP_G_LOADBLOCK_WIDE = OPCODE(0x46);
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -220,6 +221,7 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
 #define G_IM_SIZ_8b 1
 #define G_IM_SIZ_16b 2
 #define G_IM_SIZ_32b 3
+#define G_IM_SIZ_RAW 4
 #define G_IM_SIZ_DD 5
 
 #define G_IM_SIZ_4b_BYTES 0
