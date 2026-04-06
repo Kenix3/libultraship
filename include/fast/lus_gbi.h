@@ -67,9 +67,10 @@ constexpr int8_t OTR_G_READFB = OPCODE(0x3e);
 constexpr int8_t OTR_G_REGBLENDEDTEX = OPCODE(0x3f);
 constexpr int8_t OTR_G_SETINTENSITY = OPCODE(0x40);
 constexpr int8_t OTR_G_MOVEMEM_HASH = OPCODE(0x42);
-constexpr int8_t OTR_G_LOAD_SHADER = OPCODE(0x43);
-constexpr int8_t RDP_G_SETTILESIZE_INTERP = OPCODE(0x44);
-constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x45);
+constexpr int8_t OTR_G_PUSH_SHADER = OPCODE(0x43);
+constexpr int8_t OTR_G_POP_SHADER = OPCODE(0x44);
+constexpr int8_t RDP_G_SETTILESIZE_INTERP = OPCODE(0x45);
+constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x46);
 constexpr int8_t RDP_G_LOADBLOCK_WIDE = OPCODE(0x47);
 constexpr int8_t RDP_G_VTX_WIDE = OPCODE(0x48);
 constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
@@ -223,7 +224,6 @@ constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
 #define G_IM_SIZ_8b 1
 #define G_IM_SIZ_16b 2
 #define G_IM_SIZ_32b 3
-#define G_IM_SIZ_RAW 4
 #define G_IM_SIZ_DD 5
 
 #define G_IM_SIZ_4b_BYTES 0
