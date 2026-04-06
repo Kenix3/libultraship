@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 typedef int32_t EventID;
-typedef uint32_t ListenerID;
+typedef int32_t ListenerID;
 
 typedef enum {
     EVENT_PRIORITY_LOW,
@@ -31,15 +31,15 @@ typedef struct EventListener {
 
 #ifndef __cplusplus
 #ifdef INIT_EVENT_IDS
-#define DECLARE_EVENT(eventName) uint32_t eventName##ID = -1;
+#define DECLARE_EVENT(eventName) EventID eventName##ID = -1;
 #else
-#define DECLARE_EVENT(eventName) extern uint32_t eventName##ID;
+#define DECLARE_EVENT(eventName) extern EventID eventName##ID;
 #endif
 #else
 #ifdef INIT_EVENT_IDS
-#define DECLARE_EVENT(eventName) extern "C" uint32_t eventName##ID = -1;
+#define DECLARE_EVENT(eventName) extern "C" EventID eventName##ID = -1;
 #else
-#define DECLARE_EVENT(eventName) extern "C" uint32_t eventName##ID;
+#define DECLARE_EVENT(eventName) extern "C" EventID eventName##ID;
 #endif
 #endif
 
