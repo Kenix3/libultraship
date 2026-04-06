@@ -9,6 +9,7 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
+#include "ship/events/EventSystem.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -42,6 +43,7 @@ Context::~Context() {
     mControlDeck = nullptr;
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
+    mEventSystem = nullptr;
     GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
@@ -91,7 +93,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
-           InitFileDropMgr();
+           InitEventSystem() && InitFileDropMgr();
 }
 
 bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
@@ -339,6 +341,19 @@ bool Context::InitFileDropMgr() {
     return true;
 }
 
+bool Context::InitEventSystem() {
+    if (GetEventSystem() != nullptr) {
+        return true;
+    }
+
+    mEventSystem = std::make_shared<EventSystem>();
+    if (GetEventSystem() == nullptr) {
+        SPDLOG_ERROR("Failed to initialize event system");
+        return false;
+    }
+    return true;
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -381,6 +396,10 @@ std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
 
 std::shared_ptr<FileDropMgr> Context::GetFileDropMgr() {
     return mFileDropMgr;
+}
+
+std::shared_ptr<EventSystem> Context::GetEventSystem() {
+    return mEventSystem;
 }
 
 std::string Context::GetName() {
