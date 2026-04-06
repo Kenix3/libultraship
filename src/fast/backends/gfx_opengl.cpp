@@ -305,7 +305,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    const char* shaderName = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = Fast::gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.glsl";
 
     if (nullptr != shaderName) {
@@ -371,7 +371,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    const char* shaderName = gfx_get_shader(cc_features.shader_id);
+    const char* shaderName = Fast::gfx_get_shader(cc_features.shader_id);
     std::string path = "shaders/opengl/default.shader.glsl";
 
     if (nullptr != shaderName) {
