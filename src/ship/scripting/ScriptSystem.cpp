@@ -96,7 +96,9 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
     const bool isTrusted = archive->IsSigned() && archive->IsChecksumValid();
 
     if (lvl == SafeLevel::ONLY_TRUSTED_SCRIPTS && !isTrusted) {
-        throw std::runtime_error("Script loading is disabled for untrusted scripts. Failed to load script from archive: " + archive->GetPath());
+        throw std::runtime_error(
+            "Script loading is disabled for untrusted scripts. Failed to load script from archive: " +
+            archive->GetPath());
     }
 
     if (lvl == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
