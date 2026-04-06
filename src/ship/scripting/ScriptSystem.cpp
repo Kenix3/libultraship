@@ -190,8 +190,8 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
     }
 };
 
-void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> pre_callback,
-                              std::optional<std::function<void()>> post_callback) {
+void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> preCallback,
+                              std::optional<std::function<void()>> postCallback) {
     auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
     auto list = archive->GetArchives();
 
@@ -201,12 +201,12 @@ void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared
             continue;
         }
 
-        if (pre_callback.has_value()) {
-            pre_callback.value()(entry);
+        if (preCallback.has_value()) {
+            preCallback.value()(entry);
         }
         Compile(entry);
-        if (post_callback.has_value()) {
-            post_callback.value()();
+        if (postCallback.has_value()) {
+            postCallback.value()();
         }
     }
 }
