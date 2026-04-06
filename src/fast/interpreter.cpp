@@ -253,6 +253,18 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                 c[1][i][k] = i == 0 ? G_CCMUX_0 : G_ACMUX_0;
             }
         }
+
+        // In 1-cycle mode, TEXEL1 returns the same value as TEXEL0.
+        // Remap combiner inputs so the shader samples from the correct slot.
+        // Ex: TEXEL1/TEXEL1_ALPHA → TEXEL0/TEXEL0_ALPHA
+        for (uint32_t k = 0; k < 4; k++) {
+            if (c[0][0][k] == G_CCMUX_TEXEL1)
+                c[0][0][k] = G_CCMUX_TEXEL0;
+            if (c[0][0][k] == G_CCMUX_TEXEL1_ALPHA)
+                c[0][0][k] = G_CCMUX_TEXEL0_ALPHA;
+            if (c[0][1][k] == G_ACMUX_TEXEL1)
+                c[0][1][k] = G_ACMUX_TEXEL0;
+        }
     }
     {
         uint8_t inputNumber[32] = { 0 };
