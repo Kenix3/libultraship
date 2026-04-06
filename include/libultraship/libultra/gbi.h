@@ -189,10 +189,10 @@
 #define G_DL_INDEX 0x3d
 #define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
-#define G_PUSH_SHADER 0x49
-#define G_POP_SHADER 0x4a
-#define G_SETTILESIZE_INTERP 0x44
-#define G_SETTARGETINTERPINDEX 0x45
+#define G_PUSH_SHADER 0x43
+#define G_POP_SHADER 0x44
+#define G_SETTILESIZE_INTERP 0x45
+#define G_SETTARGETINTERPINDEX 0x46
 
 /*
  * The following commands are the "generated" RDP commands; the user
