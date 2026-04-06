@@ -1,7 +1,10 @@
 #include "ship/audio/Audio.h"
 
 #ifdef __APPLE__
+#include <TargetConditionals.h>
+#if !TARGET_OS_IPHONE
 #include "ship/audio/CoreAudioAudioPlayer.h"
+#endif
 #endif
 
 #include "ship/Context.h"
@@ -20,7 +23,7 @@ void Audio::InitAudioPlayer() {
             mAudioPlayer = std::make_shared<WasapiAudioPlayer>(this->mAudioSettings);
             break;
 #endif
-#ifdef __APPLE__
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
         case AudioBackend::COREAUDIO:
             mAudioPlayer = std::make_shared<CoreAudioAudioPlayer>(this->mAudioSettings);
             break;
@@ -45,7 +48,7 @@ void Audio::Init() {
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
 #endif
-#ifdef __APPLE__
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
     mAvailableAudioBackends->push_back(AudioBackend::COREAUDIO);
 #endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
