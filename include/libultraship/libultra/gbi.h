@@ -178,9 +178,9 @@
 #define G_FILLWIDERECT 0x38
 #define G_REGBLENDEDTEX 0x3f
 #define G_MOVEMEM_OTR 0x42
-#define G_LOADBLOCK_WIDE 0x46
-#define G_VTX_WIDE 0x47
-#define G_TRI1_WIDE 0x48
+#define G_LOADBLOCK_WIDE 0x47
+#define G_VTX_WIDE 0x48
+#define G_TRI1_WIDE 0x49
 
 /* GFX Effects */
 
