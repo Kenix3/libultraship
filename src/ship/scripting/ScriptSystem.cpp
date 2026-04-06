@@ -76,7 +76,7 @@ constexpr std::string_view GetPlatform() {
 #endif
 }
 
-void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
+void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
     const SafeLevel lvl = static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(
         CVAR_SCRIPT_SAFE_LEVEL, static_cast<int>(SafeLevel::WARN_UNTRUSTED_SCRIPTS)));
     const ArchiveManifest& info = archive->GetManifest();
@@ -184,28 +184,47 @@ void ScriptSystem::Load(const std::shared_ptr<Archive>& archive) {
             tcc_delete(s);
             throw std::runtime_error("Failed to output compiled code for " + temp);
         }
-    }
 
-    loader.Init(temp);
-    const ScriptFunc_t init = (ScriptFunc_t)loader.GetFunction("ModInit");
-
-    if (init) {
-        init();
+        loader.Init(temp);
         mLoadedScripts[info.Name] = loader;
     }
 };
 
-void ScriptSystem::LoadAll() {
+void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> pre_callback,
+                              std::optional<std::function<void()>> post_callback) {
     auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
     auto list = archive->GetArchives();
-    std::vector<std::shared_ptr<Archive>> loadOrder;
+
+    for (const auto& entry : *list) {
+        const auto& info = entry->GetManifest();
+        if (info.Main.empty()) {
+            continue;
+        }
+
+        if (pre_callback.has_value()) {
+            pre_callback.value()(entry);
+        }
+        Compile(entry);
+        if (post_callback.has_value()) {
+            post_callback.value()();
+        }
+    }
+}
+
+std::vector<ScriptLoader*> ScriptSystem::GetLoadersInDependencyOrder() {
+    std::vector<ScriptLoader*> orderedLoaders;
+    auto archiveManager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto list = archiveManager->GetArchives();
+
+    std::vector<std::string> loadOrder;
     std::unordered_map<std::string, std::shared_ptr<Archive>> archiveMap;
     std::unordered_map<std::string, int> inDegree;
     std::unordered_map<std::string, std::vector<std::string>> dependents;
 
     for (const auto& entry : *list) {
         const auto& info = entry->GetManifest();
-        if (info.Main.empty()) {
+
+        if (mLoadedScripts.find(info.Name) == mLoadedScripts.end()) {
             continue;
         }
 
@@ -220,13 +239,13 @@ void ScriptSystem::LoadAll() {
                 dependents[depName].push_back(name);
                 inDegree[name]++;
             } else {
-                throw std::runtime_error("Archive " + name + " depends on missing archive: " + depName);
+                throw std::runtime_error("Loaded archive " + name +
+                                         " depends on missing or unloaded archive: " + depName);
             }
         }
     }
 
     std::queue<std::string> readyQueue;
-
     for (const auto& [name, degree] : inDegree) {
         if (degree == 0) {
             readyQueue.push(name);
@@ -237,7 +256,7 @@ void ScriptSystem::LoadAll() {
         std::string current = readyQueue.front();
         readyQueue.pop();
 
-        loadOrder.push_back(archiveMap[current]);
+        loadOrder.push_back(current);
 
         for (const std::string& dependentName : dependents[current]) {
             inDegree[dependentName]--;
@@ -249,24 +268,37 @@ void ScriptSystem::LoadAll() {
     }
 
     if (loadOrder.size() != archiveMap.size()) {
-        throw std::runtime_error("Circular dependency detected among script archives. Failed to resolve load order.");
+        throw std::runtime_error("Circular dependency detected among loaded scripts. Failed to resolve init order.");
     }
 
-    for (const auto& entry : loadOrder) {
-        Load(entry);
+    for (const std::string& name : loadOrder) {
+        orderedLoaders.push_back(&mLoadedScripts.at(name));
     }
+
+    return orderedLoaders;
 }
 
+void ScriptSystem::LoadAll() {
+    auto loaders = GetLoadersInDependencyOrder();
+    for (const auto& loader : loaders) {
+        const ScriptFunc_t init = (ScriptFunc_t)loader->GetFunction("ModInit");
+        if (init) {
+            init();
+        }
+    }
+}
 void ScriptSystem::UnloadAll() {
-    for (auto& [_, loader] : mLoadedScripts) {
-        const ScriptFunc_t exit = (ScriptFunc_t)loader.GetFunction("ModExit");
+    auto loaders = GetLoadersInDependencyOrder();
+    for (auto it = loaders.rbegin(); it != loaders.rend(); ++it) {
+        const auto& loader = *it;
+        const ScriptFunc_t exit = (ScriptFunc_t)loader->GetFunction("ModExit");
+
         if (exit) {
             exit();
         }
-        loader.Unload();
     }
     mLoadedScripts.clear();
-};
+}
 
 void* ScriptSystem::GetFunction(const std::string& name, const std::string& function) {
     if (mLoadedScripts.contains(name)) {
