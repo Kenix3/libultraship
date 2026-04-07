@@ -320,6 +320,10 @@ void GfxRenderingAPIMetal::SelectTexture(int tile, uint32_t texture_id) {
 }
 
 void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
     TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();

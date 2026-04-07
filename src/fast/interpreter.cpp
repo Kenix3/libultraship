@@ -3701,6 +3701,10 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     char* imgData = (char*)i;
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetdata = {};
+    // Default scale factors to 1 for raw N64 textures. OTR textures set these
+    // from the resource, but raw textures would leave them at 0.
+    rawTexMetdata.h_byte_scale = 1;
+    rawTexMetdata.v_pixel_scale = 1;
 
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {

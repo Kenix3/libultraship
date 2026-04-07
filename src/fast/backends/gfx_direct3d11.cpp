@@ -547,6 +547,10 @@ static D3D11_TEXTURE_ADDRESS_MODE gfx_cm_to_d3d11(uint32_t val) {
 }
 
 void GfxRenderingAPIDX11::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
     // Create texture
 
     TextureData* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
@@ -708,6 +712,12 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mShaderProgram->usedTextures[i]) {
+            // mTextures is append-only (NewTexture just resizes +1, DeleteTexture is a no-op),
+            // so this is really just catching stale IDs left over from before we zero-initialized
+            // mCurrentTextureIds. No entries are ever removed, so gaps aren't a concern.
+            if (mCurrentTextureIds[i] >= mTextures.size()) {
+                continue;
+            }
             if (mLastResourceViews[i].Get() != mTextures[mCurrentTextureIds[i]].resource_view.Get()) {
                 mLastResourceViews[i] = mTextures[mCurrentTextureIds[i]].resource_view.Get();
                 mContext->PSSetShaderResources(i, 1, mTextures[mCurrentTextureIds[i]].resource_view.GetAddressOf());
@@ -723,8 +733,8 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
                     mLastSamplerStates[i] = mTextures[mCurrentTextureIds[i]].sampler_state.Get();
                 }
             }
+            mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIds[i]].sampler_state.GetAddressOf());
         }
-        mContext->PSSetSamplers(i, 1, mTextures[mCurrentTextureIds[i]].sampler_state.GetAddressOf());
     }
 
     // Set per-draw constant buffer
@@ -1039,6 +1049,8 @@ void GfxRenderingAPIDX11::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32
     ThrowIfFailed(mContext->Map(staging, 0, D3D11_MAP_READ, 0, &resource));
 
     if (!resource.pData) {
+        mContext->Unmap(staging, 0);
+        staging->Release();
         return;
     }
 
