@@ -18,7 +18,7 @@ FolderManager::~FolderManager() {
     [(NSAutoreleasePool *)m_autoreleasePool release];
 }
 
-void FolderManager::createAppSupportDirectory(const char * appName) {
+void FolderManager::CreateAppSupportDirectory(const char * appName) {
     NSString *appNameString = [NSString stringWithUTF8String:appName];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSString *appSupportDirectory = [NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory::NSApplicationSupportDirectory, Ship::NSUserDomainMask, YES) firstObject];
