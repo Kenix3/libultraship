@@ -61,6 +61,11 @@ class GfxRenderingAPI {
     virtual void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
                                  int dstY0, int dstX1, int dstY1) = 0;
     virtual void ClearFramebuffer(bool color, bool depth) = 0;
+    virtual void ClearDepthRegion(int x, int y, int w, int h) {
+        // Default: full depth clear. Backends that support scissored depth clears
+        // (e.g. OpenGL) should override for a more precise partial clear.
+        ClearFramebuffer(false, true);
+    }
     virtual void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) = 0;
     virtual void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) = 0;
     virtual std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
