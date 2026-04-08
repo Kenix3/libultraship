@@ -20,22 +20,25 @@ ListenerID EventSystem::RegisterListener(EventID id, EventCallback callback, Eve
 
     auto& registry = this->mEventRegistry[id];
 
-    if (std::find_if(registry.Listeners.begin(), registry.Listeners.end(), [callback](const EventListener listener) {
+    if (std::find_if(registry.Listeners.begin(), registry.Listeners.end(), [callback](const EventListener& listener) {
             return listener.Function == callback;
         }) != registry.Listeners.end()) {
         throw std::runtime_error("Listener already registered");
     }
 
-    registry.Listeners.push_back({ priority, callback, { file, line, 0 } });
+    const EventListener newListener = { registry.NextListenerID++, priority, callback, { file, line, 0 } };
 
-    std::sort(registry.Listeners.begin(), registry.Listeners.end(),
-              [](const EventListener a, const EventListener b) { return a.Priority < b.Priority; });
+    auto insertIt = std::lower_bound(registry.Listeners.begin(), registry.Listeners.end(), newListener,
+                                     [](const EventListener& existingListener, const EventListener& listenerToInsert) {
+                                         return existingListener.Priority < listenerToInsert.Priority;
+                                     });
 
-    return registry.Listeners.size() - 1;
+    registry.Listeners.insert(insertIt, newListener);
+
+    return newListener.ID;
 }
 
 void EventSystem::UnregisterListener(EventID id, ListenerID listenerId) {
-
     if (id == -1) {
         return;
     }
@@ -46,14 +49,21 @@ void EventSystem::UnregisterListener(EventID id, ListenerID listenerId) {
 
     auto& registry = this->mEventRegistry[id];
 
-    registry.Listeners.erase(registry.Listeners.begin() + listenerId);
+    auto it = std::find_if(registry.Listeners.begin(), registry.Listeners.end(),
+                           [listenerId](const EventListener& listener) { return listener.ID == listenerId; });
+
+    if (it == registry.Listeners.end()) {
+        return;
+    }
+
+    registry.Listeners.erase(it);
 }
 
 void EventSystem::CallEvent(const EventID id, IEvent* event, const char* file, const int line, const char* key) {
     auto& registry = this->mEventRegistry[id];
 
-    for (auto& [priority, function, _] : registry.Listeners) {
-        function(event);
+    for (auto& listener : registry.Listeners) {
+        listener.Function(event);
     }
 
     auto& info = registry.Callers[key];

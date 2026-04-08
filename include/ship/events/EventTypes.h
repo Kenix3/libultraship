@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 typedef int32_t EventID;
-typedef int32_t ListenerID;
+typedef int64_t ListenerID;
 
 typedef enum {
     EVENT_PRIORITY_LOW,
@@ -24,6 +24,7 @@ typedef struct EventMetadata {
 } EventMetadata;
 
 typedef struct EventListener {
+    ListenerID ID;
     EventPriority Priority;
     EventCallback Function;
     EventMetadata Metadata;
