@@ -520,7 +520,7 @@ class Interpreter {
     int mInterpolationIndexTarget;
 };
 
-void gfx_set_target_ucode(UcodeHandlers ucode);
+void gfx_set_ucode_handler(UcodeHandlers ucode)
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* GfxGetOpcodeName(int8_t opcode);
