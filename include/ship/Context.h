@@ -28,7 +28,7 @@ class ResourceManager;
 class FileDropMgr;
 class EventSystem;
 class ScriptSystem;
-class KeystoreSystem;
+class Keystore;
 
 class Context {
   public:
@@ -68,7 +68,7 @@ class Context {
     std::shared_ptr<FileDropMgr> GetFileDropMgr();
     std::shared_ptr<EventSystem> GetEventSystem();
     std::shared_ptr<ScriptSystem> GetScriptSystem();
-    std::shared_ptr<KeystoreSystem> GetKeystoreSystem();
+    std::shared_ptr<Keystore> GetKeystore();
 
     std::string GetName();
     std::string GetShortName();
@@ -89,7 +89,7 @@ class Context {
     bool InitFileDropMgr();
     bool InitEventSystem();
     bool InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1);
-    bool InitKeystoreSystem();
+    bool InitKeystore();
 
   protected:
     Context() = default;
@@ -110,7 +110,7 @@ class Context {
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
     std::shared_ptr<ScriptSystem> mScriptSystem;
-    std::shared_ptr<KeystoreSystem> mKeystoreSystem;
+    std::shared_ptr<Keystore> mKeystore;
 
     std::string mConfigFilePath;
     std::string mMainPath;

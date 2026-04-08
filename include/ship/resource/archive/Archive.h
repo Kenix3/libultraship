@@ -72,7 +72,6 @@ class Archive : public std::enable_shared_from_this<Archive> {
     void SetGameVersion(uint32_t gameVersion);
     void IndexFile(const std::string& filePath);
     void Validate();
-    std::vector<uint8_t> HexToBytes(const std::string& hex);
 
   private:
     bool mIsLoaded;

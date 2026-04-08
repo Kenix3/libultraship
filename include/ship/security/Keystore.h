@@ -7,10 +7,10 @@
 
 namespace Ship {
 
-class KeystoreSystem {
+class Keystore {
   public:
-    KeystoreSystem() = default;
-    ~KeystoreSystem() = default;
+    Keystore() = default;
+    ~Keystore() = default;
 
     bool Load();
 

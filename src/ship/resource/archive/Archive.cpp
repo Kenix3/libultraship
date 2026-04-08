@@ -10,7 +10,8 @@
 #include "ship/utils/glob.h"
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
-#include "ship/security/KeystoreSystem.h"
+#include "ship/utils/StringHelper.h"
+#include "ship/security/Keystore.h"
 
 #include <tinyxml2.h>
 #include <monocypher.h>
@@ -241,7 +242,7 @@ void Archive::Validate() {
         return;
     }
 
-    std::vector<uint8_t> signature = HexToBytes(mManifest.Signature);
+    std::vector<uint8_t> signature = StringHelper::HexToBytes(mManifest.Signature);
 
     if (signature.size() != 64) {
         SPDLOG_ERROR("Invalid signature size for archive {}. Expected 64 bytes, got {}", GetPath(), signature.size());
@@ -250,7 +251,7 @@ void Archive::Validate() {
 
     bool validSignature = false;
 
-    for (const auto& key : Context::GetInstance()->GetKeystoreSystem()->GetAllKeys()) {
+    for (const auto& key : Context::GetInstance()->GetKeystore()->GetAllKeys()) {
         const int status = crypto_ed25519_check(signature.data(), key.data(),
                                                 reinterpret_cast<const uint8_t*>(calculatedChecksumHex.data()),
                                                 calculatedChecksumHex.length());
@@ -270,16 +271,6 @@ void Archive::Validate() {
 
     mIsSigned = true;
     SPDLOG_INFO("Archive {} successfully authenticated.", GetPath());
-}
-
-std::vector<uint8_t> Archive::HexToBytes(const std::string& hex) {
-    std::vector<uint8_t> bytes;
-    for (size_t i = 0; i < hex.length(); i += 2) {
-        std::string byteString = hex.substr(i, 2);
-        uint8_t byte = static_cast<uint8_t>(strtol(byteString.c_str(), nullptr, 16));
-        bytes.push_back(byte);
-    }
-    return bytes;
 }
 
 } // namespace Ship
