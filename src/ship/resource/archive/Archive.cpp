@@ -63,7 +63,7 @@ void Archive::Load() {
             mManifest.Version = json.value("version", "1.0");
             mManifest.Website = json.value("website", "https://github.com/Kenix3/libultraship");
             mManifest.Description = json.value("description", "No description provided.");
-            mManifest.License = json.value("license", "MIT");
+            mManifest.License = json.value("license", "All rights reserved");
             mManifest.CodeVersion = json.value("code_version", 1);
             mManifest.GameVersion = json.value("game_version", 0xFFFFFFFF);
             mManifest.Main = json.value("main", "");
