@@ -635,7 +635,7 @@ void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
     }
 }
 
-void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+void GfxRenderingAPIOGL::DrawPrimitives(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
     if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;
@@ -689,7 +689,8 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 
     // printf("flushing %d tris\n", buf_vbo_num_tris);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_vbo_len, buf_vbo, GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
+    // TODO: Be able to render to more than just triangles.
+    glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_prims);
 }
 
 void GfxRenderingAPIOGL::Init() {
