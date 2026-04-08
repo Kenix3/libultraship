@@ -133,8 +133,7 @@ void Interpreter::Flush() {
     if (mBufVboLen > 0) {
 <<<<<<< Updated upstream
         mRapi->DrawPrimitives(mBufVbo, mBufVboLen, mBufVboNumPrims);
-=======
-        mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumPrims);
+        == == == = mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumPrims);
 >>>>>>> Stashed changes
         mBufVboLen = 0;
         mBufVboNumPrims = 0;
@@ -1394,7 +1393,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
         // If inverted culling is requested, negate the cross
         if ((ucode_handler_index == UcodeHandlers::ucode_f3dex2 ||
-            ucode_handler_index == UcodeHandlers::ucode_l3dex2) &&
+             ucode_handler_index == UcodeHandlers::ucode_l3dex2) &&
             (mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
@@ -3060,8 +3059,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
 }
 
 bool gfx_mtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
-    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 ||
-        ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         return gfx_mtx_otr_filepath_handler_custom_f3dex2(cmd0);
     } else {
         return gfx_mtx_otr_filepath_handler_custom_f3d(cmd0);
@@ -3103,8 +3101,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
 }
 
 bool gfx_mtx_otr_handler_custom(F3DGfx** cmd0) {
-    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 ||
-        ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         return gfx_mtx_otr_handler_custom_f3dex2(cmd0);
     } else {
         return gfx_mtx_otr_handler_custom_f3d(cmd0);
@@ -3159,8 +3156,7 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 ||
-        ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         gfx->GfxSpMovememF3dex2(index, offset,
                                 Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash));
     } else {
@@ -3585,7 +3581,7 @@ bool gfx_tri1_handler_l3d(F3DGfx** cmd0) {
     uint32_t vtx2_idx = C1(8, 8) / 10;
     uint32_t vtx3_idx = C1(0, 8) / 10;
     // TODO: Implement. This has to do with the line colour.
-    //uint32_t first_vtx = C1(24, 8);
+    // uint32_t first_vtx = C1(24, 8);
 
     if (vtx1_idx != vtx2_idx)
         gfx->GfxSpLine3D(vtx1_idx, vtx2_idx, 0);
@@ -3689,7 +3685,6 @@ bool gfx_tri2_handler_l3dex2(F3DGfx** cmd0) {
     return false;
 }
 
-
 bool gfx_quad_handler_l3dex(F3DGfx** cmd0, Interpreter* gfx) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -3703,7 +3698,7 @@ bool gfx_quad_handler_l3dex2(F3DGfx** cmd0, Interpreter* gfx) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-     SPDLOG_INFO("Encountered unimplemented opcode: gfx_quad_handler_l3dex2");
+    SPDLOG_INFO("Encountered unimplemented opcode: gfx_quad_handler_l3dex2");
 
     return false;
 }
@@ -4562,7 +4557,7 @@ static constexpr std::array ucode_handlers = {
     &f3dexHandlers,  // ucode_f3dexb
     &f3dex2Handlers, // ucode_f3dex2
     &s2dexHandlers,  // ucode_s2dex
-    &l3dHandlers,   // ucode_l3db
+    &l3dHandlers,    // ucode_l3db
     &l3dHandlers,    // ucode_l3d
     &l3dexHandlers,  // ucode_l3dex
     &l3dexHandlers,  // ucode_l3dexb
