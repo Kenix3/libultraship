@@ -93,16 +93,15 @@ class Context : public Component, public Tickable {
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-    GetTickableComponents(const std::vector<std::string>& names);
+    GetTickableComponents(const std::vector<std::string>& componentNames);
     template <typename T>
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-    GetTickableComponents(const std::vector<std::string>& names);
-    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents(const std::string& name);
-    template <typename T>
-    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents(const std::string& name);
+    GetTickableComponents(const std::vector<std::string>& componentNames);
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-    GetTickableComponent(const std::vector<int32_t>& ids);
-    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponent(const int32_t id);
+    GetTickableComponents(const std::string& componentName);
+    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents(const std::string& componentName);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponent(const std::vector<int32_t>& componentIds);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponent(const int32_t componentId);
 
     Context& SetTickableComponentsOrderStale();
     Context& UnsetTickableComponentsOrderStale();

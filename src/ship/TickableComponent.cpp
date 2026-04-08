@@ -1,4 +1,5 @@
 #include "ship/TickableComponent.h"
+#include "ship/actions/DrawDebugMenuAction.h"
 
 #include <spdlog/spdlog.h>
 
@@ -8,13 +9,29 @@ TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Co
                                      const bool isDrawing, const bool isDrawingDebugMenu)
     : Tickable(isTicking, isDrawing), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
     if (isDrawingDebugMenu) {
-        StartAction(ActionType::DrawDebugMenu);
+        AddAction(std::make_shared<DrawDebugMenuAction>(static_cast<uint32_t>(ActionType::DrawDebugMenu)));
     }
 
     if (GetContext() != nullptr) {
         GetContext()->AddTickableComponent(std::static_pointer_cast<TickableComponent>(shared_from_this()));
     }
 }
+
+// TODO: Logic for the DrawDebugMenuAction
+/*
+bool TickableComponent::ActionRan(const ActionType action, const double durationSinceLastTick) {
+    bool val = Tickable::ActionRan(action, durationSinceLastTick);
+    if (action == ActionType::DrawDebugMenu) {
+        val &= DebugMenuDrawn(durationSinceLastTick);
+        auto children = GetChildren();
+        for (const auto& child : *children) {
+            const auto& childTickable = std::dynamic_pointer_cast<Tickable>(child); 
+            val &= childTickable->ActionRan(action, durationSinceLastTick);
+        }
+    }
+    return val;
+}
+*/
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
@@ -31,19 +48,6 @@ TickableComponent::~TickableComponent() {
     }
 
     Component::~Component();
-}
-
-bool TickableComponent::ActionRan(const ActionType action, const double durationSinceLastTick) {
-    bool val = Tickable::ActionRan(action, durationSinceLastTick);
-    if (action == ActionType::DrawDebugMenu) {
-        val &= DebugMenuDrawn(durationSinceLastTick);
-        auto children = GetChildren();
-        for (const auto& child : *children) {
-            const auto& childTickable = std::dynamic_pointer_cast<Tickable>(child); 
-            val &= childTickable->ActionRan(action, durationSinceLastTick);
-        }
-    }
-    return val;
 }
 
 std::shared_ptr<Context> TickableComponent::GetContext() const {

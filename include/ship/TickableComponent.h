@@ -1,11 +1,12 @@
 #pragma once
 
+#include <stdint.h>
+#include <memory>
+
 #include "ship/Context.h"
 #include "ship/Tickable.h"
 #include "ship/Component.h"
-
-#include <stdint.h>
-#include <memory>
+#include "ship/Action.h"
 
 namespace Ship {
 class Context;

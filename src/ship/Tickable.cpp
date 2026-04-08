@@ -1,48 +1,37 @@
 #include "ship/Tickable.h"
 #include "ship/Component.h"
+#include "ship/Action.h"
+#include "ship/actions/TickAction.h"
+#include "ship/actions/DrawAction.h"
 
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-Tickable::Tickable(const bool isTicking, const bool isDrawing)
-    : mActions(false)
+Tickable::Tickable(const bool isTicking)
+    : mIsTicking(isTicking), mActions()
 #ifdef INCLUDE_MUTEX
       ,
       mMutex()
 #endif
-#ifdef INCLUDE_PROFILING
-      ,
-      mClocks()
-#endif
 {
-    if (isTicking) {
-        StartAction(ActionType::Tick);
-    }
 
-    if (isDrawing) {
-        StartAction(ActionType::Draw);
-    }
 }
 
-Tickable::Tickable(const std::vector<bool>& actions)
-    : mActions(false)
+Tickable::Tickable(const bool isTicking, const std::vector<std::shared_ptr<Action>>& actions)
+    : mIsTicking(isTicking), mActions()
 #ifdef INCLUDE_MUTEX
 ,     mMutex()
-#endif
-#ifdef INCLUDE_PROFILING
-      ,
-      mClocks()
 #endif
 {
     auto actionCount = actions.size();
     for (size_t i = 0; i < actionCount; i++) {
-        StartAction(static_cast<ActionType>(i));
+        AddAction(actions[i]);
     }
 }
 
 Tickable::~Tickable() = default;
 
-bool Tickable::RunAction(const ActionType action, const double durationSinceLastTick) {
+bool Tickable::RunAction(const uint32_t action, const double durationSinceLastTick) {
 #ifdef INCLUDE_PROFILING
     // Set Previous clocks to the current clock.
     SetClock(ClockType::PreviousTickStart, GetClock(ClockType::TickStart));
@@ -66,14 +55,14 @@ bool Tickable::RunAction(const ActionType action, const double durationSinceLast
     return val;
 }
 
-bool Tickable::IsActionRunning(const ActionType action) {
+bool Tickable::IsActionRunning(const uint32_t action) {
 #ifdef INCLUDE_MUTEX
     const std::lock_guard<std::mutex> lock(mMutex);
 #endif
     return mActions[action];
 }
 
-bool Tickable::StartAction(const ActionType action, const bool force) {
+bool Tickable::StartAction(const uint32_t action, const bool force) {
     if (IsActionRunning(action)) {
         return true;
     }
@@ -103,7 +92,7 @@ bool Tickable::StartAction(const ActionType action, const bool force) {
     return true;
 }
 
-bool Tickable::StopAction(const ActionType action, const bool force) {
+bool Tickable::StopAction(const uint32_t action, const bool force) {
     if (!IsActionRunning(action)) {
         return true;
     }
@@ -133,31 +122,33 @@ bool Tickable::StopAction(const ActionType action, const bool force) {
     return true;
 }
 
-
 #ifdef INCLUDE_PROFILING
 double Tickable::GetTime(const ClockType clockType) const {
     return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
 }
 #endif
 
-bool Tickable::ActionRan(const ActionType action, const double durationSinceLastTick) {
+bool Tickable::ActionRan(const uint32_t action, const double durationSinceLastTick) {
     return true;
 }
 
+std::mutex& Tickable::GetMutex() {
+    return mMutex;
+}
 
-bool Tickable::CanStartAction(const ActionType action) {
+bool Tickable::CanStartAction(const uint32_t action) {
     return true;
 }
 
-bool Tickable::CanStopAction(const ActionType action) {
+bool Tickable::CanStopAction(const uint32_t action) {
     return true;
 }
 
-void Tickable::ActionStarted(const ActionType action, const bool forced) {
+void Tickable::ActionStarted(const uint32_t action, const bool forced) {
 
 }
 
-void Tickable::ActionStopped(const ActionType action, const bool forced) {
+void Tickable::ActionStopped(const uint32_t action, const bool forced) {
 
 }
 
