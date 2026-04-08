@@ -4589,7 +4589,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
 
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
 // are OK with that...
-void gfx_set_ucode_handler(UcodeHandlers ucode) {
+extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode) {
     // Loaded ucode must be in range of the supported ucode_handlers
     assert(ucode < ucode_max);
     Interpreter* gfx = mInstance.lock().get();

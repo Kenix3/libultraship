@@ -520,13 +520,13 @@ class Interpreter {
     int mInterpolationIndexTarget;
 };
 
-void gfx_set_ucode_handler(UcodeHandlers ucode)
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 } // namespace Fast
 
+extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize);
