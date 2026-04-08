@@ -17,7 +17,7 @@ class ScriptLoader {
     void* GetFunction(const std::string& name);
     void Unload();
 
-  protected:
+  private:
     ScriptHandle_t mHandle;
     std::string mTempFile;
 };
