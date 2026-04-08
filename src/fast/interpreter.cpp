@@ -131,10 +131,7 @@ void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
 
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
-<<<<<<< Updated upstream
         mRapi->DrawPrimitives(mBufVbo, mBufVboLen, mBufVboNumPrims);
-        == == == = mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumPrims);
->>>>>>> Stashed changes
         mBufVboLen = 0;
         mBufVboNumPrims = 0;
     }
