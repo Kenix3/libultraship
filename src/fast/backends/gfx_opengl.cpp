@@ -594,7 +594,7 @@ void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
     }
 }
 
-void GfxRenderingAPIOGL::DrawPrimitves(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
+void GfxRenderingAPIOGL::DrawPrimitives(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
     if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;

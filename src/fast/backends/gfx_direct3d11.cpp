@@ -571,7 +571,7 @@ void GfxRenderingAPIDX11::SetUseAlpha(bool use_alpha) {
     // Already part of the pipeline state from shader info
 }
 
-void GfxRenderingAPIDX11::DrawPrimitves(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
+void GfxRenderingAPIDX11::DrawPrimitives(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
 
     if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask) {
         mLastDepthTest = mCurrentDepthTest;
