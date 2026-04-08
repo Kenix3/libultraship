@@ -69,7 +69,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void SetViewport(int x, int y, int width, int height) override;
     void SetScissor(int x, int y, int width, int height) override;
     void SetUseAlpha(bool useAlpha) override;
-    void DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) override;
+    void DrawPrimitves(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) override;
     void Init() override;
     void OnResize() override;
     void StartFrame() override;

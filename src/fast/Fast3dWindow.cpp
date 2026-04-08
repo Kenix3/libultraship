@@ -159,7 +159,7 @@ void Fast3dWindow::EnableSRGBMode() {
 }
 
 void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {
-    gfx_set_target_ucode(ucode);
+    gfx_set_ucode_handler(ucode);
 }
 
 void Fast3dWindow::Close() {
