@@ -1,6 +1,5 @@
 #pragma once
 
-#include <queue>
 #include <vector>
 #include <cstdint>
 #include <cstddef>
