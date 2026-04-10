@@ -3724,7 +3724,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     HMODULE module = nullptr;
     if (i <= 0x0FFFFFFF &&
         !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                             reinterpret_cast<LPCWSTR>(ptr), &module))) {
+                             reinterpret_cast<LPCWSTR>(i), &module))) {
         return false;
     }
 #else
