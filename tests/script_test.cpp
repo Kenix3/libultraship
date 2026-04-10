@@ -42,8 +42,8 @@ class RamArchive final : virtual public Archive {
             content = "test.c";
         } else if (filePath == "test.c") {
             content = R"(
-                #include <stdio.h>
                 #define HM_API __attribute__((visibility("default")))
+                static int status = -1;
 
                 #ifdef __FIBx2__
                 HM_API int fib(int n) {
@@ -56,8 +56,17 @@ class RamArchive final : virtual public Archive {
                     return fib(n - 1) + fib(n - 2);
                 }
                 #endif
-                HM_API void ModInit() { printf("Hello from test.c!\n"); }
-                HM_API void ModExit() { printf("Goodbye from test.c!\n"); }
+
+                HM_API int GetStatus() {
+                    return status;
+                }
+
+                HM_API void ModInit() {
+                    status = 1;
+                }
+                HM_API void ModExit() {
+                    status = 0;
+                }
             )";
         } else {
             return nullptr;
@@ -94,12 +103,18 @@ TEST(ScriptSystem, ModInitAndExit) {
 
     auto init = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModInit"));
     auto exit = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModExit"));
+    auto status = reinterpret_cast<int (*)()>(system.GetFunction("Test Script", "GetStatus"));
 
     ASSERT_NE(init, nullptr);
     ASSERT_NE(exit, nullptr);
+    ASSERT_NE(status, nullptr);
+
+    EXPECT_EQ(status(), -1);
 
     init();
+    EXPECT_EQ(status(), 1);
     exit();
+    EXPECT_EQ(status(), 0);
 }
 
 TEST(ScriptSystem, CompileDefines) {
