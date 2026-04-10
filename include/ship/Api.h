@@ -7,7 +7,7 @@
 #endif
 
 #ifdef _WIN32
-#ifdef __DLL__
+#ifndef __DLL__
 #define API_EXPORT API_EXTERN __declspec(dllexport)
 #else
 #define API_EXPORT API_EXTERN __declspec(dllimport)
