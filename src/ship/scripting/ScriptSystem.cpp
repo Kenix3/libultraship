@@ -146,7 +146,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
         for (const auto& [key, value] : mCompileDefines) {
             tcc_define_symbol(s, key.c_str(), value.c_str());
         }
-        
+
         tcc_set_options(s, mBuildOptions.c_str());
         tcc_set_output_type(s, TCC_OUTPUT_DLL);
 
@@ -221,7 +221,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
         }
     }
 
-    
+
     loader.Init(temp);
     mLoadedScripts[info.Name] = loader;
 };

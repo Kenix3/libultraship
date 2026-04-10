@@ -32,7 +32,7 @@ typedef struct EventListener {
 } EventListener;
 
 #ifdef INIT_EVENT_IDS
-#ifdef __cplusplus 
+#ifdef __cplusplus
 #define DECLARE_EVENT(eventName) extern "C" EventID eventName##ID = -1;
 #else
 #define DECLARE_EVENT(eventName) EventID eventName##ID = -1;
