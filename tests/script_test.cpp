@@ -21,6 +21,9 @@ class RamArchive final : virtual public Archive {
     bool Close() override { return true; }
     bool WriteFile(const std::string& filename, const std::vector<uint8_t>& data) override { return true; }
 
+    std::shared_ptr<File> LoadFile(uint64_t hash) override {
+        return nullptr;
+    }
     std::shared_ptr<File> LoadFile(const std::string& filePath) override {
         auto file = std::make_shared<File>();
         if (filePath == "version") {
