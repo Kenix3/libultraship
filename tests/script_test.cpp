@@ -85,14 +85,11 @@ class RamArchive final : virtual public Archive {
 };
 
 std::string FindLibTCC1Folder() {
-    std::vector<std::string> searchPaths = {
-        "/usr/lib",
-        "/usr/local/lib",
-        "/lib"
-    };
+    std::vector<std::string> searchPaths = { "/usr/lib", "/usr/local/lib", "/lib" };
 
     for (const auto& basePath : searchPaths) {
-        if (!fs::exists(basePath)) continue;
+        if (!fs::exists(basePath))
+            continue;
 
         try {
             auto options = fs::directory_options::skip_permission_denied;
@@ -102,12 +99,10 @@ std::string FindLibTCC1Folder() {
                     return entry.path().parent_path().string();
                 }
             }
-        } catch (const fs::filesystem_error& e) {
-            continue;
-        }
+        } catch (const fs::filesystem_error& e) { continue; }
     }
 
-    return ""; 
+    return "";
 }
 }; // namespace Ship
 
