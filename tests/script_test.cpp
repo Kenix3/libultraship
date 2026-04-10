@@ -63,8 +63,8 @@ class RamArchive final : virtual public Archive {
                 }
                 #endif
 
-                HM_API int GetStatus() {
-                    return status;
+                HM_API int* GetStatus() {
+                    return &status;
                 }
 
                 HM_API void ModInit() {
@@ -136,18 +136,18 @@ TEST(ScriptSystem, ModInitAndExit) {
 
     auto init = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModInit"));
     auto exit = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModExit"));
-    auto status = reinterpret_cast<int (*)()>(system.GetFunction("Test Script", "GetStatus"));
+    auto status = reinterpret_cast<int*(*)()>(system.GetFunction("Test Script", "GetStatus"));
 
     ASSERT_NE(init, nullptr);
     ASSERT_NE(exit, nullptr);
     ASSERT_NE(status, nullptr);
 
-    EXPECT_EQ(status(), -1);
+    EXPECT_EQ(*status(), -1);
 
     init();
-    EXPECT_EQ(status(), 1);
+    EXPECT_EQ(*status(), 1);
     exit();
-    EXPECT_EQ(status(), 0);
+    EXPECT_EQ(*status(), 0);
 }
 
 TEST(ScriptSystem, CompileDefines) {
