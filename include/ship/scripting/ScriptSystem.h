@@ -18,7 +18,8 @@ class ScriptSystem {
                  const std::string& buildOptions, const std::vector<std::string>& includePaths,
                  const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries)
         : mCompileDefines(compileDefines), mCodeVersion(codeVersion), mBuildOptions(buildOptions),
-          mIncludePaths(includePaths), mLibraryPaths(libraryPaths), mLibraries(libraries) {}
+          mIncludePaths(includePaths), mLibraryPaths(libraryPaths), mLibraries(libraries) {
+    }
 
     void Compile(const std::shared_ptr<Archive>& archive);
     void CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> preCallback = std::nullopt,

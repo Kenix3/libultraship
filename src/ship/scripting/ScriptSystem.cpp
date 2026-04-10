@@ -150,7 +150,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
         tcc_set_options(s, mBuildOptions.c_str());
         tcc_set_output_type(s, TCC_OUTPUT_DLL);
 
-        for(const std::string& includePath : mIncludePaths) {
+        for (const std::string& includePath : mIncludePaths) {
             if (!std::filesystem::exists(includePath)) {
                 SPDLOG_WARN("Include path does not exist: {}", includePath);
                 continue;
@@ -164,7 +164,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
             tcc_add_include_path(s, includePath.c_str());
         }
 
-        for(const std::string& libraryPath : mLibraryPaths) {
+        for (const std::string& libraryPath : mLibraryPaths) {
             if (!std::filesystem::exists(libraryPath)) {
                 SPDLOG_WARN("Library path does not exist: {}", libraryPath);
                 continue;
@@ -178,7 +178,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
             tcc_add_library_path(s, libraryPath.c_str());
         }
 
-        for(const std::string& library : mLibraries) {
+        for (const std::string& library : mLibraries) {
             tcc_add_library(s, library.c_str());
         }
 

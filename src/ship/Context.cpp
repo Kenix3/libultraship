@@ -359,13 +359,14 @@ bool Context::InitEventSystem() {
 }
 
 bool Context::InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
-                              std::string buildOptions, std::vector<std::string> includePaths,
-                              std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
+                               std::string buildOptions, std::vector<std::string> includePaths,
+                               std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
     if (GetScriptSystem() != nullptr) {
         return true;
     }
 
-    mScriptSystem = std::make_shared<ScriptSystem>(compileDefines, codeVersion, buildOptions, includePaths, libraryPaths, libraries);
+    mScriptSystem = std::make_shared<ScriptSystem>(compileDefines, codeVersion, buildOptions, includePaths,
+                                                   libraryPaths, libraries);
     if (GetScriptSystem() == nullptr) {
         SPDLOG_ERROR("Failed to initialize script system");
         return false;

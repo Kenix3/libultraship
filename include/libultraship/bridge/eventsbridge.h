@@ -10,7 +10,7 @@ extern "C" {
 
 API_EXPORT EventID EventSystemRegisterEvent(const char* name);
 API_EXPORT ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority,
-                                              const char* file, int line);
+                                                  const char* file, int line);
 API_EXPORT void EventSystemUnregisterListener(EventID ev, ListenerID id);
 API_EXPORT void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key);
 
