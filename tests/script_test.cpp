@@ -74,10 +74,14 @@ class RamArchive final : virtual public Archive {
 
 TEST(ScriptSystem, FibFunction) {
     auto archive = std::make_shared<Ship::RamArchive>();
+    printf("Creating ScriptSystem...\n");
     Ship::ScriptSystem system({}, 1, "-g -Wl", {}, {}, {});
+    printf("Compiling script...\n");
     system.Compile(archive);
+    printf("Loading script...\n");
     system.LoadAll();
-
+    printf("Getting function pointer...\n");
+    
     auto fib = reinterpret_cast<int (*)(int)>(system.GetFunction("Test Script", "fib"));
     EXPECT_NE(fib, nullptr);
     EXPECT_EQ(fib(10), 55);
@@ -85,9 +89,13 @@ TEST(ScriptSystem, FibFunction) {
 
 TEST(ScriptSystem, ModInitAndExit) {
     auto archive = std::make_shared<Ship::RamArchive>();
+    printf("Creating ScriptSystem...\n");
     Ship::ScriptSystem system({}, 1, "-g -Wl", {}, {}, {});
+    printf("Compiling script...\n");
     system.Compile(archive);
+    printf("Loading script...\n");
     system.LoadAll();
+    printf("Getting function pointer...\n");
 
     auto init = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModInit"));
     auto exit = reinterpret_cast<void (*)()>(system.GetFunction("Test Script", "ModExit"));
@@ -100,9 +108,13 @@ TEST(ScriptSystem, ModInitAndExit) {
 
 TEST(ScriptSystem, CompileDefines) {
     auto archive = std::make_shared<Ship::RamArchive>();
+    printf("Creating ScriptSystem...\n");
     Ship::ScriptSystem system({{"__FIBx2__", "1"}}, 1, "-g -Wl", {}, {}, {});
+    printf("Compiling script...\n");
     system.Compile(archive);
+    printf("Loading script...\n");
     system.LoadAll();
+    printf("Getting function pointer...\n");
 
     auto fib = reinterpret_cast<int (*)(int)>(system.GetFunction("Test Script", "fib"));
     EXPECT_NE(fib, nullptr);
