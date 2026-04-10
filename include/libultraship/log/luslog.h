@@ -2,14 +2,10 @@
 #include <stdint.h>
 #include "ship/Api.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// NOLINTBEGIN(readability-identifier-naming)
 API_EXPORT void luslog(const char* file, int32_t line, int32_t logLevel, const char* msg);
 API_EXPORT void lusprintf(const char* file, int32_t line, int32_t logLevel, const char* fmt, ...);
-#ifdef __cplusplus
-}
-#endif
+// NOLINTEND(readability-identifier-naming)
 
 #define LUSLOG_LEVEL_TRACE 0
 #define LUSLOG_LEVEL_DEBUG 1
