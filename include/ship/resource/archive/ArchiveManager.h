@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stdint.h>
+#include <functional>
 #include "ship/resource/File.h"
 
 namespace Ship {
