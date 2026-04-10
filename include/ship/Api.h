@@ -1,11 +1,17 @@
 #pragma once
 
-#ifdef _WIN32
 #ifdef __cplusplus
-#define API_EXPORT extern "C" __declspec(dllexport)
+#define API_EXTERN extern "C"
 #else
-#define API_EXPORT __declspec(dllexport)
+#define API_EXTERN extern
+#endif
+
+#ifdef _WIN32
+#ifdef __DLL__
+#define API_EXPORT API_EXTERN __declspec(dllexport)
+#else
+#define API_EXPORT API_EXTERN __declspec(dllimport)
 #endif
 #else
-#define API_EXPORT
+#define API_EXPORT API_EXTERN
 #endif
