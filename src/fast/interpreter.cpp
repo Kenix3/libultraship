@@ -3718,6 +3718,8 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     // If the resolved address is still in the N64 segmented range, SegAddr
     // failed to resolve it (segment not set up). Skip to avoid dereferencing
     // invalid memory.
+    // For Windows, also check if the address is not from a dll because this validation returns a false positive caused
+    // by how the virtual memory is allocated.
 #ifdef _WIN32
     HMODULE module = nullptr;
     if (i <= 0x0FFFFFFF &&
