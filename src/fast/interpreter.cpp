@@ -39,6 +39,10 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 std::stack<std::string> currentDir;
 
 #define SEG_ADDR(seg, addr) (addr | (seg << 24) | 1)
@@ -3710,6 +3714,22 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             rawTexMetdata.resource = tex;
         }
     }
+
+    // If the resolved address is still in the N64 segmented range, SegAddr
+    // failed to resolve it (segment not set up). Skip to avoid dereferencing
+    // invalid memory.
+#ifdef _WIN32
+    HMODULE module = nullptr;
+    if (i <= 0x0FFFFFFF &&
+        !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                             reinterpret_cast<LPCWSTR>(ptr), &module))) {
+        return false;
+    }
+#else
+    if (i <= 0x0FFFFFFF) {
+        return false;
+    }
+#endif
 
     gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
