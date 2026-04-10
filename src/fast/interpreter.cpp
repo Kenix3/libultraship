@@ -3711,13 +3711,6 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
         }
     }
 
-    // If the resolved address is still in the N64 segmented range, SegAddr
-    // failed to resolve it (segment not set up). Skip to avoid dereferencing
-    // invalid memory.
-    if (i <= 0x0FFFFFFF) {
-        return false;
-    }
-
     gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
     return false;
