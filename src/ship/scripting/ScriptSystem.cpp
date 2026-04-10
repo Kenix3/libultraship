@@ -3,7 +3,6 @@
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/File.h"
-#include "ship/Context.h"
 #include "spdlog/spdlog.h"
 #include <optional>
 #include <fstream>
@@ -77,8 +76,6 @@ constexpr std::string_view GetPlatform() {
 }
 
 void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
-    const SafeLevel lvl = static_cast<SafeLevel>(Context::GetInstance()->GetConsoleVariables()->GetInteger(
-        CVAR_SCRIPT_SAFE_LEVEL, static_cast<int>(SafeLevel::WARN_UNTRUSTED_SCRIPTS)));
     const ArchiveManifest& info = archive->GetManifest();
     constexpr std::string_view platform = GetPlatform();
     const bool isCodeMod = !info.Main.empty() || !info.Binaries.empty();
@@ -95,13 +92,13 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
 
     const bool isTrusted = archive->IsSigned() && archive->IsChecksumValid();
 
-    if (lvl == SafeLevel::ONLY_TRUSTED_SCRIPTS && !isTrusted) {
+    if (mSafeLevel == SafeLevel::ONLY_TRUSTED_SCRIPTS && !isTrusted) {
         throw std::runtime_error(
             "Script loading is disabled for untrusted scripts. Failed to load script from archive: " +
             archive->GetPath());
     }
 
-    if (lvl == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
+    if (mSafeLevel == SafeLevel::WARN_UNTRUSTED_SCRIPTS) {
         if (isTrusted) {
             SPDLOG_INFO("Loaded trusted script from archive: {}", archive->GetPath());
         } else {
@@ -111,6 +108,8 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
                 archive->GetPath());
         }
     }
+
+    mLoadedArchives.push_back(archive);
 
     ScriptLoader loader;
 
@@ -227,10 +226,7 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
 
 void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> preCallback,
                               std::optional<std::function<void()>> postCallback) {
-    auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
-    auto list = archive->GetArchives();
-
-    for (const auto& entry : *list) {
+    for (const auto& entry : mLoadedArchives) {
         const auto& info = entry->GetManifest();
         if (info.Main.empty() && info.Binaries.empty()) {
             continue;
@@ -248,15 +244,13 @@ void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared
 
 std::vector<std::string> ScriptSystem::GetLoadersInDependencyOrder() {
     std::vector<std::string> orderedLoaders;
-    auto archiveManager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
-    auto list = archiveManager->GetArchives();
 
     std::vector<std::string> loadOrder;
     std::unordered_map<std::string, std::shared_ptr<Archive>> archiveMap;
     std::unordered_map<std::string, int> inDegree;
     std::unordered_map<std::string, std::vector<std::string>> dependents;
 
-    for (const auto& entry : *list) {
+    for (const auto& entry : mLoadedArchives) {
         const auto& info = entry->GetManifest();
 
         if (mLoadedScripts.find(info.Name) == mLoadedScripts.end()) {
