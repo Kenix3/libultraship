@@ -30,4 +30,5 @@ class StringHelper {
     static bool IsValidOffset(const std::string& str);
     static bool IEquals(const std::string& a, const std::string& b);
     static std::vector<uint8_t> HexToBytes(const std::string& hex);
+    static std::string BytesToHex(const std::vector<unsigned char>& bytes);
 };

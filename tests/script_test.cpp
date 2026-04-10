@@ -1,9 +1,15 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <filesystem>
 
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/ScriptSystem.h"
+
+namespace fs = std::filesystem;
 
 // ============================================================
 // ScriptSystem Tests
@@ -77,12 +83,41 @@ class RamArchive final : virtual public Archive {
         return file;
     }
 };
+
+std::string FindLibTCC1Folder() {
+    std::vector<std::string> searchPaths = {
+        "/usr/lib",
+        "/usr/local/lib",
+        "/lib"
+    };
+
+    for (const auto& basePath : searchPaths) {
+        if (!fs::exists(basePath)) continue;
+
+        try {
+            auto options = fs::directory_options::skip_permission_denied;
+
+            for (const auto& entry : fs::recursive_directory_iterator(basePath, options)) {
+                if (entry.is_regular_file() && entry.path().filename() == "libtcc1.a") {
+                    return entry.path().parent_path().string();
+                }
+            }
+        } catch (const fs::filesystem_error& e) {
+            continue;
+        }
+    }
+
+    return ""; 
+}
 }; // namespace Ship
 
 TEST(ScriptSystem, FibFunction) {
     auto archive = std::make_shared<Ship::RamArchive>();
+    auto libPath = Ship::FindLibTCC1Folder();
     archive->Load();
-    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, {}, {});
+    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, { libPath }, {});
+
+    ASSERT_NE(libPath, "");
 
     system.Compile(archive);
     system.LoadAll();
@@ -96,7 +131,10 @@ TEST(ScriptSystem, FibFunction) {
 TEST(ScriptSystem, ModInitAndExit) {
     auto archive = std::make_shared<Ship::RamArchive>();
     archive->Load();
-    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, {}, {});
+    auto libPath = Ship::FindLibTCC1Folder();
+    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, { libPath }, {});
+
+    ASSERT_NE(libPath, "");
 
     system.Compile(archive);
     system.LoadAll();
@@ -120,7 +158,10 @@ TEST(ScriptSystem, ModInitAndExit) {
 TEST(ScriptSystem, CompileDefines) {
     auto archive = std::make_shared<Ship::RamArchive>();
     archive->Load();
-    Ship::ScriptSystem system({ { "__FIBx2__", "1" } }, 1, "-g -Wl", {}, {}, {});
+    auto libPath = Ship::FindLibTCC1Folder();
+    Ship::ScriptSystem system({ { "__FIBx2__", "1" } }, 1, "-g -Wl", {}, { libPath }, {});
+
+    ASSERT_NE(libPath, "");
 
     system.Compile(archive);
     system.LoadAll();

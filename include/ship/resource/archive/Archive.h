@@ -35,6 +35,7 @@ struct ArchiveManifest {
 
     std::string Checksum;
     std::string Signature;
+    std::string PublicKey;
 };
 
 class Archive : public std::enable_shared_from_this<Archive> {

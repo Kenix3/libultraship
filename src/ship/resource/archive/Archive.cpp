@@ -71,6 +71,7 @@ void Archive::Load() {
             mManifest.Dependencies = json.value("dependencies", std::vector<std::string>{});
             mManifest.Checksum = json.value("checksum", "");
             mManifest.Signature = json.value("signature", "");
+            mManifest.PublicKey = json.value("public_key", "");
 
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
@@ -184,6 +185,8 @@ void Archive::Validate() {
     }
 
     std::vector<std::tuple<std::string, std::shared_ptr<File>>> files;
+    auto keystore = Context::GetInstance()->GetKeystore();
+    auto manager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
 
     for (const auto& [hash, filePath] : *mHashes) {
         std::string normalizedPath = filePath;
@@ -200,6 +203,20 @@ void Archive::Validate() {
         }
 
         files.emplace_back(normalizedPath, file);
+    }
+
+    std::vector<uint8_t> manifestKey(mManifest.PublicKey.begin(), mManifest.PublicKey.end());
+    auto callback = manager->GetUntrustedArchiveHandler();
+
+    if (!keystore->HasKey(manifestKey) && callback != nullptr) {
+        bool isTrusted = callback(*this);
+        if (!isTrusted) {
+            SPDLOG_ERROR("Archive {} is untrusted and was rejected by the untrusted archive handler callback.",
+                         GetPath());
+            return;
+        }
+    } else {
+        SPDLOG_WARN("Archive {} is untrusted.", GetPath());
     }
 
     std::sort(files.begin(), files.end(),
@@ -251,7 +268,7 @@ void Archive::Validate() {
 
     bool validSignature = false;
 
-    for (const auto& key : Context::GetInstance()->GetKeystore()->GetAllKeys()) {
+    for (const auto& key : keystore->GetAllKeys()) {
         const int status = crypto_ed25519_check(signature.data(), key.data(),
                                                 reinterpret_cast<const uint8_t*>(calculatedChecksumHex.data()),
                                                 calculatedChecksumHex.length());

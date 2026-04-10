@@ -11,7 +11,7 @@ import zipfile
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-def update_zip_manifest(zip_path: str, checksum: str, signature: str):
+def update_zip_manifest(zip_path: str, public_key_path: str, checksum: str, signature: str):
     manifest_data = {}
 
     with zipfile.ZipFile(zip_path, 'r') as zin:
@@ -24,6 +24,10 @@ def update_zip_manifest(zip_path: str, checksum: str, signature: str):
 
     manifest_data["checksum"] = checksum
     manifest_data["signature"] = signature
+
+    with open(public_key_path, "rb") as pk_file:
+        public_key_data = pk_file.read()
+        manifest_data["public_key"] = public_key_data.hex()
 
     fd, temp_path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)
@@ -95,7 +99,8 @@ if __name__ == "__main__":
         description="Generate a deterministic checksum, sign it, and inject it into the ZIP's manifest.json."
     )
     parser.add_argument("zip_file", help="Path to the target .zip file")
-    parser.add_argument("pem_file", help="Path to the PEM file for signing")
+    parser.add_argument("private_key", help="Path to the PEM file containing the Ed25519 private key")
+    parser.add_argument("public_key", help="Path to the PEM file containing the Ed25519 public key")
     parser.add_argument("-p", "--passphrase", help="Passphrase for the PEM file (if encrypted)", default=None)
 
     args = parser.parse_args()
@@ -106,12 +111,12 @@ if __name__ == "__main__":
     print(f"Calculated BLAKE2b: {checksum}")
 
     passphrase_bytes = args.passphrase.encode('utf-8') if args.passphrase else None
-    private_key = load_private_key(args.pem_file, password=passphrase_bytes)
+    private_key = load_private_key(args.private_key, password=passphrase_bytes)
 
     print("Signing checksum...")
     signature_str = sign_data(private_key, checksum.encode('utf-8'))
 
     print("Injecting signature and checksum into manifest.json...")
-    update_zip_manifest(args.zip_file, checksum, signature_str)
+    update_zip_manifest(args.zip_file, args.public_key, checksum, signature_str)
 
     print("[SUCCESS] Zip file updated and signed successfully.")

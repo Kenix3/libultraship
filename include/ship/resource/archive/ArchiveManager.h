@@ -12,6 +12,7 @@
 namespace Ship {
 struct File;
 class Archive;
+using UntrustedArchiveHandler = std::function<bool(const Archive& archive)>;
 
 class ArchiveManager {
   public:
@@ -43,6 +44,8 @@ class ArchiveManager {
     const std::string* HashToString(uint64_t hash) const;
     const char* HashToCString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
+    void SetUntrustedArchiveHandler(UntrustedArchiveHandler handler);
+    UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
 
   protected:
     static std::vector<std::string> GetArchiveListInPaths(const std::vector<std::string>& archivePaths);
@@ -56,5 +59,6 @@ class ArchiveManager {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
+    UntrustedArchiveHandler mUntrustedArchiveHandler;
 };
 } // namespace Ship

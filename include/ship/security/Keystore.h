@@ -9,13 +9,15 @@ namespace Ship {
 
 class Keystore {
   public:
-    Keystore() = default;
+    Keystore();
     ~Keystore() = default;
 
-    bool Load();
+    void Load();
+    void Save();
 
     bool AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData);
     bool RemoveKey(const std::string& keyName);
+    bool HasKey(const std::vector<uint8_t>& keyData) const;
     std::vector<uint8_t> GetKey(const std::string& keyName) const;
     std::vector<std::vector<uint8_t>> GetAllKeys() const;
 
