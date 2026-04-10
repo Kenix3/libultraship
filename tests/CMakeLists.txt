@@ -12,6 +12,7 @@ add_executable(lus_tests
     binary_io_tests.cpp
     string_helper_tests.cpp
     crc64_tests.cpp
+    script_test.cpp
 )
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
