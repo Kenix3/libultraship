@@ -221,7 +221,6 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
         }
     }
 
-
     loader.Init(temp);
     mLoadedScripts[info.Name] = loader;
 };
