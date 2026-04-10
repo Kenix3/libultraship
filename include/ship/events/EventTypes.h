@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "ship/Api.h"
 
 typedef int32_t EventID;
 typedef int64_t ListenerID;
@@ -30,18 +31,14 @@ typedef struct EventListener {
     EventMetadata Metadata;
 } EventListener;
 
-#ifndef __cplusplus
 #ifdef INIT_EVENT_IDS
-#define DECLARE_EVENT(eventName) EventID eventName##ID = -1;
-#else
-#define DECLARE_EVENT(eventName) extern EventID eventName##ID;
-#endif
-#else
-#ifdef INIT_EVENT_IDS
+#ifdef __cplusplus 
 #define DECLARE_EVENT(eventName) extern "C" EventID eventName##ID = -1;
 #else
-#define DECLARE_EVENT(eventName) extern "C" EventID eventName##ID;
+#define DECLARE_EVENT(eventName) EventID eventName##ID = -1;
 #endif
+#else
+#define DECLARE_EVENT(eventName) API_EXPORT EventID eventName##ID;
 #endif
 
 #define STRINGIFY_DETAIL(x) #x

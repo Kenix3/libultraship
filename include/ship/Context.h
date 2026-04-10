@@ -88,7 +88,9 @@ class Context {
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
     bool InitEventSystem();
-    bool InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1);
+    bool InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1,
+                          std::string buildOptions = "-g -Wl", std::vector<std::string> includePaths = {},
+                          std::vector<std::string> libraryPaths = {}, std::vector<std::string> libraries = {});
     bool InitKeystore();
 
   protected:

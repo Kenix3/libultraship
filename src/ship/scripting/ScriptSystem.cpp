@@ -141,11 +141,46 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to create TCCState");
         }
 
+        tcc_define_symbol(s, "__DLL__", "1");
+
         for (const auto& [key, value] : mCompileDefines) {
             tcc_define_symbol(s, key.c_str(), value.c_str());
         }
-
+        
+        tcc_set_options(s, mBuildOptions.c_str());
         tcc_set_output_type(s, TCC_OUTPUT_DLL);
+
+        for(const std::string& includePath : mIncludePaths) {
+            if (!std::filesystem::exists(includePath)) {
+                SPDLOG_WARN("Include path does not exist: {}", includePath);
+                continue;
+            }
+
+            if (!std::filesystem::is_directory(includePath)) {
+                SPDLOG_WARN("Include path is not a directory: {}", includePath);
+                continue;
+            }
+
+            tcc_add_include_path(s, includePath.c_str());
+        }
+
+        for(const std::string& libraryPath : mLibraryPaths) {
+            if (!std::filesystem::exists(libraryPath)) {
+                SPDLOG_WARN("Library path does not exist: {}", libraryPath);
+                continue;
+            }
+
+            if (!std::filesystem::is_directory(libraryPath)) {
+                SPDLOG_WARN("Library path is not a directory: {}", libraryPath);
+                continue;
+            }
+
+            tcc_add_library_path(s, libraryPath.c_str());
+        }
+
+        for(const std::string& library : mLibraries) {
+            tcc_add_library(s, library.c_str());
+        }
 
         const std::vector<uint8_t>& raw = data.value();
         std::string content(raw.begin(), raw.end());
@@ -184,10 +219,11 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
             tcc_delete(s);
             throw std::runtime_error("Failed to output compiled code for " + temp);
         }
-
-        loader.Init(temp);
-        mLoadedScripts[info.Name] = loader;
     }
+
+    
+    loader.Init(temp);
+    mLoadedScripts[info.Name] = loader;
 };
 
 void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> preCallback,
@@ -197,7 +233,7 @@ void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared
 
     for (const auto& entry : *list) {
         const auto& info = entry->GetManifest();
-        if (info.Main.empty()) {
+        if (info.Main.empty() && info.Binaries.empty()) {
             continue;
         }
 
@@ -211,8 +247,8 @@ void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared
     }
 }
 
-std::vector<ScriptLoader*> ScriptSystem::GetLoadersInDependencyOrder() {
-    std::vector<ScriptLoader*> orderedLoaders;
+std::vector<std::string> ScriptSystem::GetLoadersInDependencyOrder() {
+    std::vector<std::string> orderedLoaders;
     auto archiveManager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
     auto list = archiveManager->GetArchives();
 
@@ -272,7 +308,7 @@ std::vector<ScriptLoader*> ScriptSystem::GetLoadersInDependencyOrder() {
     }
 
     for (const std::string& name : loadOrder) {
-        orderedLoaders.push_back(&mLoadedScripts.at(name));
+        orderedLoaders.push_back(name);
     }
 
     return orderedLoaders;
@@ -280,8 +316,10 @@ std::vector<ScriptLoader*> ScriptSystem::GetLoadersInDependencyOrder() {
 
 void ScriptSystem::LoadAll() {
     auto loaders = GetLoadersInDependencyOrder();
-    for (const auto& loader : loaders) {
-        const ScriptFunc_t init = (ScriptFunc_t)loader->GetFunction("ModInit");
+    for (const auto& id : loaders) {
+        auto& loader = mLoadedScripts.at(id);
+        SPDLOG_INFO("Initializing script: {}", id);
+        const ScriptFunc_t init = (ScriptFunc_t)loader.GetFunction("ModInit");
         if (init) {
             init();
         }
@@ -290,8 +328,9 @@ void ScriptSystem::LoadAll() {
 void ScriptSystem::UnloadAll() {
     auto loaders = GetLoadersInDependencyOrder();
     for (auto it = loaders.rbegin(); it != loaders.rend(); ++it) {
-        const auto& loader = *it;
-        const ScriptFunc_t exit = (ScriptFunc_t)loader->GetFunction("ModExit");
+        auto& loader = mLoadedScripts.at(*it);
+        SPDLOG_INFO("Uninitialize script: {}", *it);
+        const ScriptFunc_t exit = (ScriptFunc_t)loader.GetFunction("ModExit");
 
         if (exit) {
             exit();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include "ship/Api.h"
 
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
@@ -8,7 +9,7 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
 extern "C" {
 #endif
 
-void CrashHandlerRegisterCallback(CrashHandlerCallback callback);
+API_EXPORT void CrashHandlerRegisterCallback(CrashHandlerCallback callback);
 
 #ifdef __cplusplus
 }

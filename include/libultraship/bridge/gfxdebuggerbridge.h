@@ -2,15 +2,16 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "ship/Api.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void GfxDebuggerRequestDebugging();
-bool GfxDebuggerIsDebugging();
-bool GfxDebuggerIsDebuggingRequested();
-void GfxDebuggerDebugDisplayList(void* cmds);
+API_EXPORT void GfxDebuggerRequestDebugging();
+API_EXPORT bool GfxDebuggerIsDebugging();
+API_EXPORT bool GfxDebuggerIsDebuggingRequested();
+API_EXPORT void GfxDebuggerDebugDisplayList(void* cmds);
 
 #ifdef __cplusplus
 };
