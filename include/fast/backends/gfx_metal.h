@@ -106,9 +106,8 @@ struct FramebufferMetal {
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
 
-    // When true, StartDrawToFramebuffer creates this FB's command buffer on
-    // the readback queue instead of the main queue, allowing synchronous
-    // commit+waitUntilCompleted without enqueue-ordering deadlocks.
+    // When true, command buffer is created on the readback queue (no enqueue ordering).
+    // First ReadFramebufferToCPU returns zeros and flips this; real data from frame 2+.
     bool mUseReadbackQueue = false;
 };
 

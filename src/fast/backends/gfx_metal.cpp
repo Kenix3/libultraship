@@ -600,6 +600,14 @@ void GfxRenderingAPIMetal::EndFrame() {
     if (mScreenReadbackBuffer && !mScreenReadbackDataReady) {
         mScreenReadbackCmdBuf = screen_framebuffer.mCommandBuffer->retain();
         mScreenReadbackDataReady = true;
+    } else if (mScreenReadbackDataReady && mScreenReadbackCmdBuf) {
+        // Nobody consumed the readback this frame — data is going stale.
+        // Release the retained command buffer to avoid leaking it, and reset
+        // so the next ReadFramebufferToCPU requests a fresh blit instead of
+        // serving outdated pixels.
+        mScreenReadbackCmdBuf->release();
+        mScreenReadbackCmdBuf = nullptr;
+        mScreenReadbackDataReady = false;
     }
 
     mDrawnFramebuffers.clear();
