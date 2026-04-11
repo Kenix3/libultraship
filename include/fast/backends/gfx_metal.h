@@ -105,6 +105,12 @@ struct FramebufferMetal {
     int8_t mLastDepthTest = -1;
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
+
+    // When true, StartDrawToFramebuffer creates this FB's command buffer on
+    // the readback queue instead of the main queue, allowing synchronous
+    // commit+waitUntilCompleted without enqueue-ordering deadlocks.
+    bool mUseReadbackQueue = false;
+
 };
 
 struct FrameUniforms {
@@ -179,6 +185,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     CA::MetalLayer* mLayer; // CA::MetalLayer*
     MTL::Device* mDevice;
     MTL::CommandQueue* mCommandQueue;
+    MTL::CommandQueue* mReadbackQueue;
 
     int mCurrentVertexBufferPoolIndex = 0;
     MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize];
@@ -201,6 +208,16 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     MTL::Function* mDepthComputeFunction;
     MTL::Function* mConvertToRgb5a1Function;
     MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
+
+    // Screen FB deferred readback: blit in EndFrame, CPU conversion next frame.
+    // mScreenReadbackCmdBuf retains the command buffer that encoded the blit so
+    // we can waitUntilCompleted before reading the shared buffer contents.
+    MTL::CommandBuffer* mScreenReadbackCmdBuf = nullptr;
+    MTL::Buffer* mScreenReadbackBuffer = nullptr;
+    uint32_t mScreenReadbackWidth = 0;
+    uint32_t mScreenReadbackHeight = 0;
+    bool mScreenReadbackDataReady = false;
+    bool mScreenReadbackRequested = false;
 
     // Current state
     struct ShaderProgramMetal* mShaderProgram;

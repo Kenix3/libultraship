@@ -79,6 +79,7 @@ bool GfxRenderingAPIMetal::MetalInit(SDL_Renderer* renderer) {
 
     mDevice = mLayer->device();
     mCommandQueue = mDevice->newCommandQueue();
+    mReadbackQueue = mDevice->newCommandQueue();
 
     for (size_t i = 0; i < kMaxVertexBufferPoolSize; i++) {
         MTL::Buffer* new_buffer = mDevice->newBuffer(256 * 32 * 3 * sizeof(float) * 50, MTL::ResourceStorageModeShared);
@@ -549,7 +550,7 @@ void GfxRenderingAPIMetal::EndFrame() {
     it++;
 
     while (it != mDrawnFramebuffers.end()) {
-        auto framebuffer = mFramebuffers[*it];
+        auto& framebuffer = mFramebuffers[*it];
 
         if (!framebuffer.mHasEndedEncoding)
             framebuffer.mCommandEncoder->endEncoding();
@@ -558,11 +559,48 @@ void GfxRenderingAPIMetal::EndFrame() {
         it++;
     }
 
-    auto screen_framebuffer = mFramebuffers[0];
-    screen_framebuffer.mCommandEncoder->endEncoding();
+    auto& screen_framebuffer = mFramebuffers[0];
+    if (!screen_framebuffer.mHasEndedEncoding)
+        screen_framebuffer.mCommandEncoder->endEncoding();
+
+    // Deferred screen FB readback: blit the rendered texture into a shared
+    // MTLBuffer using a blit encoder (cheap DMA — no render pass boundary,
+    // no TBDR tile flush/reload).  The CPU reads this buffer next frame in
+    // ReadFramebufferToCPU and converts BGRA8 → RGBA5551 on the CPU side.
+    if (mScreenReadbackRequested) {
+        MTL::Texture* screenTex = mTextures[screen_framebuffer.mTextureId].texture;
+        uint32_t w = mScreenReadbackWidth;
+        uint32_t h = mScreenReadbackHeight;
+        size_t bytesPerRow = w * 4;  // BGRA8 = 4 bytes per pixel
+        size_t bufSize = bytesPerRow * h;
+
+        // Allocate / reuse a persistent shared buffer for CPU readback.
+        if (!mScreenReadbackBuffer || mScreenReadbackBuffer->length() < bufSize) {
+            if (mScreenReadbackBuffer)
+                mScreenReadbackBuffer->release();
+            mScreenReadbackBuffer = mDevice->newBuffer(bufSize, MTL::ResourceStorageModeShared);
+        }
+
+        MTL::BlitCommandEncoder* blit = screen_framebuffer.mCommandBuffer->blitCommandEncoder();
+        blit->copyFromTexture(screenTex, 0, 0, MTL::Origin(0, 0, 0), MTL::Size(w, h, 1),
+                              mScreenReadbackBuffer, 0, bytesPerRow, bufSize);
+        blit->endEncoding();
+
+        // Don't set mScreenReadbackDataReady yet — the blit hasn't executed.
+        // Retain the command buffer so ReadFramebufferToCPU can wait on it.
+        mScreenReadbackRequested = false;
+    }
+
     screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
     screen_framebuffer.mCommandBuffer->commit();
+
+    // Now that commit has been called, retain the command buffer for GPU sync
+    // in ReadFramebufferToCPU next frame (waitUntilCompleted before reading).
+    if (mScreenReadbackBuffer && !mScreenReadbackDataReady) {
+        mScreenReadbackCmdBuf = screen_framebuffer.mCommandBuffer->retain();
+        mScreenReadbackDataReady = true;
+    }
 
     mDrawnFramebuffers.clear();
 
@@ -817,12 +855,17 @@ void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) 
 
     if (fb.mRenderTarget && fb.mCommandBuffer == nullptr && fb.mCommandEncoder == nullptr &&
         fb.mRenderPassDescriptor != nullptr) {
-        fb.mCommandBuffer = mCommandQueue->commandBuffer();
+        // FBs that are read back to CPU use a separate queue so
+        // commit+waitUntilCompleted doesn't deadlock on enqueue ordering.
+        MTL::CommandQueue* queue = fb.mUseReadbackQueue ? mReadbackQueue : mCommandQueue;
+        fb.mCommandBuffer = queue->commandBuffer();
         std::string fbcb_label = fmt::format("FrameBuffer {} Command Buffer", fb_id);
         fb.mCommandBuffer->setLabel(NS::String::string(fbcb_label.c_str(), NS::UTF8StringEncoding));
 
-        // Queue the command buffers in order of start draw
-        fb.mCommandBuffer->enqueue();
+        if (!fb.mUseReadbackQueue) {
+            // Queue the command buffers in order of start draw
+            fb.mCommandBuffer->enqueue();
+        }
 
         fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
         std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
@@ -1101,8 +1144,8 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mLastZmodeDecal = -1;
 }
 
-void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
-                                                                      uint16_t* rgba16_buf) {
+void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
+                                                uint16_t* rgba16_buf) {
     if (fb_id >= (int)mFramebuffers.size()) {
         return;
     }
@@ -1110,47 +1153,81 @@ void GfxRenderingAPIMetal::GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id,
     FramebufferMetal& framebuffer = mFramebuffers[fb_id];
     MTL::Texture* texture = mTextures[framebuffer.mTextureId].texture;
 
-    MTL::Buffer* output_buffer =
-        mDevice->newBuffer(sizeof(uint16_t) * width * height, MTL::ResourceOptionCPUCacheModeDefault);
-    output_buffer->setLabel(NS::String::string("Pixels output buffer", NS::UTF8StringEncoding));
+    if (fb_id == 0) {
+        // Screen Framebuffer: deferred blit (zero encoder overhead)
+        // Return previous frame's data.  Wait on the retained command buffer
+        // to guarantee the GPU blit has finished before reading the shared buffer.
+        if (mScreenReadbackDataReady && mScreenReadbackBuffer && mScreenReadbackCmdBuf) {
+            mScreenReadbackCmdBuf->waitUntilCompleted();
+            mScreenReadbackCmdBuf->release();
+            mScreenReadbackCmdBuf = nullptr;
+            mScreenReadbackDataReady = false;
 
-    NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+            uint8_t* bgra = (uint8_t*)mScreenReadbackBuffer->contents();
+            uint32_t count = mScreenReadbackWidth * mScreenReadbackHeight;
+            for (uint32_t i = 0; i < count; i++) {
+                uint8_t b = bgra[i * 4 + 0];
+                uint8_t g = bgra[i * 4 + 1];
+                uint8_t r = bgra[i * 4 + 2];
+                uint8_t a = bgra[i * 4 + 3];
+                rgba16_buf[i] = ((r >> 3) << 11) | ((g >> 3) << 6) | ((b >> 3) << 1) | (a >> 7);
+            }
+        }
 
-    auto command_buffer = mCommandQueue->commandBuffer();
-    command_buffer->setLabel(NS::String::string("Read Pixels Shader Command Buffer", NS::UTF8StringEncoding));
-
-    // Lazily create and cache the compute pipeline state on first use.
-    // newComputePipelineState compiles the shader — expensive per frame, free to reuse.
-    if (!mConvertToRgb5a1PipelineState) {
-        NS::Error* pso_error = nullptr;
-        mConvertToRgb5a1PipelineState = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
-    }
-    MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
-    compute_encoder->setComputePipelineState(mConvertToRgb5a1PipelineState);
-    compute_encoder->setTexture(texture, 0);
-    compute_encoder->setBuffer(output_buffer, 0, 0);
-
-    MTL::Size thread_group_size = MTL::Size::Make(8, 8, 1);
-    MTL::Size total_threads = MTL::Size::Make(width, height, 1);
-
-    if (mNonUniformThreadgroupSupported) {
-        compute_encoder->dispatchThreads(total_threads, thread_group_size);
+        // Request a blit in EndFrame and we don't touch any encoders here
+        mScreenReadbackRequested = true;
+        mScreenReadbackWidth = width;
+        mScreenReadbackHeight = height;
     } else {
-        MTL::Size thread_group_count = MTL::Size::Make((width + 7) / 8, (height + 7) / 8, 1);
-        compute_encoder->dispatchThreadgroups(thread_group_count, thread_group_size);
+        // Custom Framebuffer: synchronous readback via readback queue
+        if (framebuffer.mCommandEncoder && !framebuffer.mHasEndedEncoding) {
+            framebuffer.mCommandEncoder->endEncoding();
+        }
+
+        if (!mConvertToRgb5a1PipelineState) {
+            NS::Error* pso_error = nullptr;
+            mConvertToRgb5a1PipelineState = mDevice->newComputePipelineState(mConvertToRgb5a1Function, &pso_error);
+        }
+
+        MTL::Buffer* output_buffer =
+            mDevice->newBuffer(sizeof(uint16_t) * width * height, MTL::ResourceStorageModeShared);
+
+        MTL::ComputeCommandEncoder* compute_encoder = framebuffer.mCommandBuffer->computeCommandEncoder();
+        compute_encoder->setComputePipelineState(mConvertToRgb5a1PipelineState);
+        compute_encoder->setTexture(texture, 0);
+        compute_encoder->setBuffer(output_buffer, 0, 0);
+
+        MTL::Size tg = MTL::Size::Make(8, 8, 1);
+        MTL::Size total = MTL::Size::Make(width, height, 1);
+        if (mNonUniformThreadgroupSupported) {
+            compute_encoder->dispatchThreads(total, tg);
+        } else {
+            compute_encoder->dispatchThreadgroups(MTL::Size::Make((width + 7) / 8, (height + 7) / 8, 1), tg);
+        }
+        compute_encoder->endEncoding();
+
+        framebuffer.mCommandBuffer->commit();
+
+        if (framebuffer.mUseReadbackQueue) {
+            framebuffer.mCommandBuffer->waitUntilCompleted();
+            uint16_t* values = (uint16_t*)output_buffer->contents();
+            memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
+        } else {
+            // First frame on main queue — can't block without deadlock.
+            // Return zeros so the caller gets black instead of garbage.
+            memset(rgba16_buf, 0, sizeof(uint16_t) * width * height);
+            framebuffer.mUseReadbackQueue = true;
+        }
+
+        output_buffer->release();
+
+        // Reset state so StartDrawToFramebuffer can create a fresh command buffer.
+        // Example case: the FB can be reused for another sprite in the same frame.
+        framebuffer.mCommandBuffer = nullptr;
+        framebuffer.mCommandEncoder = nullptr;
+        framebuffer.mHasEndedEncoding = false;
+        mDrawnFramebuffers.erase(fb_id);
     }
-    compute_encoder->endEncoding();
-
-    // Block until the GPU finishes — the caller expects rgba16_buf to be
-    // filled when this function returns (same as OpenGL's glReadPixels).
-    command_buffer->commit();
-    command_buffer->waitUntilCompleted();
-
-    uint16_t* values = (uint16_t*)output_buffer->contents();
-    memcpy(rgba16_buf, values, sizeof(uint16_t) * width * height);
-
-    output_buffer->release();
-    autorelease_pool->release();
 }
 
 void GfxRenderingAPIMetal::SetTextureFilter(FilteringMode mode) {
