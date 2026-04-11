@@ -110,7 +110,6 @@ struct FramebufferMetal {
     // the readback queue instead of the main queue, allowing synchronous
     // commit+waitUntilCompleted without enqueue-ordering deadlocks.
     bool mUseReadbackQueue = false;
-
 };
 
 struct FrameUniforms {

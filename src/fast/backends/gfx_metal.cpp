@@ -571,7 +571,7 @@ void GfxRenderingAPIMetal::EndFrame() {
         MTL::Texture* screenTex = mTextures[screen_framebuffer.mTextureId].texture;
         uint32_t w = mScreenReadbackWidth;
         uint32_t h = mScreenReadbackHeight;
-        size_t bytesPerRow = w * 4;  // BGRA8 = 4 bytes per pixel
+        size_t bytesPerRow = w * 4; // BGRA8 = 4 bytes per pixel
         size_t bufSize = bytesPerRow * h;
 
         // Allocate / reuse a persistent shared buffer for CPU readback.
@@ -582,8 +582,8 @@ void GfxRenderingAPIMetal::EndFrame() {
         }
 
         MTL::BlitCommandEncoder* blit = screen_framebuffer.mCommandBuffer->blitCommandEncoder();
-        blit->copyFromTexture(screenTex, 0, 0, MTL::Origin(0, 0, 0), MTL::Size(w, h, 1),
-                              mScreenReadbackBuffer, 0, bytesPerRow, bufSize);
+        blit->copyFromTexture(screenTex, 0, 0, MTL::Origin(0, 0, 0), MTL::Size(w, h, 1), mScreenReadbackBuffer, 0,
+                              bytesPerRow, bufSize);
         blit->endEncoding();
 
         // Don't set mScreenReadbackDataReady yet — the blit hasn't executed.
@@ -1144,8 +1144,7 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mLastZmodeDecal = -1;
 }
 
-void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height,
-                                                uint16_t* rgba16_buf) {
+void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
     if (fb_id >= (int)mFramebuffers.size()) {
         return;
     }
