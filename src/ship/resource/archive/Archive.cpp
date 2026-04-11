@@ -191,7 +191,8 @@ void Archive::Validate() {
     if (!keystore->HasKey(manifestKey)) {
         auto callback = manager->GetUntrustedArchiveHandler();
         if (callback != nullptr) {
-            bool isTrusted = callback(*this);
+            auto key = KeystoreEntry{ mManifest.Author, manifestKey, false };
+            bool isTrusted = callback(*this, key);
             if (!isTrusted) {
                 SPDLOG_ERROR("Archive {} is untrusted and was rejected by the user.", GetPath());
                 return;

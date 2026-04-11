@@ -9,11 +9,12 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#include "ship/security/Keystore.h"
 
 namespace Ship {
 struct File;
 class Archive;
-using UntrustedArchiveHandler = std::function<bool(Archive& archive)>;
+using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEntry& key)>;
 
 class ArchiveManager {
   public:
