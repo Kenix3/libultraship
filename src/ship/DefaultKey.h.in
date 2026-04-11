@@ -1,0 +1,5 @@
+#pragma once
+
+const char DefaultPublicKey[] = R"KEY(
+@DEFAULT_LUS_PEM@
+)KEY";

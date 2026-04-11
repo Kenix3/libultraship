@@ -54,3 +54,5 @@ LUS makes use of the following third party libraries and resources:
 - [libgfxd](https://github.com/glankk/libgfxd/blob/master/LICENSE) (MIT) display list disassembler.
 - [metal-cpp](https://github.com/bkaradzic/metal-cpp/blob/metal-cpp_26/LICENSE.txt) (Apache 2.0) interface to the Apple Metal rendering backend.
 - [glew](https://github.com/nigels-com/glew/blob/master/LICENSE.txt) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
+- [libtcc](https://repo.or.cz/tinycc.git/blob/HEAD:/COPYING) (LGPL-2.1) C compiler used for the script system.
+- [monocypher](https://github.com/LoupVaillant/Monocypher/blob/master/LICENSE) (CC-0) cryptography library used for the modding system.

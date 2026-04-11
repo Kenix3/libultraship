@@ -359,6 +359,7 @@ cmake_install.cmake
 *.tlog
 *.recipe
 src/ship/install_config.h
+src/ship/DefaultKey.h
 # Removed jsonConfig and jsonConfigVersion
 extern/nlohmann-json/*_jsonConfig*
 *.pbxproj

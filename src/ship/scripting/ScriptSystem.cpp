@@ -81,6 +81,11 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
     constexpr std::string_view platform = GetPlatform();
     const bool isCodeMod = !info.Main.empty() || !info.Binaries.empty();
 
+    if (mSafeLevel == SafeLevel::DISABLE_SCRIPTS) {
+        SPDLOG_WARN("Script loading is disabled. Skipping script from archive: {}", archive->GetPath());
+        return;
+    }
+
     if (!isCodeMod) {
         return;
     }

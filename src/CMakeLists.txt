@@ -20,6 +20,9 @@ endif()
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/install_config.h @ONLY)
 
+file( READ "${CMAKE_CURRENT_SOURCE_DIR}/ship/keys/DefaultLUSKey.pem" DEFAULT_LUS_PEM )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/DefaultKey.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKey.h @ONLY)
+
 #=================== Fast ===================
 
 add_subdirectory("fast")

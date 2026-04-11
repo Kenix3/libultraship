@@ -3,6 +3,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
+#include "ship/DefaultKey.h"
 
 #include <vector>
 
@@ -10,6 +11,7 @@ namespace Ship {
 
 Keystore::Keystore() {
     Load();
+    AddKey("default", std::vector<uint8_t>(DefaultPublicKey, DefaultPublicKey + sizeof(DefaultPublicKey) - 1));
 }
 
 bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData) {

@@ -10,7 +10,7 @@
 
 namespace Ship {
 
-enum class SafeLevel { ONLY_TRUSTED_SCRIPTS, WARN_UNTRUSTED_SCRIPTS, ALLOW_ALL_SCRIPTS };
+enum class SafeLevel { DISABLE_SCRIPTS, ONLY_TRUSTED_SCRIPTS, WARN_UNTRUSTED_SCRIPTS, ALLOW_ALL_SCRIPTS };
 
 class ScriptSystem {
   public:
