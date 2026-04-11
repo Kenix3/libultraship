@@ -1,5 +1,6 @@
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include <cstring>
 #include <iostream>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -487,7 +488,12 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
 #endif
 
 #if defined(__APPLE__)
+    FolderManager foldermanager;
     if (char* fpath = std::getenv("SHIP_HOME")) {
+        const char* appBundleID = strrchr(fpath, '/');
+        if (appBundleID != nullptr) {
+            foldermanager.CreateAppSupportDirectory(appBundleID + 1);
+        }
         if (fpath[0] == '~') {
             const char* home = getenv("HOME") ? getenv("HOME") : getpwuid(getuid())->pw_dir;
             return std::string(home) + std::string(fpath).substr(1);
