@@ -1682,7 +1682,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
     }
 
-    bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER;
+    bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER && (mRdp->other_mode_l & Z_CMP) == Z_CMP;
     bool depth_mask = (mRdp->other_mode_l & Z_UPD) == Z_UPD;
     uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
     if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
