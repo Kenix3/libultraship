@@ -42,6 +42,8 @@ jobs:
           cmake ..
           make
           sudo make install
+      - name: Install Python dependencies
+        run: python3 -m pip install -r requirements.txt
       - name: Prepare compile_commands.json
         run: |
           cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON

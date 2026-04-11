@@ -20,6 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mac-ccache-${{ github.ref }}
           ${{ runner.os }}-mac-ccache-
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt --break-system-packages || python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -45,6 +47,8 @@ jobs:
           ${{ runner.os }}-14-ios-build-
         path: |
           build-cmake
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt --break-system-packages || python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
@@ -90,6 +94,8 @@ jobs:
         cmake ..
         make
         sudo make install
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -127,6 +133,8 @@ jobs:
         unzip -q android-ndk.zip
         mkdir -p android-ndk
         mv android-ndk-r29 android-ndk/
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
     - name: Configure libultraship for Android
       run: |
         cmake --no-warn-unused-cli -S . -Bbuild-cmake-android -GNinja \
@@ -175,6 +183,8 @@ jobs:
           D:/a/vcpkg
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
+    - name: Install Python dependencies
+      run: python -m pip install -r requirements.txt
     - name: Build libultraship
       env:
         VCPKG_ROOT: D:/a/vcpkg
@@ -217,6 +227,8 @@ jobs:
             D:/a/vcpkg
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
       - name: Build libultraship
         env:
           VCPKG_ROOT: D:/a/vcpkg
