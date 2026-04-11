@@ -641,9 +641,13 @@ void GfxDebuggerWindow::DrawDisas() {
                     ImGui::Text("%dx%d; type=%s", metadata.width, metadata.height, getTexType(metadata.type));
                 }
 
-                if (isNew && metadata.resource != nullptr) {
-                    gui->UnloadTexture(name);
-                    gui->LoadGuiTexture(name, *metadata.resource, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+                if (isNew && metadata.resource.valid() &&
+                    metadata.resource.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    auto res = std::static_pointer_cast<Fast::Texture>(metadata.resource.get());
+                    if (res != nullptr) {
+                        gui->UnloadTexture(name);
+                        gui->LoadGuiTexture(name, *res, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+                    }
                 }
 
                 ImGui::Image(gui->GetTextureByName(name), ImVec2{ 100.0f, 100.0f });
