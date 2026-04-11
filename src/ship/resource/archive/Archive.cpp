@@ -184,9 +184,28 @@ void Archive::Validate() {
         return;
     }
 
-    std::vector<std::tuple<std::string, std::shared_ptr<File>>> files;
     auto keystore = Context::GetInstance()->GetKeystore();
     auto manager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
+
+    if (!keystore->HasKey(manifestKey)) {
+        auto callback = manager->GetUntrustedArchiveHandler();
+        if (callback != nullptr) {
+            bool isTrusted = callback(*this);
+            if (!isTrusted) {
+                SPDLOG_ERROR("Archive {} is untrusted and was rejected by the user.", GetPath());
+                return;
+            }
+            keystore->AddKey(mManifest.Author, manifestKey);
+            SPDLOG_INFO("Added new public key for author {} to keystore.", mManifest.Author);
+        } else {
+            SPDLOG_ERROR("Archive {} is signed by an unknown author, and no handler is available to approve it.",
+                         GetPath());
+            return;
+        }
+    }
+
+    std::vector<std::tuple<std::string, std::shared_ptr<File>>> files;
 
     for (const auto& [hash, filePath] : *mHashes) {
         std::string normalizedPath = filePath;
@@ -205,20 +224,6 @@ void Archive::Validate() {
         files.emplace_back(normalizedPath, file);
     }
 
-    std::vector<uint8_t> manifestKey(mManifest.PublicKey.begin(), mManifest.PublicKey.end());
-    auto callback = manager->GetUntrustedArchiveHandler();
-
-    if (!keystore->HasKey(manifestKey) && callback != nullptr) {
-        bool isTrusted = callback(*this);
-        if (!isTrusted) {
-            SPDLOG_ERROR("Archive {} is untrusted and was rejected by the untrusted archive handler callback.",
-                         GetPath());
-            return;
-        }
-    } else {
-        SPDLOG_WARN("Archive {} is untrusted.", GetPath());
-    }
-
     std::sort(files.begin(), files.end(),
               [](const std::tuple<std::string, std::shared_ptr<File>>& a,
                  const std::tuple<std::string, std::shared_ptr<File>>& b) { return std::get<0>(a) < std::get<0>(b); });
@@ -233,17 +238,9 @@ void Archive::Validate() {
         }
     }
 
-    std::vector<uint8_t> hash(64);
-    crypto_blake2b_final(&ctx, hash.data());
-
-    std::stringstream hexSs;
-    hexSs << std::hex << std::setfill('0');
-    for (int i = 0; i < 64; ++i) {
-        hexSs << std::setw(2) << static_cast<int>(hash[i]);
-    }
-
-    std::string calculatedChecksumHex = hexSs.str();
-
+    std::vector<uint8_t> rawHash(64);
+    crypto_blake2b_final(&ctx, rawHash.data());
+    std::string calculatedChecksumHex = StringHelper::BytesToHex(rawHash);
     if (calculatedChecksumHex != mManifest.Checksum) {
         SPDLOG_ERROR("Checksum validation failed for archive {}. Expected {}, got {}", GetPath(), mManifest.Checksum,
                      calculatedChecksumHex);
@@ -269,9 +266,7 @@ void Archive::Validate() {
     bool validSignature = false;
 
     for (const auto& key : keystore->GetAllKeys()) {
-        const int status = crypto_ed25519_check(signature.data(), key.data(),
-                                                reinterpret_cast<const uint8_t*>(calculatedChecksumHex.data()),
-                                                calculatedChecksumHex.length());
+        const int status = crypto_ed25519_check(signature.data(), key.data(), rawHash.data(), rawHash.size());
 
         if (status == 0) {
             validSignature = true;

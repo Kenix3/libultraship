@@ -54,11 +54,20 @@ std::vector<std::vector<uint8_t>> Keystore::GetAllKeys() const {
 void Keystore::Load() {
     std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
     conf->Reload();
-    auto jsonKeys = conf->GetNestedJson()["Keystore"].items();
 
-    for (const auto& [keyName, keyData] : jsonKeys) {
+    nlohmann::json rootJson = conf->GetNestedJson();
+
+    if (!rootJson.contains("Keystore") || !rootJson["Keystore"].is_object()) {
+        SPDLOG_WARN("Keystore not found in config or is empty.");
+        return;
+    }
+
+    nlohmann::json keystoreNode = rootJson["Keystore"];
+    for (const auto& [keyName, keyData] : keystoreNode.items()) {
         if (keyData.is_string()) {
             AddKey(keyName, StringHelper::HexToBytes(keyData.get<std::string>()));
+        } else {
+            SPDLOG_WARN("Skipping key {}: Data is not a string.", keyName);
         }
     }
 }

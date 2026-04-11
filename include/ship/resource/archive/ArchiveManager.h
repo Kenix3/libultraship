@@ -13,7 +13,7 @@
 namespace Ship {
 struct File;
 class Archive;
-using UntrustedArchiveHandler = std::function<bool(const Archive& archive)>;
+using UntrustedArchiveHandler = std::function<bool(Archive& archive)>;
 
 class ArchiveManager {
   public:
@@ -45,7 +45,7 @@ class ArchiveManager {
     const std::string* HashToString(uint64_t hash) const;
     const char* HashToCString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
-    void SetUntrustedArchiveHandler(UntrustedArchiveHandler handler);
+    void SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler);
     UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
 
   protected:

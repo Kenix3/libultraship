@@ -168,7 +168,7 @@ std::vector<uint8_t> StringHelper::HexToBytes(const std::string& hex) {
 
 std::string StringHelper::BytesToHex(const std::vector<unsigned char>& bytes) {
     std::string hexString;
-    static const char sHexChars[] = "0123456789ABCDEF";
+    static const char sHexChars[] = "0123456789abcdef";
     hexString.reserve(bytes.size() * 2);
 
     for (unsigned char byte : bytes) {

@@ -296,7 +296,7 @@ bool ArchiveManager::IsGameVersionValid(uint32_t gameVersion) {
     return mValidGameVersions.empty() || mValidGameVersions.contains(gameVersion);
 }
 
-void ArchiveManager::SetUntrustedArchiveHandler(UntrustedArchiveHandler handler) {
+void ArchiveManager::SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler) {
     mUntrustedArchiveHandler = handler;
 }
 

@@ -1,5 +1,4 @@
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -11,7 +10,7 @@ import zipfile
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-def update_zip_manifest(zip_path: str, public_key_path: str, checksum: str, signature: str):
+def update_zip_manifest(zip_path: str, public_key_hex: str, checksum_hex: str, signature_hex: str):
     manifest_data = {}
 
     with zipfile.ZipFile(zip_path, 'r') as zin:
@@ -22,12 +21,9 @@ def update_zip_manifest(zip_path: str, public_key_path: str, checksum: str, sign
             except json.JSONDecodeError:
                 print("Warning: Existing manifest.json is invalid JSON. Overwriting.")
 
-    manifest_data["checksum"] = checksum
-    manifest_data["signature"] = signature
-
-    with open(public_key_path, "rb") as pk_file:
-        public_key_data = pk_file.read()
-        manifest_data["public_key"] = public_key_data.hex()
+    manifest_data["checksum"] = checksum_hex
+    manifest_data["signature"] = signature_hex
+    manifest_data["public_key"] = public_key_hex
 
     fd, temp_path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)
@@ -57,66 +53,43 @@ def load_private_key(key_path: str, password: bytes = None):
     except FileNotFoundError:
         print(f"Error: Private key file not found at '{key_path}'")
         sys.exit(1)
-    except ValueError as e:
-        print(f"Error loading key (incorrect password or invalid format): {e}")
-        sys.exit(1)
 
-def sign_data(private_key, data: bytes) -> str:
-    signature = private_key.sign(data)
-    return signature.hex()
+def calculate_o2r_checksum(zip_path) -> bytes:
+    hasher = hashlib.blake2b()
+    with zipfile.ZipFile(zip_path, 'r') as zf:
+        all_entries = zf.namelist()
+        filtered_files = [f for f in all_entries if not f.endswith('/') and f != 'manifest.json']
+        filtered_files.sort()
 
-def calculate_o2r_checksum(zip_path):
-    try:
-        hasher = hashlib.blake2b()
-    except ValueError:
-        print("Error: Unsupported hash algorithm")
-        sys.exit(1)
+        for file_name in filtered_files:
+            hasher.update(file_name.encode('utf-8'))
+            with zf.open(file_name) as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    hasher.update(chunk)
 
-    try:
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            all_entries = zf.namelist()
-            filtered_files = [
-                f for f in all_entries 
-                if not f.endswith('/') and f != 'manifest.json'
-            ]
-            filtered_files.sort()
-
-            for file_name in filtered_files:
-                hasher.update(file_name.encode('utf-8'))
-                with zf.open(file_name) as f:
-                    for chunk in iter(lambda: f.read(8192), b""):
-                        hasher.update(chunk)
-        return hasher.hexdigest()
-    except FileNotFoundError:
-        print(f"Error: File '{zip_path}' not found.")
-        sys.exit(1)
-    except zipfile.BadZipFile:
-        print(f"Error: '{zip_path}' is not a valid ZIP file or is corrupted.")
-        sys.exit(1)
+    return hasher.digest()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate a deterministic checksum, sign it, and inject it into the ZIP's manifest.json."
-    )
+    parser = argparse.ArgumentParser(description="Sign a ZIP and inject into manifest.json.")
     parser.add_argument("zip_file", help="Path to the target .zip file")
-    parser.add_argument("private_key", help="Path to the PEM file containing the Ed25519 private key")
-    parser.add_argument("public_key", help="Path to the PEM file containing the Ed25519 public key")
-    parser.add_argument("-p", "--passphrase", help="Passphrase for the PEM file (if encrypted)", default=None)
+    parser.add_argument("private_key", help="Path to the PEM private key")
+    parser.add_argument("-p", "--passphrase", help="Passphrase for the PEM file", default=None)
 
     args = parser.parse_args()
-
     print(f"Processing {args.zip_file}...")
 
-    checksum = calculate_o2r_checksum(args.zip_file)
-    print(f"Calculated BLAKE2b: {checksum}")
+    raw_checksum = calculate_o2r_checksum(args.zip_file)
+    hex_checksum = raw_checksum.hex()
 
     passphrase_bytes = args.passphrase.encode('utf-8') if args.passphrase else None
     private_key = load_private_key(args.private_key, password=passphrase_bytes)
 
-    print("Signing checksum...")
-    signature_str = sign_data(private_key, checksum.encode('utf-8'))
-
-    print("Injecting signature and checksum into manifest.json...")
-    update_zip_manifest(args.zip_file, args.public_key, checksum, signature_str)
-
-    print("[SUCCESS] Zip file updated and signed successfully.")
+    public_key_obj = private_key.public_key()
+    raw_public_key = public_key_obj.public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw
+    )
+    public_key_hex = raw_public_key.hex()
+    signature_str = private_key.sign(raw_checksum).hex()
+    update_zip_manifest(args.zip_file, public_key_hex, hex_checksum, signature_str)
+    print("[SUCCESS] Zip signed successfully.")
