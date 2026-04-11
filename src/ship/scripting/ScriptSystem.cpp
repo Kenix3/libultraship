@@ -12,6 +12,7 @@
 #include <queue>
 #include <unordered_map>
 
+#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
@@ -226,7 +227,10 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
 
 void ScriptSystem::CompileAll(std::optional<std::function<void(const std::shared_ptr<Archive>&)>> preCallback,
                               std::optional<std::function<void()>> postCallback) {
-    for (const auto& entry : mLoadedArchives) {
+    auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto list = archive->GetArchives();
+
+    for (const auto& entry : *list) {
         const auto& info = entry->GetManifest();
         if (info.Main.empty() && info.Binaries.empty()) {
             continue;
