@@ -3,7 +3,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
-#include "ship/DefaultKey.h"
+#include "ship/DefaultKeys.h"
 
 #include <vector>
 
@@ -11,11 +11,13 @@ namespace Ship {
 
 Keystore::Keystore() {
     Load();
-    AddKey("default", std::vector<uint8_t>(DefaultPublicKey, DefaultPublicKey + sizeof(DefaultPublicKey) - 1));
+    for (const auto entry : AllDefaultKeys) {
+        AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), true);
+    }
 }
 
-bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData) {
-    mKeys[keyName] = keyData;
+bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, bool defaultKey) {
+    mKeys[keyName] = KeystoreEntry{ keyName, keyData, defaultKey };
     Save();
     return true;
 }
@@ -29,26 +31,27 @@ bool Keystore::RemoveKey(const std::string& keyName) {
 }
 
 bool Keystore::HasKey(const std::vector<uint8_t>& keyData) const {
-    for (const auto& [keyName, storedKeyData] : mKeys) {
-        if (storedKeyData == keyData) {
+    for (const auto& [keyName, entry] : mKeys) {
+        if (entry.data == keyData) {
             return true;
         }
     }
     return false;
 }
 
-std::vector<uint8_t> Keystore::GetKey(const std::string& keyName) const {
+std::vector<KeystoreEntry> Keystore::GetKey(const std::string& keyName) const {
+    std::vector<KeystoreEntry> entries;
     auto it = mKeys.find(keyName);
     if (it != mKeys.end()) {
-        return it->second;
+        entries.push_back(it->second);
     }
-    return {};
+    return entries;
 }
 
-std::vector<std::vector<uint8_t>> Keystore::GetAllKeys() const {
-    std::vector<std::vector<uint8_t>> allKeys;
-    for (const auto& [keyName, keyData] : mKeys) {
-        allKeys.push_back(keyData);
+std::vector<KeystoreEntry> Keystore::GetAllKeys() const {
+    std::vector<KeystoreEntry> allKeys;
+    for (const auto& [keyName, entry] : mKeys) {
+        allKeys.push_back(entry);
     }
     return allKeys;
 }
@@ -76,8 +79,8 @@ void Keystore::Load() {
 
 void Keystore::Save() {
     std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
-    for (const auto& [keyName, keyData] : mKeys) {
-        std::string hexString = StringHelper::BytesToHex(keyData);
+    for (const auto& [keyName, entry] : mKeys) {
+        std::string hexString = StringHelper::BytesToHex(entry.data);
         conf->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);
     }
     conf->Save();

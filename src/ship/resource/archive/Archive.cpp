@@ -266,7 +266,7 @@ void Archive::Validate() {
     bool validSignature = false;
 
     for (const auto& key : keystore->GetAllKeys()) {
-        const int status = crypto_ed25519_check(signature.data(), key.data(), rawHash.data(), rawHash.size());
+        const int status = crypto_ed25519_check(signature.data(), key.data.data(), rawHash.data(), rawHash.size());
 
         if (status == 0) {
             validSignature = true;

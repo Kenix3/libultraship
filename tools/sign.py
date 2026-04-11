@@ -8,7 +8,6 @@ import tempfile
 import zipfile
 
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ed25519
 
 def update_zip_manifest(zip_path: str, public_key_hex: str, checksum_hex: str, signature_hex: str):
     manifest_data = {}

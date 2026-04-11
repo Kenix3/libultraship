@@ -7,6 +7,12 @@
 
 namespace Ship {
 
+struct KeystoreEntry {
+    std::string name;
+    std::vector<uint8_t> data;
+    bool defaultKey;
+};
+
 class Keystore {
   public:
     Keystore();
@@ -15,14 +21,14 @@ class Keystore {
     void Load();
     void Save();
 
-    bool AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData);
+    bool AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, bool defaultKey = false);
     bool RemoveKey(const std::string& keyName);
     bool HasKey(const std::vector<uint8_t>& keyData) const;
-    std::vector<uint8_t> GetKey(const std::string& keyName) const;
-    std::vector<std::vector<uint8_t>> GetAllKeys() const;
+    std::vector<KeystoreEntry> GetKey(const std::string& keyName) const;
+    std::vector<KeystoreEntry> GetAllKeys() const;
 
   private:
-    std::unordered_map<std::string, std::vector<uint8_t>> mKeys;
+    std::unordered_map<std::string, KeystoreEntry> mKeys;
 };
 
 } // namespace Ship

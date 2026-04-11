@@ -1,13 +1,10 @@
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
 def generate_keypair(private_out="private_key.pem", public_out="public_key.pem", password=None):
-    print("Generating RSA 2048-bit key pair...")
+    print("Generating Ed25519 key pair...")
 
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-    )
+    private_key = ed25519.Ed25519PrivateKey.generate()
 
     if password:
         encryption = serialization.BestAvailableEncryption(password.encode('utf-8'))
