@@ -8,6 +8,7 @@ import tempfile
 import zipfile
 
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
 
 def update_zip_manifest(zip_path: str, public_key_hex: str, checksum_hex: str, signature_hex: str):
     manifest_data = {}
@@ -48,6 +49,9 @@ def load_private_key(key_path: str, password: bytes = None):
                 key_file.read(),
                 password=password
             )
+            if not isinstance(private_key, ed25519.Ed25519PrivateKey):
+                print(f"Error: The key at '{key_path}' is not an Ed25519 private key.")
+                sys.exit(1)
             return private_key
     except FileNotFoundError:
         print(f"Error: Private key file not found at '{key_path}'")
