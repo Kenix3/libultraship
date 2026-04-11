@@ -47,6 +47,7 @@ jobs:
       - name: Prepare compile_commands.json
         run: |
           cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build --target GenerateScriptKeys
       - name: Create results directory
         run: |
           mkdir clang-tidy-result

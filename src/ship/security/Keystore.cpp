@@ -32,7 +32,7 @@ bool Keystore::RemoveKey(const std::string& keyName) {
 
 bool Keystore::HasKey(const std::vector<uint8_t>& keyData) const {
     for (const auto& [keyName, entry] : mKeys) {
-        if (entry.data == keyData) {
+        if (entry.Data == keyData) {
             return true;
         }
     }
@@ -80,7 +80,7 @@ void Keystore::Load() {
 void Keystore::Save() {
     std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
     for (const auto& [keyName, entry] : mKeys) {
-        std::string hexString = StringHelper::BytesToHex(entry.data);
+        std::string hexString = StringHelper::BytesToHex(entry.Data);
         conf->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);
     }
     conf->Save();

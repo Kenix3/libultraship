@@ -8,9 +8,9 @@
 namespace Ship {
 
 struct KeystoreEntry {
-    std::string name;
-    std::vector<uint8_t> data;
-    bool defaultKey;
+    std::string Name;
+    std::vector<uint8_t> Data;
+    bool DefaultKey;
 };
 
 class Keystore {
