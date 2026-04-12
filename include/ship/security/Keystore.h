@@ -7,10 +7,12 @@
 
 namespace Ship {
 
+enum class KeyOrigin { User, Game, System };
+
 struct KeystoreEntry {
     std::string Name;
     std::vector<uint8_t> Data;
-    bool DefaultKey;
+    KeyOrigin Origin;
 };
 
 class Keystore {
@@ -21,7 +23,7 @@ class Keystore {
     void Load();
     void Save();
 
-    bool AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, bool defaultKey = false);
+    bool AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, KeyOrigin origin = KeyOrigin::Game);
     bool RemoveKey(const std::string& keyName);
     bool HasKey(const std::vector<uint8_t>& keyData) const;
     std::vector<KeystoreEntry> GetKey(const std::string& keyName) const;

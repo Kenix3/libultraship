@@ -12,12 +12,12 @@ namespace Ship {
 Keystore::Keystore() {
     Load();
     for (const auto entry : AllDefaultKeys) {
-        AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), true);
+        AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), KeyOrigin::System);
     }
 }
 
-bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, bool defaultKey) {
-    mKeys[keyName] = KeystoreEntry{ keyName, keyData, defaultKey };
+bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, KeyOrigin origin) {
+    mKeys[keyName] = KeystoreEntry{ keyName, keyData, origin };
     Save();
     return true;
 }
@@ -70,7 +70,7 @@ void Keystore::Load() {
     nlohmann::json keystoreNode = rootJson["Keystore"];
     for (const auto& [keyName, keyData] : keystoreNode.items()) {
         if (keyData.is_string()) {
-            AddKey(keyName, StringHelper::HexToBytes(keyData.get<std::string>()));
+            AddKey(keyName, StringHelper::HexToBytes(keyData.get<std::string>()), KeyOrigin::User);
         } else {
             SPDLOG_WARN("Skipping key {}: Data is not a string.", keyName);
         }

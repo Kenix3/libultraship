@@ -191,13 +191,13 @@ void Archive::Validate() {
     if (!keystore->HasKey(manifestKey)) {
         auto callback = manager->GetUntrustedArchiveHandler();
         if (callback != nullptr) {
-            auto key = KeystoreEntry{ mManifest.Author, manifestKey, false };
+            auto key = KeystoreEntry{ mManifest.Author, manifestKey, KeyOrigin::User };
             bool isTrusted = callback(*this, key);
             if (!isTrusted) {
                 SPDLOG_ERROR("Archive {} is untrusted and was rejected by the user.", GetPath());
                 return;
             }
-            keystore->AddKey(mManifest.Author, manifestKey);
+            keystore->AddKey(mManifest.Author, manifestKey, key.Origin);
             SPDLOG_INFO("Added new public key for author {} to keystore.", mManifest.Author);
         } else {
             SPDLOG_ERROR("Archive {} is signed by an unknown author, and no handler is available to approve it.",
