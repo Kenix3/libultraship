@@ -10,7 +10,7 @@
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 #include "ship/events/EventSystem.h"
-#include "ship/scripting/ScriptSystem.h"
+#include "ship/scripting/ScriptLoader.h"
 #include "ship/security/Keystore.h"
 
 #ifdef _WIN32
@@ -95,7 +95,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
-           InitEventSystem() && InitFileDropMgr() && InitScriptSystem();
+           InitEventSystem() && InitFileDropMgr() && InitScriptLoader();
 }
 
 bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
@@ -358,16 +358,16 @@ bool Context::InitEventSystem() {
     return true;
 }
 
-bool Context::InitScriptSystem(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
+bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
                                std::string buildOptions, std::vector<std::string> includePaths,
                                std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
-    if (GetScriptSystem() != nullptr) {
+    if (GetScriptLoader() != nullptr) {
         return true;
     }
 
-    mScriptSystem = std::make_shared<ScriptSystem>(compileDefines, codeVersion, buildOptions, includePaths,
+    mScriptLoader = std::make_shared<ScriptLoader>(compileDefines, codeVersion, buildOptions, includePaths,
                                                    libraryPaths, libraries);
-    if (GetScriptSystem() == nullptr) {
+    if (GetScriptLoader() == nullptr) {
         SPDLOG_ERROR("Failed to initialize script system");
         return false;
     }
@@ -435,8 +435,8 @@ std::shared_ptr<EventSystem> Context::GetEventSystem() {
     return mEventSystem;
 }
 
-std::shared_ptr<ScriptSystem> Context::GetScriptSystem() {
-    return mScriptSystem;
+std::shared_ptr<ScriptLoader> Context::GetScriptLoader() {
+    return mScriptLoader;
 }
 
 std::shared_ptr<Keystore> Context::GetKeystore() {

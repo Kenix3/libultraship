@@ -7,12 +7,12 @@
 
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
-#include "ship/scripting/ScriptSystem.h"
+#include "ship/scripting/ScriptLoader.h"
 
 namespace fs = std::filesystem;
 
 // ============================================================
-// ScriptSystem Tests
+// ScriptLoader Tests
 // ============================================================
 
 namespace Ship {
@@ -101,11 +101,11 @@ std::string FindLibTCC1Folder() {
 }
 }; // namespace Ship
 
-TEST(ScriptSystem, FibFunction) {
+TEST(ScriptLoader, FibFunction) {
     auto archive = std::make_shared<Ship::RamArchive>();
     auto libPath = Ship::FindLibTCC1Folder();
     archive->Load();
-    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, { libPath }, {});
+    Ship::ScriptLoader system({}, 1, "-g -Wl", {}, { libPath }, {});
 
     ASSERT_NE(libPath, "");
 
@@ -118,11 +118,11 @@ TEST(ScriptSystem, FibFunction) {
     EXPECT_EQ(fib(10), 55);
 }
 
-TEST(ScriptSystem, ModInitAndExit) {
+TEST(ScriptLoader, ModInitAndExit) {
     auto archive = std::make_shared<Ship::RamArchive>();
     archive->Load();
     auto libPath = Ship::FindLibTCC1Folder();
-    Ship::ScriptSystem system({}, 1, "-g -Wl", {}, { libPath }, {});
+    Ship::ScriptLoader system({}, 1, "-g -Wl", {}, { libPath }, {});
 
     ASSERT_NE(libPath, "");
 
@@ -139,11 +139,11 @@ TEST(ScriptSystem, ModInitAndExit) {
     exit();
 }
 
-TEST(ScriptSystem, CompileDefines) {
+TEST(ScriptLoader, CompileDefines) {
     auto archive = std::make_shared<Ship::RamArchive>();
     archive->Load();
     auto libPath = Ship::FindLibTCC1Folder();
-    Ship::ScriptSystem system({ { "__FIBx2__", "1" } }, 1, "-g -Wl", {}, { libPath }, {});
+    Ship::ScriptLoader system({ { "__FIBx2__", "1" } }, 1, "-g -Wl", {}, { libPath }, {});
 
     ASSERT_NE(libPath, "");
 
