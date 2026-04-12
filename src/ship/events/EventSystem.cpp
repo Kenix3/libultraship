@@ -19,13 +19,6 @@ ListenerID EventSystem::RegisterListener(EventID id, EventCallback callback, Eve
     }
 
     auto& registry = this->mEventRegistry[id];
-
-    if (std::find_if(registry.Listeners.begin(), registry.Listeners.end(), [callback](const EventListener& listener) {
-            return listener.Function == callback;
-        }) != registry.Listeners.end()) {
-        throw std::runtime_error("Listener already registered");
-    }
-
     const EventListener newListener = { registry.NextListenerID++, priority, callback, { file, line, 0 } };
 
     auto insertIt = std::lower_bound(registry.Listeners.begin(), registry.Listeners.end(), newListener,
