@@ -3252,11 +3252,29 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 bool gfx_push_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
-    const char* shader = (char*)cmd->words.w1;
+    const char* path = (const char*)gfx->SegAddr(cmd->words.w1);
 
-    gfx->mShaders[gfx->mShadersIndex] = shader;
-    gfx->mShaderStack.push(gfx->mShadersIndex);
-    gfx->mShadersIndex++;
+    if (!gfx_check_image_signature(path)) {
+        SPDLOG_ERROR("G_PUSH_SHADER: Shader is not a valid OTR resource name, unable to register push shader");
+        return false;
+    }
+
+    path = &path[7];
+
+    size_t shaderId = static_cast<size_t>(-1);
+    for (const auto& shader : gfx->mShaders) {
+        if (strcmp(shader.second, path) == 0) {
+            shaderId = shader.first;
+            break;
+        }
+    }
+
+    if (shaderId == static_cast<size_t>(-1)) {
+        shaderId = gfx->mShadersIndex++;
+        gfx->mShaders[shaderId] = path;
+    }
+
+    gfx->mShaderStack.push(shaderId);
 
     return false;
 }
@@ -4534,8 +4552,7 @@ static void gfx_step() {
         // OTR filepath handlers expect w1 to be a valid string pointer.
         // Guard against null or N64-segment addresses that would crash in strlen/strncmp.
         if (opcode == OTR_G_VTX_OTR_FILEPATH || opcode == OTR_G_SETTIMG_OTR_FILEPATH ||
-            opcode == OTR_G_DL_OTR_FILEPATH || opcode == OTR_G_PUSHCD || opcode == OTR_G_MTX_OTR_FILEPATH ||
-            opcode == OTR_G_PUSH_SHADER) {
+            opcode == OTR_G_DL_OTR_FILEPATH || opcode == OTR_G_PUSHCD || opcode == OTR_G_MTX_OTR_FILEPATH) {
             uintptr_t w1 = (uintptr_t)cmd->words.w1;
             if (w1 < 0x10000
 #if UINTPTR_MAX > 0xFFFFFFFFu

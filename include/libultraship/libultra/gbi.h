@@ -2817,9 +2817,9 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPPushShader(shader)                       \
-    { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (shader) }, { \
-        0, 0                                         \
+#define gsSPPushShader(shader)                                  \
+    { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (uintptr_t)(shader) }, { \
+        0, 0                                                    \
     }
 
 #define gSPPushShader(pkt, shader)                     \
@@ -2827,7 +2827,7 @@ typedef union Gfx {
         Gfx* _g0 = (Gfx*)(pkt);                        \
                                                        \
         _g0->words.w0 = _SHIFTL(G_PUSH_SHADER, 24, 8); \
-        _g0->words.w1 = shader;                        \
+        _g0->words.w1 = (uintptr_t)(shader);           \
     }
 
 #define gsSPPopShader()                      \
