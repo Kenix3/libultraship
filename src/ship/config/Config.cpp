@@ -9,6 +9,7 @@
 #include "ship/Context.h"
 
 #ifdef __APPLE__
+#include <TargetConditionals.h>
 #include "fast/backends/gfx_metal.h"
 #endif
 
@@ -261,7 +262,7 @@ AudioBackend Config::GetCurrentAudioBackend() {
     return AudioBackend::WASAPI;
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
     return AudioBackend::COREAUDIO;
 #endif
 
