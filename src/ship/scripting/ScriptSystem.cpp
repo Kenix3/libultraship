@@ -148,8 +148,9 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
 
         tcc_set_error_func(s, NULL, [](void* opaque, const char* msg) {
             std::string_view sv(msg);
-            if (sv.find("error") != std::string_view::npos || sv.find("warning") != std::string_view::npos ||
-                sv.find("fatal") != std::string_view::npos) {
+            if (sv.find("warning") != std::string_view::npos) {
+                SPDLOG_WARN("Compiler: {}", msg);
+            } else if (sv.find("error") != std::string_view::npos || sv.find("fatal") != std::string_view::npos) {
                 SPDLOG_ERROR("Compiler: {}", msg);
             } else {
                 SPDLOG_INFO("Compiler: {}", msg);
