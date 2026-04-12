@@ -8,7 +8,7 @@ if (NOT ${spdlog_FOUND})
     FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.14.1
+        GIT_TAG v1.16.0
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(spdlog)
