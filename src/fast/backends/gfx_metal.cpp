@@ -650,6 +650,8 @@ int GfxRenderingAPIMetal::CreateFramebuffer() {
     data.mViewport = new MTL::Viewport();
     data.mTextureId = texture_id;
 
+    data.mUpscaleMethod = FILTER_LINEAR;
+
     uint32_t tile = 0;
     uint32_t saved = mCurrentTextureIds[tile];
     mCurrentTextureIds[tile] = texture_id;
@@ -719,7 +721,7 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
 
 void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                        bool opengl_invertY, bool render_target, bool has_depth_buffer,
-                                                       bool can_extract_depth) {
+                                                       bool can_extract_depth, FilteringMode upscale_method) {
     // Screen framebuffer is handled separately on a frame by frame basis
     // see `SetupScreenFramebuffer`.
     if (fb_id == 0) {
@@ -739,7 +741,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         --msaa_level;
     }
 
-    bool diff = tex.width != width || tex.height != height || fb.mMsaaLevel != msaa_level;
+    bool diff = tex.width != width || tex.height != height || fb.mMsaaLevel != msaa_level || fb.mUpscaleMethod != upscale_method;
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
@@ -752,6 +754,20 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         tex_descriptor->setMipmapLevelCount(1);
         tex_descriptor->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
         tex_descriptor->setUsage((render_target ? MTL::TextureUsageRenderTarget : 0) | MTL::TextureUsageShaderRead);
+        
+        // apply upscaling method
+        tex.linear_filtering = (upscale_method == FILTER_LINEAR);
+        MTL::SamplerDescriptor* sampler_descriptor = MTL::SamplerDescriptor::alloc()->init();
+        MTL::SamplerMinMagFilter filter = upscale_method == FILTER_LINEAR
+                                          ? MTL::SamplerMinMagFilterLinear
+                                          : MTL::SamplerMinMagFilterNearest;
+        sampler_descriptor->setMinFilter(filter);
+        sampler_descriptor->setMagFilter(filter);
+        sampler_descriptor->setSAddressMode(gfx_cm_to_metal(G_TX_WRAP));
+        sampler_descriptor->setTAddressMode(gfx_cm_to_metal(G_TX_WRAP));
+        sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
+        tex.sampler = mDevice->newSamplerState(sampler_descriptor);
+        sampler_descriptor->release();
 
         if (tex.texture != nullptr)
             tex.texture->release();
@@ -847,6 +863,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
     fb.mRenderTarget = render_target;
     fb.mHasDepthBuffer = has_depth_buffer;
     fb.mMsaaLevel = msaa_level;
+    fb.mUpscaleMethod = upscale_method;
 
     autorelease_pool->release();
 }
