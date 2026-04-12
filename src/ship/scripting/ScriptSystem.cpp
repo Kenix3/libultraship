@@ -146,6 +146,10 @@ void ScriptSystem::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to create TCCState");
         }
 
+        tcc_set_error_func(s, NULL, [](void* opaque, const char* msg) {
+            throw std::runtime_error(std::string("Failed to compile script: ") + msg);
+        });
+
         tcc_define_symbol(s, "__DLL__", "1");
 
         for (const auto& [key, value] : mCompileDefines) {
