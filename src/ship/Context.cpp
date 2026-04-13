@@ -37,6 +37,10 @@ Context::~Context() {
     SPDLOG_TRACE("destruct context");
     GetWindow()->SaveWindowToConfig();
 
+    if (mScriptLoader) {
+        mScriptLoader->UnloadAll();
+    }
+
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
     mWindow = nullptr;

@@ -348,6 +348,8 @@ void ScriptLoader::UnloadAll() {
         if (exit) {
             exit();
         }
+
+        loader.Unload();
     }
     mLoadedScripts.clear();
 }
