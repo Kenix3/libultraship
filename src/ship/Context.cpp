@@ -50,6 +50,8 @@ Context::~Context() {
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
     mEventSystem = nullptr;
+    mScriptLoader = nullptr;
+    mKeystore = nullptr;
     GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
