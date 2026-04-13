@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24.0)
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
+option(ENABLE_DLL_LOADER "Enable dynamic library loading support" ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     option(SIGN_LIBRARY "Enable xcode signing" OFF)
