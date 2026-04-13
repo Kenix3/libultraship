@@ -11,6 +11,7 @@ namespace Ship {
 
 struct EventRegistration {
     const char* Name;
+    ListenerID NextListenerID = 0;
     std::unordered_map<const char*, EventMetadata> Callers;
     std::vector<EventListener> Listeners;
 };

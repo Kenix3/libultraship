@@ -71,6 +71,9 @@ constexpr int8_t OTR_G_PUSH_SHADER = OPCODE(0x43);
 constexpr int8_t OTR_G_POP_SHADER = OPCODE(0x44);
 constexpr int8_t RDP_G_SETTILESIZE_INTERP = OPCODE(0x45);
 constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x46);
+constexpr int8_t RDP_G_LOADBLOCK_WIDE = OPCODE(0x47);
+constexpr int8_t RDP_G_VTX_WIDE = OPCODE(0x48);
+constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
 
 /*
  * The following commands are the "generated" RDP commands; the user
