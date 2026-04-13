@@ -205,6 +205,12 @@ void GfxRenderingAPIMetal::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramMetal*)new_prg;
 }
 
+void GfxRenderingAPIMetal::ClearShaderCache() {
+    for (auto& [key, prg] : mShaderProgramPool) {
+        prg.markedForDeletion = true;
+    }
+}
+
 struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
@@ -295,6 +301,18 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
 
 struct ShaderProgram* GfxRenderingAPIMetal::LookupShader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
+
+    if (it == mShaderProgramPool.end()) {
+        return nullptr;
+    }
+
+    struct ShaderProgramMetal* prg = &it->second;
+
+    if (prg->markedForDeletion) {
+        mShaderProgramPool.erase(it);
+        return nullptr;
+    }
+
     return it == mShaderProgramPool.end() ? nullptr : (struct ShaderProgram*)&it->second;
 }
 

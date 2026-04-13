@@ -372,6 +372,10 @@ void GfxRenderingAPIDX11::LoadShader(struct ShaderProgram* new_prg) {
     mShaderProgram = (struct ShaderProgramD3D11*)new_prg;
 }
 
+void GfxRenderingAPIDX11::ClearShaderCache() {
+    mShaderProgramPool.clear();
+}
+
 struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);

@@ -396,6 +396,10 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     return result;
 }
 
+void GfxRenderingAPIOGL::ClearShaderCache() {
+    mShaderProgramPool.clear();
+}
+
 ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);

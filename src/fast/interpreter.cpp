@@ -422,6 +422,10 @@ void Interpreter::TextureCacheClear() {
     std::fill(std::begin(mRenderingState.mTextures), std::end(mRenderingState.mTextures), nullptr);
 }
 
+void Interpreter::ShaderCacheClear() {
+    mRapi->ClearShaderCache();
+}
+
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
     TextureCacheMap::iterator it = mTextureCache.map.find(key);
     TextureCacheNode** n = &mRenderingState.mTextures[i];
@@ -5127,4 +5131,12 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 extern "C" void gfx_texture_cache_clear() {
     Fast::mInstance.lock().get()->TextureCacheClear();
+}
+
+extern "C" void gfx_shader_cache_clear() {
+    auto instance = Fast::mInstance.lock().get();
+    instance->mColorCombinerPool.clear();
+    instance->mPrevCombiner = Fast::mInstance.lock().get()->mColorCombinerPool.end();
+    instance->mRenderingState.mShaderProgram = nullptr;
+    instance->mRapi->ClearShaderCache();
 }
