@@ -22,7 +22,7 @@ target_link_libraries(lus_tests PRIVATE
     gtest_main
 )
 
-target_compile_definitions(lus_tests PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF ENABLE_DLL_LOADER=1)
+target_compile_definitions(lus_tests PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
 
 include(GoogleTest)
 gtest_discover_tests(lus_tests)

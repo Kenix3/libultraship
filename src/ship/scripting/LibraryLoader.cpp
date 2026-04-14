@@ -131,7 +131,7 @@ void FixELFHeader(const std::string& path) {
 #endif
 
 void LibraryLoader::Init(const std::string& path) {
-#ifdef ENABLE_DLL_LOADER
+#ifndef DISABLE_DLL_LOADER
 #if defined(_WIN32) || defined(__CYGWIN__)
     HMODULE handle = LoadLibraryA(path.c_str());
     if (handle) {
@@ -160,12 +160,12 @@ void LibraryLoader::Init(const std::string& path) {
 #endif
 #else
     throw std::runtime_error(
-        "DLL loading is disabled. Recompile with ENABLE_DLL_LOADER defined to enable this feature.");
+        "DLL loading is disabled. Recompile without DISABLE_DLL_LOADER defined to enable this feature.");
 #endif
 }
 
 void* LibraryLoader::GetFunction(const std::string& name) {
-#ifdef ENABLE_DLL_LOADER
+#ifndef DISABLE_DLL_LOADER
     if (!mHandle) {
         return nullptr;
     }
@@ -176,12 +176,12 @@ void* LibraryLoader::GetFunction(const std::string& name) {
 #endif
 #else
     throw std::runtime_error(
-        "DLL loading is disabled. Recompile with ENABLE_DLL_LOADER defined to enable this feature.");
+        "DLL loading is disabled. Recompile without DISABLE_DLL_LOADER defined to enable this feature.");
 #endif
 }
 
 void LibraryLoader::Unload() {
-#ifdef ENABLE_DLL_LOADER
+#ifndef DISABLE_DLL_LOADER
     if (!mHandle) {
         return;
     }
