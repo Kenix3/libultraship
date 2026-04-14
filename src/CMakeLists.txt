@@ -21,7 +21,7 @@ endif()
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/install_config.h @ONLY)
 
-file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/ship/keys/script/*.pem")
+file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
 set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)
 set(GENERATE_KEYS_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.py)
 get_filename_component(EMBEDDED_KEYS_DIR ${EMBEDDED_KEYS_HEADER} DIRECTORY)
@@ -34,7 +34,7 @@ add_custom_command(
             ${SCRIPT_PUB_KEYS}
     DEPENDS ${GENERATE_KEYS_SCRIPT} 
             ${SCRIPT_PUB_KEYS}
-    COMMENT "Generating DefaultKeys.h from all keys in src/ship/keys/script/"
+    COMMENT "Generating DefaultKeys.h from all keys in /keys/script/"
     VERBATIM
 )
 
