@@ -39,6 +39,10 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 std::stack<std::string> currentDir;
 
 #define SEG_ADDR(seg, addr) (addr | (seg << 24) | 1)
@@ -3301,11 +3305,29 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 bool gfx_push_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
-    const char* shader = (char*)cmd->words.w1;
+    const char* path = (const char*)gfx->SegAddr(cmd->words.w1);
 
-    gfx->mShaders[gfx->mShadersIndex] = shader;
-    gfx->mShaderStack.push(gfx->mShadersIndex);
-    gfx->mShadersIndex++;
+    if (!gfx_check_image_signature(path)) {
+        SPDLOG_ERROR("G_PUSH_SHADER: Shader is not a valid OTR resource name, unable to register push shader");
+        return false;
+    }
+
+    path = &path[7];
+
+    size_t shaderId = static_cast<size_t>(-1);
+    for (const auto& shader : gfx->mShaders) {
+        if (strcmp(shader.second, path) == 0) {
+            shaderId = shader.first;
+            break;
+        }
+    }
+
+    if (shaderId == static_cast<size_t>(-1)) {
+        shaderId = gfx->mShadersIndex++;
+        gfx->mShaders[shaderId] = path;
+    }
+
+    gfx->mShaderStack.push(shaderId);
 
     return false;
 }
@@ -3771,9 +3793,20 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     // If the resolved address is still in the N64 segmented range, SegAddr
     // failed to resolve it (segment not set up). Skip to avoid dereferencing
     // invalid memory.
+    // For Windows, also check if the address is not from a dll because this validation returns a false positive caused
+    // by how the virtual memory is allocated.
+#ifdef _WIN32
+    HMODULE module = nullptr;
+    if (i <= 0x0FFFFFFF &&
+        !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                             reinterpret_cast<LPCSTR>(i), &module))) {
+        return false;
+    }
+#else
     if (i <= 0x0FFFFFFF) {
         return false;
     }
+#endif
 
     gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
@@ -4003,6 +4036,24 @@ bool gfx_load_block_handler_rdp(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     gfx->GfxDpLoadBlock(C1(24, 3), C0(12, 12), C0(0, 12), C1(12, 12), C1(0, 12));
+    return false;
+}
+
+bool gfx_load_block_wide_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint32_t tile = cmd->words.w0 & 0x7;
+    uint32_t lrs = cmd->words.w1;
+
+    (*cmd0)++;
+    cmd = *cmd0;
+
+    uint32_t uls = (cmd->words.w0 >> 16) & 0xFFFF;
+    uint32_t ult = (cmd->words.w0 >> 0) & 0xFFFF;
+    uint32_t dxt = (cmd->words.w1 >> 0) & 0xFFF;
+
+    gfx->GfxDpLoadBlock(tile, uls, ult, lrs, dxt);
     return false;
 }
 
@@ -4390,6 +4441,9 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
+    { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
+    { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
+    { RDP_G_TRI1_WIDE, { "G_TRI1_WIDE", gfx_tri1_handler_f3dex2 } },                   // RDP_G_TRI1_WIDE (-17)
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4555,8 +4609,7 @@ static void gfx_step() {
         // OTR filepath handlers expect w1 to be a valid string pointer.
         // Guard against null or N64-segment addresses that would crash in strlen/strncmp.
         if (opcode == OTR_G_VTX_OTR_FILEPATH || opcode == OTR_G_SETTIMG_OTR_FILEPATH ||
-            opcode == OTR_G_DL_OTR_FILEPATH || opcode == OTR_G_PUSHCD || opcode == OTR_G_MTX_OTR_FILEPATH ||
-            opcode == OTR_G_PUSH_SHADER) {
+            opcode == OTR_G_DL_OTR_FILEPATH || opcode == OTR_G_PUSHCD || opcode == OTR_G_MTX_OTR_FILEPATH) {
             uintptr_t w1 = (uintptr_t)cmd->words.w1;
             if (w1 < 0x10000
 #if UINTPTR_MAX > 0xFFFFFFFFu

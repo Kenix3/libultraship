@@ -41,6 +41,8 @@ jobs:
         cmake ..
         make
         sudo make install
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
     - name: Configure
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
