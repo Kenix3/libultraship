@@ -5,6 +5,7 @@
 #include <vector>
 #include <filesystem>
 
+#define ENABLE_DLL_LOADER 1
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/ScriptLoader.h"
