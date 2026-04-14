@@ -131,6 +131,7 @@ void FixELFHeader(const std::string& path) {
 #endif
 
 void LibraryLoader::Init(const std::string& path) {
+#ifdef ENABLE_DLL_LOADER
 #if defined(_WIN32) || defined(__CYGWIN__)
     HMODULE handle = LoadLibraryA(path.c_str());
     if (handle) {
@@ -157,9 +158,14 @@ void LibraryLoader::Init(const std::string& path) {
 #else
 #error "Unsupported Operating System"
 #endif
+#else
+    throw std::runtime_error(
+        "DLL loading is disabled. Recompile with ENABLE_DLL_LOADER defined to enable this feature.");
+#endif
 }
 
 void* LibraryLoader::GetFunction(const std::string& name) {
+#ifdef ENABLE_DLL_LOADER
     if (!mHandle) {
         return nullptr;
     }
@@ -168,9 +174,14 @@ void* LibraryLoader::GetFunction(const std::string& name) {
 #else
     return (void*)dlsym(mHandle, name.c_str());
 #endif
+#else
+    throw std::runtime_error(
+        "DLL loading is disabled. Recompile with ENABLE_DLL_LOADER defined to enable this feature.");
+#endif
 }
 
 void LibraryLoader::Unload() {
+#ifdef ENABLE_DLL_LOADER
     if (!mHandle) {
         return;
     }
@@ -180,5 +191,6 @@ void LibraryLoader::Unload() {
     DeleteFileA(mTempFile.c_str());
 #endif
     mHandle = nullptr;
+#endif
 }
 } // namespace Ship::Scripting
