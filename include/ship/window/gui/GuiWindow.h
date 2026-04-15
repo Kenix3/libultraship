@@ -9,7 +9,6 @@
 namespace Ship {
 class GuiWindow : public GuiElement {
   public:
-    GuiWindow() = default;
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
               uint32_t windowFlags);
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize);
@@ -18,7 +17,6 @@ class GuiWindow : public GuiElement {
     GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize);
     GuiWindow(const std::string& consoleVariable, const std::string& name);
     void Draw() override;
-    std::string GetName();
 
   protected:
     void SetVisibility(bool visible) override;
@@ -27,7 +25,6 @@ class GuiWindow : public GuiElement {
     void SyncVisibilityConsoleVariable();
 
   private:
-    std::string mName;
     std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;
     ImVec2 mOriginalSize;

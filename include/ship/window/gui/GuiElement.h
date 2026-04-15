@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
+#include "ship/Component.h"
 
 namespace Ship {
-class GuiElement {
+class GuiElement : public Component {
   public:
-    GuiElement(bool isVisible);
-    GuiElement();
+    GuiElement(const std::string& name, bool isVisible);
+    GuiElement(const std::string& name);
     virtual ~GuiElement();
 
     void Init();
