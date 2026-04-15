@@ -481,12 +481,16 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
     return GetResourceRawPointer(resource);
 }
 
-std::shared_ptr<BS::thread_pool> ResourceManager::GetThreadPool() const {
+std::shared_ptr<BS::thread_pool> ResourceManager::GetThreadPool() {
+    if (mCachedThreadPool) {
+        return mCachedThreadPool;
+    }
     auto context = Context::GetInstance();
     if (context) {
         auto tpc = context->GetChildren().GetFirst<ThreadPoolComponent>();
         if (tpc) {
-            return tpc->GetPool();
+            mCachedThreadPool = tpc->GetPool();
+            return mCachedThreadPool;
         }
     }
     return nullptr;

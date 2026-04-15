@@ -3,7 +3,7 @@
 namespace Ship {
 
 Action::Action(const uint32_t actionType, std::shared_ptr<Tickable> tickable)
-    : Part(), mActionType(actionType), mTickable(std::weak_ptr<Tickable>(tickable)), mIsActionRunning(false)
+    : Part(), mActionType(actionType), mTickable(tickable), mIsActionRunning(false)
 #ifdef INCLUDE_PROFILING
       ,
       mClocks()
