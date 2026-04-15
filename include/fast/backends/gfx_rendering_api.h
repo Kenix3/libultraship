@@ -35,6 +35,7 @@ class GfxRenderingAPI {
     virtual GfxClipParameters GetClipParameters() = 0;
     virtual void UnloadShader(ShaderProgram* oldPrg) = 0;
     virtual void LoadShader(ShaderProgram* newPrg) = 0;
+    virtual void ClearShaderCache() = 0;
     virtual ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) = 0;
     virtual ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) = 0;
     virtual void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) = 0;
