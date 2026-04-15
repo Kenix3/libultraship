@@ -19,6 +19,7 @@ add_executable(lus_tests
     event_system_tests.cpp
     sound_matrix_decoder_tests.cpp
     path_file_helper_tests.cpp
+    archive_resource_tests.cpp
 )
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)

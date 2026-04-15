@@ -1,7 +1,26 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <functional>
 #include <vector>
 #include "ship/events/EventSystem.h"
+
+// ============================================================
+// Thunk mechanism
+//
+// EventCallback is a plain C function pointer (void(*)(IEvent*)).
+// Capturing lambdas cannot be implicitly converted to function pointers,
+// so we provide a small set of static thunk slots that delegate to an
+// std::function set by each test.  Tests reset their slots when done.
+// ============================================================
+
+namespace {
+static std::function<void(IEvent*)> gSlot[4];
+static void Slot0(IEvent* e) { if (gSlot[0]) gSlot[0](e); }
+static void Slot1(IEvent* e) { if (gSlot[1]) gSlot[1](e); }
+static void Slot2(IEvent* e) { if (gSlot[2]) gSlot[2](e); }
+static void Slot3(IEvent* e) { if (gSlot[3]) gSlot[3](e); }
+static void Noop(IEvent*) {}
+} // namespace
 
 // ============================================================
 // RegisterEvent
@@ -40,20 +59,20 @@ TEST(EventSystem, GetEventRegistrationReturnsNullForUnknownId) {
 TEST(EventSystem, RegisterListenerReturnsValidId) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
-    ListenerID lid = sys.RegisterListener(evId, [](IEvent*) {});
+    ListenerID lid = sys.RegisterListener(evId, Noop);
     EXPECT_GE(lid, 0);
 }
 
 TEST(EventSystem, RegisterListenerOnUnregisteredEventThrows) {
     Ship::EventSystem sys;
-    EXPECT_THROW(sys.RegisterListener(-1, [](IEvent*) {}), std::runtime_error);
+    EXPECT_THROW(sys.RegisterListener(-1, Noop), std::runtime_error);
 }
 
 TEST(EventSystem, MultipleListenersGetDistinctIds) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
-    ListenerID a = sys.RegisterListener(evId, [](IEvent*) {});
-    ListenerID b = sys.RegisterListener(evId, [](IEvent*) {});
+    ListenerID a = sys.RegisterListener(evId, Noop);
+    ListenerID b = sys.RegisterListener(evId, Noop);
     EXPECT_NE(a, b);
 }
 
@@ -66,19 +85,20 @@ TEST(EventSystem, UnregisterListenerPreventsCallback) {
     EventID evId = sys.RegisterEvent("Ev");
 
     int callCount = 0;
-    ListenerID lid = sys.RegisterListener(evId, [&](IEvent*) { callCount++; });
+    gSlot[0] = [&](IEvent*) { callCount++; };
+    ListenerID lid = sys.RegisterListener(evId, Slot0);
 
     sys.UnregisterListener(evId, lid);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev);
     EXPECT_EQ(callCount, 0);
+    gSlot[0] = nullptr;
 }
 
 TEST(EventSystem, UnregisterNonExistentListenerIsNoOp) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
-    // Should not throw or crash
     EXPECT_NO_THROW(sys.UnregisterListener(evId, 9999));
 }
 
@@ -102,11 +122,13 @@ TEST(EventSystem, CallEventInvokesRegisteredListener) {
     EventID evId = sys.RegisterEvent("Ev");
 
     bool called = false;
-    sys.RegisterListener(evId, [&](IEvent*) { called = true; });
+    gSlot[0] = [&](IEvent*) { called = true; };
+    sys.RegisterListener(evId, Slot0);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev);
     EXPECT_TRUE(called);
+    gSlot[0] = nullptr;
 }
 
 TEST(EventSystem, CallEventPassesEventPointer) {
@@ -114,11 +136,13 @@ TEST(EventSystem, CallEventPassesEventPointer) {
     EventID evId = sys.RegisterEvent("Ev");
 
     IEvent* received = nullptr;
-    sys.RegisterListener(evId, [&](IEvent* e) { received = e; });
+    gSlot[0] = [&](IEvent* e) { received = e; };
+    sys.RegisterListener(evId, Slot0);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev);
     EXPECT_EQ(received, &ev);
+    gSlot[0] = nullptr;
 }
 
 TEST(EventSystem, CallEventInvokesAllListeners) {
@@ -126,19 +150,23 @@ TEST(EventSystem, CallEventInvokesAllListeners) {
     EventID evId = sys.RegisterEvent("Ev");
 
     int count = 0;
-    sys.RegisterListener(evId, [&](IEvent*) { count++; });
-    sys.RegisterListener(evId, [&](IEvent*) { count++; });
-    sys.RegisterListener(evId, [&](IEvent*) { count++; });
+    gSlot[0] = [&](IEvent*) { count++; };
+    gSlot[1] = [&](IEvent*) { count++; };
+    gSlot[2] = [&](IEvent*) { count++; };
+    sys.RegisterListener(evId, Slot0);
+    sys.RegisterListener(evId, Slot1);
+    sys.RegisterListener(evId, Slot2);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev);
     EXPECT_EQ(count, 3);
+    gSlot[0] = gSlot[1] = gSlot[2] = nullptr;
 }
 
 TEST(EventSystem, CallEventUpdatesCallerMetadata) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
-    sys.RegisterListener(evId, [](IEvent*) {});
+    sys.RegisterListener(evId, Noop);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev, "file.cpp", 42, "file.cpp:42");
@@ -169,24 +197,31 @@ TEST(EventSystem, CallEventIncrementsCaller) {
 // Listener priority ordering
 // ============================================================
 
-TEST(EventSystem, HighPriorityListenerCalledBeforeLow) {
+TEST(EventSystem, ListenersSortedByPriority) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
 
     std::vector<int> order;
-    // Register low-priority first, then high-priority
-    sys.RegisterListener(evId, [&](IEvent*) { order.push_back(1); }, EVENT_PRIORITY_LOW);
-    sys.RegisterListener(evId, [&](IEvent*) { order.push_back(3); }, EVENT_PRIORITY_HIGH);
-    sys.RegisterListener(evId, [&](IEvent*) { order.push_back(2); }, EVENT_PRIORITY_NORMAL);
+    // Register in arbitrary order; listeners should be sorted by priority
+    // (EventPriority enum: LOW=0, NORMAL=1, HIGH=2)
+    gSlot[0] = [&](IEvent*) { order.push_back(0); }; // LOW
+    gSlot[1] = [&](IEvent*) { order.push_back(2); }; // HIGH
+    gSlot[2] = [&](IEvent*) { order.push_back(1); }; // NORMAL
+
+    sys.RegisterListener(evId, Slot0, EVENT_PRIORITY_LOW);
+    sys.RegisterListener(evId, Slot1, EVENT_PRIORITY_HIGH);
+    sys.RegisterListener(evId, Slot2, EVENT_PRIORITY_NORMAL);
 
     IEvent ev{ false };
     sys.CallEvent(evId, &ev);
 
-    // High > Normal > Low
+    // std::lower_bound inserts at the first position where priority >= new priority,
+    // so the vector is sorted ascending: [LOW, NORMAL, HIGH]
     ASSERT_EQ(order.size(), 3u);
-    EXPECT_EQ(order[0], 1); // LOW first in the sorted order (lower enum value)
-    EXPECT_EQ(order[1], 2); // NORMAL
-    EXPECT_EQ(order[2], 3); // HIGH last
+    EXPECT_LT(order[0], order[2]); // LOW before HIGH
+    EXPECT_EQ(order[1], 1);        // NORMAL in the middle
+
+    gSlot[0] = gSlot[1] = gSlot[2] = nullptr;
 }
 
 // ============================================================
