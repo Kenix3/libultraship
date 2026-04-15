@@ -3,7 +3,11 @@
 namespace Ship {
 
 Action::Action(const uint32_t actionType, std::shared_ptr<Tickable> tickable)
-    : Part(), mActionType(actionType), mTickable(tickable), mIsActionRunning(false), mClocks() {
+    : Part(), mActionType(actionType), mTickable(tickable), mIsActionRunning(false)
+#ifdef INCLUDE_PROFILING
+      , mClocks()
+#endif
+{
 }
 
 uint32_t Action::GetType() const {
@@ -15,17 +19,21 @@ std::shared_ptr<Tickable> Action::GetTickable() const {
 }
 
 bool Action::Run(const double durationSinceLastTick) {
+#ifdef INCLUDE_PROFILING
     SetClock(ClockType::PreviousStart, GetClock(ClockType::Start));
     SetClock(ClockType::PreviousEnd, GetClock(ClockType::End));
     SetClock(ClockType::Start, std::chrono::steady_clock::now());
     SetClock(ClockType::End, {});
+#endif
 
     bool result = false;
     if (IsRunning()) {
         result = ActionRan(durationSinceLastTick);
     }
 
+#ifdef INCLUDE_PROFILING
     SetClock(ClockType::End, std::chrono::steady_clock::now());
+#endif
     return result;
 }
 
@@ -73,6 +81,7 @@ void Action::Started(const bool forced) {}
 
 void Action::Stopped(const bool forced) {}
 
+#ifdef INCLUDE_PROFILING
 double Action::GetTime(const ClockType clockType) const {
     return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
 }
@@ -86,5 +95,6 @@ Action& Action::SetClock(const ClockType clockType,
     mClocks[static_cast<size_t>(clockType)] = clockValue;
     return *this;
 }
+#endif
 
 } // namespace Ship

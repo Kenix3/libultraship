@@ -106,6 +106,10 @@ target_link_libraries(libultraship PUBLIC prism)
 
 #=================== Compile Options & Defs ===================
 
+if(INCLUDE_PROFILING)
+    target_compile_definitions(libultraship PUBLIC INCLUDE_PROFILING)
+endif()
+
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

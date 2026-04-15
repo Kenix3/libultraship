@@ -52,7 +52,9 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     virtual void AddedAction(std::shared_ptr<Action> action, const bool forced);
     virtual void RemovedAction(std::shared_ptr<Action> action, const bool forced);
 
+#ifdef INCLUDE_PROFILING
     double GetTime(const ClockType clockType) const;
+#endif
 
   protected:
     virtual bool CanStart();
@@ -63,14 +65,18 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     std::mutex& GetMutex();
 
   private:
+#ifdef INCLUDE_PROFILING
     Tickable& SetClock(const ClockType clockType,
                        std::chrono::time_point<std::chrono::steady_clock> clockValue);
     std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
+#endif
 
     ActionList mActions;
     bool mIsTicking;
     mutable std::mutex mMutex;
+#ifdef INCLUDE_PROFILING
     std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<size_t>(ClockType::ClockMax)];
+#endif
 };
 
 // ---- Template method implementations ----
@@ -81,7 +87,11 @@ double Tickable::Tick(const double durationSinceLastTick) {
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
+#ifdef INCLUDE_PROFILING
     return GetTime(ClockType::End) - GetTime(ClockType::Start);
+#else
+    return 0.0;
+#endif
 }
 
 template <typename T>
@@ -92,7 +102,11 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
             action->Run(durationSinceLastTick);
         }
     }
+#ifdef INCLUDE_PROFILING
     return GetTime(ClockType::End) - GetTime(ClockType::Start);
+#else
+    return 0.0;
+#endif
 }
 
 template <typename T>
@@ -103,7 +117,11 @@ double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionT
             action->Run(durationSinceLastTick);
         }
     }
+#ifdef INCLUDE_PROFILING
     return GetTime(ClockType::End) - GetTime(ClockType::Start);
+#else
+    return 0.0;
+#endif
 }
 
 template <typename T>
