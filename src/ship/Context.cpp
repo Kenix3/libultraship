@@ -1,6 +1,8 @@
 #include "ship/Context.h"
+#include "ship/TickableComponent.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <iostream>
+#include <algorithm>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -83,7 +85,9 @@ std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)), Component(std::move(name)) {
+    : Component(name), Tickable(), mConfigFilePath(std::move(configFilePath)),
+      mName(std::move(name)), mShortName(std::move(shortName)),
+      mIsTickableComponentsOrderStale(false) {
 }
 
 bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
@@ -520,4 +524,159 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     // current dir
     return "./" + std::string(path);
 }
+
+// ---- TickableComponent management ----
+
+bool Context::HasTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
+    if (!tickableComponent) {
+        return false;
+    }
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    return std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent) !=
+           mTickableComponents.end();
+}
+
+size_t Context::CountTickableComponent() {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    return mTickableComponents.size();
+}
+
+bool Context::AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
+                                   const bool force) {
+    if (!tickableComponent) {
+        return false;
+    }
+    const bool canAdd = CanAddTickableComponent(tickableComponent);
+    if (!canAdd && !force) {
+        return false;
+    }
+    const bool forced = !canAdd && force;
+    {
+        const std::lock_guard<std::mutex> lock(mTickableMutex);
+        if (std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent) !=
+            mTickableComponents.end()) {
+            return true;
+        }
+        mTickableComponents.push_back(tickableComponent);
+        mIsTickableComponentsOrderStale = true;
+    }
+    AddedTickableComponent(tickableComponent, forced);
+    return true;
+}
+
+bool Context::RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
+                                      const bool force) {
+    if (!tickableComponent) {
+        return false;
+    }
+    const bool canRemove = CanRemoveTickableComponent(tickableComponent);
+    if (!canRemove && !force) {
+        return false;
+    }
+    const bool forced = !canRemove && force;
+    {
+        const std::lock_guard<std::mutex> lock(mTickableMutex);
+        auto it = std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent);
+        if (it == mTickableComponents.end()) {
+            return true;
+        }
+        mTickableComponents.erase(it);
+    }
+    RemovedTickableComponent(tickableComponent, forced);
+    return true;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> Context::GetTickableComponents() {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    return std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>(mTickableComponents);
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+Context::GetTickableComponents(const std::vector<std::string>& componentNames) {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
+    for (const auto& tc : mTickableComponents) {
+        if (std::find(componentNames.begin(), componentNames.end(), tc->GetName()) !=
+            componentNames.end()) {
+            result->push_back(tc);
+        }
+    }
+    return result;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+Context::GetTickableComponents(const std::string& componentName) {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
+    for (const auto& tc : mTickableComponents) {
+        if (tc->GetName() == componentName) {
+            result->push_back(tc);
+        }
+    }
+    return result;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+Context::GetTickableComponent(const std::vector<int32_t>& componentIds) {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
+    for (const auto& tc : mTickableComponents) {
+        if (std::find(componentIds.begin(), componentIds.end(),
+                      static_cast<int32_t>(tc->GetId())) != componentIds.end()) {
+            result->push_back(tc);
+        }
+    }
+    return result;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
+Context::GetTickableComponent(const int32_t componentId) {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
+    for (const auto& tc : mTickableComponents) {
+        if (static_cast<int32_t>(tc->GetId()) == componentId) {
+            result->push_back(tc);
+        }
+    }
+    return result;
+}
+
+Context& Context::SetTickableComponentsOrderStale() {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    mIsTickableComponentsOrderStale = true;
+    return *this;
+}
+
+Context& Context::UnsetTickableComponentsOrderStale() {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    mIsTickableComponentsOrderStale = false;
+    return *this;
+}
+
+Context& Context::SortTickableComponents() {
+    const std::lock_guard<std::mutex> lock(mTickableMutex);
+    std::stable_sort(mTickableComponents.begin(), mTickableComponents.end(),
+        [](const std::shared_ptr<TickableComponent>& a,
+           const std::shared_ptr<TickableComponent>& b) {
+            return a->GetOrder() < b->GetOrder();
+        });
+    mIsTickableComponentsOrderStale = false;
+    return *this;
+}
+
+bool Context::CanAddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
+    return true;
+}
+
+bool Context::CanRemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
+    return true;
+}
+
+void Context::AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
+                                     const bool forced) {}
+
+void Context::RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
+                                       const bool forced) {}
+
 } // namespace Ship
+

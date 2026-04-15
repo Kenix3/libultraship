@@ -1,15 +1,14 @@
 #include "ship/Component.h"
 
+#include <shared_mutex>
+#include <mutex>
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
 namespace Ship {
+
 Component::Component(const std::string& name)
-    : Part(), mName(name), mParents(), mChildren()
-#ifdef INCLUDE_MUTEX
-    , mMutex()
-#endif
-{
+    : Part(), mName(name), mParents(), mChildren(), mMutex() {
     SPDLOG_INFO("Constructing component {}", ToString());
 }
 
@@ -33,534 +32,341 @@ std::shared_mutex& Component::GetMutex() {
     return mMutex;
 }
 
-template <typename T> bool Component::HasParent(const std::string name) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    auto iterator = std::find_if(list->begin(), list->end(),
-         [&name](const std::shared_ptr<Component>& component) {
-            return component->GetName() == name && std::dynamic_pointer_cast<T>(component) != nullptr;
-         });
-    return iterator != list->end();
-}
+// ---- Has ----
 
-template <typename T> bool Component::HasChild(const std::string name) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    auto iterator = std::find_if(list->begin(), list->end(), [&name](const std::shared_ptr<Component>& component) {
-            return component->GetName() == name &&
-                   std::dynamic_pointer_cast<T>(component) != nullptr;
-        });
-    return iterator != list->end();
-}
-
-bool Component::HasParent(const std::string& parent) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    auto iterator = std::find_if(list->begin(), list->end(),
-                     [&parent](const std::shared_ptr<Component>& component) { return component->GetName() == parent; });
-    return iterator != list->end();
-}
-
-bool Component::HasChild(const std::string& child) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    auto iterator = std::find_if(list->begin(), list->end(),
-                     [&child](const std::shared_ptr<Component>& component) { return component->GetName() == child; });
-    return iterator != list->end();
-}
-
-template <typename T> std::shared_ptr<T> Component::GetParents(const std::string& parent) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    auto val = std::make_shared<std::vector<T>>(list->size());
-    for (const auto& parentObject : *list) {
-        if (std::dynamic_pointer_cast<T>(parentObject) != nullptr && parentObject->GetName() == parent) {
-            val.push_back(parentObject);
-        }
+bool Component::HasParent(std::shared_ptr<Component> parent) const {
+    if (!parent) {
+        return false;
     }
-    return val;
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    return mParents.Has(parent);
 }
 
-template <typename T> std::shared_ptr<T> Component::GetChildren(const std::string& child) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    auto val = std::make_shared<std::vector<T>>(list->size());
-    for (const auto& childObject : *list) {
-        if (std::dynamic_pointer_cast<T>(childObject) != nullptr && childObject->GetName() == child) {
-            val->push_back(childObject);
-        }
-    }
-    return val;
+bool Component::HasParent(const std::string& name) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    const auto& list = mParents.GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<Component>& c) {
+                   return c->GetName() == name;
+               }) != list.end();
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetParents(const std::string& parent) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    auto val = std::make_shared<std::vector<std::shared_ptr<Component>>>(list->size());
-    for (const auto& parentObject : *list) {
-        if (parentObject->GetName() == parent) {
-            val->push_back(parentObject);
-        }
+bool Component::HasChild(std::shared_ptr<Component> child) const {
+    if (!child) {
+        return false;
     }
-    return val;
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    return mChildren.Has(child);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetChildren(const std::string& child) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    auto val = std::make_shared<std::vector<std::shared_ptr<Component>>>(list->size());
-    for (const auto& childObject : *list) {
-        if (childObject->GetName() == child) {
-            val->push_back(childObject);
-        }
-    }
-    return val;
+bool Component::HasChild(const std::string& name) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    const auto& list = mChildren.GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<Component>& c) {
+                   return c->GetName() == name;
+               }) != list.end();
+}
+
+// ---- Get ----
+
+std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetParents() const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    return mParents.Get();
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetParents(const std::vector<std::string>& parents) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    auto val = std::make_shared<std::vector<std::shared_ptr<Component>>>(list->size());
-    for (const auto& parent : *list) {
-        const auto search = parent->GetName();
-        auto iterator =
-            std::find_if(parents.begin(), parents.end(), [&search](const std::string& name) {
-                return name == search;
-            });
-
-        if (iterator != parents.end()) {
-            val->push_back(parent);
+Component::GetParents(const std::string& name) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : mParents.GetList()) {
+        if (c->GetName() == name) {
+            result->push_back(c);
         }
     }
-    return val;
+    return result;
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetChildren(const std::vector<std::string>& children) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    auto val = std::make_shared<std::vector<std::shared_ptr<Component>>>(list->size());
-    for (const auto& child : *list) {
-        const auto search = child->GetName();
-        auto iterator = std::find_if(children.begin(), children.end(),
-                                     [&search](const std::string& name) { return name == search; });
-
-        if (iterator != children.end()) {
-            val->push_back(child);
+Component::GetParents(const std::vector<std::string>& names) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : mParents.GetList()) {
+        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
+            result->push_back(c);
         }
     }
-    return val;
+    return result;
 }
 
+std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetChildren() const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    return mChildren.Get();
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+Component::GetChildren(const std::string& name) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : mChildren.GetList()) {
+        if (c->GetName() == name) {
+            result->push_back(c);
+        }
+    }
+    return result;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+Component::GetChildren(const std::vector<std::string>& names) const {
+    const std::shared_lock<std::shared_mutex> lock(mMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : mChildren.GetList()) {
+        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
+            result->push_back(c);
+        }
+    }
+    return result;
+}
+
+// ---- Add ----
+
+bool Component::AddParent(std::shared_ptr<Component> parent, const bool force) {
+    if (!parent) {
+        return false;
+    }
+    const auto self = shared_from_this();
+    const bool canAddParent = CanAddParent(parent);
+    const bool canAddChild = parent->CanAddChild(self);
+    const bool forced = (!canAddParent || !canAddChild) && force;
+    {
+        const std::unique_lock<std::shared_mutex> lock(mMutex);
+        if (mParents.Has(parent)) {
+            return true;
+        }
+        if ((!canAddParent || !canAddChild) && !force) {
+            return false;
+        }
+        mParents.Add(parent);
+    }
+    AddedParent(parent, forced);
+    if (forced) {
+        SPDLOG_WARN("Forcing {} to be added as a parent to {}", parent->ToString(), ToString());
+    }
+    parent->AddChild(self, force);
+    return true;
+}
 
 bool Component::AddParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force) {
-    bool val = true;
-    for (const auto& parent : parents) {
-        val &= AddParent(parent, force);
+    bool ok = true;
+    for (const auto& p : parents) {
+        ok &= AddParent(p, force);
     }
+    return ok;
+}
 
-    return val;
+bool Component::AddChild(std::shared_ptr<Component> child, const bool force) {
+    if (!child) {
+        return false;
+    }
+    const auto self = shared_from_this();
+    const bool canAddChild = CanAddChild(child);
+    const bool canAddParent = child->CanAddParent(self);
+    const bool forced = (!canAddChild || !canAddParent) && force;
+    {
+        const std::unique_lock<std::shared_mutex> lock(mMutex);
+        if (mChildren.Has(child)) {
+            return true;
+        }
+        if ((!canAddChild || !canAddParent) && !force) {
+            return false;
+        }
+        mChildren.Add(child);
+    }
+    AddedChild(child, forced);
+    if (forced) {
+        SPDLOG_WARN("Forcing {} to be added as a child to {}", child->ToString(), ToString());
+    }
+    child->AddParent(self, force);
+    return true;
 }
 
 bool Component::AddChildren(const std::vector<std::shared_ptr<Component>>& children, const bool force) {
-    bool val = true;
-    for (const auto& child : children) {
-        val &= AddChild(child, force);
+    bool ok = true;
+    for (const auto& c : children) {
+        ok &= AddChild(c, force);
     }
-
-    return val;
+    return ok;
 }
 
+// ---- Remove ----
+
 bool Component::RemoveParent(std::shared_ptr<Component> parent, const bool force) {
-    if (parent == nullptr) {
+    if (!parent) {
         return false;
     }
-
-    const auto ptr = shared_from_this();
+    const auto self = shared_from_this();
     const bool canRemoveParent = CanRemoveParent(parent);
-    const bool canRemoveChild = parent->CanRemoveChild(ptr);
+    const bool canRemoveChild = parent->CanRemoveChild(self);
     const bool forced = (!canRemoveParent || !canRemoveChild) && force;
     {
-#ifdef INCLUDE_MUTEX
-        // This use of recursive mutex allows us to make sure duplicates are never added to the parent list
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
-        if (!HasParent(parent)) {
+        const std::unique_lock<std::shared_mutex> lock(mMutex);
+        if (!mParents.Has(parent)) {
             return true;
         }
-
         if ((!canRemoveParent || !canRemoveChild) && !force) {
             return false;
         }
-
-        RemoveParentRaw(parent);
+        mParents.Remove(parent);
     }
     RemovedParent(parent, forced);
     if (forced) {
-        SPDLOG_WARN("Forcing {} to be removed as a parent to {}", parent->ToString(), ptr->ToString());
+        SPDLOG_WARN("Forcing {} to be removed as a parent from {}", parent->ToString(), ToString());
     }
-    parent->RemoveChild(ptr, force);
-
+    parent->RemoveChild(self, force);
     return true;
 }
 
-bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) {
-    if (child == nullptr) {
-        return false;
-    }
-
-    const auto ptr = shared_from_this();
-    const bool canRemoveChild = CanRemoveChild(child);
-    const bool canRemoveParent = child->CanRemoveParent(ptr);
-    const bool forced = (!canRemoveParent || !canRemoveChild) && force;
-    {
-#ifdef INCLUDE_MUTEX
-        // This use of recursive mutex allows us to make sure duplicates are never added to the children list
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
-        if (!HasChild(child)) {
-            return true;
-        }
-
-        if ((!canRemoveParent || !canRemoveChild) && !force) {
-            return false;
-        }
-
-        RemoveChildRaw(child);
-    }
-    RemovedChild(child, forced);
-    if (forced) {
-        SPDLOG_WARN("Forcing {} to be removed as a child to {}", child->ToString(), ptr->ToString());
-    }
-    child->RemoveParent(ptr, force);
-
-    return true;
-}
-
-bool Component::RemoveParent(const uint32_t parent, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    for (const auto& parentObject : *list) {
-        if (parentObject->GetId() == parent) {
-            return RemoveParent(parentObject, force);
-        }
-    }
-    return false;
-}
-
-bool Component::RemoveChild(const uint32_t child, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    for (const auto& childObject : *list) {
-        if (childObject->GetId() == child) {
-            return RemoveChild(childObject, force);
+bool Component::RemoveParent(const uint64_t parentId, const bool force) {
+    auto snapshot = GetParents();
+    for (const auto& p : *snapshot) {
+        if (p->GetId() == parentId) {
+            return RemoveParent(p, force);
         }
     }
     return false;
 }
 
 bool Component::RemoveParents(const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parent : *list) {
-        val &= RemoveParent(parent, force);
+    // Take a snapshot to avoid iterator invalidation during removal.
+    auto snapshot = GetParents();
+    bool ok = true;
+    for (const auto& p : *snapshot) {
+        ok &= RemoveParent(p, force);
     }
-
-    return val;
-}
-
-bool Component::RemoveChildren(const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& child : *list) {
-        val &= RemoveChild(child, force);
-    }
-
-    return val;
+    return ok;
 }
 
 bool Component::RemoveParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force) {
-    bool val = true;
-    for (const auto& parent : parents) {
-        val &= RemoveParent(parent, force);
+    bool ok = true;
+    for (const auto& p : parents) {
+        ok &= RemoveParent(p, force);
     }
-
-    return val;
+    return ok;
 }
 
-bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, const bool force) {
-    bool val = true;
-    for (const auto& child : children) {
-        val &= RemoveChild(child, force);
-    }
-
-    return val;
-}
-
-template <typename T> bool Component::RemoveParents(const std::string& name, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parent : *list) {
-        if (std::dynamic_pointer_cast<T>(parent) != nullptr && parent->GetName() == name) {
-            val &= RemoveParent(parent, force);
+bool Component::RemoveParents(const std::vector<uint64_t>& parentIds, const bool force) {
+    auto snapshot = GetParents();
+    bool ok = true;
+    for (const auto& p : *snapshot) {
+        if (std::find(parentIds.begin(), parentIds.end(), p->GetId()) != parentIds.end()) {
+            ok &= RemoveParent(p, force);
         }
     }
-    return val;
+    return ok;
 }
 
-template <typename T> bool Component::RemoveChildren(const std::string& name, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& child : *list) {
-        if (std::dynamic_pointer_cast<T>(child) != nullptr && child->GetName() == name) {
-            val &= RemoveChild(child, force);
+bool Component::RemoveParents(const std::string& name, const bool force) {
+    auto snapshot = GetParents(name);
+    bool ok = true;
+    for (const auto& p : *snapshot) {
+        ok &= RemoveParent(p, force);
+    }
+    return ok;
+}
+
+bool Component::RemoveParents(const std::vector<std::string>& names, const bool force) {
+    auto snapshot = GetParents(names);
+    bool ok = true;
+    for (const auto& p : *snapshot) {
+        ok &= RemoveParent(p, force);
+    }
+    return ok;
+}
+
+bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) {
+    if (!child) {
+        return false;
+    }
+    const auto self = shared_from_this();
+    const bool canRemoveChild = CanRemoveChild(child);
+    const bool canRemoveParent = child->CanRemoveParent(self);
+    const bool forced = (!canRemoveChild || !canRemoveParent) && force;
+    {
+        const std::unique_lock<std::shared_mutex> lock(mMutex);
+        if (!mChildren.Has(child)) {
+            return true;
+        }
+        if ((!canRemoveChild || !canRemoveParent) && !force) {
+            return false;
+        }
+        mChildren.Remove(child);
+    }
+    RemovedChild(child, forced);
+    if (forced) {
+        SPDLOG_WARN("Forcing {} to be removed as a child from {}", child->ToString(), ToString());
+    }
+    child->RemoveParent(self, force);
+    return true;
+}
+
+bool Component::RemoveChild(const uint64_t childId, const bool force) {
+    auto snapshot = GetChildren();
+    for (const auto& c : *snapshot) {
+        if (c->GetId() == childId) {
+            return RemoveChild(c, force);
         }
     }
-    return val;
+    return false;
 }
 
-template <typename T> bool Component::RemoveParents(const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parent : *list) {
-        if (std::dynamic_pointer_cast<T>(parent) != nullptr) {
-            val &= RemoveParent(parent, force);
+bool Component::RemoveChildren(const bool force) {
+    auto snapshot = GetChildren();
+    bool ok = true;
+    for (const auto& c : *snapshot) {
+        ok &= RemoveChild(c, force);
+    }
+    return ok;
+}
+
+bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children,
+                               const bool force) {
+    bool ok = true;
+    for (const auto& c : children) {
+        ok &= RemoveChild(c, force);
+    }
+    return ok;
+}
+
+bool Component::RemoveChildren(const std::vector<uint64_t>& childIds, const bool force) {
+    auto snapshot = GetChildren();
+    bool ok = true;
+    for (const auto& c : *snapshot) {
+        if (std::find(childIds.begin(), childIds.end(), c->GetId()) != childIds.end()) {
+            ok &= RemoveChild(c, force);
         }
     }
-    return val;
+    return ok;
 }
 
-template <typename T> bool Component::RemoveChildren(const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& child : *list) {
-        if (std::dynamic_pointer_cast<T>(child) != nullptr) {
-            val &= RemoveChild(child, force);
-        }
+bool Component::RemoveChildren(const std::string& name, const bool force) {
+    auto snapshot = GetChildren(name);
+    bool ok = true;
+    for (const auto& c : *snapshot) {
+        ok &= RemoveChild(c, force);
     }
-    return val;
+    return ok;
 }
 
-bool Component::RemoveParents(const std::vector<uint32_t>& parents, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parent : *list) {
-        const auto search = parent->GetId();
-        auto iterator =
-            std::find_if(parents.begin(), parents.end(), [&search](const int32_t& id) {
-                return id == search;
-            });
-
-        if (iterator != parents.end()) {
-            val &= RemoveParent(parent, force);
-        }
+bool Component::RemoveChildren(const std::vector<std::string>& names, const bool force) {
+    auto snapshot = GetChildren(names);
+    bool ok = true;
+    for (const auto& c : *snapshot) {
+        ok &= RemoveChild(c, force);
     }
-    return val;
+    return ok;
 }
 
-bool Component::RemoveChildren(const std::vector<uint32_t>& children, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& child : *list) {
-        const auto search = child->GetId();
-        auto iterator =
-            std::find_if(children.begin(), children.end(), [&search](const int32_t& id) { return id == search; });
-
-        if (iterator != children.end()) {
-            val &= RemoveChild(child, force);
-        }
-    }
-    return val;
-}
-
-bool Component::RemoveParents(const std::string& parent, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parentObject : *list) {
-        if (parentObject->GetName() == parent) {
-            val &= RemoveParent(parentObject, force);
-        }
-    }
-    return val;
-}
-
-bool Component::RemoveChildren(const std::string& child, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& childObject : *list) {
-        if (childObject->GetName() == child) {
-            val &= RemoveChild(childObject, force);
-        }
-    }
-    return val;
-}
-
-bool Component::RemoveParents(const std::vector<std::string>& parents, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetParents();
-    list = sharedList.get();
-#else
-    list = &mParents;
-#endif
-    bool val = true;
-    for (const auto& parent : *list) {
-        const auto search = parent->GetName();
-        auto iterator =
-            std::find_if(parents.begin(), parents.end(), [&search](const std::string& name) {
-                return name == search;
-            });
-
-        if (iterator != parents.end()) {
-            val &= RemoveParent(parent, force);
-        }
-    }
-    return val;
-}
-
-bool Component::RemoveChildren(const std::vector<std::string>& children, const bool force) {
-    std::vector<std::shared_ptr<Component>>* list;
-#ifdef INCLUDE_MUTEX
-    auto sharedList = GetChildren();
-    list = sharedList.get();
-#else
-    list = &mChildren;
-#endif
-    bool val = true;
-    for (const auto& child : *list) {
-        const auto search = child->GetName();
-        auto iterator = std::find_if(children.begin(), children.end(),
-                                     [&search](const std::string& name) { return name == search; });
-
-        if (iterator != children.end()) {
-            val &= RemoveChild(child, force);
-        }
-    }
-    return val;
-}
+// ---- Virtual hooks (default implementations) ----
 
 bool Component::CanAddParent(std::shared_ptr<Component> parent) {
     return true;
@@ -578,19 +384,13 @@ bool Component::CanRemoveChild(std::shared_ptr<Component> child) {
     return true;
 }
 
-void Component::AddedParent(std::shared_ptr<Component> parent, const bool forced) {
+void Component::AddedParent(std::shared_ptr<Component> parent, const bool forced) {}
 
-}
+void Component::AddedChild(std::shared_ptr<Component> child, const bool forced) {}
 
-void Component::AddedChild(std::shared_ptr<Component> child, const bool forced) {
+void Component::RemovedParent(std::shared_ptr<Component> parent, const bool forced) {}
 
-}
+void Component::RemovedChild(std::shared_ptr<Component> child, const bool forced) {}
 
-void Component::RemovedParent(std::shared_ptr<Component> parent, const bool forced) {
-
-}
-
-void Component::RemovedChild(std::shared_ptr<Component> child, const bool forced) {
-
-}
 } // namespace Ship
+

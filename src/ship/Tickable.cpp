@@ -1,165 +1,251 @@
 #include "ship/Tickable.h"
 #include "ship/Component.h"
-#include "ship/Action.h"
-#include "ship/actions/TickAction.h"
-#include "ship/actions/DrawAction.h"
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
+#include <algorithm>
 
 namespace Ship {
-Tickable::Tickable(const bool isTicking)
-    : mIsTicking(isTicking), mActions()
-#ifdef INCLUDE_MUTEX
-      ,
-      mMutex()
-#endif
-{
 
-}
+Tickable::Tickable(const bool isTicking)
+    : mIsTicking(isTicking), mActions(), mMutex(), mClocks() {}
 
 Tickable::Tickable(const bool isTicking, const std::vector<std::shared_ptr<Action>>& actions)
-    : mIsTicking(isTicking), mActions()
-#ifdef INCLUDE_MUTEX
-,     mMutex()
-#endif
-{
-    auto actionCount = actions.size();
-    for (size_t i = 0; i < actionCount; i++) {
-        AddAction(actions[i]);
+    : mIsTicking(isTicking), mActions(), mMutex(), mClocks() {
+    for (const auto& action : actions) {
+        AddAction(action);
     }
 }
 
 Tickable::~Tickable() = default;
 
-bool Tickable::RunAction(const uint32_t action, const double durationSinceLastTick) {
-#ifdef INCLUDE_PROFILING
-    // Set Previous clocks to the current clock.
-    SetClock(ClockType::PreviousTickStart, GetClock(ClockType::TickStart));
-    SetClock(ClockType::PreviousTickEnd, GetClock(ClockType::TickEnd));
-
-    // Set Start clock to now, and end clocks to "empty"
-    // Then run the logic. After the logic, set the end time.
-    SetClock(ClockType::TickStart, std::chrono::high_resolution_clock::now());
-    SetClock(ClockType::TickEnd, std::chrono::time_point<std::chrono::steady_clock>(std::chrono::system_clock::duration::zero()));
-#endif
-
-    bool val = true;
-    if (IsActionRunning(action)) {
-        val = ActionRan(action, durationSinceLastTick);
-    }
-
-#ifdef INCLUDE_PROFILING
-    SetClock(ClockType::TickEnd, std::chrono::high_resolution_clock::now());
-#endif
-
-    return val;
+bool Tickable::IsTicking() const {
+    return mIsTicking;
 }
 
-bool Tickable::IsActionRunning(const uint32_t action) {
-#ifdef INCLUDE_MUTEX
+bool Tickable::Start(const bool force) {
+    if (mIsTicking) {
+        return true;
+    }
+    const bool canStart = CanStart();
+    if (!canStart && !force) {
+        return false;
+    }
+    const bool forced = !canStart && force;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        mIsTicking = true;
+    }
+    Started(forced);
+    if (forced) {
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Start on Component {}", component->ToString());
+        }
+    }
+    return true;
+}
+
+bool Tickable::Stop(const bool force) {
+    if (!mIsTicking) {
+        return true;
+    }
+    const bool canStop = CanStop();
+    if (!canStop && !force) {
+        return false;
+    }
+    const bool forced = !canStop && force;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        mIsTicking = false;
+    }
+    Stopped(forced);
+    if (forced) {
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing Stop on Component {}", component->ToString());
+        }
+    }
+    return true;
+}
+
+double Tickable::Tick(const double durationSinceLastTick) {
+    SetClock(ClockType::PreviousStart, GetClock(ClockType::Start));
+    SetClock(ClockType::PreviousEnd, GetClock(ClockType::End));
+    SetClock(ClockType::Start, std::chrono::steady_clock::now());
+    SetClock(ClockType::End, {});
+
+    if (!mIsTicking) {
+        return 0.0;
+    }
+
+    auto actions = GetActions();
+    std::stable_sort(actions->begin(), actions->end(),
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
+            return a->GetType() < b->GetType();
+        });
+    for (const auto& action : *actions) {
+        action->Run(durationSinceLastTick);
+    }
+
+    SetClock(ClockType::End, std::chrono::steady_clock::now());
+    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+}
+
+double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
+    if (!mIsTicking) {
+        return 0.0;
+    }
+    auto actions = GetActions(actionTypes);
+    std::stable_sort(actions->begin(), actions->end(),
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
+            return a->GetType() < b->GetType();
+        });
+    for (const auto& action : *actions) {
+        action->Run(durationSinceLastTick);
+    }
+    return 0.0;
+}
+
+double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+    if (!mIsTicking) {
+        return 0.0;
+    }
+    auto actions = GetActions(actionType);
+    for (const auto& action : *actions) {
+        action->Run(durationSinceLastTick);
+    }
+    return 0.0;
+}
+
+bool Tickable::HasAction(std::shared_ptr<Action> action) const {
     const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-    return mActions[action];
+    return mActions.Has(action);
 }
 
-bool Tickable::StartAction(const uint32_t action, const bool force) {
-    if (IsActionRunning(action)) {
-        return true;
-    }
+size_t Tickable::CountActions() const {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    return mActions.GetCount();
+}
 
-    const bool canStartAction = CanStartAction(action);
-    if (!canStartAction && !force) {
+bool Tickable::AddAction(std::shared_ptr<Action> action, const bool force) {
+    if (!action) {
         return false;
     }
-
-    const bool forced = !canStartAction && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-        mActions[action] = true;
+    const bool canAdd = CanAddAction(action);
+    if (!canAdd && !force) {
+        return false;
     }
-    ActionStarted(action, forced);
-
-    if (forced) {
-        // If this is also a component, log out.
-        auto component = dynamic_cast<Component*>(this);
-        if (component != nullptr) {
-            SPDLOG_WARN("Forcing Action {} Start on Component {}", static_cast<uint32_t>(action), component->ToString());
+    const bool forced = !canAdd && force;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        if (mActions.Has(action)) {
+            return true;
+        }
+        const ListReturnCode result = mActions.Add(action);
+        if (static_cast<int32_t>(result) < 0) {
+            return false;
         }
     }
-
+    action->Start();
+    AddedAction(action, forced);
+    if (forced) {
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing AddAction {} on Component {}", action->GetId(), component->ToString());
+        }
+    }
     return true;
 }
 
-bool Tickable::StopAction(const uint32_t action, const bool force) {
-    if (!IsActionRunning(action)) {
-        return true;
-    }
-
-    const bool canStopAction = CanStopAction(action);
-    if (!canStopAction && !force) {
+bool Tickable::RemoveAction(std::shared_ptr<Action> action, const bool force) {
+    if (!action) {
         return false;
     }
-
-    const bool forced = !canStopAction && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::mutex> lock(mMutex);
-#endif
-        mActions[action] = false;
+    const bool canRemove = CanRemoveAction(action);
+    if (!canRemove && !force) {
+        return false;
     }
-    ActionStopped(action, forced);
-
-    if (forced) {
-        // If this is also a component, log out.
-        auto component = dynamic_cast<Component*>(this);
-        if (component != nullptr) {
-            SPDLOG_WARN("Forcing Action {} Stop on Component {}", static_cast<uint32_t>(action), component->ToString());
+    const bool forced = !canRemove && force;
+    {
+        const std::lock_guard<std::mutex> lock(mMutex);
+        const ListReturnCode result = mActions.Remove(action);
+        if (result == ListReturnCode::NotFound) {
+            return true;
+        }
+        if (static_cast<int32_t>(result) < 0) {
+            return false;
         }
     }
-
+    action->Stop();
+    RemovedAction(action, forced);
+    if (forced) {
+        auto component = dynamic_cast<Component*>(this);
+        if (component != nullptr) {
+            SPDLOG_WARN("Forcing RemoveAction {} on Component {}", action->GetId(),
+                        component->ToString());
+        }
+    }
     return true;
 }
 
-#ifdef INCLUDE_PROFILING
+std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions() const {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    return mActions.Get();
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+Tickable::GetActions(const std::vector<uint32_t>& actionTypes) const {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    return mActions.Get(actionTypes);
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+Tickable::GetActions(const uint32_t actionType) const {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    return mActions.Get(actionType);
+}
+
+bool Tickable::CanAddAction(std::shared_ptr<Action> action) {
+    return true;
+}
+
+bool Tickable::CanRemoveAction(std::shared_ptr<Action> action) {
+    return true;
+}
+
+void Tickable::AddedAction(std::shared_ptr<Action> action, const bool forced) {}
+
+void Tickable::RemovedAction(std::shared_ptr<Action> action, const bool forced) {}
+
+bool Tickable::CanStart() {
+    return true;
+}
+
+bool Tickable::CanStop() {
+    return true;
+}
+
+void Tickable::Started(const bool forced) {}
+
+void Tickable::Stopped(const bool forced) {}
+
 double Tickable::GetTime(const ClockType clockType) const {
     return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
-}
-#endif
-
-bool Tickable::ActionRan(const uint32_t action, const double durationSinceLastTick) {
-    return true;
 }
 
 std::mutex& Tickable::GetMutex() {
     return mMutex;
 }
 
-bool Tickable::CanStartAction(const uint32_t action) {
-    return true;
-}
-
-bool Tickable::CanStopAction(const uint32_t action) {
-    return true;
-}
-
-void Tickable::ActionStarted(const uint32_t action, const bool forced) {
-
-}
-
-void Tickable::ActionStopped(const uint32_t action, const bool forced) {
-
-}
-
-#ifdef INCLUDE_PROFILING
 std::chrono::time_point<std::chrono::steady_clock> Tickable::GetClock(const ClockType clockType) const {
-    return mClocks[static_cast<unsigned long long>(clockType)];
+    return mClocks[static_cast<size_t>(clockType)];
 }
 
-Tickable& Tickable::SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue) {
-    mClocks[static_cast<unsigned long long>(clockType)] = clockValue;
+Tickable& Tickable::SetClock(const ClockType clockType,
+                              std::chrono::time_point<std::chrono::steady_clock> clockValue) {
+    mClocks[static_cast<size_t>(clockType)] = clockValue;
     return *this;
 }
-#endif
+
 } // namespace Ship
+

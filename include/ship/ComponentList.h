@@ -1,147 +1,80 @@
-// Adds functions to search components by name
+#pragma once
 
-//bool AddPart(std::shared_ptr<C> parent, const bool force = false);
-//bool AddParts(const std::vector<std::shared_ptr<C>>& parts, const bool force = false);
-//bool RemovePart(std::shared_ptr<C> parent, const bool force = false);
-//bool RemovePart(const uint64_t id, bool force = false);
-//bool RemoveParts(const bool force = false);
-//bool RemoveParts(const std::vector<std::shared_ptr<C>>& parts, const bool force = false);
-//template <typename T> bool RemoveParts(const bool force = false);
-//bool RemoveParts(const std::vector<uint64_t>& parents, const bool force = false);
+#include <string>
+#include <memory>
+#include <vector>
+#include <algorithm>
 
-/*
-bool Component::AddParent(std::shared_ptr<Component> parent, const bool force) {
-    if (parent == nullptr) {
-        return false;
-    }
+#include "ship/Component.h"
 
-    const auto ptr = shared_from_this();
-    const bool canAddParent = CanAddParent(parent);
-    const bool canAddChild = parent->CanAddChild(ptr);
-    const bool forced = (!canAddParent || !canAddChild) && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
+namespace Ship {
 
-        if (HasParent(parent)) {
-            return true;
-        }
+// ComponentList extends PartList<Component> with name- and type-based search helpers.
+class ComponentList : public PartList<Component> {
+  public:
+    using PartList<Component>::PartList;
 
-        if ((!canAddParent || !canAddChild) && !force) {
-            return false;
-        }
+    bool Has(const std::string& name) const;
+    template <typename T> bool Has(const std::string& name) const;
 
-        AddParentRaw(parent);
-    }
-    AddedParent(parent, forced);
-    if (forced) {
-        SPDLOG_WARN("Forcing {} to be added as a parent to {}", parent->ToString(), ptr->ToString());
-    }
-    parent->AddChild(ptr, force);
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> Get(const std::string& name) const;
+    template <typename T>
+    std::shared_ptr<std::vector<std::shared_ptr<T>>> Get(const std::string& name) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+    Get(const std::vector<std::string>& names) const;
+};
 
-    return true;
+inline bool ComponentList::Has(const std::string& name) const {
+    const auto& list = this->GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<Component>& c) {
+                   return c->GetName() == name;
+               }) != list.end();
 }
 
-bool Component::AddChild(std::shared_ptr<Component> child, const bool force) {
-    if (child == nullptr) {
-        return false;
-    }
-
-    const auto ptr = shared_from_this();
-    const bool canAddChild = CanAddChild(child);
-    const bool canAddParent = child->CanAddParent(ptr);
-    const bool forced = (!canAddParent || !canAddChild) && force;
-    {
-#ifdef INCLUDE_MUTEX
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
-        if (HasChild(child)) {
-            return true;
-        }
-
-        if ((!canAddParent || !canAddChild) && !force) {
-            return false;
-        }
-
-        AddChildRaw(child);
-    }
-    AddedChild(child, forced);
-    if (forced) {
-        SPDLOG_WARN("Forcing {} to be added as a child to {}", child->ToString(), ptr->ToString());
-    }
-    child->AddParent(ptr, force);
-
-    return true;
+template <typename T>
+bool ComponentList::Has(const std::string& name) const {
+    const auto& list = this->GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<Component>& c) {
+                   return c->GetName() == name && std::dynamic_pointer_cast<T>(c) != nullptr;
+               }) != list.end();
 }
 
-bool Component::RemoveParent(std::shared_ptr<Component> parent, const bool force) {
-    if (parent == nullptr) {
-        return false;
-    }
-
-    const auto ptr = shared_from_this();
-    const bool canRemoveParent = CanRemoveParent(parent);
-    const bool canRemoveChild = parent->CanRemoveChild(ptr);
-    const bool forced = (!canRemoveParent || !canRemoveChild) && force;
-    {
-#ifdef INCLUDE_MUTEX
-        // This use of recursive mutex allows us to make sure duplicates are never added to the parent list
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
-        if (!HasParent(parent)) {
-            return true;
+inline std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+ComponentList::Get(const std::string& name) const {
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : this->GetList()) {
+        if (c->GetName() == name) {
+            result->push_back(c);
         }
-
-        if ((!canRemoveParent || !canRemoveChild) && !force) {
-            return false;
-        }
-
-        RemoveParentRaw(parent);
     }
-    RemovedParent(parent, forced);
-    if (forced) {
-        SPDLOG_WARN("Forcing {} to be removed as a parent to {}", parent->ToString(), ptr->ToString());
-    }
-    parent->RemoveChild(ptr, force);
-
-    return true;
+    return result;
 }
 
-bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) {
-    if (child == nullptr) {
-        return false;
-    }
-
-    const auto ptr = shared_from_this();
-    const bool canRemoveChild = CanRemoveChild(child);
-    const bool canRemoveParent = child->CanRemoveParent(ptr);
-    const bool forced = (!canRemoveParent || !canRemoveChild) && force;
-    {
-#ifdef INCLUDE_MUTEX
-        // This use of recursive mutex allows us to make sure duplicates are never added to the children list
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-
-        if (!HasChild(child)) {
-            return true;
+template <typename T>
+std::shared_ptr<std::vector<std::shared_ptr<T>>>
+ComponentList::Get(const std::string& name) const {
+    auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
+    for (const auto& c : this->GetList()) {
+        auto typed = std::dynamic_pointer_cast<T>(c);
+        if (typed && c->GetName() == name) {
+            result->push_back(typed);
         }
-
-        if ((!canRemoveParent || !canRemoveChild) && !force) {
-            return false;
-        }
-
-        RemoveChildRaw(child);
     }
-    RemovedChild(child, forced);
-    if (forced) {
-        SPDLOG_WARN("Forcing {} to be removed as a child to {}", child->ToString(), ptr->ToString());
-    }
-    child->RemoveParent(ptr, force);
-
-    return true;
+    return result;
 }
-*/
+
+inline std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+ComponentList::Get(const std::vector<std::string>& names) const {
+    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+    for (const auto& c : this->GetList()) {
+        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
+            result->push_back(c);
+        }
+    }
+    return result;
+}
+
+} // namespace Ship
 

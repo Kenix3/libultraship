@@ -4,90 +4,146 @@
 #include <mutex>
 #include <vector>
 #include <stdint.h>
-#incldue <stddef.h>
+#include <stddef.h>
 
-#define INCLUDE_PROFILING 1
-#define INCLUDE_MUTEX 1
-
-#ifdef INCLUDE_PROFILING
-#include <chrono>
-#endif
+#include "ship/Action.h"
+#include "ship/ActionList.h"
 
 namespace Ship {
-class Action;
 
-#ifdef INCLUDE_PROFILING
-// TODO: New Clock type. Should be on Action and Tickable
-enum class ClockType : uint64_t { Start, End, PreviousStart, PreviousEnd, ClockMax };
-#endif
-
-enum class ActionType : size_t;
+class Component;
 
 class Tickable : public std::enable_shared_from_this<Tickable> {
-    // TODO: Basically all functions need to be reimplemented.
   public:
     Tickable(const bool isTicking = true);
     Tickable(const bool isTicking, const std::vector<std::shared_ptr<Action>>& actions);
-    // TODO: Destructor needs to RemoveActions first like Components
-    ~Tickable();
+    virtual ~Tickable();
 
-    bool IsTicking();
+    bool IsTicking() const;
     bool Start(const bool force = false);
     bool Stop(const bool force = false);
 
-    // Should sort by action type, low to high.
+    // Runs all running Actions sorted by action type (low → high).
     double Tick(const double durationSinceLastTick);
     template <typename T> double Tick(const double durationSinceLastTick);
     double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
-    template <typename T> double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
-    double Tick(const double durationSinceLastTick, uint32_t actionType);
+    template <typename T>
+    double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
+    double Tick(const double durationSinceLastTick, const uint32_t actionType);
     template <typename T> double Tick(const double durationSinceLastTick, const uint32_t actionType);
 
-    // TODO: All of this action stuff is really just an ID'd thread safe list. This could probably be common between Context (tickablecomponents), Tickable (actions), and Component (components)
-    // I need a searchable container class that has all of these functions and maybe some more. It can be sub-classable to search.
-    // Maybe move all of this new LUS stuff to a new core folder?
-    // We probably need to make all Tickables also be Components.
-    // There should also be an enabled class in addition to the "has identifier" and "has list" class.
-    // TODO: Also fix the crash on close. It's due to spdlog being destructed before all of the Context is done.
-    bool HasAction(std::shared_ptr<Action> action);
-    size_t CountActions();
+    bool HasAction(std::shared_ptr<Action> action) const;
+    size_t CountActions() const;
     bool AddAction(std::shared_ptr<Action> action, const bool force = false);
     bool RemoveAction(std::shared_ptr<Action> action, const bool force = false);
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions();
-    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions();
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const std::vector<uint32_t>& actionTypes);
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions() const;
+    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions() const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+    GetActions(const std::vector<uint32_t>& actionTypes) const;
     template <typename T>
     std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-    GetActions(const std::vector<uint32_t>& actionTypes);
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType);
-    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType);
+    GetActions(const std::vector<uint32_t>& actionTypes) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType) const;
+    template <typename T>
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType) const;
 
-    bool CanAddAction(std::shared_ptr<Action> action);
-    bool CanRemoveAction(std::shared_ptr<Action> action);
-    void AddedAction(std::shared_ptr<Action> action, const bool forced);
-    void RemovedAction(std::shared_ptr<Action> action, const bool forced);
+    virtual bool CanAddAction(std::shared_ptr<Action> action);
+    virtual bool CanRemoveAction(std::shared_ptr<Action> action);
+    virtual void AddedAction(std::shared_ptr<Action> action, const bool forced);
+    virtual void RemovedAction(std::shared_ptr<Action> action, const bool forced);
 
-#ifdef INCLUDE_PROFILING
     double GetTime(const ClockType clockType) const;
-#endif
 
-protected:
+  protected:
+    virtual bool CanStart();
+    virtual bool CanStop();
+    virtual void Started(const bool forced);
+    virtual void Stopped(const bool forced);
+
     std::mutex& GetMutex();
 
-private:
-#ifdef INCLUDE_PROFILING
-    Tickable& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
-#endif
+  private:
+    Tickable& SetClock(const ClockType clockType,
+                       std::chrono::time_point<std::chrono::steady_clock> clockValue);
+    std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
 
-    std::vector<std::shared_ptr<Action>> mActions;
+    ActionList mActions;
     bool mIsTicking;
-
-#ifdef INCLUDE_MUTEX
-    std::mutex mMutex;
-#endif
-#ifdef INCLUDE_PROFILING
-    std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<unsigned long long>(ClockType::ClockMax)];
-#endif
+    mutable std::mutex mMutex;
+    std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<size_t>(ClockType::ClockMax)];
 };
 
+// ---- Template method implementations ----
+
+template <typename T>
+double Tickable::Tick(const double durationSinceLastTick) {
+    auto actions = GetActions<T>();
+    for (const auto& action : *actions) {
+        action->Run(durationSinceLastTick);
+    }
+    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+}
+
+template <typename T>
+double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
+    auto allActions = GetActions(actionTypes);
+    for (const auto& action : *allActions) {
+        if (std::dynamic_pointer_cast<T>(action)) {
+            action->Run(durationSinceLastTick);
+        }
+    }
+    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+}
+
+template <typename T>
+double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+    auto allActions = GetActions(actionType);
+    for (const auto& action : *allActions) {
+        if (std::dynamic_pointer_cast<T>(action)) {
+            action->Run(durationSinceLastTick);
+        }
+    }
+    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+}
+
+template <typename T>
+std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions() const {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
+    for (const auto& action : mActions.GetList()) {
+        if (std::dynamic_pointer_cast<T>(action)) {
+            result->push_back(action);
+        }
+    }
+    return result;
+}
+
+template <typename T>
+std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+Tickable::GetActions(const std::vector<uint32_t>& actionTypes) const {
+    auto filtered = GetActions(actionTypes);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
+    for (const auto& action : *filtered) {
+        if (std::dynamic_pointer_cast<T>(action)) {
+            result->push_back(action);
+        }
+    }
+    return result;
+}
+
+template <typename T>
+std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+Tickable::GetActions(const uint32_t actionType) const {
+    auto filtered = GetActions(actionType);
+    auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
+    for (const auto& action : *filtered) {
+        if (std::dynamic_pointer_cast<T>(action)) {
+            result->push_back(action);
+        }
+    }
+    return result;
+}
+
 } // namespace Ship
+
+

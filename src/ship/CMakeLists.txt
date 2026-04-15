@@ -5,6 +5,13 @@ file(GLOB Source_Files__TopLevel RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
 source_group("" FILES ${Source_Files__TopLevel})
 target_sources(libultraship PRIVATE ${Source_Files__TopLevel})
 
+#=================== Actions ===================
+
+file(GLOB Source_Files__Actions RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "actions/*.cpp")
+
+source_group("actions" FILES ${Source_Files__Actions})
+target_sources(libultraship PRIVATE ${Source_Files__Actions})
+
 #=================== Audio ===================
 
 file(GLOB Source_Files__Audio RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "audio/*.cpp")
