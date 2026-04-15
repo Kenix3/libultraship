@@ -233,6 +233,7 @@ if(NOT TARGET libtcc)
             target_compile_definitions(libtcc1 PRIVATE __x86_64__ _WIN64)
             target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 _WIN64)
         endif()
+        target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
     endif()
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
