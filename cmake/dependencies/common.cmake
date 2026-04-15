@@ -225,6 +225,16 @@ if(NOT TARGET libtcc)
         "${tinycc_BINARY_DIR}"
     )
 
+    if(MSVC)
+        if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
+            target_compile_definitions(libtcc1 PRIVATE __aarch64__)
+            target_compile_definitions(libtcc  PRIVATE __aarch64__ TCC_TARGET_ARM64)
+        else()
+            target_compile_definitions(libtcc1 PRIVATE __x86_64__)
+            target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64)
+        endif()
+    endif()
+
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
     configure_file(
         "${tinycc_SOURCE_DIR}/libtcc.h"
@@ -240,7 +250,9 @@ if(NOT TARGET libtcc)
         $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
     )
 
-    if(UNIX AND NOT APPLE)
+    if(ANDROID)
+        target_link_libraries(libtcc PRIVATE dl m)
+    elseif(UNIX AND NOT APPLE)
         target_link_libraries(libtcc PRIVATE dl m pthread)
     endif()
     

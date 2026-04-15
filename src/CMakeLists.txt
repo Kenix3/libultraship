@@ -130,7 +130,7 @@ if (USE_OPENGLES)
     endif()
 endif()
 
-target_link_libraries(libultraship PUBLIC prism libtcc monocypher)
+target_link_libraries(libultraship PUBLIC prism libtcc libtcc1 monocypher)
 
 #=================== Compile Options & Defs ===================
 
