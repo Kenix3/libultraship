@@ -11,7 +11,9 @@
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 #include "ship/events/EventSystem.h"
+#ifndef DISABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
+#endif
 #include "ship/security/Keystore.h"
 
 #ifdef _WIN32
@@ -38,10 +40,6 @@ Context::~Context() {
     SPDLOG_TRACE("destruct context");
     GetWindow()->SaveWindowToConfig();
 
-    if (mScriptLoader) {
-        mScriptLoader->UnloadAll();
-    }
-
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
     mWindow = nullptr;
@@ -51,7 +49,12 @@ Context::~Context() {
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
     mEventSystem = nullptr;
+#ifndef DISABLE_SCRIPTING
+    if (mScriptLoader) {
+        mScriptLoader->UnloadAll();
+    }
     mScriptLoader = nullptr;
+#endif
     mKeystore = nullptr;
     GetConfig()->Save();
     mConfig = nullptr;
@@ -102,7 +105,11 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
+#ifndef DISABLE_SCRIPTING
            InitEventSystem() && InitFileDropMgr() && InitScriptLoader();
+#else
+           InitEventSystem() && InitFileDropMgr();
+#endif
 }
 
 bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
@@ -365,6 +372,7 @@ bool Context::InitEventSystem() {
     return true;
 }
 
+#ifndef DISABLE_SCRIPTING
 bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
                                std::string buildOptions, std::vector<std::string> includePaths,
                                std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
@@ -380,6 +388,7 @@ bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> comp
     }
     return true;
 }
+#endif // DISABLE_SCRIPTING
 
 bool Context::InitKeystore() {
     if (GetKeystore() != nullptr) {
@@ -442,9 +451,11 @@ std::shared_ptr<EventSystem> Context::GetEventSystem() const {
     return mEventSystem;
 }
 
+#ifndef DISABLE_SCRIPTING
 std::shared_ptr<ScriptLoader> Context::GetScriptLoader() const {
     return mScriptLoader;
 }
+#endif
 
 std::shared_ptr<Keystore> Context::GetKeystore() const {
     return mKeystore;

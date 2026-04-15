@@ -134,6 +134,8 @@ target_include_directories(monocypher PUBLIC
 )
 
 #=========== libtcc ===========
+if(NOT DISABLE_SCRIPTING)
+
 FetchContent_Declare(
     tinycc
     GIT_REPOSITORY https://github.com/TinyCC/tinycc.git
@@ -257,5 +259,8 @@ if(NOT TARGET libtcc)
         target_link_libraries(libtcc PRIVATE dl m pthread)
     endif()
     
+    set_target_properties(libtcc  PROPERTIES OUTPUT_NAME "tcc")
     set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
 endif()
+
+endif() # NOT DISABLE_SCRIPTING

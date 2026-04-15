@@ -11,6 +11,10 @@ source_group("bridge")
 
 file(GLOB Source_Files__Bridge RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "bridge/*.cpp")
 
+if(DISABLE_SCRIPTING)
+    list(FILTER Source_Files__Bridge EXCLUDE REGEX "bridge/scriptingbridge\\.cpp")
+endif()
+
 source_group("bridge" FILES ${Source_Files__Bridge})
 
 target_sources(libultraship PRIVATE ${Source_Files__Bridge})

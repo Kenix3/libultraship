@@ -27,7 +27,9 @@ class Config;
 class ResourceManager;
 class FileDropMgr;
 class EventSystem;
+#ifndef DISABLE_SCRIPTING
 class ScriptLoader;
+#endif
 class Keystore;
 
 class Context {
@@ -67,7 +69,9 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() const;
     std::shared_ptr<FileDropMgr> GetFileDropMgr() const;
     std::shared_ptr<EventSystem> GetEventSystem() const;
+#ifndef DISABLE_SCRIPTING
     std::shared_ptr<ScriptLoader> GetScriptLoader() const;
+#endif
     std::shared_ptr<Keystore> GetKeystore() const;
 
     std::string GetName() const;
@@ -88,9 +92,11 @@ class Context {
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
     bool InitEventSystem();
+#ifndef DISABLE_SCRIPTING
     bool InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1,
                           std::string buildOptions = "-g -Wl", std::vector<std::string> includePaths = {},
                           std::vector<std::string> libraryPaths = {}, std::vector<std::string> libraries = {});
+#endif
     bool InitKeystore();
 
   protected:
@@ -111,7 +117,9 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
+#ifndef DISABLE_SCRIPTING
     std::shared_ptr<ScriptLoader> mScriptLoader;
+#endif
     std::shared_ptr<Keystore> mKeystore;
 
     std::string mConfigFilePath;
