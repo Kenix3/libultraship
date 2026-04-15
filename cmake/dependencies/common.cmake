@@ -134,6 +134,8 @@ target_include_directories(monocypher PUBLIC
 )
 
 #=========== libtcc ===========
+if(NOT DISABLE_SCRIPTING)
+
 FetchContent_Declare(
     tinycc
     GIT_REPOSITORY https://github.com/TinyCC/tinycc.git
@@ -141,8 +143,10 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(tinycc)
-
 if(NOT TARGET libtcc)
+    # Enable symbol exporting for Windows DLLs
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
     if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
@@ -201,6 +205,17 @@ if(NOT TARGET libtcc)
         target_compile_definitions(tcc_c2str PRIVATE C2STR)
         target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
 
+        if(APPLE)
+            set_target_properties(tcc_c2str PROPERTIES
+                CODE_SIGNING_ALLOWED NO
+                CODE_SIGNING_REQUIRED NO
+                XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+                XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+            )
+        endif()
+
         add_custom_command(
             OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
             COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
@@ -209,10 +224,30 @@ if(NOT TARGET libtcc)
         )
     endif()
 
-    add_library(libtcc STATIC
+    add_library(libtcc SHARED
         "${tinycc_SOURCE_DIR}/libtcc.c"
         "${tinycc_BINARY_DIR}/tccdefs_.h"
     )
+
+    add_library(libtcc1 STATIC
+        "${tinycc_SOURCE_DIR}/lib/libtcc1.c"
+    )
+    
+    target_include_directories(libtcc1 PRIVATE 
+        "${tinycc_SOURCE_DIR}"
+        "${tinycc_BINARY_DIR}"
+    )
+
+    if(MSVC)
+        if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
+            target_compile_definitions(libtcc1 PRIVATE __aarch64__ _WIN64)
+            target_compile_definitions(libtcc  PRIVATE __aarch64__ TCC_TARGET_ARM64 _WIN64)
+        else()
+            target_compile_definitions(libtcc1 PRIVATE __x86_64__ _WIN64)
+            target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 _WIN64)
+        endif()
+        target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
+    endif()
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
     configure_file(
@@ -229,7 +264,25 @@ if(NOT TARGET libtcc)
         $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
     )
 
-    if(UNIX AND NOT APPLE)
+    if(ANDROID)
+        target_link_libraries(libtcc PRIVATE dl m)
+    elseif(UNIX AND NOT APPLE)
         target_link_libraries(libtcc PRIVATE dl m pthread)
     endif()
+    
+    set_target_properties(libtcc  PROPERTIES OUTPUT_NAME "tcc")
+    set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
+
+    if(APPLE)
+        set_target_properties(libtcc libtcc1 PROPERTIES
+            CODE_SIGNING_ALLOWED NO
+            CODE_SIGNING_REQUIRED NO
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+        )
+    endif()
 endif()
+
+endif() # NOT DISABLE_SCRIPTING

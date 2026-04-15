@@ -78,9 +78,11 @@ target_sources(libultraship PRIVATE ${Source_Files__Events})
 
 #=================== Scripting ===================
 
-file(GLOB_RECURSE Source_Files__Scripting RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "scripting/*.cpp")
-source_group("scripting" FILES ${Source_Files__Scripting})
-target_sources(libultraship PRIVATE ${Source_Files__Scripting})
+if(NOT DISABLE_SCRIPTING)
+    file(GLOB_RECURSE Source_Files__Scripting RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "scripting/*.cpp")
+    source_group("scripting" FILES ${Source_Files__Scripting})
+    target_sources(libultraship PRIVATE ${Source_Files__Scripting})
+endif()
 
 #=================== Security ===================
 

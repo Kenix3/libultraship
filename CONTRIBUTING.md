@@ -1,5 +1,5 @@
 # Preface
-LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/RQvdvavB).
+LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
 
 # Code of Conduct
 Please review and abide by our [code of conduct](https://github.com/Kenix3/libultraship/blob/main/CODE_OF_CONDUCT.md).
@@ -25,4 +25,26 @@ find src include -name "*.cpp" -o -name "*.h" | sed 's| |\\ |g' | xargs clang-fo
 Powershell:
 ```
 Get-ChildItem -Recurse -Path .\src -Include *.cpp, *.h -File | ForEach-Object { clang-format-14.exe -i $_.FullName }
+```
+
+##### Running clang-tidy
+###### From within the LUS directory.
+Ensure `clang-tidy` is installed and available through your system path.
+
+First, generate a `compile_commands.json` so clang-tidy can resolve includes:
+```
+cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build --target GenerateScriptKeys
+```
+
+Then run clang-tidy-diff on your local changes:
+
+Bash:
+```
+git diff -U0 HEAD -- src include | clang-tidy-diff -p1 -path build
+```
+
+To check a specific file:
+```
+clang-tidy -p build src/path/to/file.cpp
 ```
