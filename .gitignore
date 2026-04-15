@@ -358,6 +358,7 @@ tcc_c2str
 *.stamp
 *.depend
 *.lib
+*.dylib
 *.tlog
 *.recipe
 src/ship/install_config.h
