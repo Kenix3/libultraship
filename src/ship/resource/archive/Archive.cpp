@@ -77,9 +77,11 @@ void Archive::Load() {
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
                 SetGameVersion(mManifest.GameVersion);
-                isGameVersionValid =
-                    Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->IsGameVersionValid(
-                        GetGameVersion());
+                isGameVersionValid = Context::GetInstance()
+                                         ->GetChildren()
+                                         .GetFirst<ResourceManager>()
+                                         ->GetArchiveManager()
+                                         ->IsGameVersionValid(GetGameVersion());
 
                 if (!isGameVersionValid) {
                     SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(),

@@ -358,8 +358,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     auto ctx = Ship::Context::GetInstance();
-    if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() &&
-        ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
+    if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() && ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
         ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
     }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;

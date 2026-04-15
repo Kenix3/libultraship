@@ -160,7 +160,8 @@ void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetChildren().GetFirst<Window>()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+                    CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
@@ -168,7 +169,8 @@ void Gui::ImGuiWMInit() {
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+                    CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
@@ -599,7 +601,6 @@ void Gui::HandleMouseCapture() {
         }
     }
 }
-
 
 void Gui::StartFrame() {
     HandleMouseCapture();

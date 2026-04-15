@@ -351,7 +351,11 @@ bool Fast3dWindow::KeyUp(int32_t scancode) {
     }
 
     if (scancode == Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetMouseCaptureScancode()) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetMouseStateManager()->ToggleMouseCaptureOverride();
+        Ship::Context::GetInstance()
+            ->GetChildren()
+            .GetFirst<Ship::Window>()
+            ->GetMouseStateManager()
+            ->ToggleMouseCaptureOverride();
     }
 
     Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->SetLastScancode(-1);

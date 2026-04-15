@@ -111,7 +111,6 @@ class Context : public Component, public Tickable {
 #endif
     std::shared_ptr<Keystore> mKeystore;
 
-
     std::string mConfigFilePath;
     std::string mMainPath;
     std::string mPatchesPath;
