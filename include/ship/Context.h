@@ -85,15 +85,11 @@ class Context : public Component, public Tickable {
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
 
-
     bool HasTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
     size_t CountTickableComponent();
-    bool AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                              const bool force = false);
-    bool RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                 const bool force = false);
-    template <typename T>
-    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
+    bool AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force = false);
+    bool RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force = false);
+    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponents();
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
     GetTickableComponents(const std::vector<std::string>& componentNames);
@@ -107,8 +103,7 @@ class Context : public Component, public Tickable {
     GetTickableComponents(const std::string& componentName);
     std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
     GetTickableComponent(const std::vector<int32_t>& componentIds);
-    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-    GetTickableComponent(const int32_t componentId);
+    std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> GetTickableComponent(const int32_t componentId);
 
     Context& SetTickableComponentsOrderStale();
     Context& UnsetTickableComponentsOrderStale();
@@ -116,10 +111,8 @@ class Context : public Component, public Tickable {
 
     virtual bool CanAddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
     virtual bool CanRemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent);
-    virtual void AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                        const bool forced);
-    virtual void RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                          const bool forced);
+    virtual void AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced);
+    virtual void RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced);
 
   protected:
     Context() = default;
@@ -177,8 +170,7 @@ Context::GetTickableComponents(const std::vector<std::string>& componentNames) {
     auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
     for (const auto& tc : mTickableComponents) {
         if (std::dynamic_pointer_cast<T>(tc) &&
-            std::find(componentNames.begin(), componentNames.end(), tc->GetName()) !=
-                componentNames.end()) {
+            std::find(componentNames.begin(), componentNames.end(), tc->GetName()) != componentNames.end()) {
             result->push_back(tc);
         }
     }

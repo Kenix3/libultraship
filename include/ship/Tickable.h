@@ -27,8 +27,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     double Tick(const double durationSinceLastTick);
     template <typename T> double Tick(const double durationSinceLastTick);
     double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
-    template <typename T>
-    double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
+    template <typename T> double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
     double Tick(const double durationSinceLastTick, const uint32_t actionType);
     template <typename T> double Tick(const double durationSinceLastTick, const uint32_t actionType);
 
@@ -38,11 +37,9 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     bool RemoveAction(std::shared_ptr<Action> action, const bool force = false);
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions() const;
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions() const;
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-    GetActions(const std::vector<uint32_t>& actionTypes) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const std::vector<uint32_t>& actionTypes) const;
     template <typename T>
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-    GetActions(const std::vector<uint32_t>& actionTypes) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const std::vector<uint32_t>& actionTypes) const;
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType) const;
     template <typename T>
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> GetActions(const uint32_t actionType) const;
@@ -66,8 +63,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
   private:
 #ifdef INCLUDE_PROFILING
-    Tickable& SetClock(const ClockType clockType,
-                       std::chrono::time_point<std::chrono::steady_clock> clockValue);
+    Tickable& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
     std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
 #endif
 
@@ -81,8 +77,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
 // ---- Template method implementations ----
 
-template <typename T>
-double Tickable::Tick(const double durationSinceLastTick) {
+template <typename T> double Tickable::Tick(const double durationSinceLastTick) {
     auto actions = GetActions<T>();
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
@@ -109,8 +104,7 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
 #endif
 }
 
-template <typename T>
-double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+template <typename T> double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
     auto allActions = GetActions(actionType);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
@@ -124,8 +118,7 @@ double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionT
 #endif
 }
 
-template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions() const {
+template <typename T> std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions() const {
     const std::lock_guard<std::mutex> lock(mMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : mActions.GetList()) {
@@ -150,8 +143,7 @@ Tickable::GetActions(const std::vector<uint32_t>& actionTypes) const {
 }
 
 template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-Tickable::GetActions(const uint32_t actionType) const {
+std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions(const uint32_t actionType) const {
     auto filtered = GetActions(actionType);
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : *filtered) {
@@ -163,5 +155,3 @@ Tickable::GetActions(const uint32_t actionType) const {
 }
 
 } // namespace Ship
-
-

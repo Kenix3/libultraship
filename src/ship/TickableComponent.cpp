@@ -9,11 +9,9 @@
 namespace Ship {
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
-                                     const TickGroup tickGroup, const TickPriority tickPriority,
-                                     const bool isTicking, const bool isDrawing,
-                                     const bool isDrawingDebugMenu)
-    : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority),
-      mContext(context) {
+                                     const TickGroup tickGroup, const TickPriority tickPriority, const bool isTicking,
+                                     const bool isDrawing, const bool isDrawingDebugMenu)
+    : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
     if (isTicking) {
         AddAction(std::make_shared<TickAction>(Tickable::shared_from_this()));
     }
@@ -28,19 +26,16 @@ TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Co
     }
 
     if (GetContext() != nullptr) {
-        GetContext()->AddTickableComponent(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        GetContext()->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
 }
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
                                      const std::vector<std::shared_ptr<Action>>& actions)
-    : Tickable(true, actions), Component(name), mTickGroup(tickGroup),
-      mTickPriority(tickPriority), mContext(context) {
+    : Tickable(true, actions), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
     if (GetContext() != nullptr) {
-        GetContext()->AddTickableComponent(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        GetContext()->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
 }
 
@@ -88,13 +83,11 @@ TickableComponent& TickableComponent::SetTickPriority(const TickPriority tickPri
 TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> context) {
     const auto& oldContext = GetContext();
     if (oldContext != nullptr) {
-        oldContext->RemoveTickableComponent(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        oldContext->RemoveTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
     mContext = context;
     if (context != nullptr) {
-        context->AddTickableComponent(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        context->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
     return *this;
 }
@@ -111,4 +104,3 @@ bool TickableComponent::DebugMenuDrawn(const double durationSinceLastTick) {
 }
 
 } // namespace Ship
-

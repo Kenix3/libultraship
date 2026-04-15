@@ -9,14 +9,17 @@ namespace Ship {
 Tickable::Tickable(const bool isTicking)
     : mIsTicking(isTicking), mActions(), mMutex()
 #ifdef INCLUDE_PROFILING
-      , mClocks()
+      ,
+      mClocks()
 #endif
-{}
+{
+}
 
 Tickable::Tickable(const bool isTicking, const std::vector<std::shared_ptr<Action>>& actions)
     : mIsTicking(isTicking), mActions(), mMutex()
 #ifdef INCLUDE_PROFILING
-      , mClocks()
+      ,
+      mClocks()
 #endif
 {
     for (const auto& action : actions) {
@@ -89,10 +92,9 @@ double Tickable::Tick(const double durationSinceLastTick) {
     }
 
     auto actions = GetActions();
-    std::stable_sort(actions->begin(), actions->end(),
-        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
-            return a->GetType() < b->GetType();
-        });
+    std::stable_sort(
+        actions->begin(), actions->end(),
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
@@ -113,10 +115,9 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
     const auto start = std::chrono::steady_clock::now();
 #endif
     auto actions = GetActions(actionTypes);
-    std::stable_sort(actions->begin(), actions->end(),
-        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
-            return a->GetType() < b->GetType();
-        });
+    std::stable_sort(
+        actions->begin(), actions->end(),
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
@@ -211,8 +212,7 @@ bool Tickable::RemoveAction(std::shared_ptr<Action> action, const bool force) {
     if (forced) {
         auto component = dynamic_cast<Component*>(this);
         if (component != nullptr) {
-            SPDLOG_WARN("Forcing RemoveAction {} on Component {}", action->GetId(),
-                        component->ToString());
+            SPDLOG_WARN("Forcing RemoveAction {} on Component {}", action->GetId(), component->ToString());
         }
     }
     return true;
@@ -229,8 +229,7 @@ Tickable::GetActions(const std::vector<uint32_t>& actionTypes) const {
     return mActions.Get(actionTypes);
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-Tickable::GetActions(const uint32_t actionType) const {
+std::shared_ptr<std::vector<std::shared_ptr<Action>>> Tickable::GetActions(const uint32_t actionType) const {
     const std::lock_guard<std::mutex> lock(mMutex);
     return mActions.Get(actionType);
 }
@@ -243,9 +242,11 @@ bool Tickable::CanRemoveAction(std::shared_ptr<Action> action) {
     return true;
 }
 
-void Tickable::AddedAction(std::shared_ptr<Action> action, const bool forced) {}
+void Tickable::AddedAction(std::shared_ptr<Action> action, const bool forced) {
+}
 
-void Tickable::RemovedAction(std::shared_ptr<Action> action, const bool forced) {}
+void Tickable::RemovedAction(std::shared_ptr<Action> action, const bool forced) {
+}
 
 bool Tickable::CanStart() {
     return true;
@@ -255,9 +256,11 @@ bool Tickable::CanStop() {
     return true;
 }
 
-void Tickable::Started(const bool forced) {}
+void Tickable::Started(const bool forced) {
+}
 
-void Tickable::Stopped(const bool forced) {}
+void Tickable::Stopped(const bool forced) {
+}
 
 #ifdef INCLUDE_PROFILING
 double Tickable::GetTime(const ClockType clockType) const {
@@ -272,8 +275,7 @@ std::chrono::time_point<std::chrono::steady_clock> Tickable::GetClock(const Cloc
     return mClocks[static_cast<size_t>(clockType)];
 }
 
-Tickable& Tickable::SetClock(const ClockType clockType,
-                              std::chrono::time_point<std::chrono::steady_clock> clockValue) {
+Tickable& Tickable::SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue) {
     mClocks[static_cast<size_t>(clockType)] = clockValue;
     return *this;
 }
@@ -284,4 +286,3 @@ std::mutex& Tickable::GetMutex() {
 #endif
 
 } // namespace Ship
-

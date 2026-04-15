@@ -49,8 +49,7 @@ class Action : public Part {
   private:
 #ifdef INCLUDE_PROFILING
     std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
-    Action& SetClock(const ClockType clockType,
-                     std::chrono::time_point<std::chrono::steady_clock> clockValue);
+    Action& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
 #endif
 
     uint32_t mActionType;

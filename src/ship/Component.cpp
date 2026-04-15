@@ -13,7 +13,8 @@ namespace Ship {
 Component::Component(const std::string& name)
     : Part(), mName(name), mParents(), mChildren()
 #ifdef COMPONENT_THREAD_SAFE
-      , mMutex()
+      ,
+      mMutex()
 #endif
 {
     SPDLOG_INFO("Constructing component {}", ToString());
@@ -308,8 +309,7 @@ bool Component::RemoveChildren(const bool force) {
     return ok;
 }
 
-bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children,
-                               const bool force) {
+bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& children, const bool force) {
     bool ok = true;
     for (const auto& c : children) {
         ok &= RemoveChild(c, force);
@@ -386,13 +386,16 @@ bool Component::CanRemoveChild(std::shared_ptr<Component> child) {
     return true;
 }
 
-void Component::AddedParent(std::shared_ptr<Component> parent, const bool forced) {}
+void Component::AddedParent(std::shared_ptr<Component> parent, const bool forced) {
+}
 
-void Component::AddedChild(std::shared_ptr<Component> child, const bool forced) {}
+void Component::AddedChild(std::shared_ptr<Component> child, const bool forced) {
+}
 
-void Component::RemovedParent(std::shared_ptr<Component> parent, const bool forced) {}
+void Component::RemovedParent(std::shared_ptr<Component> parent, const bool forced) {
+}
 
-void Component::RemovedChild(std::shared_ptr<Component> child, const bool forced) {}
+void Component::RemovedChild(std::shared_ptr<Component> child, const bool forced) {
+}
 
 } // namespace Ship
-

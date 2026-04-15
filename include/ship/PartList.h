@@ -28,8 +28,7 @@ enum class ListReturnCode : int32_t {
 // PartList is a non-thread-safe ordered list.
 // Thread safety is the caller's responsibility.
 // C must be derived from Part.
-template <typename C = Part>
-class PartList : public Part {
+template <typename C = Part> class PartList : public Part {
   public:
     explicit PartList(const size_t initialAllocation = 0);
     virtual ~PartList() = default;
@@ -67,90 +66,66 @@ class PartList : public Part {
 
 // ---- Inline implementations ----
 
-template <typename C>
-PartList<C>::PartList(const size_t initialAllocation)
-    : Part(), mList() {
+template <typename C> PartList<C>::PartList(const size_t initialAllocation) : Part(), mList() {
     mList.reserve(initialAllocation);
 }
 
-template <typename C>
-bool PartList<C>::Has(std::shared_ptr<C> part) const {
+template <typename C> bool PartList<C>::Has(std::shared_ptr<C> part) const {
     if (!part) {
         return false;
     }
     const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(),
-               [&part](const std::shared_ptr<C>& item) {
-                   return item->GetId() == part->GetId();
-               }) != list.end();
+    return std::find_if(list.begin(), list.end(), [&part](const std::shared_ptr<C>& item) {
+               return item->GetId() == part->GetId();
+           }) != list.end();
 }
 
-template <typename C>
-template <typename T>
-bool PartList<C>::Has() const {
+template <typename C> template <typename T> bool PartList<C>::Has() const {
+    const auto& list = GetList();
+    return std::find_if(list.begin(), list.end(), [](const std::shared_ptr<C>& item) {
+               return std::dynamic_pointer_cast<T>(item) != nullptr;
+           }) != list.end();
+}
+
+template <typename C> bool PartList<C>::Has(const uint64_t id) const {
     const auto& list = GetList();
     return std::find_if(list.begin(), list.end(),
-               [](const std::shared_ptr<C>& item) {
-                   return std::dynamic_pointer_cast<T>(item) != nullptr;
-               }) != list.end();
+                        [id](const std::shared_ptr<C>& item) { return item->GetId() == id; }) != list.end();
 }
 
-template <typename C>
-bool PartList<C>::Has(const uint64_t id) const {
+template <typename C> bool PartList<C>::Has(const std::string& name) const {
     const auto& list = GetList();
     return std::find_if(list.begin(), list.end(),
-               [id](const std::shared_ptr<C>& item) {
-                   return item->GetId() == id;
-               }) != list.end();
+                        [&name](const std::shared_ptr<C>& item) { return item->GetName() == name; }) != list.end();
 }
 
-template <typename C>
-bool PartList<C>::Has(const std::string& name) const {
+template <typename C> template <typename T> bool PartList<C>::Has(const std::string& name) const {
     const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(),
-               [&name](const std::shared_ptr<C>& item) {
-                   return item->GetName() == name;
-               }) != list.end();
+    return std::find_if(list.begin(), list.end(), [&name](const std::shared_ptr<C>& item) {
+               return item->GetName() == name && std::dynamic_pointer_cast<T>(item) != nullptr;
+           }) != list.end();
 }
 
-template <typename C>
-template <typename T>
-bool PartList<C>::Has(const std::string& name) const {
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(),
-               [&name](const std::shared_ptr<C>& item) {
-                   return item->GetName() == name && std::dynamic_pointer_cast<T>(item) != nullptr;
-               }) != list.end();
-}
-
-template <typename C>
-bool PartList<C>::Has() const {
+template <typename C> bool PartList<C>::Has() const {
     return !mList.empty();
 }
 
-template <typename C>
-size_t PartList<C>::GetCount() const {
+template <typename C> size_t PartList<C>::GetCount() const {
     return mList.size();
 }
 
-template <typename C>
-std::shared_ptr<C> PartList<C>::Get(const uint64_t id) const {
+template <typename C> std::shared_ptr<C> PartList<C>::Get(const uint64_t id) const {
     const auto& list = GetList();
-    auto it = std::find_if(list.begin(), list.end(),
-                  [id](const std::shared_ptr<C>& item) {
-                      return item->GetId() == id;
-                  });
+    auto it =
+        std::find_if(list.begin(), list.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
     return it != list.end() ? *it : nullptr;
 }
 
-template <typename C>
-std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get() const {
+template <typename C> std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get() const {
     return std::make_shared<std::vector<std::shared_ptr<C>>>(mList);
 }
 
-template <typename C>
-template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<T>>> PartList<C>::Get() const {
+template <typename C> template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> PartList<C>::Get() const {
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
     for (const auto& item : mList) {
         auto typed = std::dynamic_pointer_cast<T>(item);
@@ -173,8 +148,7 @@ std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get(const std::vec
     return result;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Add(std::shared_ptr<C> part) {
+template <typename C> ListReturnCode PartList<C>::Add(std::shared_ptr<C> part) {
     if (!part) {
         return ListReturnCode::Failed;
     }
@@ -185,8 +159,7 @@ ListReturnCode PartList<C>::Add(std::shared_ptr<C> part) {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Add(const std::vector<std::shared_ptr<C>>& parts) {
+template <typename C> ListReturnCode PartList<C>::Add(const std::vector<std::shared_ptr<C>>& parts) {
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
@@ -203,16 +176,13 @@ ListReturnCode PartList<C>::Add(const std::vector<std::shared_ptr<C>>& parts) {
     return result;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part) {
+template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part) {
     if (!part) {
         return ListReturnCode::Failed;
     }
     auto& list = GetList();
     auto it = std::find_if(list.begin(), list.end(),
-                  [&part](const std::shared_ptr<C>& item) {
-                      return item->GetId() == part->GetId();
-                  });
+                           [&part](const std::shared_ptr<C>& item) { return item->GetId() == part->GetId(); });
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
@@ -220,13 +190,10 @@ ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part) {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Remove(const uint64_t id) {
+template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id) {
     auto& list = GetList();
-    auto it = std::find_if(list.begin(), list.end(),
-                  [id](const std::shared_ptr<C>& item) {
-                      return item->GetId() == id;
-                  });
+    auto it =
+        std::find_if(list.begin(), list.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
@@ -234,8 +201,7 @@ ListReturnCode PartList<C>::Remove(const uint64_t id) {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Remove() {
+template <typename C> ListReturnCode PartList<C>::Remove() {
     if (mList.empty()) {
         return ListReturnCode::NotFound;
     }
@@ -243,8 +209,7 @@ ListReturnCode PartList<C>::Remove() {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts) {
+template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts) {
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
@@ -261,14 +226,11 @@ ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts)
     return result;
 }
 
-template <typename C>
-template <typename T>
-ListReturnCode PartList<C>::Remove() {
+template <typename C> template <typename T> ListReturnCode PartList<C>::Remove() {
     auto& list = GetList();
-    const auto it = std::remove_if(list.begin(), list.end(),
-                       [](const std::shared_ptr<C>& item) {
-                           return std::dynamic_pointer_cast<T>(item) != nullptr;
-                       });
+    const auto it = std::remove_if(list.begin(), list.end(), [](const std::shared_ptr<C>& item) {
+        return std::dynamic_pointer_cast<T>(item) != nullptr;
+    });
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
@@ -276,16 +238,14 @@ ListReturnCode PartList<C>::Remove() {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-ListReturnCode PartList<C>::Remove(const std::vector<uint64_t>& ids) {
+template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<uint64_t>& ids) {
     if (ids.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
     auto& list = GetList();
-    const auto it = std::remove_if(list.begin(), list.end(),
-                       [&ids](const std::shared_ptr<C>& item) {
-                           return std::find(ids.begin(), ids.end(), item->GetId()) != ids.end();
-                       });
+    const auto it = std::remove_if(list.begin(), list.end(), [&ids](const std::shared_ptr<C>& item) {
+        return std::find(ids.begin(), ids.end(), item->GetId()) != ids.end();
+    });
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
@@ -293,13 +253,11 @@ ListReturnCode PartList<C>::Remove(const std::vector<uint64_t>& ids) {
     return ListReturnCode::Success;
 }
 
-template <typename C>
-std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
+template <typename C> std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
     return mList;
 }
 
-template <typename C>
-const std::vector<std::shared_ptr<C>>& PartList<C>::GetList() const {
+template <typename C> const std::vector<std::shared_ptr<C>>& PartList<C>::GetList() const {
     return mList;
 }
 

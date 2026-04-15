@@ -18,20 +18,17 @@ class ActionList : public PartList<Action> {
 
     bool Has(const uint32_t actionType) const;
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const uint32_t actionType) const;
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-    Get(const std::vector<uint32_t>& actionTypes) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<uint32_t>& actionTypes) const;
 };
 
 inline bool ActionList::Has(const uint32_t actionType) const {
     const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(),
-               [actionType](const std::shared_ptr<Action>& action) {
-                   return action->GetType() == actionType;
-               }) != list.end();
+    return std::find_if(list.begin(), list.end(), [actionType](const std::shared_ptr<Action>& action) {
+               return action->GetType() == actionType;
+           }) != list.end();
 }
 
-inline std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-ActionList::Get(const uint32_t actionType) const {
+inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(const uint32_t actionType) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : this->GetList()) {
         if (action->GetType() == actionType) {

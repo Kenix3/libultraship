@@ -85,9 +85,8 @@ std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : Component(name), Tickable(), mConfigFilePath(std::move(configFilePath)),
-      mName(std::move(name)), mShortName(std::move(shortName)),
-      mIsTickableComponentsOrderStale(false) {
+    : Component(name), Tickable(), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
+      mShortName(std::move(shortName)), mIsTickableComponentsOrderStale(false) {
 }
 
 bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
@@ -541,8 +540,7 @@ size_t Context::CountTickableComponent() {
     return mTickableComponents.size();
 }
 
-bool Context::AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                   const bool force) {
+bool Context::AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force) {
     if (!tickableComponent) {
         return false;
     }
@@ -564,8 +562,7 @@ bool Context::AddTickableComponent(std::shared_ptr<TickableComponent> tickableCo
     return true;
 }
 
-bool Context::RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                      const bool force) {
+bool Context::RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force) {
     if (!tickableComponent) {
         return false;
     }
@@ -596,8 +593,7 @@ Context::GetTickableComponents(const std::vector<std::string>& componentNames) {
     const std::lock_guard<std::mutex> lock(mTickableMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
     for (const auto& tc : mTickableComponents) {
-        if (std::find(componentNames.begin(), componentNames.end(), tc->GetName()) !=
-            componentNames.end()) {
+        if (std::find(componentNames.begin(), componentNames.end(), tc->GetName()) != componentNames.end()) {
             result->push_back(tc);
         }
     }
@@ -621,8 +617,8 @@ Context::GetTickableComponent(const std::vector<int32_t>& componentIds) {
     const std::lock_guard<std::mutex> lock(mTickableMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
     for (const auto& tc : mTickableComponents) {
-        if (std::find(componentIds.begin(), componentIds.end(),
-                      static_cast<int32_t>(tc->GetId())) != componentIds.end()) {
+        if (std::find(componentIds.begin(), componentIds.end(), static_cast<int32_t>(tc->GetId())) !=
+            componentIds.end()) {
             result->push_back(tc);
         }
     }
@@ -656,10 +652,9 @@ Context& Context::UnsetTickableComponentsOrderStale() {
 Context& Context::SortTickableComponents() {
     const std::lock_guard<std::mutex> lock(mTickableMutex);
     std::stable_sort(mTickableComponents.begin(), mTickableComponents.end(),
-        [](const std::shared_ptr<TickableComponent>& a,
-           const std::shared_ptr<TickableComponent>& b) {
-            return a->GetOrder() < b->GetOrder();
-        });
+                     [](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {
+                         return a->GetOrder() < b->GetOrder();
+                     });
     mIsTickableComponentsOrderStale = false;
     return *this;
 }
@@ -672,11 +667,10 @@ bool Context::CanRemoveTickableComponent(std::shared_ptr<TickableComponent> tick
     return true;
 }
 
-void Context::AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                     const bool forced) {}
+void Context::AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced) {
+}
 
-void Context::RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent,
-                                       const bool forced) {}
+void Context::RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced) {
+}
 
 } // namespace Ship
-

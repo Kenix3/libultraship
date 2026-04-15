@@ -21,9 +21,8 @@ class TickableComponent : public Tickable, public Component {
     // Creates a TickableComponent and registers it with the given Context.
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
-                      const TickPriority priority = TickPriority::TickPriorityDefault,
-                      const bool isTicking = true, const bool isDrawing = true,
-                      const bool isDrawingDebugMenu = true);
+                      const TickPriority priority = TickPriority::TickPriorityDefault, const bool isTicking = true,
+                      const bool isDrawing = true, const bool isDrawingDebugMenu = true);
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
                       const TickPriority tickPriority = TickPriority::TickPriorityDefault,
@@ -50,4 +49,3 @@ class TickableComponent : public Tickable, public Component {
 };
 
 } // namespace Ship
-

@@ -81,8 +81,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 
 // ---- Template method implementations (Component is complete here) ----
 
-template <typename T>
-bool Component::RemoveParents(const bool force) {
+template <typename T> bool Component::RemoveParents(const bool force) {
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -99,8 +98,7 @@ bool Component::RemoveParents(const bool force) {
     return ok;
 }
 
-template <typename T>
-bool Component::RemoveParents(const std::string& name, const bool force) {
+template <typename T> bool Component::RemoveParents(const std::string& name, const bool force) {
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -117,8 +115,7 @@ bool Component::RemoveParents(const std::string& name, const bool force) {
     return ok;
 }
 
-template <typename T>
-bool Component::RemoveChildren(const bool force) {
+template <typename T> bool Component::RemoveChildren(const bool force) {
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -135,8 +132,7 @@ bool Component::RemoveChildren(const bool force) {
     return ok;
 }
 
-template <typename T>
-bool Component::RemoveChildren(const std::string& name, const bool force) {
+template <typename T> bool Component::RemoveChildren(const std::string& name, const bool force) {
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -154,4 +150,3 @@ bool Component::RemoveChildren(const std::string& name, const bool force) {
 }
 
 } // namespace Ship
-

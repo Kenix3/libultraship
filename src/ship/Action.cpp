@@ -5,7 +5,8 @@ namespace Ship {
 Action::Action(const uint32_t actionType, std::shared_ptr<Tickable> tickable)
     : Part(), mActionType(actionType), mTickable(tickable), mIsActionRunning(false)
 #ifdef INCLUDE_PROFILING
-      , mClocks()
+      ,
+      mClocks()
 #endif
 {
 }
@@ -77,9 +78,11 @@ bool Action::CanStop() {
     return true;
 }
 
-void Action::Started(const bool forced) {}
+void Action::Started(const bool forced) {
+}
 
-void Action::Stopped(const bool forced) {}
+void Action::Stopped(const bool forced) {
+}
 
 #ifdef INCLUDE_PROFILING
 double Action::GetTime(const ClockType clockType) const {
@@ -90,8 +93,7 @@ std::chrono::time_point<std::chrono::steady_clock> Action::GetClock(const ClockT
     return mClocks[static_cast<size_t>(clockType)];
 }
 
-Action& Action::SetClock(const ClockType clockType,
-                         std::chrono::time_point<std::chrono::steady_clock> clockValue) {
+Action& Action::SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue) {
     mClocks[static_cast<size_t>(clockType)] = clockValue;
     return *this;
 }
