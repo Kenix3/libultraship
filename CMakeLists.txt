@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.24.0)
 option(NON_PORTABLE "Build a non-portable version" OFF)
 option(INCLUDE_PROFILING "Enable action and tickable profiling timers" OFF)
 option(COMPONENT_THREAD_SAFE "Enable thread safety for Component parent/child lists" OFF)
+option(BUILD_TESTS "Build unit tests" OFF)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     option(SIGN_LIBRARY "Enable xcode signing" OFF)
@@ -63,3 +64,9 @@ endif()
 
 # =========== Sources =============
 add_subdirectory("src")
+
+# =========== Tests =============
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory("tests")
+endif()

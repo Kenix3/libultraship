@@ -8,12 +8,13 @@
 #include <unordered_set>
 #include <stdint.h>
 #include "ship/resource/File.h"
+#include "ship/Component.h"
 
 namespace Ship {
 struct File;
 class Archive;
 
-class ArchiveManager {
+class ArchiveManager : public Component {
   public:
     ArchiveManager();
     void Init(const std::vector<std::string>& archivePaths);
