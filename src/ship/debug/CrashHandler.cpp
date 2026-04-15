@@ -66,10 +66,10 @@ void CrashHandler::AppendLine(const char* str) {
  */
 void CrashHandler::PrintCommon() {
     if (mCallback != nullptr) {
-        mCallback(mOutBuffer, &mOutBuffersize);
+        mCallback(mOutBuffer.get(), &mOutBuffersize);
     }
 
-    SPDLOG_CRITICAL(mOutBuffer);
+    SPDLOG_CRITICAL(mOutBuffer.get());
 }
 
 #if defined(__linux__) && !defined(__ANDROID__)
@@ -414,8 +414,7 @@ extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
 
 #endif
 
-CrashHandler::CrashHandler() {
-    mOutBuffer = new char[gMaxBufferSize];
+CrashHandler::CrashHandler() : mOutBuffer(std::make_unique<char[]>(gMaxBufferSize)) {
 #if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction action = { 0 };
     struct sigaction shutdownAction = { 0 };
@@ -439,14 +438,12 @@ CrashHandler::CrashHandler() {
 #endif
 }
 
-CrashHandler::CrashHandler(CrashHandlerCallback callback) {
+CrashHandler::CrashHandler(CrashHandlerCallback callback) : CrashHandler() {
     mCallback = callback;
-    CrashHandler();
 }
 
 CrashHandler::~CrashHandler() {
     SPDLOG_TRACE("destruct crash handler");
-    delete[] mOutBuffer;
 }
 
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {
