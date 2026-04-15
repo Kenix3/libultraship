@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include "ship/Component.h"
 
 namespace Fast {
 union F3DGfx;
 
-class GfxDebugger {
+class GfxDebugger : public Ship::Component {
   public:
+    GfxDebugger();
     void RequestDebugging();
     bool IsDebugging() const;
     bool IsDebuggingRequested() const;

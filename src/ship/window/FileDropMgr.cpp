@@ -114,7 +114,7 @@ void FileDropMgr::CallHandlers() {
         }
     }
     SPDLOG_WARN("Dropped file {} not handled by any registered.", mPath);
-    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+    auto gui = Ship::Context::GetInstance()->GetChild<Window>()->GetGui();
     gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
 }
 

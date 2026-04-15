@@ -8,7 +8,7 @@ namespace Ship {
 GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
     : GuiElement(visibilityConsoleVariable, isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
     if (!mVisibilityConsoleVariable.empty()) {
-        mIsVisible = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(mVisibilityConsoleVariable.c_str(),
+        mIsVisible = Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->GetInteger(mVisibilityConsoleVariable.c_str(),
                                                                                      mIsVisible);
         SyncVisibilityConsoleVariable();
     }
@@ -32,18 +32,18 @@ void GuiMenuBar::SyncVisibilityConsoleVariable() {
         return;
     }
 
-    bool shouldSave = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+    bool shouldSave = Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->GetInteger(
                           mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
 
     if (IsVisible()) {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(mVisibilityConsoleVariable.c_str(),
+        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(mVisibilityConsoleVariable.c_str(),
                                                                         IsVisible());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(mVisibilityConsoleVariable.c_str());
+        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(mVisibilityConsoleVariable.c_str());
     }
 
     if (shouldSave) {
-        Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+        Context::GetInstance()->GetChild<Window>()->GetGui()->SaveConsoleVariablesNextFrame();
     }
 }
 

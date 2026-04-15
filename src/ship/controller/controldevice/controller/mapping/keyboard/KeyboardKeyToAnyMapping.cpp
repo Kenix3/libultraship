@@ -14,7 +14,7 @@ KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {
 }
 
 std::string KeyboardKeyToAnyMapping::GetPhysicalInputName() {
-    return Context::GetInstance()->GetWindow()->GetKeyName(mKeyboardScancode);
+    return Context::GetInstance()->GetChild<Window>()->GetKeyName(mKeyboardScancode);
 }
 
 bool KeyboardKeyToAnyMapping::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {

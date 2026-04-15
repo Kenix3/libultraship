@@ -58,16 +58,6 @@ class Context : public Component, public Tickable {
               std::shared_ptr<ControlDeck> controlDeck = nullptr);
 
     std::shared_ptr<spdlog::logger> GetLogger();
-    std::shared_ptr<Config> GetConfig();
-    std::shared_ptr<ConsoleVariable> GetConsoleVariables();
-    std::shared_ptr<ResourceManager> GetResourceManager();
-    std::shared_ptr<ControlDeck> GetControlDeck();
-    std::shared_ptr<CrashHandler> GetCrashHandler();
-    std::shared_ptr<Window> GetWindow();
-    std::shared_ptr<Console> GetConsole();
-    std::shared_ptr<Audio> GetAudio();
-    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
-    std::shared_ptr<FileDropMgr> GetFileDropMgr();
 
     std::string GetName();
     std::string GetShortName();
@@ -121,16 +111,6 @@ class Context : public Component, public Tickable {
     static std::weak_ptr<Context> mContext;
 
     std::shared_ptr<spdlog::logger> mLogger;
-    std::shared_ptr<Config> mConfig;
-    std::shared_ptr<ConsoleVariable> mConsoleVariables;
-    std::shared_ptr<ResourceManager> mResourceManager;
-    std::shared_ptr<ControlDeck> mControlDeck;
-    std::shared_ptr<CrashHandler> mCrashHandler;
-    std::shared_ptr<Window> mWindow;
-    std::shared_ptr<Console> mConsole;
-    std::shared_ptr<Audio> mAudio;
-    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
-    std::shared_ptr<FileDropMgr> mFileDropMgr;
 
     std::string mConfigFilePath;
     std::string mMainPath;

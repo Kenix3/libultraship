@@ -35,18 +35,19 @@ std::shared_ptr<Context> Context::GetInstance() {
 
 Context::~Context() {
     SPDLOG_TRACE("destruct context");
-    GetWindow()->SaveWindowToConfig();
+    auto window = GetChild<Window>();
+    if (window) {
+        window->SaveWindowToConfig();
+    }
 
-    // Explicitly destructing everything so that logging is done last.
-    mAudio = nullptr;
-    mWindow = nullptr;
-    mConsole = nullptr;
-    mCrashHandler = nullptr;
-    mControlDeck = nullptr;
-    mResourceManager = nullptr;
-    mConsoleVariables = nullptr;
-    GetConfig()->Save();
-    mConfig = nullptr;
+    auto config = GetChild<Config>();
+
+    // Remove children in order to allow explicit teardown before logging shuts down.
+    RemoveChildren(true);
+
+    if (config) {
+        config->Save();
+    }
     spdlog::shutdown();
 }
 
@@ -168,13 +169,14 @@ bool Context::InitLogging() {
 }
 
 bool Context::InitConfiguration() {
-    if (GetConfig() != nullptr) {
+    if (GetChild<Config>() != nullptr) {
         return true;
     }
 
-    mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(mConfigFilePath));
+    auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(mConfigFilePath));
+    AddChild(config);
 
-    if (GetConfig() == nullptr) {
+    if (GetChild<Config>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize config");
         return false;
     }
@@ -183,13 +185,14 @@ bool Context::InitConfiguration() {
 }
 
 bool Context::InitConsoleVariables() {
-    if (GetConsoleVariables() != nullptr) {
+    if (GetChild<ConsoleVariable>() != nullptr) {
         return true;
     }
 
-    mConsoleVariables = std::make_shared<ConsoleVariable>();
+    auto consoleVariables = std::make_shared<ConsoleVariable>();
+    AddChild(consoleVariables);
 
-    if (GetConsoleVariables() == nullptr) {
+    if (GetChild<ConsoleVariable>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize console variables");
         return false;
     }
@@ -199,25 +202,27 @@ bool Context::InitConsoleVariables() {
 
 bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
-    if (GetResourceManager() != nullptr) {
+    if (GetChild<ResourceManager>() != nullptr) {
         return true;
     }
 
-    mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    auto config = GetChild<Config>();
+    mMainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
+    mPatchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+
+    auto resourceManager = std::make_shared<ResourceManager>();
+    AddChild(resourceManager);
+
     if (archivePaths.empty()) {
         std::vector<std::string> paths = std::vector<std::string>();
         paths.push_back(mMainPath);
         paths.push_back(mPatchesPath);
-
-        mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(paths, validHashes, reservedThreadCount);
+        resourceManager->Init(paths, validHashes, reservedThreadCount);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
+        resourceManager->Init(archivePaths, validHashes, reservedThreadCount);
     }
 
-    if (!GetResourceManager()->IsLoaded()) {
+    if (!resourceManager->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
@@ -232,28 +237,28 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
 }
 
 bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
-    if (GetControlDeck() != nullptr) {
+    if (GetChild<ControlDeck>() != nullptr) {
         return true;
     }
 
-    mControlDeck = controlDeck;
-
-    if (GetControlDeck() == nullptr) {
+    if (controlDeck == nullptr) {
         SPDLOG_ERROR("Failed to initialize control deck");
         return false;
     }
 
+    AddChild(controlDeck);
     return true;
 }
 
 bool Context::InitCrashHandler() {
-    if (GetCrashHandler() != nullptr) {
+    if (GetChild<CrashHandler>() != nullptr) {
         return true;
     }
 
-    mCrashHandler = std::make_shared<CrashHandler>();
+    auto crashHandler = std::make_shared<CrashHandler>();
+    AddChild(crashHandler);
 
-    if (GetCrashHandler() == nullptr) {
+    if (GetChild<CrashHandler>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize crash handler");
         return false;
     }
@@ -262,29 +267,31 @@ bool Context::InitCrashHandler() {
 }
 
 bool Context::InitAudio(AudioSettings settings) {
-    if (GetAudio() != nullptr) {
+    if (GetChild<Audio>() != nullptr) {
         return true;
     }
 
-    mAudio = std::make_shared<Audio>(settings);
+    auto audio = std::make_shared<Audio>(settings);
+    AddChild(audio);
 
-    if (GetAudio() == nullptr) {
+    if (GetChild<Audio>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize audio");
         return false;
     }
 
-    GetAudio()->Init();
+    audio->Init();
     return true;
 }
 
 bool Context::InitGfxDebugger() {
-    if (GetGfxDebugger() != nullptr) {
+    if (GetChild<Fast::GfxDebugger>() != nullptr) {
         return true;
     }
 
-    mGfxDebugger = std::make_shared<Fast::GfxDebugger>();
+    auto gfxDebugger = std::make_shared<Fast::GfxDebugger>();
+    AddChild(gfxDebugger);
 
-    if (GetGfxDebugger() == nullptr) {
+    if (GetChild<Fast::GfxDebugger>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize gfx debugger");
         return false;
     }
@@ -293,94 +300,56 @@ bool Context::InitGfxDebugger() {
 }
 
 bool Context::InitConsole() {
-    if (GetConsole() != nullptr) {
+    if (GetChild<Console>() != nullptr) {
         return true;
     }
 
-    mConsole = std::make_shared<Console>();
+    auto console = std::make_shared<Console>();
+    AddChild(console);
 
-    if (GetConsole() == nullptr) {
+    if (GetChild<Console>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize console");
         return false;
     }
 
-    GetConsole()->Init();
+    console->Init();
 
     return true;
 }
 
 bool Context::InitWindow(std::shared_ptr<Window> window) {
-    if (GetWindow() != nullptr) {
+    if (GetChild<Window>() != nullptr) {
         return true;
     }
 
-    mWindow = window;
-
-    if (GetWindow() == nullptr) {
+    if (window == nullptr) {
         SPDLOG_ERROR("Failed to initialize window");
         return false;
     }
 
-    GetWindow()->Init();
+    AddChild(window);
+    window->Init();
 
     return true;
 }
 
 bool Context::InitFileDropMgr() {
-    if (GetFileDropMgr() != nullptr) {
+    if (GetChild<FileDropMgr>() != nullptr) {
         return true;
     }
 
-    mFileDropMgr = std::make_shared<FileDropMgr>();
-    if (GetFileDropMgr() == nullptr) {
+    auto fileDropMgr = std::make_shared<FileDropMgr>();
+    AddChild(fileDropMgr);
+
+    if (GetChild<FileDropMgr>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize file drop manager");
         return false;
     }
     return true;
 }
 
-std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
-    return mConsoleVariables;
-}
-
 std::shared_ptr<spdlog::logger> Context::GetLogger() {
     return mLogger;
-}
-
-std::shared_ptr<Config> Context::GetConfig() {
-    return mConfig;
-}
-
-std::shared_ptr<ResourceManager> Context::GetResourceManager() {
-    return mResourceManager;
-}
-
-std::shared_ptr<ControlDeck> Context::GetControlDeck() {
-    return mControlDeck;
-}
-
-std::shared_ptr<CrashHandler> Context::GetCrashHandler() {
-    return mCrashHandler;
-}
-
-std::shared_ptr<Window> Context::GetWindow() {
-    return mWindow;
-}
-
-std::shared_ptr<Console> Context::GetConsole() {
-    return mConsole;
-}
-
-std::shared_ptr<Audio> Context::GetAudio() {
-    return mAudio;
-}
-
-std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
-    return mGfxDebugger;
-}
-
-std::shared_ptr<FileDropMgr> Context::GetFileDropMgr() {
-    return mFileDropMgr;
 }
 
 std::string Context::GetName() {

@@ -235,7 +235,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     mFullScreen = on;
 #else
     if (SDL_SetWindowFullscreen(
-            mWnd, on ? (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0)
+            mWnd, on ? (Ship::Context::GetInstance()->GetChild<Ship::ConsoleVariable>()->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0)
                             ? SDL_WINDOW_FULLSCREEN_DESKTOP
                             : SDL_WINDOW_FULLSCREEN)
                      : 0) >= 0) {
@@ -247,7 +247,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
 #endif
 
     if (!on) {
-        auto conf = Ship::Context::GetInstance()->GetConfig();
+        auto conf = Ship::Context::GetInstance()->GetChild<Ship::Config>();
         mWindowWidth = conf->GetInt("Window.Width", 640);
         mWindowHeight = conf->GetInt("Window.Height", 480);
         int32_t posX = conf->GetInt("Window.PositionX", 100);
@@ -419,7 +419,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         window_impl.Metal = { mWnd, mRenderer };
     }
 
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    Ship::Context::GetInstance()->GetChild<Ship::Window>()->GetGui()->Init(window_impl);
 
     for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
         mSdlToLusTable[lus_to_sdl_table[i]] = i;
@@ -562,7 +562,7 @@ void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
 void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
     Ship::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    Ship::Context::GetInstance()->GetChild<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
@@ -602,7 +602,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetFileDropMgr()->SetDroppedFile(event.drop.file);
+            Ship::Context::GetInstance()->GetChild<Ship::FileDropMgr>()->SetDroppedFile(event.drop.file);
             break;
         case SDL_QUIT:
             Close();
@@ -684,7 +684,7 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 }
 
 void GfxWindowBackendSDL2::SwapBuffersBegin() {
-    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetChild<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1);
 
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;

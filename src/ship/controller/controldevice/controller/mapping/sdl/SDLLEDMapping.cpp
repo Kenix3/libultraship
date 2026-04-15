@@ -20,7 +20,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
     }
 
     for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
+         Context::GetInstance()->GetChild<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
              mPortIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;
@@ -36,26 +36,26 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetString(
         StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetColor24(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
 }
 
 void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
 }
 
 std::string SDLLEDMapping::GetPhysicalDeviceName() {

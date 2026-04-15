@@ -45,7 +45,7 @@ std::shared_ptr<File> Ship::FolderArchive::LoadFile(const std::string& filePath)
 
 std::shared_ptr<File> Ship::FolderArchive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+        *Context::GetInstance()->GetChild<ResourceManager>()->GetArchiveManager()->HashToString(hash);
 
     return LoadFileRaw(filePath);
 }
@@ -68,7 +68,7 @@ std::shared_ptr<File> FolderArchive::LoadFileRaw(const std::string& filePath) {
 
 std::shared_ptr<File> FolderArchive::LoadFileRaw(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+        *Context::GetInstance()->GetChild<ResourceManager>()->GetArchiveManager()->HashToString(hash);
 
     return LoadFileRaw(filePath);
 }

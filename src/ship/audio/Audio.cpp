@@ -39,7 +39,7 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
-    SetCurrentAudioBackend(Context::GetInstance()->GetConfig()->GetCurrentAudioBackend());
+    SetCurrentAudioBackend(Context::GetInstance()->GetChild<Config>()->GetCurrentAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -52,8 +52,8 @@ AudioBackend Audio::GetCurrentAudioBackend() {
 
 void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     mAudioBackend = backend;
-    Context::GetInstance()->GetConfig()->SetCurrentAudioBackend(GetCurrentAudioBackend());
-    Context::GetInstance()->GetConfig()->Save();
+    Context::GetInstance()->GetChild<Config>()->SetCurrentAudioBackend(GetCurrentAudioBackend());
+    Context::GetInstance()->GetChild<Config>()->Save();
 
     InitAudioPlayer();
 }

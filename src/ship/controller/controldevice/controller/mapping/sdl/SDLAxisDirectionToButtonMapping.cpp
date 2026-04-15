@@ -15,25 +15,25 @@ SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portInd
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
-    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+    if (Context::GetInstance()->GetChild<ControlDeck>()->GamepadGameInputBlocked()) {
         return;
     }
 
     int32_t axisThresholdPercentage = 25;
     if (AxisIsStick()) {
         axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetControlDeck()
+                                      ->GetChild<ControlDeck>()
                                       ->GetGlobalSDLDeviceSettings()
                                       ->GetStickAxisThresholdPercentage();
     } else if (AxisIsTrigger()) {
         axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetControlDeck()
+                                      ->GetChild<ControlDeck>()
                                       ->GetGlobalSDLDeviceSettings()
                                       ->GetTriggerAxisThresholdPercentage();
     }
 
     for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
+         Context::GetInstance()->GetChild<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
              mPortIndex)) {
         const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
@@ -56,29 +56,29 @@ std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetString(
         StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
         "SDLAxisDirectionToButtonMapping");
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
 }
 
 void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetPhysicalDeviceName() {

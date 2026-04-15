@@ -138,7 +138,7 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChild<CrashHandler>();
     char intToCharBuffer[16];
 
     std::array<void*, 4096> arr;
@@ -397,7 +397,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
     char exceptionString[20];
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChild<CrashHandler>();
 
     snprintf(exceptionString, std::size(exceptionString), "0x%x", ex->ExceptionRecord->ExceptionCode);
 
