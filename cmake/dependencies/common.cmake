@@ -205,6 +205,13 @@ if(NOT TARGET libtcc)
         target_compile_definitions(tcc_c2str PRIVATE C2STR)
         target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
 
+        if(APPLE)
+            set_target_properties(tcc_c2str PROPERTIES
+                CODE_SIGNING_ALLOWED NO
+                CODE_SIGNING_REQUIRED NO
+            )
+        endif()
+
         add_custom_command(
             OUTPUT "${tinycc_BINARY_DIR}/tccdefs_.h"
             COMMAND tcc_c2str "${tinycc_SOURCE_DIR}/include/tccdefs.h" "${tinycc_BINARY_DIR}/tccdefs_.h"
@@ -261,6 +268,13 @@ if(NOT TARGET libtcc)
     
     set_target_properties(libtcc  PROPERTIES OUTPUT_NAME "tcc")
     set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
+
+    if(APPLE)
+        set_target_properties(libtcc libtcc1 PROPERTIES
+            CODE_SIGNING_ALLOWED NO
+            CODE_SIGNING_REQUIRED NO
+        )
+    endif()
 endif()
 
 endif() # NOT DISABLE_SCRIPTING
