@@ -870,7 +870,10 @@ void GfxWindowBackendDXGI::SwapBuffersBegin() {
     // mLengthInVsyncFrames (now mVsyncEnabled) was used as present interval. Present interval >1 (aka fractional
     // V-Sync) breaks VRR and introduces even more input lag than capping via normal V-Sync does. Get the present
     // interval the user wants instead (V-Sync toggle).
-    mVsyncEnabled = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
+    mVsyncEnabled =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1)
+            ? 1
+            : 0;
 
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);

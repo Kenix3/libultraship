@@ -169,7 +169,8 @@ void GameOverlay::SetCurrentFont(const std::string& name) {
     }
 
     mCurrentFont = name;
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(CVAR_GAME_OVERLAY_FONT,
+                                                                                       name.c_str());
     Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->SaveConsoleVariablesNextFrame();
 }
 

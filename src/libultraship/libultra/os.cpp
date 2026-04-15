@@ -86,7 +86,11 @@ int32_t osAiSetNextBuffer(void* buff, size_t len) {
 }
 
 int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
-    auto io = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->GetControllerByPort(pfs->channel)->GetRumble();
+    auto io = Ship::Context::GetInstance()
+                  ->GetChildren()
+                  .GetFirst<Ship::ControlDeck>()
+                  ->GetControllerByPort(pfs->channel)
+                  ->GetRumble();
     if (vibrate) {
         io->StartRumble();
     } else {

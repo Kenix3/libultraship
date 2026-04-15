@@ -67,7 +67,8 @@ uint8_t Controller::GetPortIndex() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(hasConfigCvarKey.c_str(), false);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(hasConfigCvarKey.c_str(),
+                                                                                               false);
 }
 
 void Controller::ClearAllMappings() {

@@ -16,9 +16,11 @@ SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutr
 }
 
 void SDLGyroMapping::Recalibrate() {
-    for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()
+                                                 ->GetChildren()
+                                                 .GetFirst<ControlDeck>()
+                                                 ->GetConnectedPhysicalDeviceManager()
+                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
         }
@@ -47,9 +49,11 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
         return;
     }
 
-    for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()
+                                                 ->GetChildren()
+                                                 .GetFirst<ControlDeck>()
+                                                 ->GetConnectedPhysicalDeviceManager()
+                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
         }

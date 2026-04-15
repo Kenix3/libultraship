@@ -19,9 +19,11 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         color = mSavedColor;
     }
 
-    for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()
+                                                 ->GetChildren()
+                                                 .GetFirst<ControlDeck>()
+                                                 ->GetConnectedPhysicalDeviceManager()
+                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;
         }

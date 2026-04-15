@@ -32,10 +32,11 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(ledMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            ledMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(ledMappingIdsCvarKey.c_str(),
-                                                                       ledMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+            ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
     Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
@@ -103,7 +104,8 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     std::stringstream ledMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(ledMappingIdsCvarKey.c_str(), ""));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(ledMappingIdsCvarKey.c_str(),
+                                                                                           ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
         LoadLEDMappingFromConfig(ledMappingIdString);

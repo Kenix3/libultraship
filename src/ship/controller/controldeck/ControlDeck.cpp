@@ -75,7 +75,8 @@ bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
     return AllGameInputBlocked() ||
            Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMenuOrMenubarVisible() &&
-               Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
+               Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                   CVAR_IMGUI_CONTROLLER_NAV, 0);
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {
@@ -83,7 +84,8 @@ bool ControlDeck::KeyboardGameInputBlocked() {
     ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
     return AllGameInputBlocked() ||
            (activeIDWindow != NULL &&
-            activeIDWindow->ID != Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMainGameWindowID()) ||
+            activeIDWindow->ID !=
+                Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMainGameWindowID()) ||
            ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
 }
 

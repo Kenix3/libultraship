@@ -138,12 +138,13 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
-    if (SupportsViewports() &&
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
+    if (SupportsViewports() && Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                                   CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                            0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
@@ -161,10 +162,12 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
 
     ImGuiWMInit();
-    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>())->GetInterpreterWeak();
+    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>())
+                       ->GetInterpreterWeak();
     ImGuiBackendInit();
 
-    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>())->GetInterpreterWeak();
+    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>())
+                       ->GetInterpreterWeak();
 }
 
 void Gui::ImGuiWMInit() {
@@ -322,7 +325,8 @@ void Gui::BlockGamepadNavigation() {
 }
 
 void Gui::UnblockGamepadNavigation() {
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                            0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
@@ -392,10 +396,12 @@ void Gui::ApplyResolutionChanges() {
         CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
     const float aspectRatioY = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetFloat(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
-    const bool verticalResolutionToggle = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
+    const uint32_t verticalPixelCount =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
+    const bool verticalResolutionToggle =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -542,7 +548,8 @@ void Gui::DrawMenu() {
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) &&
-         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
+         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                             0))) {
         if ((ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) && GetMenu()) {
             GetMenu()->ToggleVisibility();
         } else if ((ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) &&
@@ -554,10 +561,12 @@ void Gui::DrawMenu() {
         } else {
             Context::GetInstance()->GetChildren().GetFirst<Window>()->SetMouseCapture(false);
             Context::GetInstance()->GetChildren().GetFirst<Window>()->SetCursorVisibility(true);
-            auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>());
+            auto wnd =
+                std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>());
             mCursorVisibleTicks = mCursorVisibleSeconds * wnd->GetTargetFps();
         }
-        if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+        if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                CVAR_IMGUI_CONTROLLER_NAV, 0) &&
             GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
@@ -674,8 +683,8 @@ void Gui::CalculateGameViewport() {
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
     mInterpreter.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
-                                                                        0)) {
+    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
@@ -1047,8 +1056,8 @@ void Gui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, cons
 }
 
 void Gui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
-    const auto res =
-        static_cast<Fast::Texture*>(Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadResource(path, true).get());
+    const auto res = static_cast<Fast::Texture*>(
+        Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadResource(path, true).get());
 
     LoadGuiTexture(name, *res, tint);
 }

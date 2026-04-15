@@ -95,10 +95,11 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
             CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(axisDirectionMappingIdsCvarKey.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+                axisDirectionMappingIdsCvarKey.c_str());
         } else {
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(axisDirectionMappingIdsCvarKey.c_str(),
-                                                                           axisDirectionMappingIdListString.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+                axisDirectionMappingIdsCvarKey.c_str(), axisDirectionMappingIdListString.c_str());
         }
     }
 
@@ -173,7 +174,8 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+                axisDirectionMappingIdsCvarKey.c_str(), ""));
         std::string axisDirectionMappingIdString;
         while (getline(axisDirectionMappingIdsStringStream, axisDirectionMappingIdString, ',')) {
             LoadAxisDirectionMappingFromConfig(axisDirectionMappingIdString);

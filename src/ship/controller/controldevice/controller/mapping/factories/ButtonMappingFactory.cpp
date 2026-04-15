@@ -27,12 +27,14 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
     }
 
     if (mappingClass == "SDLButtonToButtonMapping") {
-        int32_t sdlControllerButton = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
-            StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
+        int32_t sdlControllerButton =
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if (sdlControllerButton == -1) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+                mappingCvarKey.c_str());
             Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
             return nullptr;
         }
@@ -48,7 +50,8 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
         if (sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mappingCvarKey.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+                mappingCvarKey.c_str());
             Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
             return nullptr;
         }
@@ -86,7 +89,8 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CON
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultsForBitmask = Context::GetInstance()
-                                  ->GetChildren().GetFirst<ControlDeck>()
+                                  ->GetChildren()
+                                  .GetFirst<ControlDeck>()
                                   ->GetControllerDefaultMappings()
                                   ->GetDefaultKeyboardKeyToButtonMappings()[bitmask];
 
@@ -102,7 +106,8 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultButtonsForBitmask = Context::GetInstance()
-                                        ->GetChildren().GetFirst<ControlDeck>()
+                                        ->GetChildren()
+                                        .GetFirst<ControlDeck>()
                                         ->GetControllerDefaultMappings()
                                         ->GetDefaultSDLButtonToButtonMappings()[bitmask];
 
@@ -111,7 +116,8 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
     }
 
     auto defaultAxisDirectionsForBitmask = Context::GetInstance()
-                                               ->GetChildren().GetFirst<ControlDeck>()
+                                               ->GetChildren()
+                                               .GetFirst<ControlDeck>()
                                                ->GetControllerDefaultMappings()
                                                ->GetDefaultSDLAxisDirectionToButtonMappings()[bitmask];
 
@@ -127,9 +133,11 @@ std::shared_ptr<ControllerButtonMapping>
 ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] :
-         Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             portIndex)) {
+    for (auto [instanceId, gamepad] : Context::GetInstance()
+                                          ->GetChildren()
+                                          .GetFirst<ControlDeck>()
+                                          ->GetConnectedPhysicalDeviceManager()
+                                          ->GetConnectedSDLGamepadsForPort(portIndex)) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {
                 mapping = std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, button);

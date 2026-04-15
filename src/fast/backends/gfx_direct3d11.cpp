@@ -612,7 +612,8 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         const int noVanishFactor = 100;
         float SSDB = -2;
 
-        switch (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+        switch (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+            CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mRenderTargetHeight / n64modeFactor;
                 break;
@@ -1327,8 +1328,9 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(
-        "shaders/directx/default.shader.hlsl", true, init));
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(
+            "shaders/directx/default.shader.hlsl", true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");

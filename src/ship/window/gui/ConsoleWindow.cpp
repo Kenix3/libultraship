@@ -46,8 +46,8 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                     std::string* output) {
-    auto window =
-        std::static_pointer_cast<ConsoleWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
+    auto window = std::static_pointer_cast<ConsoleWindow>(
+        Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
     if (!window) {
         if (output) {
             *output += "A console window is necessary for Clear";
@@ -203,9 +203,11 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
     int vType = CheckVarType(args[2]);
 
     if (vType == VARTYPE_STRING) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(args[1].c_str(), args[2].c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(args[1].c_str(),
+                                                                                           args[2].c_str());
     } else if (vType == VARTYPE_FLOAT) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat((char*)args[1].c_str(), std::stof(args[2]));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat((char*)args[1].c_str(),
+                                                                                          std::stof(args[2]));
     } else if (vType == VARTYPE_RGBA) {
         uint32_t val = std::stoul(&args[2].c_str()[1], nullptr, 16);
         Color_RGBA8 clr;
@@ -215,7 +217,8 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
         clr.a = val & 0xFF;
         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetColor((char*)args[1].c_str(), clr);
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(args[1].c_str(), std::stoi(args[2]));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(args[1].c_str(),
+                                                                                            std::stoi(args[2]));
     }
 
     Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
@@ -306,8 +309,10 @@ void ConsoleWindow::InitElement() {
                  { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
     Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
         "get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand("help", { HelpCommand, "Shows all the commands" });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand("clear", { ClearCommand, "Clear the console history" });
+    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand("help",
+                                                                          { HelpCommand, "Shows all the commands" });
+    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+        "clear", { ClearCommand, "Clear the console history" });
     Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
         "unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
     Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
@@ -329,7 +334,8 @@ void ConsoleWindow::UpdateElement() {
         if (ImGui::IsKeyPressed(key)) {
             Dispatch("set " + var + " " +
                      std::to_string(!static_cast<bool>(
-                         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(var.c_str(), 0))));
+                         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                             var.c_str(), 0))));
         }
     }
 }

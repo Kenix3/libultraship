@@ -80,10 +80,11 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(buttonMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            buttonMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(buttonMappingIdsCvarKey.c_str(),
-                                                                       buttonMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+            buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
     }
 
     Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
@@ -101,7 +102,8 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     std::stringstream buttonMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+            buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
         LoadButtonMappingFromConfig(buttonMappingIdString);

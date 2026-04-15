@@ -22,19 +22,23 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
     int32_t axisThresholdPercentage = 25;
     if (AxisIsStick()) {
         axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetChildren().GetFirst<ControlDeck>()
+                                      ->GetChildren()
+                                      .GetFirst<ControlDeck>()
                                       ->GetGlobalSDLDeviceSettings()
                                       ->GetStickAxisThresholdPercentage();
     } else if (AxisIsTrigger()) {
         axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetChildren().GetFirst<ControlDeck>()
+                                      ->GetChildren()
+                                      .GetFirst<ControlDeck>()
                                       ->GetGlobalSDLDeviceSettings()
                                       ->GetTriggerAxisThresholdPercentage();
     }
 
-    for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()
+                                                 ->GetChildren()
+                                                 .GetFirst<ControlDeck>()
+                                                 ->GetConnectedPhysicalDeviceManager()
+                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
         auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);

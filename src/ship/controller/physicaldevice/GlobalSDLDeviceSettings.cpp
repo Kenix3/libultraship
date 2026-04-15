@@ -12,9 +12,10 @@ GlobalSDLDeviceSettings::GlobalSDLDeviceSettings() {
     mStickAxisThresholdPercentage = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
         StringHelper::Sprintf("%s.StickAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
         defaultAxisThresholdPercentage);
-    mTriggerAxisThresholdPercentage = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
-        StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
-        defaultAxisThresholdPercentage);
+    mTriggerAxisThresholdPercentage =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            StringHelper::Sprintf("%s.TriggerAxisThresholdPercentage", mappingCvarKey.c_str()).c_str(),
+            defaultAxisThresholdPercentage);
 }
 
 GlobalSDLDeviceSettings::~GlobalSDLDeviceSettings() {

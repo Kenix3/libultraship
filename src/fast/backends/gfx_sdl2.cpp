@@ -235,7 +235,8 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     mFullScreen = on;
 #else
     if (SDL_SetWindowFullscreen(
-            mWnd, on ? (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0)
+            mWnd, on ? (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+                            CVAR_SDL_WINDOWED_FULLSCREEN, 0)
                             ? SDL_WINDOW_FULLSCREEN_DESKTOP
                             : SDL_WINDOW_FULLSCREEN)
                      : 0) >= 0) {
@@ -684,7 +685,8 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 }
 
 void GfxWindowBackendSDL2::SwapBuffersBegin() {
-    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+        CVAR_VSYNC_ENABLED, 1);
 
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;

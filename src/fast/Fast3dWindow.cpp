@@ -75,21 +75,27 @@ void Fast3dWindow::Init() {
     uint32_t width, height;
     int32_t posX, posY;
 
-    isFullscreen = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetBool("Window.Fullscreen.Enabled", false) || gameMode;
+    isFullscreen = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetBool(
+                       "Window.Fullscreen.Enabled", false) ||
+                   gameMode;
     posX = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.PositionY", 100);
 
     if (isFullscreen) {
-        width = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
-        height = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
+        width = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.Fullscreen.Width",
+                                                                                             gameMode ? 1280 : 1920);
+        height = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt(
+            "Window.Fullscreen.Height", gameMode ? 800 : 1080);
     } else {
         width = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Window.Height", 480);
     }
     Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->SetFullscreenScancode(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Shortcuts.Fullscreen",
+                                                                                     Ship::KbScancode::LUS_KB_F11));
     Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->SetMouseCaptureScancode(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->GetInt("Shortcuts.MouseCapture",
+                                                                                     Ship::KbScancode::LUS_KB_F2));
 
     InitWindowManager();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
@@ -98,8 +104,9 @@ void Fast3dWindow::Init() {
     mWindowManagerApi->SetKeyboardCallbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->SetMouseCallbacks(MouseButtonDown, MouseButtonUp);
 
-    SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
-        CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
+    SetTextureFilter(
+        (FilteringMode)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+            CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
 int32_t Fast3dWindow::GetTargetFps() {
@@ -355,18 +362,19 @@ bool Fast3dWindow::KeyDown(int32_t scancode) {
 }
 
 void Fast3dWindow::AllKeysUp() {
-    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
-                                                                         Ship::KbScancode::LUS_KB_UNKNOWN);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessKeyboardEvent(
+        Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP, Ship::KbScancode::LUS_KB_UNKNOWN);
 }
 
 bool Fast3dWindow::MouseButtonUp(int button) {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessMouseButtonEvent(false,
-                                                                                   static_cast<Ship::MouseBtn>(button));
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessMouseButtonEvent(
+        false, static_cast<Ship::MouseBtn>(button));
 }
 
 bool Fast3dWindow::MouseButtonDown(int button) {
-    bool isProcessed = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessMouseButtonEvent(
-        true, static_cast<Ship::MouseBtn>(button));
+    bool isProcessed =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->ProcessMouseButtonEvent(
+            true, static_cast<Ship::MouseBtn>(button));
     return isProcessed;
 }
 
@@ -374,7 +382,8 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
 
     // Re-save fullscreen enabled after
-    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>()->SetBool("Window.Fullscreen.Enabled",
+                                                                                  isNowFullscreen);
 }
 
 std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {

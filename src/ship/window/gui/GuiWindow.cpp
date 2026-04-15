@@ -10,8 +10,8 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const s
     : GuiElement(name, isVisible), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize),
       mWindowFlags(windowFlags) {
     if (!mVisibilityConsoleVariable.empty()) {
-        mIsVisible = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(mVisibilityConsoleVariable.c_str(),
-                                                                                     mIsVisible);
+        mIsVisible = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
     }
 }
@@ -51,10 +51,11 @@ void GuiWindow::SyncVisibilityConsoleVariable() {
                           mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
 
     if (IsVisible()) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(mVisibilityConsoleVariable.c_str(),
-                                                                        IsVisible());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+            mVisibilityConsoleVariable.c_str(), IsVisible());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mVisibilityConsoleVariable.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            mVisibilityConsoleVariable.c_str());
     }
 
     if (shouldSave) {

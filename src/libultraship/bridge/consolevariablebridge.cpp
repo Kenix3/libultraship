@@ -7,7 +7,8 @@ std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
 
 extern "C" {
 int32_t CVarGetInteger(const char* name, int32_t defaultValue) {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(name, defaultValue);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(name,
+                                                                                                     defaultValue);
 }
 
 float CVarGetFloat(const char* name, float defaultValue) {
@@ -23,7 +24,8 @@ Color_RGBA8 CVarGetColor(const char* name, Color_RGBA8 defaultValue) {
 }
 
 Color_RGB8 CVarGetColor24(const char* name, Color_RGB8 defaultValue) {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetColor24(name, defaultValue);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetColor24(name,
+                                                                                                     defaultValue);
 }
 
 void CVarSetInteger(const char* name, int32_t value) {

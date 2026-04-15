@@ -25,8 +25,9 @@ void GfxDebuggerWindow::InitElement() {
 
 void GfxDebuggerWindow::UpdateElement() {
     if (mInterpreter.lock() == nullptr) {
-        mInterpreter =
-            dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>())->GetInterpreterWeak();
+        mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(
+                           Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>())
+                           ->GetInterpreterWeak();
     }
 }
 
@@ -399,8 +400,10 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 if (texAddr == 0) {
                     nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: clear all entries"));
                 } else {
-                    if (((uintptr_t)texAddr & 1) == 0 &&
-                        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->OtrSignatureCheck(texAddr)) {
+                    if (((uintptr_t)texAddr & 1) == 0 && Ship::Context::GetInstance()
+                                                             ->GetChildren()
+                                                             .GetFirst<Ship::ResourceManager>()
+                                                             ->OtrSignatureCheck(texAddr)) {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: {}", texAddr));
                     } else {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: 0x{:x}", (uintptr_t)texAddr));
@@ -508,7 +511,8 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 uint8_t* mask = (uint8_t*)cmd->words.w0;
                 uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
 
-                if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->OtrSignatureCheck(timg)) {
+                if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->OtrSignatureCheck(
+                        timg)) {
                     timg += 7;
                     nodeWithText(cmd0, fmt::format("G_REGBLENDEDTEX: src {}, mask {}, blended {}", timg, (void*)mask,
                                                    (void*)replacementTex));

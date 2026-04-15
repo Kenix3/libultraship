@@ -20,7 +20,11 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->HashToCString(crc);
+    return Ship::Context::GetInstance()
+        ->GetChildren()
+        .GetFirst<Ship::ResourceManager>()
+        ->GetArchiveManager()
+        ->HashToCString(crc);
 }
 
 size_t ResourceGetSizeByName(const char* name) {
@@ -114,7 +118,11 @@ size_t ResourceGetTexSizeByCrc(uint64_t crc) {
 }
 
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->GetGameVersions();
+    auto list = Ship::Context::GetInstance()
+                    ->GetChildren()
+                    .GetFirst<Ship::ResourceManager>()
+                    ->GetArchiveManager()
+                    ->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
@@ -124,7 +132,11 @@ void ResourceLoadDirectoryAsync(const char* name) {
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
-    auto list = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->GetGameVersions();
+    auto list = Ship::Context::GetInstance()
+                    ->GetChildren()
+                    .GetFirst<Ship::ResourceManager>()
+                    ->GetArchiveManager()
+                    ->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
