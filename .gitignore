@@ -357,7 +357,7 @@ tcc_c2str
 *.filters
 *.stamp
 *.depend
-*.
+*.lib
 *.tlog
 *.recipe
 src/ship/install_config.h
