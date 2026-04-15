@@ -95,6 +95,7 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
     if (!mIsTicking) {
         return 0.0;
     }
+    const auto start = std::chrono::steady_clock::now();
     auto actions = GetActions(actionTypes);
     std::stable_sort(actions->begin(), actions->end(),
         [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
@@ -103,18 +104,21 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
-    return 0.0;
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 }
 
 double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
     if (!mIsTicking) {
         return 0.0;
     }
+    const auto start = std::chrono::steady_clock::now();
     auto actions = GetActions(actionType);
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
-    return 0.0;
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 }
 
 bool Tickable::HasAction(std::shared_ptr<Action> action) const {
