@@ -141,8 +141,11 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(tinycc)
-
 if(NOT TARGET libtcc)
+    # Enable symbol exporting for Windows DLLs
+    # This is vital because TinyCC doesn't use __declspec(dllexport) in source
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
     if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
@@ -209,9 +212,21 @@ if(NOT TARGET libtcc)
         )
     endif()
 
-    add_library(libtcc STATIC
+    add_library(libtcc SHARED
         "${tinycc_SOURCE_DIR}/libtcc.c"
         "${tinycc_BINARY_DIR}/tccdefs_.h"
+    )
+
+    add_library(libtcc1 SHARED
+        "${tinycc_SOURCE_DIR}/lib/libtcc1.c"
+    )
+    
+    # Ensure libtcc1 is compiled with Position Independent Code
+    set_target_properties(libtcc1 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    
+    target_include_directories(libtcc1 PRIVATE 
+        "${tinycc_SOURCE_DIR}"
+        "${tinycc_BINARY_DIR}"
     )
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
@@ -232,4 +247,6 @@ if(NOT TARGET libtcc)
     if(UNIX AND NOT APPLE)
         target_link_libraries(libtcc PRIVATE dl m pthread)
     endif()
+
+    set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
 endif()
