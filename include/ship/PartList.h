@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <memory>
 #include <type_traits>
@@ -36,6 +37,8 @@ class PartList : public Part {
     bool Has(std::shared_ptr<C> part) const;
     template <typename T> bool Has() const;
     bool Has(const uint64_t id) const;
+    bool Has(const std::string& name) const;
+    template <typename T> bool Has(const std::string& name) const;
     bool Has() const;
     size_t GetCount() const;
 
@@ -98,6 +101,25 @@ bool PartList<C>::Has(const uint64_t id) const {
     return std::find_if(list.begin(), list.end(),
                [id](const std::shared_ptr<C>& item) {
                    return item->GetId() == id;
+               }) != list.end();
+}
+
+template <typename C>
+bool PartList<C>::Has(const std::string& name) const {
+    const auto& list = GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<C>& item) {
+                   return item->GetName() == name;
+               }) != list.end();
+}
+
+template <typename C>
+template <typename T>
+bool PartList<C>::Has(const std::string& name) const {
+    const auto& list = GetList();
+    return std::find_if(list.begin(), list.end(),
+               [&name](const std::shared_ptr<C>& item) {
+                   return item->GetName() == name && std::dynamic_pointer_cast<T>(item) != nullptr;
                }) != list.end();
 }
 
