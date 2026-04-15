@@ -347,8 +347,10 @@ ZAPDUtils.lib
 .idea/
 cmake-build-**
 cmake_install.cmake
+tcc_c2str
 *.a
 *.o
+*.so
 *.pc
 *.vcxproj
 *.sln
@@ -356,6 +358,7 @@ cmake_install.cmake
 *.stamp
 *.depend
 *.lib
+*.dylib
 *.tlog
 *.recipe
 src/ship/install_config.h

@@ -12,8 +12,11 @@ add_executable(lus_tests
     binary_io_tests.cpp
     string_helper_tests.cpp
     crc64_tests.cpp
-    script_test.cpp
 )
+
+if(NOT DISABLE_SCRIPTING)
+    target_sources(lus_tests PRIVATE script_test.cpp)
+endif()
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
 
