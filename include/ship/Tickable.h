@@ -78,12 +78,19 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 // ---- Template method implementations ----
 
 template <typename T> double Tickable::Tick(const double durationSinceLastTick) {
+    if (!mIsTicking) {
+        return 0.0;
+    }
+#ifdef INCLUDE_PROFILING
+    const auto start = std::chrono::steady_clock::now();
+#endif
     auto actions = GetActions<T>();
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
 #ifdef INCLUDE_PROFILING
-    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 #else
     return 0.0;
 #endif
@@ -91,6 +98,12 @@ template <typename T> double Tickable::Tick(const double durationSinceLastTick) 
 
 template <typename T>
 double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
+    if (!mIsTicking) {
+        return 0.0;
+    }
+#ifdef INCLUDE_PROFILING
+    const auto start = std::chrono::steady_clock::now();
+#endif
     auto allActions = GetActions(actionTypes);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
@@ -98,13 +111,20 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
         }
     }
 #ifdef INCLUDE_PROFILING
-    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 #else
     return 0.0;
 #endif
 }
 
 template <typename T> double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+    if (!mIsTicking) {
+        return 0.0;
+    }
+#ifdef INCLUDE_PROFILING
+    const auto start = std::chrono::steady_clock::now();
+#endif
     auto allActions = GetActions(actionType);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
@@ -112,7 +132,8 @@ template <typename T> double Tickable::Tick(const double durationSinceLastTick, 
         }
     }
 #ifdef INCLUDE_PROFILING
-    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 #else
     return 0.0;
 #endif

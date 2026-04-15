@@ -439,9 +439,8 @@ CrashHandler::CrashHandler() : Component("CrashHandler") {
 #endif
 }
 
-CrashHandler::CrashHandler(CrashHandlerCallback callback) : Component("CrashHandler") {
+CrashHandler::CrashHandler(CrashHandlerCallback callback) : CrashHandler() {
     mCallback = callback;
-    CrashHandler();
 }
 
 CrashHandler::~CrashHandler() {

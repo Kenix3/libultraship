@@ -12,16 +12,37 @@ TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Co
                                      const TickGroup tickGroup, const TickPriority tickPriority, const bool isTicking,
                                      const bool isDrawing, const bool isDrawingDebugMenu)
     : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
-    if (isTicking) {
+    // Note: Actions and context registration are deferred to RegisterWithContext()
+    // because shared_from_this() cannot be called in a constructor.
+    mPendingTicking = isTicking;
+    mPendingDrawing = isDrawing;
+    mPendingDrawingDebugMenu = isDrawingDebugMenu;
+}
+
+TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
+                                     const TickGroup tickGroup, const TickPriority tickPriority,
+                                     const std::vector<std::shared_ptr<Action>>& actions)
+    : Tickable(true, actions), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context),
+      mPendingTicking(false), mPendingDrawing(false), mPendingDrawingDebugMenu(false) {
+}
+
+TickableComponent::~TickableComponent() {
+    // Do not call shared_from_this() in destructor - it is unsafe.
+    // UnregisterFromContext() should be called explicitly before destruction,
+    // or the Context should clean up its own references.
+}
+
+void TickableComponent::RegisterWithContext() {
+    if (mPendingTicking) {
         AddAction(std::make_shared<TickAction>(Tickable::shared_from_this()));
     }
-    if (isDrawing) {
+    if (mPendingDrawing) {
         AddAction(std::make_shared<DrawAction>(Tickable::shared_from_this()));
     }
-    if (isDrawingDebugMenu) {
+    if (mPendingDrawingDebugMenu) {
         AddAction(std::make_shared<DrawDebugMenuAction>(Tickable::shared_from_this()));
     }
-    if (isTicking || isDrawing || isDrawingDebugMenu) {
+    if (mPendingTicking || mPendingDrawing || mPendingDrawingDebugMenu) {
         Start();
     }
 
@@ -30,16 +51,7 @@ TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Co
     }
 }
 
-TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
-                                     const TickGroup tickGroup, const TickPriority tickPriority,
-                                     const std::vector<std::shared_ptr<Action>>& actions)
-    : Tickable(true, actions), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
-    if (GetContext() != nullptr) {
-        GetContext()->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
-    }
-}
-
-TickableComponent::~TickableComponent() {
+void TickableComponent::UnregisterFromContext() {
     if (GetContext() != nullptr) {
         GetContext()->RemoveTickableComponent(
             std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));

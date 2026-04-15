@@ -53,7 +53,7 @@ class Action : public Part {
 #endif
 
     uint32_t mActionType;
-    std::shared_ptr<Tickable> mTickable;
+    std::weak_ptr<Tickable> mTickable;
     bool mIsActionRunning;
 
 #ifdef INCLUDE_PROFILING

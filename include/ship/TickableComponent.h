@@ -18,7 +18,8 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
 
 class TickableComponent : public Tickable, public Component {
   public:
-    // Creates a TickableComponent and registers it with the given Context.
+    // Creates a TickableComponent. Call RegisterWithContext() after construction
+    // (once the object is owned by a shared_ptr).
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
                       const TickPriority priority = TickPriority::TickPriorityDefault, const bool isTicking = true,
@@ -28,6 +29,10 @@ class TickableComponent : public Tickable, public Component {
                       const TickPriority tickPriority = TickPriority::TickPriorityDefault,
                       const std::vector<std::shared_ptr<Action>>& actions = {});
     virtual ~TickableComponent();
+
+    // Must be called after construction, once this object is managed by a shared_ptr.
+    void RegisterWithContext();
+    void UnregisterFromContext();
 
     std::shared_ptr<Context> GetContext() const;
     TickGroup GetTickGroup() const;
@@ -46,6 +51,9 @@ class TickableComponent : public Tickable, public Component {
     TickGroup mTickGroup;
     TickPriority mTickPriority;
     std::shared_ptr<Context> mContext;
+    bool mPendingTicking;
+    bool mPendingDrawing;
+    bool mPendingDrawingDebugMenu;
 };
 
 } // namespace Ship
