@@ -21,10 +21,10 @@ enum class OverlayType {
  * @brief An active overlay item managed by GameOverlay.
  */
 struct Overlay {
-    OverlayType Type;   ///< Discriminator for the overlay kind.
-    std::string Value;  ///< Text content or resource path, depending on Type.
-    float fadeTime;     ///< Remaining fade-out time in seconds (notifications only).
-    float duration;     ///< Total display duration in seconds (notifications only).
+    OverlayType Type;  ///< Discriminator for the overlay kind.
+    std::string Value; ///< Text content or resource path, depending on Type.
+    float fadeTime;    ///< Remaining fade-out time in seconds (notifications only).
+    float duration;    ///< Total display duration in seconds (notifications only).
 };
 
 /**

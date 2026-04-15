@@ -26,11 +26,11 @@ typedef struct CVar {
     /** @brief Discriminator indicating which union field is active. */
     ConsoleVariableType Type;
     union {
-        int32_t Integer;    ///< Active when Type == ConsoleVariableType::Integer.
-        float Float;        ///< Active when Type == ConsoleVariableType::Float.
+        int32_t Integer;        ///< Active when Type == ConsoleVariableType::Integer.
+        float Float;            ///< Active when Type == ConsoleVariableType::Float.
         char* String = nullptr; ///< Active when Type == ConsoleVariableType::String (heap-allocated).
-        Color_RGBA8 Color;  ///< Active when Type == ConsoleVariableType::Color.
-        Color_RGB8 Color24; ///< Active when Type == ConsoleVariableType::Color24.
+        Color_RGBA8 Color;      ///< Active when Type == ConsoleVariableType::Color.
+        Color_RGB8 Color24;     ///< Active when Type == ConsoleVariableType::Color24.
     };
     ~CVar() {
         if (Type == ConsoleVariableType::String && String != nullptr) {

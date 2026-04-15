@@ -6,13 +6,13 @@
 #include <cstring>
 
 #ifdef _MSC_VER
-#define BSWAP16 _byteswap_ushort   ///< Byte-swap a 16-bit value (MSVC intrinsic).
-#define BSWAP32 _byteswap_ulong    ///< Byte-swap a 32-bit value (MSVC intrinsic).
-#define BSWAP64 _byteswap_uint64   ///< Byte-swap a 64-bit value (MSVC intrinsic).
+#define BSWAP16 _byteswap_ushort ///< Byte-swap a 16-bit value (MSVC intrinsic).
+#define BSWAP32 _byteswap_ulong  ///< Byte-swap a 32-bit value (MSVC intrinsic).
+#define BSWAP64 _byteswap_uint64 ///< Byte-swap a 64-bit value (MSVC intrinsic).
 #else
-#define BSWAP16 __builtin_bswap16  ///< Byte-swap a 16-bit value (GCC/Clang built-in).
-#define BSWAP32 __builtin_bswap32  ///< Byte-swap a 32-bit value (GCC/Clang built-in).
-#define BSWAP64 __builtin_bswap64  ///< Byte-swap a 64-bit value (GCC/Clang built-in).
+#define BSWAP16 __builtin_bswap16 ///< Byte-swap a 16-bit value (GCC/Clang built-in).
+#define BSWAP32 __builtin_bswap32 ///< Byte-swap a 32-bit value (GCC/Clang built-in).
+#define BSWAP64 __builtin_bswap64 ///< Byte-swap a 64-bit value (GCC/Clang built-in).
 #endif
 
 /**
@@ -26,7 +26,7 @@ enum class Endianness {
     Big = 1,    ///< Most-significant byte first.
 
 #if (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)) || defined(__BIG_ENDIAN__)
-    Native = Big,    ///< Platform is big-endian; Native resolves to Big.
+    Native = Big, ///< Platform is big-endian; Native resolves to Big.
 #else
     Native = Little, ///< Platform is little-endian; Native resolves to Little.
 #endif

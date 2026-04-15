@@ -147,12 +147,12 @@ typedef enum MouseBtn {
  * @brief Identifies a scroll-wheel direction delivered to the input mapping system.
  */
 typedef enum WheelDirection {
-    LUS_WHEEL_NONE,    ///< No scroll (initial or reset state).
-    LUS_WHEEL_LEFT,    ///< Horizontal scroll to the left.
-    LUS_WHEEL_RIGHT,   ///< Horizontal scroll to the right.
-    LUS_WHEEL_UP,      ///< Vertical scroll upward.
-    LUS_WHEEL_DOWN,    ///< Vertical scroll downward.
-    LUS_WHEEL_UNKNOWN  ///< An unrecognised scroll direction.
+    LUS_WHEEL_NONE,   ///< No scroll (initial or reset state).
+    LUS_WHEEL_LEFT,   ///< Horizontal scroll to the left.
+    LUS_WHEEL_RIGHT,  ///< Horizontal scroll to the right.
+    LUS_WHEEL_UP,     ///< Vertical scroll upward.
+    LUS_WHEEL_DOWN,   ///< Vertical scroll downward.
+    LUS_WHEEL_UNKNOWN ///< An unrecognised scroll direction.
 } WheelDirection;
 
 #ifdef __cplusplus

@@ -18,33 +18,33 @@ namespace Ship {
  * etc.) without introducing an Objective-C dependency in C++ translation units.
  */
 enum {
-    NSApplicationDirectory = 1,       ///< Applications directory (/Applications).
-    NSDemoApplicationDirectory,       ///< Demonstration applications directory.
-    NSDeveloperApplicationDirectory,  ///< Developer applications directory.
-    NSAdminApplicationDirectory,      ///< Administration applications directory.
-    NSLibraryDirectory,               ///< Library directory.
-    NSDeveloperDirectory,             ///< Developer tools directory.
-    NSUserDirectory,                  ///< User home directories (~/...).
-    NSDocumentationDirectory,         ///< Documentation directory.
-    NSDocumentDirectory,              ///< Documents directory (~/Documents).
-    NSCoreServiceDirectory,           ///< Core services directory.
+    NSApplicationDirectory = 1,           ///< Applications directory (/Applications).
+    NSDemoApplicationDirectory,           ///< Demonstration applications directory.
+    NSDeveloperApplicationDirectory,      ///< Developer applications directory.
+    NSAdminApplicationDirectory,          ///< Administration applications directory.
+    NSLibraryDirectory,                   ///< Library directory.
+    NSDeveloperDirectory,                 ///< Developer tools directory.
+    NSUserDirectory,                      ///< User home directories (~/...).
+    NSDocumentationDirectory,             ///< Documentation directory.
+    NSDocumentDirectory,                  ///< Documents directory (~/Documents).
+    NSCoreServiceDirectory,               ///< Core services directory.
     NSAutosavedInformationDirectory = 11, ///< Autosaved information directory.
-    NSDesktopDirectory = 12,          ///< Desktop directory (~/Desktop).
-    NSCachesDirectory = 13,           ///< Caches directory (~/Library/Caches).
-    NSApplicationSupportDirectory = 14, ///< Application support directory (~/Library/Application Support).
-    NSDownloadsDirectory = 15,        ///< Downloads directory (~/Downloads).
-    NSInputMethodsDirectory = 16,     ///< Input methods directory.
-    NSMoviesDirectory = 17,           ///< Movies directory (~/Movies).
-    NSMusicDirectory = 18,            ///< Music directory (~/Music).
-    NSPicturesDirectory = 19,         ///< Pictures directory (~/Pictures).
-    NSPrinterDescriptionDirectory = 20, ///< Printer description directory.
-    NSSharedPublicDirectory = 21,     ///< Public directory (~/Public).
-    NSPreferencePanesDirectory = 22,  ///< Preference panes directory.
-    NSApplicationScriptsDirectory = 23, ///< Application scripts directory.
-    NSItemReplacementDirectory = 99,  ///< Temporary directory suitable for atomic file replacement.
-    NSAllApplicationsDirectory = 100, ///< All applications directories.
-    NSAllLibrariesDirectory = 101,    ///< All library directories.
-    NSTrashDirectory = 102            ///< Trash directory.
+    NSDesktopDirectory = 12,              ///< Desktop directory (~/Desktop).
+    NSCachesDirectory = 13,               ///< Caches directory (~/Library/Caches).
+    NSApplicationSupportDirectory = 14,   ///< Application support directory (~/Library/Application Support).
+    NSDownloadsDirectory = 15,            ///< Downloads directory (~/Downloads).
+    NSInputMethodsDirectory = 16,         ///< Input methods directory.
+    NSMoviesDirectory = 17,               ///< Movies directory (~/Movies).
+    NSMusicDirectory = 18,                ///< Music directory (~/Music).
+    NSPicturesDirectory = 19,             ///< Pictures directory (~/Pictures).
+    NSPrinterDescriptionDirectory = 20,   ///< Printer description directory.
+    NSSharedPublicDirectory = 21,         ///< Public directory (~/Public).
+    NSPreferencePanesDirectory = 22,      ///< Preference panes directory.
+    NSApplicationScriptsDirectory = 23,   ///< Application scripts directory.
+    NSItemReplacementDirectory = 99,      ///< Temporary directory suitable for atomic file replacement.
+    NSAllApplicationsDirectory = 100,     ///< All applications directories.
+    NSAllLibrariesDirectory = 101,        ///< All library directories.
+    NSTrashDirectory = 102                ///< Trash directory.
 };
 
 /** @brief Type alias for a search-path directory constant (see NSSearchPathDirectory values above). */
@@ -57,11 +57,11 @@ typedef unsigned long SearchPathDirectory;
  * domain(s) FolderManager searches when locating a standard directory.
  */
 enum {
-    NSUserDomainMask = 1,       ///< User's home directory (~).
-    NSLocalDomainMask = 2,      ///< Local machine directory (/Library).
-    NSNetworkDomainMask = 4,    ///< Network directory (/Network).
-    NSSystemDomainMask = 8,     ///< System directory (/System) — provided by Apple, unmodifiable.
-    NSAllDomainsMask = 0x0ffff  ///< All domains.
+    NSUserDomainMask = 1,      ///< User's home directory (~).
+    NSLocalDomainMask = 2,     ///< Local machine directory (/Library).
+    NSNetworkDomainMask = 4,   ///< Network directory (/Network).
+    NSSystemDomainMask = 8,    ///< System directory (/System) — provided by Apple, unmodifiable.
+    NSAllDomainsMask = 0x0ffff ///< All domains.
 };
 
 /** @brief Type alias for a domain-mask value (see NSSearchPathDomainMask values above). */

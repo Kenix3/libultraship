@@ -150,7 +150,7 @@ class BinaryReader {
     std::vector<char> ToVector();
 
   protected:
-    std::shared_ptr<Stream> mStream;              ///< Underlying byte stream.
-    Endianness mEndianness = Endianness::Native;   ///< Active byte order for multi-byte reads.
+    std::shared_ptr<Stream> mStream;             ///< Underlying byte stream.
+    Endianness mEndianness = Endianness::Native; ///< Active byte order for multi-byte reads.
 };
 } // namespace Ship

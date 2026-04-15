@@ -114,9 +114,9 @@ class ConsoleWindow : public GuiWindow {
   private:
     /** @brief An individual log entry stored in a channel's history. */
     struct ConsoleLine {
-        std::string Text;                                        ///< Rendered text.
+        std::string Text;                                         ///< Rendered text.
         spdlog::level::level_enum Priority = spdlog::level::info; ///< Severity (controls colour).
-        std::string Channel = "Console";                         ///< Owning channel name.
+        std::string Channel = "Console";                          ///< Owning channel name.
     };
 
     static int CallbackStub(ImGuiInputTextCallbackData* data);

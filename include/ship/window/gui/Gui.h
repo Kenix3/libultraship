@@ -49,8 +49,8 @@ typedef struct {
             void* Context; ///< SDL_GLContext
         } Opengl;
         struct {
-            void* Window;          ///< SDL_Window*
-            SDL_Renderer* Renderer;///< SDL_Renderer* (for Metal layer)
+            void* Window;           ///< SDL_Window*
+            SDL_Renderer* Renderer; ///< SDL_Renderer* (for Metal layer)
         } Metal;
         struct {
             uint32_t Width;  ///< Framebuffer width in pixels.

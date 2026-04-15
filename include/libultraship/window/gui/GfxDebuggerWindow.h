@@ -52,7 +52,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {}; ///< Last captured display list command buffer.
-    std::weak_ptr<Fast::Interpreter> mInterpreter;          ///< Weak reference to the Fast3D interpreter.
+    std::weak_ptr<Fast::Interpreter> mInterpreter;         ///< Weak reference to the Fast3D interpreter.
 };
 
 } // namespace LUS

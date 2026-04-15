@@ -72,8 +72,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
      * WasapiAudioPlayer uses this callback to tear down the current stream and
      * reopen it on the new default device.
      */
-    virtual HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role,
-                                                             LPCWSTR pwstrDefaultDeviceId);
+    virtual HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId);
 
     /** @brief Called when a property value of an audio endpoint device changes. */
     virtual HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key);
@@ -103,7 +102,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     ComPtr<IMMDeviceEnumerator> mDeviceEnumerator; ///< Enumerates available audio endpoints.
     ComPtr<IMMDevice> mDevice;                     ///< Currently active audio endpoint.
     ComPtr<IAudioClient> mClient;                  ///< WASAPI audio client for the active device.
-    ComPtr<IAudioRenderClient> mRenderClient;       ///< WASAPI render client for writing PCM data.
+    ComPtr<IAudioRenderClient> mRenderClient;      ///< WASAPI render client for writing PCM data.
     LONG mRefCount = 1;                            ///< IUnknown reference count.
     UINT32 mBufferFrameCount = 0;                  ///< Size of the WASAPI render buffer in frames.
     bool mInitialized = false;                     ///< True after DoInit() succeeds.

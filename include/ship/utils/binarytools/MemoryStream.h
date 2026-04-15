@@ -109,6 +109,6 @@ class MemoryStream final : public Stream {
 
   protected:
     std::shared_ptr<std::vector<char>> mBuffer; ///< Shared backing store.
-    std::size_t mBufferSize;                     ///< Fixed size (0 if growable).
+    std::size_t mBufferSize;                    ///< Fixed size (0 if growable).
 };
 } // namespace Ship

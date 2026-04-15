@@ -37,9 +37,9 @@ struct ArchiveManifest {
     uint32_t CodeVersion; ///< API version of compiled script modules bundled with this archive.
     uint32_t GameVersion; ///< Numeric game version this archive targets.
 
-    std::string Main;                                ///< Entry-point script path within the archive.
+    std::string Main;                                      ///< Entry-point script path within the archive.
     std::unordered_map<std::string, std::string> Binaries; ///< Platform → binary path map for bundled native libs.
-    std::vector<std::string> Dependencies;           ///< Archive names that must be loaded before this one.
+    std::vector<std::string> Dependencies;                 ///< Archive names that must be loaded before this one.
 
     std::string Checksum;  ///< Hex-encoded SHA-256 checksum of the archive contents.
     std::string Signature; ///< Base64-encoded digital signature over the checksum.

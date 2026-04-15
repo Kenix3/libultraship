@@ -34,7 +34,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 /*
-	[To some parts of this code]
+        [To some parts of this code]
 */
 /*
   Copyright (C) 1995-2004 Jean-loup Gailly and Mark Adler
@@ -55,7 +55,7 @@
   jloup@gzip.org          madler@alumni.caltech.edu
 */
 /*
-	[To some parts of this code]
+        [To some parts of this code]
 */
 /*
  Copyright (c) 2003, Dominik Reichl <dominik.reichl@t-online.de>

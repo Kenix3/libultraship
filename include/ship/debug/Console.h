@@ -30,18 +30,18 @@ enum class ArgumentType { TEXT, NUMBER };
  * @brief Metadata for a single positional argument of a console command.
  */
 struct CommandArgument {
-    std::string Info;                        ///< Human-readable description of the argument.
+    std::string Info;                         ///< Human-readable description of the argument.
     ArgumentType Type = ArgumentType::NUMBER; ///< Expected value type (text or numeric).
-    bool Optional = false;                   ///< If true, the argument may be omitted.
+    bool Optional = false;                    ///< If true, the argument may be omitted.
 };
 
 /**
  * @brief Registration record for a single console command.
  */
 struct CommandEntry {
-    CommandHandler Handler;                  ///< Callable invoked when the command is executed.
-    std::string Description;                 ///< Short description shown by the "help" command.
-    std::vector<CommandArgument> Arguments;  ///< Ordered list of expected arguments.
+    CommandHandler Handler;                 ///< Callable invoked when the command is executed.
+    std::string Description;                ///< Short description shown by the "help" command.
+    std::vector<CommandArgument> Arguments; ///< Ordered list of expected arguments.
 };
 
 /**

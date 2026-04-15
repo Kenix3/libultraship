@@ -150,7 +150,8 @@ class Controller : public ControlDevice {
     bool HasMappingsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType);
 
   protected:
-    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>> mButtons; ///< Button subsystems keyed by bitmask.
+    std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>>
+        mButtons; ///< Button subsystems keyed by bitmask.
 
   private:
     void LoadButtonMappingFromConfig(std::string id);

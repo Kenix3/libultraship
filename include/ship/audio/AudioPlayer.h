@@ -12,10 +12,11 @@ namespace Ship {
  * @brief Configuration parameters shared by all AudioPlayer backends.
  */
 struct AudioSettings {
-    int32_t SampleRate = 44100;                                  ///< Output sample rate in Hz.
-    int32_t SampleLength = 1024;                                 ///< Number of samples per audio frame.
-    int32_t DesiredBuffered = 2480;                              ///< Target number of frames to keep buffered.
-    AudioChannelsSetting ChannelSetting = AudioChannelsSetting::audioStereo; ///< Channel mode (stereo / 5.1 matrix / 5.1 raw).
+    int32_t SampleRate = 44100;     ///< Output sample rate in Hz.
+    int32_t SampleLength = 1024;    ///< Number of samples per audio frame.
+    int32_t DesiredBuffered = 2480; ///< Target number of frames to keep buffered.
+    AudioChannelsSetting ChannelSetting =
+        AudioChannelsSetting::audioStereo; ///< Channel mode (stereo / 5.1 matrix / 5.1 raw).
 };
 
 /**
@@ -145,7 +146,8 @@ class AudioPlayer {
     virtual void DoPlay(const uint8_t* buf, size_t len) = 0;
 
   private:
-    std::unique_ptr<SoundMatrixDecoder> mSoundMatrixDecoder; ///< Stereo-to-surround decoder (active in matrix-5.1 mode).
+    std::unique_ptr<SoundMatrixDecoder>
+        mSoundMatrixDecoder; ///< Stereo-to-surround decoder (active in matrix-5.1 mode).
 
     AudioSettings mAudioSettings;
     bool mInitialized = false;

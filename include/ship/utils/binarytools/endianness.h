@@ -14,7 +14,7 @@ enum class Endianness {
     Big = 1,    ///< Most-significant byte stored first.
 
 #if (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)) || defined(__BIG_ENDIAN__)
-    Native = Big,    ///< Platform is big-endian; Native resolves to Big.
+    Native = Big, ///< Platform is big-endian; Native resolves to Big.
 #else
     Native = Little, ///< Platform is little-endian; Native resolves to Little.
 #endif

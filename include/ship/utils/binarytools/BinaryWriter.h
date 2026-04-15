@@ -137,7 +137,7 @@ class BinaryWriter {
     std::vector<char> ToVector();
 
   protected:
-    std::shared_ptr<Stream> mStream;              ///< Underlying byte stream.
-    Endianness mEndianness = Endianness::Native;   ///< Active byte order for multi-byte writes.
+    std::shared_ptr<Stream> mStream;             ///< Underlying byte stream.
+    Endianness mEndianness = Endianness::Native; ///< Active byte order for multi-byte writes.
 };
 } // namespace Ship
