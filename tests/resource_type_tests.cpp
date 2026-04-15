@@ -42,7 +42,7 @@ static std::shared_ptr<Ship::ResourceInitData> MakeXmlInitData() {
 
 // Build a File that already has a BinaryReader pointing at the given bytes
 static std::shared_ptr<Ship::File> MakeBinaryFile(const std::vector<char>& body,
-                                                   std::shared_ptr<Ship::ResourceInitData> initData) {
+                                                  std::shared_ptr<Ship::ResourceInitData> initData) {
     auto file = std::make_shared<Ship::File>();
     file->Buffer = std::make_shared<std::vector<char>>(body);
     file->IsLoaded = true;
@@ -397,12 +397,12 @@ TEST(ResourceLoader, RegisterConflictingTypeNameRejected) {
 TEST(ResourceLoader, RegisterMultipleVersionsOfSameTypePossible) {
     Ship::ResourceLoader loader;
     // Register Blob at two different versions
-    bool ok0 = loader.RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(),
-                                              RESOURCE_FORMAT_BINARY, "Blob",
-                                              static_cast<uint32_t>(Ship::ResourceType::Blob), 0);
-    bool ok1 = loader.RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(),
-                                              RESOURCE_FORMAT_BINARY, "Blob",
-                                              static_cast<uint32_t>(Ship::ResourceType::Blob), 1);
+    bool ok0 =
+        loader.RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(), RESOURCE_FORMAT_BINARY,
+                                       "Blob", static_cast<uint32_t>(Ship::ResourceType::Blob), 0);
+    bool ok1 =
+        loader.RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(), RESOURCE_FORMAT_BINARY,
+                                       "Blob", static_cast<uint32_t>(Ship::ResourceType::Blob), 1);
     EXPECT_TRUE(ok0);
     EXPECT_TRUE(ok1);
 }

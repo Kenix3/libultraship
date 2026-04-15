@@ -19,7 +19,8 @@ class TestArchive final : public Ship::Archive {
     explicit TestArchive(const std::string& path = "ram://arch",
                          const std::unordered_map<std::string, std::string>& files = {},
                          const std::string& manifest = R"({"name":"TestArchive","code_version":1})")
-        : Ship::Archive(path), mFiles(files), mManifest(manifest) {}
+        : Ship::Archive(path), mFiles(files), mManifest(manifest) {
+    }
 
     bool Open() override {
         for (const auto& [path, _] : mFiles) {
@@ -152,10 +153,10 @@ TEST(Archive, HasFileReturnsFalseBeforeLoad) {
 
 TEST(Archive, ListFilesNoFilterReturnsAll) {
     TestArchive arch("ram://arch", {
-        { "a/x.bin", "1" },
-        { "a/y.bin", "2" },
-        { "b/z.bin", "3" },
-    });
+                                       { "a/x.bin", "1" },
+                                       { "a/y.bin", "2" },
+                                       { "b/z.bin", "3" },
+                                   });
     arch.Load();
     auto list = arch.ListFiles();
     ASSERT_NE(list, nullptr);
@@ -164,10 +165,10 @@ TEST(Archive, ListFilesNoFilterReturnsAll) {
 
 TEST(Archive, ListFilesWithGlobFilter) {
     TestArchive arch("ram://arch", {
-        { "textures/hero.bin", "a" },
-        { "textures/villain.bin", "b" },
-        { "audio/bgm.bin", "c" },
-    });
+                                       { "textures/hero.bin", "a" },
+                                       { "textures/villain.bin", "b" },
+                                       { "audio/bgm.bin", "c" },
+                                   });
     arch.Load();
 
     auto list = arch.ListFiles("textures/*");

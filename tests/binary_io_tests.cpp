@@ -359,8 +359,7 @@ TEST(MemoryStreamCtor, SharedVectorConstructor) {
 
 TEST(MemoryStreamCtor, SharedVectorWithOffsetConstructor) {
     // First byte is padding at index 0; reader starts at offset 1
-    auto vec = std::make_shared<std::vector<char>>(
-        std::initializer_list<char>{ 0x00, 0x0A, 0x0B, 0x0C });
+    auto vec = std::make_shared<std::vector<char>>(std::initializer_list<char>{ 0x00, 0x0A, 0x0B, 0x0C });
     auto stream = std::make_shared<Ship::MemoryStream>(vec, 1);
     Ship::BinaryReader reader(stream);
     EXPECT_EQ(reader.ReadInt8(), static_cast<int8_t>(0x0A));

@@ -25,7 +25,8 @@ class TestRamArchive final : public Ship::Archive {
     explicit TestRamArchive(const std::string& path = "ram://test",
                             const std::unordered_map<std::string, std::string>& files = {},
                             const std::string& manifest = R"({"name":"TestArchive","code_version":1})")
-        : Ship::Archive(path), mTestFiles(files), mManifestJson(manifest) {}
+        : Ship::Archive(path), mTestFiles(files), mManifestJson(manifest) {
+    }
 
     bool Open() override {
         for (const auto& [path, _] : mTestFiles) {
@@ -209,10 +210,10 @@ TEST(ArchiveManager, LoadFileEmptyPathReturnsNull) {
 
 TEST(ArchiveManager, ListFilesAllReturnsAll) {
     auto archive = LoadedArchive("ram://test", {
-        { "audio/sfx.bin", "a" },
-        { "textures/link.bin", "b" },
-        { "textures/ganon.bin", "c" },
-    });
+                                                   { "audio/sfx.bin", "a" },
+                                                   { "textures/link.bin", "b" },
+                                                   { "textures/ganon.bin", "c" },
+                                               });
     Ship::ArchiveManager am;
     am.AddArchive(archive);
 
@@ -222,10 +223,10 @@ TEST(ArchiveManager, ListFilesAllReturnsAll) {
 
 TEST(ArchiveManager, ListFilesWithGlobMask) {
     auto archive = LoadedArchive("ram://test", {
-        { "textures/hero.bin", "a" },
-        { "textures/villain.bin", "b" },
-        { "audio/theme.bin", "c" },
-    });
+                                                   { "textures/hero.bin", "a" },
+                                                   { "textures/villain.bin", "b" },
+                                                   { "audio/theme.bin", "c" },
+                                               });
     Ship::ArchiveManager am;
     am.AddArchive(archive);
 
@@ -238,10 +239,10 @@ TEST(ArchiveManager, ListFilesWithGlobMask) {
 
 TEST(ArchiveManager, ListFilesWithIncludeExclude) {
     auto archive = LoadedArchive("ram://test", {
-        { "textures/hero.bin", "a" },
-        { "textures/villain.bin", "b" },
-        { "audio/theme.bin", "c" },
-    });
+                                                   { "textures/hero.bin", "a" },
+                                                   { "textures/villain.bin", "b" },
+                                                   { "audio/theme.bin", "c" },
+                                               });
     Ship::ArchiveManager am;
     am.AddArchive(archive);
 
@@ -253,9 +254,9 @@ TEST(ArchiveManager, ListFilesWithIncludeExclude) {
 
 TEST(ArchiveManager, ListDirectoriesFindsDirectories) {
     auto archive = LoadedArchive("ram://test", {
-        { "textures/hero.bin", "a" },
-        { "audio/theme.bin", "b" },
-    });
+                                                   { "textures/hero.bin", "a" },
+                                                   { "audio/theme.bin", "b" },
+                                               });
     Ship::ArchiveManager am;
     am.AddArchive(archive);
 
