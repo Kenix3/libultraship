@@ -368,4 +368,4 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcworkspace
 *.xcsettings
 build*
-tcc_c2str-p "your-passphrase"
+tcc_c2str

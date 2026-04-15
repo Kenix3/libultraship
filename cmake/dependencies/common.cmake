@@ -209,6 +209,10 @@ if(NOT TARGET libtcc)
             set_target_properties(tcc_c2str PROPERTIES
                 CODE_SIGNING_ALLOWED NO
                 CODE_SIGNING_REQUIRED NO
+                XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+                XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
             )
         endif()
 
@@ -273,6 +277,10 @@ if(NOT TARGET libtcc)
         set_target_properties(libtcc libtcc1 PROPERTIES
             CODE_SIGNING_ALLOWED NO
             CODE_SIGNING_REQUIRED NO
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
         )
     endif()
 endif()
