@@ -179,7 +179,7 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
         initData->Format = RESOURCE_FORMAT_XML;
     }
 
-    initData->Type = Context::GetInstance()->GetChild<ResourceManager>()->GetResourceLoader()->GetResourceType(parsed["type"]);
+    initData->Type = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
 
     return initData;
@@ -194,11 +194,11 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
 
     if (initData == nullptr) {
         auto metaFilePath = filePath + ".meta";
-        auto metaFileToLoad = Context::GetInstance()->GetChild<ResourceManager>()->LoadFileProcess(metaFilePath);
+        auto metaFileToLoad = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadFileProcess(metaFilePath);
 
         if (metaFileToLoad != nullptr) {
             auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-            fileToLoad = Context::GetInstance()->GetChild<ResourceManager>()->LoadFileProcess(initDataFromMetaFile->Path);
+            fileToLoad = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadFileProcess(initDataFromMetaFile->Path);
             initData = initDataFromMetaFile;
         } else {
             initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
@@ -290,7 +290,7 @@ ResourceLoader::ReadResourceInitDataXml(const std::string& filePath, std::shared
 
     auto root = document->FirstChildElement();
     resourceInitData->Type =
-        Context::GetInstance()->GetChild<ResourceManager>()->GetResourceLoader()->GetResourceType(root->Name());
+        Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
     return resourceInitData;

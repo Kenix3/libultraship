@@ -2,6 +2,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/Context.h"
+#include "ship/log/LoggerComponent.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -138,7 +139,7 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChild<CrashHandler>();
+    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChildren().GetFirst<CrashHandler>();
     char intToCharBuffer[16];
 
     std::array<void*, 4096> arr;
@@ -197,7 +198,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     free(symbols);
     crashHandler->PrintCommon();
 
-    Context::GetInstance()->GetLogger()->flush();
+    Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()->GetLogger()->flush();
     spdlog::shutdown();
     exit(1);
 }
@@ -390,14 +391,14 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         }
     }
     PrintCommon();
-    Context::GetInstance()->GetLogger()->flush();
+    Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()->GetLogger()->flush();
     spdlog::shutdown();
 #endif
 }
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
     char exceptionString[20];
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChild<CrashHandler>();
+    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetChildren().GetFirst<CrashHandler>();
 
     snprintf(exceptionString, std::size(exceptionString), "0x%x", ex->ExceptionRecord->ExceptionCode);
 

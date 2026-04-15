@@ -294,7 +294,7 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
 WindowBackend Config::GetWindowBackend() {
     WindowBackend backend;
     auto backendId = GetInt("Window.Backend.Id", -1);
-    if (Context::GetInstance()->GetChild<Window>()->IsAvailableWindowBackend(backendId)) {
+    if (Context::GetInstance()->GetChildren().GetFirst<Window>()->IsAvailableWindowBackend(backendId)) {
         return static_cast<WindowBackend>(backendId);
     }
 

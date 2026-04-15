@@ -132,7 +132,7 @@ TEST(ComponentTest, RemoveChildrenByName) {
     EXPECT_TRUE(parent->GetChildren().Has(c2));
 }
 
-// ---- GetChild<T>() template tests ----
+// ---- GetChildren().GetFirst<T>() template tests ----
 
 TEST(ComponentTest, GetChildByType) {
     auto parent = std::make_shared<TestComponent>("Parent");
@@ -142,7 +142,7 @@ TEST(ComponentTest, GetChildByType) {
     parent->AddChild(derived);
     parent->AddChild(another);
 
-    auto found = parent->GetChild<DerivedComponent>();
+    auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     ASSERT_NE(found, nullptr);
     EXPECT_EQ(found->GetName(), "Derived");
     EXPECT_EQ(found->value, 42);
@@ -156,7 +156,7 @@ TEST(ComponentTest, GetChildByTypeReturnsFirstMatch) {
     parent->AddChild(d1);
     parent->AddChild(d2);
 
-    auto found = parent->GetChild<DerivedComponent>();
+    auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     ASSERT_NE(found, nullptr);
     EXPECT_EQ(found->GetName(), "First");
 }
@@ -165,13 +165,13 @@ TEST(ComponentTest, GetChildByTypeNotFound) {
     auto parent = std::make_shared<TestComponent>("Parent");
     parent->AddChild(std::make_shared<TestComponent>("Child"));
 
-    auto found = parent->GetChild<DerivedComponent>();
+    auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     EXPECT_EQ(found, nullptr);
 }
 
 TEST(ComponentTest, GetChildByTypeFromEmpty) {
     auto parent = std::make_shared<TestComponent>("Parent");
-    auto found = parent->GetChild<DerivedComponent>();
+    auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     EXPECT_EQ(found, nullptr);
 }
 
@@ -212,10 +212,10 @@ TEST(ComponentTest, DeepHierarchy) {
     mid->AddChild(leaf);
 
     // Can traverse the hierarchy
-    auto midFound = root->GetChild<TestComponent>();
+    auto midFound = root->GetChildren().GetFirst<TestComponent>();
     ASSERT_NE(midFound, nullptr);
 
-    auto leafFound = mid->GetChild<DerivedComponent>();
+    auto leafFound = mid->GetChildren().GetFirst<DerivedComponent>();
     ASSERT_NE(leafFound, nullptr);
     EXPECT_EQ(leafFound->GetName(), "Leaf");
 }

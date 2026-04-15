@@ -67,7 +67,7 @@ uint8_t Controller::GetPortIndex() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    return Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->GetInteger(hasConfigCvarKey.c_str(), false);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(hasConfigCvarKey.c_str(), false);
 }
 
 void Controller::ClearAllMappings() {
@@ -107,8 +107,8 @@ void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void Controller::ReloadAllMappingsFromConfig() {

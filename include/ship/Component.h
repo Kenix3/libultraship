@@ -34,10 +34,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     PartList<Component>& GetChildren();
     const PartList<Component>& GetChildren() const;
 
-    // Convenience: get the first child of the given type T.
-    // Returns nullptr if no child of that type exists.
-    template <typename T> std::shared_ptr<T> GetChild() const;
-
     bool AddParent(std::shared_ptr<Component> parent, const bool force = false);
     bool AddParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force = false);
 
@@ -84,19 +80,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 };
 
 // ---- Template method implementations (Component is complete here) ----
-
-template <typename T> std::shared_ptr<T> Component::GetChild() const {
-#ifdef COMPONENT_THREAD_SAFE
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-#endif
-    for (const auto& c : mChildren.GetList()) {
-        auto typed = std::dynamic_pointer_cast<T>(c);
-        if (typed) {
-            return typed;
-        }
-    }
-    return nullptr;
-}
 
 template <typename T> bool Component::RemoveParents(const bool force) {
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;

@@ -12,6 +12,8 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
+#include "ship/log/LoggerComponent.h"
+#include "ship/thread/ThreadPoolComponent.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -35,12 +37,12 @@ std::shared_ptr<Context> Context::GetInstance() {
 
 Context::~Context() {
     SPDLOG_TRACE("destruct context");
-    auto window = GetChild<Window>();
+    auto window = GetChildren().GetFirst<Window>();
     if (window) {
         window->SaveWindowToConfig();
     }
 
-    auto config = GetChild<Config>();
+    auto config = GetChildren().GetFirst<Config>();
 
     // Remove children in order to allow explicit teardown before logging shuts down.
     RemoveChildren(true);
@@ -93,14 +95,14 @@ Context::Context(std::string name, std::string shortName, std::string configFile
 bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
                    uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
                    std::shared_ptr<ControlDeck> controlDeck) {
-    return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
+    return InitLogging() && InitConfiguration() && InitConsoleVariables() && InitThreadPool(reservedThreadCount) &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
            InitFileDropMgr();
 }
 
 bool Context::InitLogging() {
-    if (GetLogger() != nullptr) {
+    if (GetChildren().GetFirst<LoggerComponent>() != nullptr) {
         return true;
     }
 
@@ -149,18 +151,22 @@ bool Context::InitLogging() {
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
         sinks.push_back(fileSink);
+
+        std::shared_ptr<spdlog::logger> logger;
 #ifdef _DEBUG
-        mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
-        GetLogger()->flush_on(spdlog::level::trace);
+        logger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
+        logger->flush_on(spdlog::level::trace);
 #else
-        mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
-                                                         spdlog::async_overflow_policy::block);
+        logger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
+                                                        spdlog::async_overflow_policy::block);
 #endif
 
-        GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+        logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 
-        spdlog::register_logger(GetLogger());
-        spdlog::set_default_logger(GetLogger());
+        spdlog::register_logger(logger);
+        spdlog::set_default_logger(logger);
+
+        AddChild(std::make_shared<LoggerComponent>(logger));
         return true;
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
@@ -169,14 +175,14 @@ bool Context::InitLogging() {
 }
 
 bool Context::InitConfiguration() {
-    if (GetChild<Config>() != nullptr) {
+    if (GetChildren().GetFirst<Config>() != nullptr) {
         return true;
     }
 
     auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(mConfigFilePath));
     AddChild(config);
 
-    if (GetChild<Config>() == nullptr) {
+    if (GetChildren().GetFirst<Config>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize config");
         return false;
     }
@@ -185,14 +191,14 @@ bool Context::InitConfiguration() {
 }
 
 bool Context::InitConsoleVariables() {
-    if (GetChild<ConsoleVariable>() != nullptr) {
+    if (GetChildren().GetFirst<ConsoleVariable>() != nullptr) {
         return true;
     }
 
     auto consoleVariables = std::make_shared<ConsoleVariable>();
     AddChild(consoleVariables);
 
-    if (GetChild<ConsoleVariable>() == nullptr) {
+    if (GetChildren().GetFirst<ConsoleVariable>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize console variables");
         return false;
     }
@@ -202,11 +208,11 @@ bool Context::InitConsoleVariables() {
 
 bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
                                   const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
-    if (GetChild<ResourceManager>() != nullptr) {
+    if (GetChildren().GetFirst<ResourceManager>() != nullptr) {
         return true;
     }
 
-    auto config = GetChild<Config>();
+    auto config = GetChildren().GetFirst<Config>();
     mMainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
 
@@ -237,7 +243,7 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
 }
 
 bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
-    if (GetChild<ControlDeck>() != nullptr) {
+    if (GetChildren().GetFirst<ControlDeck>() != nullptr) {
         return true;
     }
 
@@ -251,14 +257,14 @@ bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
 }
 
 bool Context::InitCrashHandler() {
-    if (GetChild<CrashHandler>() != nullptr) {
+    if (GetChildren().GetFirst<CrashHandler>() != nullptr) {
         return true;
     }
 
     auto crashHandler = std::make_shared<CrashHandler>();
     AddChild(crashHandler);
 
-    if (GetChild<CrashHandler>() == nullptr) {
+    if (GetChildren().GetFirst<CrashHandler>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize crash handler");
         return false;
     }
@@ -267,14 +273,14 @@ bool Context::InitCrashHandler() {
 }
 
 bool Context::InitAudio(AudioSettings settings) {
-    if (GetChild<Audio>() != nullptr) {
+    if (GetChildren().GetFirst<Audio>() != nullptr) {
         return true;
     }
 
     auto audio = std::make_shared<Audio>(settings);
     AddChild(audio);
 
-    if (GetChild<Audio>() == nullptr) {
+    if (GetChildren().GetFirst<Audio>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize audio");
         return false;
     }
@@ -284,14 +290,14 @@ bool Context::InitAudio(AudioSettings settings) {
 }
 
 bool Context::InitGfxDebugger() {
-    if (GetChild<Fast::GfxDebugger>() != nullptr) {
+    if (GetChildren().GetFirst<Fast::GfxDebugger>() != nullptr) {
         return true;
     }
 
     auto gfxDebugger = std::make_shared<Fast::GfxDebugger>();
     AddChild(gfxDebugger);
 
-    if (GetChild<Fast::GfxDebugger>() == nullptr) {
+    if (GetChildren().GetFirst<Fast::GfxDebugger>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize gfx debugger");
         return false;
     }
@@ -300,14 +306,14 @@ bool Context::InitGfxDebugger() {
 }
 
 bool Context::InitConsole() {
-    if (GetChild<Console>() != nullptr) {
+    if (GetChildren().GetFirst<Console>() != nullptr) {
         return true;
     }
 
     auto console = std::make_shared<Console>();
     AddChild(console);
 
-    if (GetChild<Console>() == nullptr) {
+    if (GetChildren().GetFirst<Console>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize console");
         return false;
     }
@@ -318,7 +324,7 @@ bool Context::InitConsole() {
 }
 
 bool Context::InitWindow(std::shared_ptr<Window> window) {
-    if (GetChild<Window>() != nullptr) {
+    if (GetChildren().GetFirst<Window>() != nullptr) {
         return true;
     }
 
@@ -334,22 +340,36 @@ bool Context::InitWindow(std::shared_ptr<Window> window) {
 }
 
 bool Context::InitFileDropMgr() {
-    if (GetChild<FileDropMgr>() != nullptr) {
+    if (GetChildren().GetFirst<FileDropMgr>() != nullptr) {
         return true;
     }
 
     auto fileDropMgr = std::make_shared<FileDropMgr>();
     AddChild(fileDropMgr);
 
-    if (GetChild<FileDropMgr>() == nullptr) {
+    if (GetChildren().GetFirst<FileDropMgr>() == nullptr) {
         SPDLOG_ERROR("Failed to initialize file drop manager");
         return false;
     }
     return true;
 }
 
-std::shared_ptr<spdlog::logger> Context::GetLogger() {
-    return mLogger;
+bool Context::InitThreadPool(uint32_t reservedThreadCount) {
+    if (GetChildren().GetFirst<ThreadPoolComponent>() != nullptr) {
+        return true;
+    }
+
+    // the extra `- 1` is because we reserve an extra thread for spdlog
+    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
+    auto threadPool = std::make_shared<ThreadPoolComponent>(threadCount);
+    AddChild(threadPool);
+
+    if (GetChildren().GetFirst<ThreadPoolComponent>() == nullptr) {
+        SPDLOG_ERROR("Failed to initialize thread pool");
+        return false;
+    }
+
+    return true;
 }
 
 std::string Context::GetName() {
@@ -493,153 +513,25 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     return "./" + std::string(path);
 }
 
-// ---- TickableComponent management ----
+// ---- TickableComponent list ----
 
-bool Context::HasTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
-    if (!tickableComponent) {
-        return false;
-    }
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    return std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent) !=
-           mTickableComponents.end();
+PartList<TickableComponent>& Context::GetTickableComponents() {
+    return mTickableComponents;
 }
 
-size_t Context::CountTickableComponent() {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    return mTickableComponents.size();
-}
-
-bool Context::AddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force) {
-    if (!tickableComponent) {
-        return false;
-    }
-    const bool canAdd = CanAddTickableComponent(tickableComponent);
-    if (!canAdd && !force) {
-        return false;
-    }
-    const bool forced = !canAdd && force;
-    {
-        const std::lock_guard<std::mutex> lock(mTickableMutex);
-        if (std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent) !=
-            mTickableComponents.end()) {
-            return true;
-        }
-        mTickableComponents.push_back(tickableComponent);
-        mIsTickableComponentsOrderStale = true;
-    }
-    AddedTickableComponent(tickableComponent, forced);
-    return true;
-}
-
-bool Context::RemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool force) {
-    if (!tickableComponent) {
-        return false;
-    }
-    const bool canRemove = CanRemoveTickableComponent(tickableComponent);
-    if (!canRemove && !force) {
-        return false;
-    }
-    const bool forced = !canRemove && force;
-    {
-        const std::lock_guard<std::mutex> lock(mTickableMutex);
-        auto it = std::find(mTickableComponents.begin(), mTickableComponents.end(), tickableComponent);
-        if (it == mTickableComponents.end()) {
-            return true;
-        }
-        mTickableComponents.erase(it);
-    }
-    RemovedTickableComponent(tickableComponent, forced);
-    return true;
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>> Context::GetTickableComponents() {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    return std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>(mTickableComponents);
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-Context::GetTickableComponents(const std::vector<std::string>& componentNames) {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
-    for (const auto& tc : mTickableComponents) {
-        if (std::find(componentNames.begin(), componentNames.end(), tc->GetName()) != componentNames.end()) {
-            result->push_back(tc);
-        }
-    }
-    return result;
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-Context::GetTickableComponents(const std::string& componentName) {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
-    for (const auto& tc : mTickableComponents) {
-        if (tc->GetName() == componentName) {
-            result->push_back(tc);
-        }
-    }
-    return result;
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-Context::GetTickableComponent(const std::vector<int32_t>& componentIds) {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
-    for (const auto& tc : mTickableComponents) {
-        if (std::find(componentIds.begin(), componentIds.end(), static_cast<int32_t>(tc->GetId())) !=
-            componentIds.end()) {
-            result->push_back(tc);
-        }
-    }
-    return result;
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<TickableComponent>>>
-Context::GetTickableComponent(const int32_t componentId) {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<TickableComponent>>>();
-    for (const auto& tc : mTickableComponents) {
-        if (static_cast<int32_t>(tc->GetId()) == componentId) {
-            result->push_back(tc);
-        }
-    }
-    return result;
-}
-
-Context& Context::SetTickableComponentsOrderStale() {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    mIsTickableComponentsOrderStale = true;
-    return *this;
-}
-
-Context& Context::UnsetTickableComponentsOrderStale() {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    mIsTickableComponentsOrderStale = false;
-    return *this;
+const PartList<TickableComponent>& Context::GetTickableComponents() const {
+    return mTickableComponents;
 }
 
 Context& Context::SortTickableComponents() {
     const std::lock_guard<std::mutex> lock(mTickableMutex);
-    std::stable_sort(mTickableComponents.begin(), mTickableComponents.end(),
+    auto& list = mTickableComponents.GetList();
+    std::stable_sort(list.begin(), list.end(),
                      [](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {
                          return a->GetOrder() < b->GetOrder();
                      });
     mIsTickableComponentsOrderStale = false;
     return *this;
-}
-
-bool Context::CanAddTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
-    return true;
-}
-
-bool Context::CanRemoveTickableComponent(std::shared_ptr<TickableComponent> tickableComponent) {
-    return true;
-}
-
-void Context::AddedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced) {
-}
-
-void Context::RemovedTickableComponent(std::shared_ptr<TickableComponent> tickableComponent, const bool forced) {
 }
 
 } // namespace Ship

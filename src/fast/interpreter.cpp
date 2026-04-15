@@ -2510,7 +2510,7 @@ void Interpreter::Gfxs2dexBgCopy(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2547,7 +2547,7 @@ void Interpreter::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -2765,7 +2765,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3dex2(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(
         (const char*)fileName);
 
     if (mtx != NULL) {
@@ -2779,7 +2779,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(
         (const char*)fileName);
 
     if (mtx != NULL) {
@@ -2803,7 +2803,7 @@ bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
     const int32_t* mtx =
-        (const int32_t*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        (const int32_t*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
 
     if (mtx != NULL) {
         Interpreter* gfx = mInstance.lock().get();
@@ -2822,7 +2822,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
     const int32_t* mtx =
-        (const int32_t*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        (const int32_t*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
     if (mtx != nullptr) {
         cmd--;
         gfx->GfxSpMatrix(C0(16, 8), (const int32_t*)gfx->SegAddr(cmd->words.w1));
@@ -2889,9 +2889,9 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 
     if (ucode_handler_index == ucode_f3dex2) {
         gfx->GfxSpMovememF3dex2(index, offset,
-                                Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash));
+                                Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash));
     } else {
-        auto light = (Fast::LightEntry*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        auto light = (Fast::LightEntry*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
         uintptr_t data = (uintptr_t)&light->Ambient;
         gfx->GfxSpMovememF3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
     }
@@ -2903,7 +2903,7 @@ int16_t Interpreter::CreateShader(const std::string& path) {
     initData->Path = path;
     initData->IsCustom = false;
     initData->ByteOrder = Ship::Endianness::Native;
-    auto shader = Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetArchiveManager()->LoadFile(path);
+    auto shader = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->LoadFile(path);
     if (shader == nullptr || !shader->IsLoaded) {
         return -1;
     }
@@ -3009,7 +3009,7 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
         gfx->GfxSpVertex(C0(12, 8), C0(1, 7) - C0(12, 8), (F3DVtx*)offset);
         (*cmd0)++;
     } else {
-        F3DVtx* vtx = (F3DVtx*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        F3DVtx* vtx = (F3DVtx*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
 
         if (vtx != NULL) {
             vtx = (F3DVtx*)((char*)vtx + offset);
@@ -3037,7 +3037,7 @@ bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
     size_t vtxIdxOff = cmd->words.w1 >> 16;
     size_t vtxDataOff = cmd->words.w1 & 0xFFFF;
     F3DVtx* vtx =
-        (F3DVtx*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer((const char*)fileName);
+        (F3DVtx*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer((const char*)fileName);
     vtx += vtxDataOff;
 
     gfx->GfxSpVertex(vtxCnt, vtxIdxOff, vtx);
@@ -3048,7 +3048,7 @@ bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
     F3DGfx* nDL =
-        (F3DGfx*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer((const char*)fileName);
+        (F3DGfx*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer((const char*)fileName);
 
     if (C0(16, 1) == 0 && nDL != nullptr) {
         g_exec_stack.call(*cmd0, nDL);
@@ -3101,7 +3101,7 @@ bool gfx_dl_otr_hash_handler_custom(F3DGfx** cmd0) {
 
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             g_exec_stack.call(cmd, gfx);
@@ -3159,7 +3159,7 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
         (gfx->mRsp->extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetResourceRawPointer(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             (*cmd0) = gfx;
@@ -3343,7 +3343,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-                Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess(imgData));
+                Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess(imgData));
 
             if (tex == nullptr) {
                 (*cmd0)++;
@@ -3371,7 +3371,7 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     (*cmd0)++;
     uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (uint64_t)(*cmd0)->words.w1;
 
-    const char* fileName = Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetArchiveManager()->HashToCString(hash);
+    const char* fileName = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->HashToCString(hash);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
@@ -3381,8 +3381,8 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     }
 
     std::shared_ptr<Fast::Texture> texture =
-        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess(
-            Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->GetArchiveManager()->HashToCString(hash)));
+        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess(
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->GetArchiveManager()->HashToCString(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3437,7 +3437,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
-        Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess(fileName));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess(fileName));
     if (texture != nullptr) {
         Interpreter* gfx = mInstance.lock().get();
         texFlags = texture->Flags;
@@ -4117,7 +4117,7 @@ static void gfx_step() {
 
 #ifdef USE_GBI_TRACE
     if (cmd->words.trace.valid &&
-        Ship::Context::GetInstance()->GetChild<Ship::ConsoleVariable>()->GetInteger("gEnableGFXTrace", 0)) {
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger("gEnableGFXTrace", 0)) {
 #define TRACE                                  \
     "\n====================================\n" \
     " - CMD: {:02X}\n"                         \
@@ -4186,8 +4186,8 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mRapi->Init();
     mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
     mCurDimensions.internal_mul =
-        Ship::Context::GetInstance()->GetChild<Ship::ConsoleVariable>()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-    mMsaaLevel = Ship::Context::GetInstance()->GetChild<Ship::ConsoleVariable>()->GetInteger(CVAR_MSAA_VALUE, 1);
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
+    mMsaaLevel = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
     mCurDimensions.height = height;
@@ -4358,7 +4358,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mRenderingState.viewport = {};
     mRenderingState.scissor = {};
 
-    auto dbg = Ship::Context::GetInstance()->GetChild<Fast::GfxDebugger>();
+    auto dbg = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
     g_exec_stack.start((F3DGfx*)commands);
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
@@ -4544,7 +4544,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 
     if (i != 0) {
-        return Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->OtrSignatureCheck(imgData);
+        return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->OtrSignatureCheck(imgData);
     }
 
     return 0;
@@ -4557,7 +4557,7 @@ void Interpreter::RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         Fast::Texture* tex = std::static_pointer_cast<Fast::Texture>(
-                                 Ship::Context::GetInstance()->GetChild<Ship::ResourceManager>()->LoadResourceProcess(
+                                 Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResourceProcess(
                                      reinterpret_cast<char*>(replacement)))
                                  .get();
 

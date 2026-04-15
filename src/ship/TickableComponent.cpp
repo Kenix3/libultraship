@@ -47,13 +47,14 @@ void TickableComponent::RegisterWithContext() {
     }
 
     if (GetContext() != nullptr) {
-        GetContext()->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        GetContext()->GetTickableComponents().Add(
+            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
 }
 
 void TickableComponent::UnregisterFromContext() {
     if (GetContext() != nullptr) {
-        GetContext()->RemoveTickableComponent(
+        GetContext()->GetTickableComponents().Remove(
             std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
 }
@@ -76,30 +77,24 @@ uint64_t TickableComponent::GetOrder() const {
 
 TickableComponent& TickableComponent::SetTickGroup(const TickGroup tickGroup) {
     mTickGroup = tickGroup;
-    const auto& context = GetContext();
-    if (context != nullptr) {
-        context->SetTickableComponentsOrderStale();
-    }
     return *this;
 }
 
 TickableComponent& TickableComponent::SetTickPriority(const TickPriority tickPriority) {
     mTickPriority = tickPriority;
-    const auto& context = GetContext();
-    if (context != nullptr) {
-        context->SetTickableComponentsOrderStale();
-    }
     return *this;
 }
 
 TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> context) {
     const auto& oldContext = GetContext();
     if (oldContext != nullptr) {
-        oldContext->RemoveTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        oldContext->GetTickableComponents().Remove(
+            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
     mContext = context;
     if (context != nullptr) {
-        context->AddTickableComponent(std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        context->GetTickableComponents().Add(
+            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
     }
     return *this;
 }

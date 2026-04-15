@@ -46,6 +46,9 @@ template <typename C = Part> class PartList : public Part {
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Get() const;
     std::shared_ptr<std::vector<std::shared_ptr<C>>> Get(const std::vector<uint64_t>& ids) const;
 
+    // Returns the first item in the list that can be dynamic_cast to T, or nullptr.
+    template <typename T> std::shared_ptr<T> GetFirst() const;
+
     ListReturnCode Add(std::shared_ptr<C> part);
     ListReturnCode Add(const std::vector<std::shared_ptr<C>>& parts);
     ListReturnCode Remove(std::shared_ptr<C> part);
@@ -134,6 +137,16 @@ template <typename C> template <typename T> std::shared_ptr<std::vector<std::sha
         }
     }
     return result;
+}
+
+template <typename C> template <typename T> std::shared_ptr<T> PartList<C>::GetFirst() const {
+    for (const auto& item : mList) {
+        auto typed = std::dynamic_pointer_cast<T>(item);
+        if (typed) {
+            return typed;
+        }
+    }
+    return nullptr;
 }
 
 template <typename C>

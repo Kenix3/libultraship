@@ -24,7 +24,7 @@ ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
-    return Ship::Context::GetInstance()->GetChild<ControlDeck>()->GetButtonNameForBitmask(bitmask);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GetButtonNameForBitmask(bitmask);
 }
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {
@@ -80,13 +80,13 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(buttonMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(buttonMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetString(buttonMappingIdsCvarKey.c_str(),
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(buttonMappingIdsCvarKey.c_str(),
                                                                        buttonMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerButton::ReloadAllMappingsFromConfig() {
@@ -101,7 +101,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     std::stringstream buttonMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
         LoadButtonMappingFromConfig(buttonMappingIdString);
@@ -154,8 +154,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
     }
 
-    else if (!Context::GetInstance()->GetChild<Window>()->GetGui()->IsMouseOverAnyGuiItem() &&
-             Context::GetInstance()->GetChild<Window>()->GetGui()->IsMouseOverActivePopup()) {
+    else if (!Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverAnyGuiItem() &&
+             Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
         } else {
@@ -184,8 +184,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     SaveButtonMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
     return true;
 }
 

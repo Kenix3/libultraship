@@ -40,7 +40,7 @@ void Archive::Load() {
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
         isGameVersionValid =
-            Context::GetInstance()->GetChild<ResourceManager>()->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
+            Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
 
         if (!isGameVersionValid) {
             SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(), GetGameVersion());
@@ -117,7 +117,7 @@ void Archive::IndexFile(const std::string& filePath) {
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChild<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

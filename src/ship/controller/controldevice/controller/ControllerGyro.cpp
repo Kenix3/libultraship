@@ -34,8 +34,8 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SaveGyroMappingIdToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
     return true;
 }
 
@@ -52,13 +52,13 @@ void ControllerGyro::SaveGyroMappingIdToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
-        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->ClearVariable(gyroMappingIdCvarKey.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(gyroMappingIdCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->SetString(gyroMappingIdCvarKey.c_str(),
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(gyroMappingIdCvarKey.c_str(),
                                                                        mGyroMapping->GetGyroMappingId().c_str());
     }
 
-    Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerGyro::ClearGyroMapping() {
@@ -75,7 +75,7 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
-    std::string id = Ship::Context::GetInstance()->GetChild<ConsoleVariable>()->GetString(gyroMappingIdCvarKey.c_str(), "");
+    std::string id = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {
         mGyroMapping = nullptr;
         return;

@@ -15,7 +15,7 @@ namespace Ship {
 Window::Window(std::shared_ptr<Gui> gui) : Component("Window") {
     mGui = gui;
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
-    mConfig = Context::GetInstance()->GetChild<Config>();
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
 }
 
 Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Window(std::make_shared<Gui>(guiWindows)) {
@@ -117,8 +117,8 @@ void Window::SetMouseCaptureScancode(int32_t scancode) {
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetChild<Config>()->SetWindowBackend(GetWindowBackend());
-    Context::GetInstance()->GetChild<Config>()->Save();
+    Context::GetInstance()->GetChildren().GetFirst<Config>()->SetWindowBackend(GetWindowBackend());
+    Context::GetInstance()->GetChildren().GetFirst<Config>()->Save();
 }
 
 void Window::AddAvailableWindowBackend(WindowBackend backend) {

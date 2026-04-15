@@ -172,7 +172,7 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetChild<Config>();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
     auto var = Get(name);
     if (var != nullptr) {
         bool color = var->Type == ConsoleVariableType::Color || var->Type == ConsoleVariableType::Color24;
@@ -202,7 +202,7 @@ void ConsoleVariable::ClearVariable(const char* name) {
 }
 
 void ConsoleVariable::ClearBlock(const char* name) {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetChild<Config>();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
     conf->EraseBlock(StringHelper::Sprintf("CVars.%s", name));
     Load();
 }
@@ -241,7 +241,7 @@ void ConsoleVariable::CopyVariable(const char* from, const char* to) {
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetChild<Config>();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
 
     for (const auto& variable : mVariables) {
         const std::string key = StringHelper::Sprintf("CVars.%s", variable.first.c_str());
@@ -277,7 +277,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetChild<Config>();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
     conf->Reload();
     if (!mVariables.empty()) {
         mVariables.clear();
