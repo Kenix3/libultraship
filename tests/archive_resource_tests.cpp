@@ -11,6 +11,7 @@
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/resource/type/Blob.h"
 #include "ship/utils/StrHash64.h"
 
 // ============================================================
@@ -581,4 +582,169 @@ TEST(ResourceManager, GetCachedResourceByIdentifierReturnNullForUncached) {
 
     Ship::ResourceIdentifier id("not/cached", 0, nullptr);
     EXPECT_EQ(rm.GetCachedResource(id), nullptr);
+}
+
+// ============================================================
+// ResourceManager — OtrSignatureCheck
+// ============================================================
+
+TEST(ResourceManager, OtrSignatureCheckDetectsPrefix) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    EXPECT_TRUE(rm.OtrSignatureCheck("__OTR__path/to/file"));
+    EXPECT_TRUE(rm.OtrSignatureCheck("__OTR__"));
+    EXPECT_FALSE(rm.OtrSignatureCheck("path/to/file"));
+    EXPECT_FALSE(rm.OtrSignatureCheck(""));
+    EXPECT_FALSE(rm.OtrSignatureCheck("__OTR")); // prefix too short
+    EXPECT_FALSE(rm.OtrSignatureCheck("_OTR__path"));
+}
+
+// ============================================================
+// ResourceManager — GetResourceSize(shared_ptr)
+// ============================================================
+
+TEST(ResourceManager, GetResourceSizeNullReturnsZero) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+    // Use explicit typed nullptr to avoid ambiguity with the const char* overload
+    std::shared_ptr<Ship::IResource> nullRes;
+    EXPECT_EQ(rm.GetResourceSize(nullRes), 0u);
+}
+
+TEST(ResourceManager, GetResourceSizeBlobWithData) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto blob = std::make_shared<Ship::Blob>();
+    blob->Data = { 1, 2, 3, 4, 5 };
+    EXPECT_EQ(rm.GetResourceSize(blob), 5u);
+}
+
+TEST(ResourceManager, GetResourceSizeBlobEmpty) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto blob = std::make_shared<Ship::Blob>();
+    EXPECT_EQ(rm.GetResourceSize(blob), 0u);
+}
+
+// ============================================================
+// ResourceManager — GetResourceIsCustom(shared_ptr)
+// ============================================================
+
+TEST(ResourceManager, GetResourceIsCustomNullReturnsFalse) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+    std::shared_ptr<Ship::IResource> nullRes;
+    EXPECT_FALSE(rm.GetResourceIsCustom(nullRes));
+}
+
+TEST(ResourceManager, GetResourceIsCustomFalseWhenNotCustom) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto initData = std::make_shared<Ship::ResourceInitData>();
+    initData->IsCustom = false;
+    auto blob = std::make_shared<Ship::Blob>(initData);
+    EXPECT_FALSE(rm.GetResourceIsCustom(blob));
+}
+
+TEST(ResourceManager, GetResourceIsCustomTrueWhenCustom) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto initData = std::make_shared<Ship::ResourceInitData>();
+    initData->IsCustom = true;
+    auto blob = std::make_shared<Ship::Blob>(initData);
+    EXPECT_TRUE(rm.GetResourceIsCustom(blob));
+}
+
+// ============================================================
+// ResourceManager — GetResourceRawPointer(shared_ptr)
+// ============================================================
+
+TEST(ResourceManager, GetResourceRawPointerNullReturnsNull) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+    std::shared_ptr<Ship::IResource> nullRes;
+    EXPECT_EQ(rm.GetResourceRawPointer(nullRes), nullptr);
+}
+
+TEST(ResourceManager, GetResourceRawPointerBlobReturnsDataPtr) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto blob = std::make_shared<Ship::Blob>();
+    blob->Data = { 0xAB, 0xCD };
+    void* ptr = rm.GetResourceRawPointer(blob);
+    EXPECT_EQ(ptr, blob->Data.data());
+}
+
+// ============================================================
+// ResourceManager — WriteResource
+// ============================================================
+
+TEST(ResourceManager, WriteResourceWithNoArchiveReturnsFalse) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    // No archive registered, no Parent in identifier
+    Ship::ResourceIdentifier id("file.bin", 0, nullptr);
+    std::vector<uint8_t> data = { 1, 2, 3 };
+    EXPECT_FALSE(rm.WriteResource(id, data, false));
+}
+
+TEST(ResourceManager, WriteResourceWithParentArchiveSucceeds) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+
+    auto archive = LoadedArchive("ram://test", { { "existing.bin", "old" } });
+    rm.GetArchiveManager()->AddArchive(archive);
+
+    Ship::ResourceIdentifier id("new.bin", 0, archive);
+    std::vector<uint8_t> data = { 0xCA, 0xFE };
+    EXPECT_TRUE(rm.WriteResource(id, data, false));
+    // The file should now exist in the archive manager
+    EXPECT_TRUE(rm.GetArchiveManager()->HasFile("new.bin"));
+}
+
+// ============================================================
+// ResourceManager — UnloadResource
+// ============================================================
+
+TEST(ResourceManager, UnloadResourceNotCachedIsNoOp) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+    // Unloading a path that was never cached should not crash
+    EXPECT_NO_THROW(rm.UnloadResource("path/that/was/never/loaded"));
+}
+
+TEST(ResourceManager, UnloadResourceByIdentifierIsNoOp) {
+    Ship::ResourceManager rm;
+    rm.Init({}, {});
+    Ship::ResourceIdentifier id("never/loaded", 0, nullptr);
+    EXPECT_NO_THROW(rm.UnloadResource(id));
+}
+
+// ============================================================
+// ResourceFilter — construction
+// ============================================================
+
+TEST(ResourceFilter, ConstructionStoresAllFields) {
+    auto archive = LoadedArchive("ram://test", {});
+    Ship::ResourceFilter filter({ "textures/*" }, { "*.tmp" }, 42, archive);
+
+    ASSERT_EQ(filter.IncludeMasks.size(), 1u);
+    EXPECT_EQ(filter.IncludeMasks.front(), "textures/*");
+    ASSERT_EQ(filter.ExcludeMasks.size(), 1u);
+    EXPECT_EQ(filter.ExcludeMasks.front(), "*.tmp");
+    EXPECT_EQ(filter.Owner, 42u);
+    EXPECT_EQ(filter.Parent, archive);
+}
+
+TEST(ResourceFilter, DefaultNullParentAndZeroOwner) {
+    Ship::ResourceFilter filter({}, {}, 0, nullptr);
+    EXPECT_EQ(filter.Owner, 0u);
+    EXPECT_EQ(filter.Parent, nullptr);
 }

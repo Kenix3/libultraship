@@ -23,7 +23,7 @@ size_t HashCombine(size_t lhs, size_t rhs) {
 }
 } // namespace Math
 
-std::vector<std::string> splitText(const std::string text, char separator = ' ', bool keepQuotes = false) {
+std::vector<std::string> splitText(const std::string& text, char separator, bool keepQuotes) {
     std::vector<std::string> args;
     char* input = strdup(text.c_str());
     const size_t length = strlen(input);
