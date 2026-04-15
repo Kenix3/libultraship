@@ -36,7 +36,7 @@ uint32_t Ship::BinaryReader::GetBaseAddress() {
 }
 
 void Ship::BinaryReader::Read(int32_t length) {
-    mStream->Read(length);
+    mStream->Seek(length, SeekOffsetType::Current);
 }
 
 void Ship::BinaryReader::Read(char* buffer, int32_t length) {
