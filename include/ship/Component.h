@@ -3,8 +3,11 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <shared_mutex>
 #include <algorithm>
+
+#ifdef INCLUDE_PROFILING
+#include <shared_mutex>
+#endif
 
 #include "ship/Part.h"
 #include "ship/PartList.h"
@@ -20,7 +23,9 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     std::string ToString() const;
     explicit operator std::string() const;
 
+#ifdef INCLUDE_PROFILING
     std::shared_mutex& GetMutex();
+#endif
 
     // ---- Parent/child relationship management ----
     bool HasParent(std::shared_ptr<Component> parent) const;
@@ -31,19 +36,11 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     bool HasChild(const std::string& name) const;
     template <typename T> bool HasChild(const std::string& name) const;
 
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>> GetParents() const;
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>> GetParents(const std::string& name) const;
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-    GetParents(const std::vector<std::string>& names) const;
-    template <typename T>
-    std::shared_ptr<std::vector<std::shared_ptr<T>>> GetParents(const std::string& name) const;
+    PartList<Component>& GetParents();
+    const PartList<Component>& GetParents() const;
 
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>> GetChildren() const;
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>> GetChildren(const std::string& name) const;
-    std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-    GetChildren(const std::vector<std::string>& names) const;
-    template <typename T>
-    std::shared_ptr<std::vector<std::shared_ptr<T>>> GetChildren(const std::string& name) const;
+    PartList<Component>& GetChildren();
+    const PartList<Component>& GetChildren() const;
 
     bool AddParent(std::shared_ptr<Component> parent, const bool force = false);
     bool AddParents(const std::vector<std::shared_ptr<Component>>& parents, const bool force = false);
@@ -85,14 +82,18 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     std::string mName;
     PartList<Component> mParents;
     PartList<Component> mChildren;
+#ifdef INCLUDE_PROFILING
     mutable std::shared_mutex mMutex;
+#endif
 };
 
 // ---- Template method implementations (Component is complete here) ----
 
 template <typename T>
 bool Component::HasParent(const std::string& name) const {
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     const auto& list = mParents.GetList();
     return std::find_if(list.begin(), list.end(),
                [&name](const std::shared_ptr<Component>& c) {
@@ -102,7 +103,9 @@ bool Component::HasParent(const std::string& name) const {
 
 template <typename T>
 bool Component::HasChild(const std::string& name) const {
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     const auto& list = mChildren.GetList();
     return std::find_if(list.begin(), list.end(),
                [&name](const std::shared_ptr<Component>& c) {
@@ -111,36 +114,14 @@ bool Component::HasChild(const std::string& name) const {
 }
 
 template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<T>>>
-Component::GetParents(const std::string& name) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
-    for (const auto& c : mParents.GetList()) {
-        auto typed = std::dynamic_pointer_cast<T>(c);
-        if (typed && c->GetName() == name) {
-            result->push_back(typed);
-        }
-    }
-    return result;
-}
-
-template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<T>>>
-Component::GetChildren(const std::string& name) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
-    for (const auto& c : mChildren.GetList()) {
-        auto typed = std::dynamic_pointer_cast<T>(c);
-        if (typed && c->GetName() == name) {
-            result->push_back(typed);
-        }
-    }
-    return result;
-}
-
-template <typename T>
 bool Component::RemoveParents(const bool force) {
-    auto snapshot = GetParents();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
         if (std::dynamic_pointer_cast<T>(p)) {
@@ -152,7 +133,13 @@ bool Component::RemoveParents(const bool force) {
 
 template <typename T>
 bool Component::RemoveParents(const std::string& name, const bool force) {
-    auto snapshot = GetParents();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
         if (p->GetName() == name && std::dynamic_pointer_cast<T>(p)) {
@@ -164,7 +151,13 @@ bool Component::RemoveParents(const std::string& name, const bool force) {
 
 template <typename T>
 bool Component::RemoveChildren(const bool force) {
-    auto snapshot = GetChildren();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
         if (std::dynamic_pointer_cast<T>(c)) {
@@ -176,7 +169,13 @@ bool Component::RemoveChildren(const bool force) {
 
 template <typename T>
 bool Component::RemoveChildren(const std::string& name, const bool force) {
-    auto snapshot = GetChildren();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
         if (c->GetName() == name && std::dynamic_pointer_cast<T>(c)) {

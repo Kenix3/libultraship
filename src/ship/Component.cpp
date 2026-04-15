@@ -1,14 +1,21 @@
 #include "ship/Component.h"
 
+#ifdef INCLUDE_PROFILING
 #include <shared_mutex>
 #include <mutex>
+#endif
+
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
 namespace Ship {
 
 Component::Component(const std::string& name)
-    : Part(), mName(name), mParents(), mChildren(), mMutex() {
+    : Part(), mName(name), mParents(), mChildren()
+#ifdef INCLUDE_PROFILING
+      , mMutex()
+#endif
+{
     SPDLOG_INFO("Constructing component {}", ToString());
 }
 
@@ -28,9 +35,11 @@ Component::operator std::string() const {
     return ToString();
 }
 
+#ifdef INCLUDE_PROFILING
 std::shared_mutex& Component::GetMutex() {
     return mMutex;
 }
+#endif
 
 // ---- Has ----
 
@@ -38,12 +47,16 @@ bool Component::HasParent(std::shared_ptr<Component> parent) const {
     if (!parent) {
         return false;
     }
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     return mParents.Has(parent);
 }
 
 bool Component::HasParent(const std::string& name) const {
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     const auto& list = mParents.GetList();
     return std::find_if(list.begin(), list.end(),
                [&name](const std::shared_ptr<Component>& c) {
@@ -55,12 +68,16 @@ bool Component::HasChild(std::shared_ptr<Component> child) const {
     if (!child) {
         return false;
     }
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     return mChildren.Has(child);
 }
 
 bool Component::HasChild(const std::string& name) const {
+#ifdef INCLUDE_PROFILING
     const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
     const auto& list = mChildren.GetList();
     return std::find_if(list.begin(), list.end(),
                [&name](const std::shared_ptr<Component>& c) {
@@ -70,62 +87,20 @@ bool Component::HasChild(const std::string& name) const {
 
 // ---- Get ----
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetParents() const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    return mParents.Get();
+PartList<Component>& Component::GetParents() {
+    return mParents;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetParents(const std::string& name) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : mParents.GetList()) {
-        if (c->GetName() == name) {
-            result->push_back(c);
-        }
-    }
-    return result;
+const PartList<Component>& Component::GetParents() const {
+    return mParents;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetParents(const std::vector<std::string>& names) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : mParents.GetList()) {
-        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
-            result->push_back(c);
-        }
-    }
-    return result;
+PartList<Component>& Component::GetChildren() {
+    return mChildren;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> Component::GetChildren() const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    return mChildren.Get();
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetChildren(const std::string& name) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : mChildren.GetList()) {
-        if (c->GetName() == name) {
-            result->push_back(c);
-        }
-    }
-    return result;
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-Component::GetChildren(const std::vector<std::string>& names) const {
-    const std::shared_lock<std::shared_mutex> lock(mMutex);
-    auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : mChildren.GetList()) {
-        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
-            result->push_back(c);
-        }
-    }
-    return result;
+const PartList<Component>& Component::GetChildren() const {
+    return mChildren;
 }
 
 // ---- Add ----
@@ -139,7 +114,9 @@ bool Component::AddParent(std::shared_ptr<Component> parent, const bool force) {
     const bool canAddChild = parent->CanAddChild(self);
     const bool forced = (!canAddParent || !canAddChild) && force;
     {
+#ifdef INCLUDE_PROFILING
         const std::unique_lock<std::shared_mutex> lock(mMutex);
+#endif
         if (mParents.Has(parent)) {
             return true;
         }
@@ -173,7 +150,9 @@ bool Component::AddChild(std::shared_ptr<Component> child, const bool force) {
     const bool canAddParent = child->CanAddParent(self);
     const bool forced = (!canAddChild || !canAddParent) && force;
     {
+#ifdef INCLUDE_PROFILING
         const std::unique_lock<std::shared_mutex> lock(mMutex);
+#endif
         if (mChildren.Has(child)) {
             return true;
         }
@@ -209,7 +188,9 @@ bool Component::RemoveParent(std::shared_ptr<Component> parent, const bool force
     const bool canRemoveChild = parent->CanRemoveChild(self);
     const bool forced = (!canRemoveParent || !canRemoveChild) && force;
     {
+#ifdef INCLUDE_PROFILING
         const std::unique_lock<std::shared_mutex> lock(mMutex);
+#endif
         if (!mParents.Has(parent)) {
             return true;
         }
@@ -227,18 +208,27 @@ bool Component::RemoveParent(std::shared_ptr<Component> parent, const bool force
 }
 
 bool Component::RemoveParent(const uint64_t parentId, const bool force) {
-    auto snapshot = GetParents();
-    for (const auto& p : *snapshot) {
-        if (p->GetId() == parentId) {
-            return RemoveParent(p, force);
-        }
+    std::shared_ptr<Component> found;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        found = mParents.Get(parentId);
     }
-    return false;
+    if (!found) {
+        return false;
+    }
+    return RemoveParent(found, force);
 }
 
 bool Component::RemoveParents(const bool force) {
-    // Take a snapshot to avoid iterator invalidation during removal.
-    auto snapshot = GetParents();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
         ok &= RemoveParent(p, force);
@@ -255,7 +245,13 @@ bool Component::RemoveParents(const std::vector<std::shared_ptr<Component>>& par
 }
 
 bool Component::RemoveParents(const std::vector<uint64_t>& parentIds, const bool force) {
-    auto snapshot = GetParents();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
         if (std::find(parentIds.begin(), parentIds.end(), p->GetId()) != parentIds.end()) {
@@ -266,19 +262,35 @@ bool Component::RemoveParents(const std::vector<uint64_t>& parentIds, const bool
 }
 
 bool Component::RemoveParents(const std::string& name, const bool force) {
-    auto snapshot = GetParents(name);
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
-        ok &= RemoveParent(p, force);
+        if (p->GetName() == name) {
+            ok &= RemoveParent(p, force);
+        }
     }
     return ok;
 }
 
 bool Component::RemoveParents(const std::vector<std::string>& names, const bool force) {
-    auto snapshot = GetParents(names);
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mParents.Get();
+    }
     bool ok = true;
     for (const auto& p : *snapshot) {
-        ok &= RemoveParent(p, force);
+        if (std::find(names.begin(), names.end(), p->GetName()) != names.end()) {
+            ok &= RemoveParent(p, force);
+        }
     }
     return ok;
 }
@@ -292,7 +304,9 @@ bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) 
     const bool canRemoveParent = child->CanRemoveParent(self);
     const bool forced = (!canRemoveChild || !canRemoveParent) && force;
     {
+#ifdef INCLUDE_PROFILING
         const std::unique_lock<std::shared_mutex> lock(mMutex);
+#endif
         if (!mChildren.Has(child)) {
             return true;
         }
@@ -310,17 +324,27 @@ bool Component::RemoveChild(std::shared_ptr<Component> child, const bool force) 
 }
 
 bool Component::RemoveChild(const uint64_t childId, const bool force) {
-    auto snapshot = GetChildren();
-    for (const auto& c : *snapshot) {
-        if (c->GetId() == childId) {
-            return RemoveChild(c, force);
-        }
+    std::shared_ptr<Component> found;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        found = mChildren.Get(childId);
     }
-    return false;
+    if (!found) {
+        return false;
+    }
+    return RemoveChild(found, force);
 }
 
 bool Component::RemoveChildren(const bool force) {
-    auto snapshot = GetChildren();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
         ok &= RemoveChild(c, force);
@@ -338,7 +362,13 @@ bool Component::RemoveChildren(const std::vector<std::shared_ptr<Component>>& ch
 }
 
 bool Component::RemoveChildren(const std::vector<uint64_t>& childIds, const bool force) {
-    auto snapshot = GetChildren();
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
         if (std::find(childIds.begin(), childIds.end(), c->GetId()) != childIds.end()) {
@@ -349,19 +379,35 @@ bool Component::RemoveChildren(const std::vector<uint64_t>& childIds, const bool
 }
 
 bool Component::RemoveChildren(const std::string& name, const bool force) {
-    auto snapshot = GetChildren(name);
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
-        ok &= RemoveChild(c, force);
+        if (c->GetName() == name) {
+            ok &= RemoveChild(c, force);
+        }
     }
     return ok;
 }
 
 bool Component::RemoveChildren(const std::vector<std::string>& names, const bool force) {
-    auto snapshot = GetChildren(names);
+    std::shared_ptr<std::vector<std::shared_ptr<Component>>> snapshot;
+    {
+#ifdef INCLUDE_PROFILING
+        const std::shared_lock<std::shared_mutex> lock(mMutex);
+#endif
+        snapshot = mChildren.Get();
+    }
     bool ok = true;
     for (const auto& c : *snapshot) {
-        ok &= RemoveChild(c, force);
+        if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
+            ok &= RemoveChild(c, force);
+        }
     }
     return ok;
 }
