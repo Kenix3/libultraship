@@ -143,7 +143,7 @@ TEST_F(DirectoryTest, ListFilesReturnsAllFiles) {
     EXPECT_EQ(files.size(), 2u);
 }
 
-TEST_F(DirectoryTest, ListFilesIgnoresSubdirectories) {
+TEST_F(DirectoryTest, ListFilesIncludesFilesInSubdirectories) {
     Directory::CreateDirectory(mTestDir.string());
     std::ofstream(mTestDir / "file.txt").close();
     Directory::CreateDirectory((mTestDir / "subdir").string());

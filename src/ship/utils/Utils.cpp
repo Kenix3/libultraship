@@ -1,10 +1,5 @@
 #include "ship/utils/Utils.h"
-#include <cstring>
 #include <algorithm>
-
-#ifdef _MSC_VER
-#define strdup _strdup
-#endif
 
 namespace Ship {
 namespace Math {
@@ -25,28 +20,27 @@ size_t HashCombine(size_t lhs, size_t rhs) {
 
 std::vector<std::string> splitText(const std::string& text, char separator, bool keepQuotes) {
     std::vector<std::string> args;
-    char* input = strdup(text.c_str());
-    const size_t length = strlen(input);
+    const size_t length = text.length();
 
     bool inQuotes = false;
-    size_t count = 0, from = 0;
+    size_t from = 0;
 
     for (size_t i = 0; i < length; i++) {
-        if (input[i] == '"') {
+        if (text[i] == '"') {
             inQuotes = !inQuotes;
-        } else if (input[i] == separator && !inQuotes) {
-            size_t strlen = i - from;
-
-            if (strlen > 0) {
-                if (!keepQuotes && input[from] == '"' && input[i - 1] == '"') {
-                    from++;
-                    strlen -= 2;
+        } else if (text[i] == separator && !inQuotes) {
+            const size_t tokenLength = i - from;
+            if (tokenLength > 0) {
+                size_t start = from;
+                size_t end = i;
+                if (!keepQuotes && (end - start) >= 2 && text[start] == '"' && text[end - 1] == '"') {
+                    start++;
+                    end--;
                 }
 
-                char* tmp = new char[strlen + 1]();
-                strncpy(tmp, &input[from], strlen);
-                count++;
-                args.emplace_back(tmp);
+                if (end > start) {
+                    args.emplace_back(text.substr(start, end - start));
+                }
             }
 
             from = i + 1;
@@ -54,17 +48,17 @@ std::vector<std::string> splitText(const std::string& text, char separator, bool
     }
 
     if (from < length) {
-        size_t strlen = length - from;
+        size_t start = from;
+        size_t end = length;
 
-        if (!keepQuotes && input[from] == L'"' && input[length - 1] == L'"') {
-            from++;
-            strlen -= 2;
+        if (!keepQuotes && (end - start) >= 2 && text[start] == '"' && text[end - 1] == '"') {
+            start++;
+            end--;
         }
 
-        char* tmp = new char[strlen + 1]();
-        strncpy(tmp, &input[from], strlen);
-        count++;
-        args.emplace_back(tmp);
+        if (end > start) {
+            args.emplace_back(text.substr(start, end - start));
+        }
     }
 
     return args;

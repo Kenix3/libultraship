@@ -187,13 +187,12 @@ TEST(BitConverterRomToBigEndian, V64FormatSwapsUInt16Pairs) {
 TEST(BitConverterRomToBigEndian, N64FormatSwapsUInt32Words) {
     // First byte 0x40 → n64 format: each group of 4 bytes is byte-reversed
     // Original: { 0x40, 0x12, 0x34, 0x56 }
-    // ToUInt32BE gives 0x40123456; stored back as little-endian uint32 in-place
-    // The result should be the big-endian representation written into memory
+    // After conversion to big-endian byte order, rom contains:
+    // { 0x56, 0x34, 0x12, 0x40 }.
     uint8_t rom[] = { 0x40, 0x12, 0x34, 0x56 };
     BitConverter::RomToBigEndian(rom, sizeof(rom));
-    // ToUInt32BE(0x40,0x12,0x34,0x56) = 0x40123456 → stored at rom[0..3]
-    // The cast writes it as a native uint32, so we just check the result is the
-    // big-endian value stored natively (little-endian machine: 0x56341240 in memory)
+    // We memcpy those bytes into a native uint32_t; on little-endian hosts,
+    // bytes { 0x56, 0x34, 0x12, 0x40 } correspond to integer 0x40123456.
     uint32_t stored;
     std::memcpy(&stored, rom, 4);
     EXPECT_EQ(stored, static_cast<uint32_t>(0x40123456));

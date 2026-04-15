@@ -168,12 +168,13 @@ TEST(EventSystem, CallEventUpdatesCallerMetadata) {
     EventID evId = sys.RegisterEvent("Ev");
     sys.RegisterListener(evId, Noop);
 
+    const char* key = "file.cpp:42";
     IEvent ev{ false };
-    sys.CallEvent(evId, &ev, "file.cpp", 42, "file.cpp:42");
+    sys.CallEvent(evId, &ev, "file.cpp", 42, key);
 
     auto* reg = sys.GetEventRegistration(evId);
     ASSERT_NE(reg, nullptr);
-    auto it = reg->Callers.find("file.cpp:42");
+    auto it = reg->Callers.find(key);
     ASSERT_NE(it, reg->Callers.end());
     EXPECT_EQ(it->second.Count, 1u);
     EXPECT_EQ(it->second.Line, 42);
@@ -183,14 +184,15 @@ TEST(EventSystem, CallEventIncrementsCaller) {
     Ship::EventSystem sys;
     EventID evId = sys.RegisterEvent("Ev");
 
+    const char* key = "key";
     IEvent ev{ false };
-    sys.CallEvent(evId, &ev, "f.cpp", 1, "key");
-    sys.CallEvent(evId, &ev, "f.cpp", 1, "key");
-    sys.CallEvent(evId, &ev, "f.cpp", 1, "key");
+    sys.CallEvent(evId, &ev, "f.cpp", 1, key);
+    sys.CallEvent(evId, &ev, "f.cpp", 1, key);
+    sys.CallEvent(evId, &ev, "f.cpp", 1, key);
 
     auto* reg = sys.GetEventRegistration(evId);
     ASSERT_NE(reg, nullptr);
-    EXPECT_EQ(reg->Callers.at("key").Count, 3u);
+    EXPECT_EQ(reg->Callers.at(key).Count, 3u);
 }
 
 // ============================================================

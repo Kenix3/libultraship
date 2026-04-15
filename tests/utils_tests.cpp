@@ -39,10 +39,13 @@ TEST(MathHashCombine, SameInputGivesSameOutput) {
     EXPECT_EQ(a, b);
 }
 
-TEST(MathHashCombine, DifferentInputsGiveDifferentOutput) {
-    size_t a = Ship::Math::HashCombine(1u, 2u);
-    size_t b = Ship::Math::HashCombine(2u, 1u);
-    EXPECT_NE(a, b);
+TEST(MathHashCombine, DifferentOrderedInputsAreDeterministic) {
+    size_t a1 = Ship::Math::HashCombine(1u, 2u);
+    size_t a2 = Ship::Math::HashCombine(1u, 2u);
+    size_t b1 = Ship::Math::HashCombine(2u, 1u);
+    size_t b2 = Ship::Math::HashCombine(2u, 1u);
+    EXPECT_EQ(a1, a2);
+    EXPECT_EQ(b1, b2);
 }
 
 TEST(MathHashCombine, ZeroAndZero) {

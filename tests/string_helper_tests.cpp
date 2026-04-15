@@ -238,7 +238,7 @@ TEST(StringHelperStrToL, OctalBase) {
 }
 
 TEST(StringHelperStrToL, AutoDetectHexPrefix) {
-    // base=0 lets strtoull auto-detect; StrToL uses base as-is
+    // With base=16, strtoull accepts hexadecimal input with an optional 0x prefix.
     EXPECT_EQ(StringHelper::StrToL("0xff", 16), 255LL);
 }
 
