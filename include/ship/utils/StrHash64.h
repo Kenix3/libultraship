@@ -34,7 +34,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 /*
-        [To some parts of this code]
+	[To some parts of this code]
 */
 /*
   Copyright (C) 1995-2004 Jean-loup Gailly and Mark Adler
@@ -55,7 +55,7 @@
   jloup@gzip.org          madler@alumni.caltech.edu
 */
 /*
-        [To some parts of this code]
+	[To some parts of this code]
 */
 /*
  Copyright (c) 2003, Dominik Reichl <dominik.reichl@t-online.de>
@@ -84,10 +84,48 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#pragma once
+
 #include <stdint.h>
 
+/** @brief Initial CRC64 seed value. Pass to update_crc64() as the starting @p crc. */
 #define INITIAL_CRC64 0xffffffffffffffffULL
 
+/**
+ * @brief Updates a running CRC64 checksum with @p len bytes from @p buf.
+ *
+ * Use this function to compute the CRC64 of a multi-part message by chaining calls:
+ * @code
+ * uint64_t crc = INITIAL_CRC64;
+ * crc = update_crc64(part1, len1, crc);
+ * crc = update_crc64(part2, len2, crc);
+ * @endcode
+ *
+ * @param buf Pointer to the data to hash.
+ * @param len Number of bytes in @p buf.
+ * @param crc Running CRC64 value (initialise with INITIAL_CRC64).
+ * @return Updated CRC64 value.
+ */
 extern uint64_t update_crc64(const void* buf, uint32_t len, uint64_t crc);
+
+/**
+ * @brief Computes the CRC64 of @p len bytes starting at @p buf.
+ *
+ * Equivalent to calling update_crc64() once with INITIAL_CRC64 as the seed.
+ *
+ * @param buf Pointer to the data to hash.
+ * @param len Number of bytes in @p buf.
+ * @return 64-bit CRC hash of the input.
+ */
 extern uint64_t crc64(const void* buf, uint32_t len);
+
+/**
+ * @brief Computes the CRC64 of a null-terminated string @p t.
+ *
+ * This is the primary hashing function used by the resource system to map virtual
+ * resource paths (char*) to their 64-bit CRC identifiers.
+ *
+ * @param t Null-terminated string to hash.
+ * @return 64-bit CRC hash of @p t (excluding the null terminator).
+ */
 extern uint64_t CRC64(const char* t);
