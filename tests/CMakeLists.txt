@@ -16,6 +16,9 @@ add_executable(lus_tests
     stox_tests.cpp
     utils_tests.cpp
     bitconverter_tests.cpp
+    event_system_tests.cpp
+    sound_matrix_decoder_tests.cpp
+    path_file_helper_tests.cpp
 )
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
