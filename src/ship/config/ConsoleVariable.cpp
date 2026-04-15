@@ -12,7 +12,7 @@
 
 namespace Ship {
 
-ConsoleVariable::ConsoleVariable() {
+ConsoleVariable::ConsoleVariable() : Component("ConsoleVariables") {
     Load();
 }
 

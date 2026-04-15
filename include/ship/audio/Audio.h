@@ -4,13 +4,14 @@
 #include <memory>
 #include <vector>
 #include "ship/audio/AudioPlayer.h"
+#include "ship/Component.h"
 
 namespace Ship {
 enum class AudioBackend { WASAPI, SDL, NUL };
 
-class Audio {
+class Audio : public Component {
   public:
-    Audio(AudioSettings settings) : mAudioSettings(settings) {
+    Audio(AudioSettings settings) : Component("Audio"), mAudioSettings(settings) {
     }
     ~Audio();
 

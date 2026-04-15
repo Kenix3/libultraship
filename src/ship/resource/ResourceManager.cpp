@@ -42,7 +42,7 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
     return rcd.GetHash();
 }
 
-ResourceManager::ResourceManager() {
+ResourceManager::ResourceManager() : Component("ResourceManager") {
 }
 
 void ResourceManager::Init(const std::vector<std::string>& archivePaths,

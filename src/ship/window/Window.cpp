@@ -12,7 +12,7 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui) {
+Window::Window(std::shared_ptr<Gui> gui) : Component("Window") {
     mGui = gui;
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
     mConfig = Context::GetInstance()->GetConfig();

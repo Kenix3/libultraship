@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ship/utils/color.h"
+#include "ship/Component.h"
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>
@@ -26,7 +27,7 @@ typedef struct CVar {
     }
 } CVar;
 
-class ConsoleVariable {
+class ConsoleVariable : public Component {
   public:
     ConsoleVariable();
     ~ConsoleVariable();

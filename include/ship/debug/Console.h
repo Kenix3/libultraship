@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <imgui.h>
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -28,7 +29,7 @@ struct CommandEntry {
     std::vector<CommandArgument> Arguments;
 };
 
-class Console {
+class Console : public Component {
   public:
     Console();
     ~Console();

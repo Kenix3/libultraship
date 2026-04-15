@@ -7,10 +7,11 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
-class ControlDeck {
+class ControlDeck : public Component {
   public:
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                 std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,

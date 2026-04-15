@@ -8,6 +8,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 enum class WindowBackend { FAST3D_DXGI_DX11, FAST3D_SDL_OPENGL, FAST3D_SDL_METAL, WINDOW_BACKEND_COUNT };
@@ -24,7 +25,7 @@ struct CoordsF {
 
 class Config;
 
-class Window {
+class Window : public Component {
     friend class Context;
 
   public:

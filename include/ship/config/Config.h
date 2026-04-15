@@ -40,7 +40,7 @@ class ConfigVersionUpdater {
      */
     uint32_t GetVersion();
 };
-class Config {
+class Config : public Component {
   public:
     Config(std::string path);
     ~Config();

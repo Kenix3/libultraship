@@ -1,13 +1,14 @@
 #pragma once
 #include <vector>
+#include "ship/Component.h"
 
 typedef bool (*FileDroppedFunc)(char*);
 
 namespace Ship {
 
-class FileDropMgr {
+class FileDropMgr : public Component {
   public:
-    FileDropMgr() = default;
+    FileDropMgr();
     ~FileDropMgr();
     void SetDroppedFile(char* path);
     void ClearDroppedFile();

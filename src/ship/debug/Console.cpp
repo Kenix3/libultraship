@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 
 namespace Ship {
-Console::Console() {
+Console::Console() : Component("Console") {
 }
 
 Console::~Console() {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include "ship/Component.h"
 
 #if (__linux__)
 #include <csignal>
@@ -19,7 +20,7 @@
 namespace Ship {
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
-class CrashHandler {
+class CrashHandler : public Component {
   public:
     CrashHandler();
     ~CrashHandler();

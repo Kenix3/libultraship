@@ -12,6 +12,7 @@
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/Component.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -51,7 +52,7 @@ struct ResourceIdentifierHash {
     size_t operator()(const ResourceIdentifier& rcd) const;
 };
 
-class ResourceManager {
+class ResourceManager : public Component {
     friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 

@@ -17,6 +17,9 @@
 #endif
 
 namespace Ship {
+FileDropMgr::FileDropMgr() : Component("FileDropMgr") {
+}
+
 FileDropMgr::~FileDropMgr() {
     if (mPath != nullptr) {
         free(mPath);

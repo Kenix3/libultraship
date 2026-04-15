@@ -414,7 +414,7 @@ extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
 
 #endif
 
-CrashHandler::CrashHandler() {
+CrashHandler::CrashHandler() : Component("CrashHandler") {
     mOutBuffer = new char[gMaxBufferSize];
 #if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction action = { 0 };
@@ -439,7 +439,7 @@ CrashHandler::CrashHandler() {
 #endif
 }
 
-CrashHandler::CrashHandler(CrashHandlerCallback callback) {
+CrashHandler::CrashHandler(CrashHandlerCallback callback) : Component("CrashHandler") {
     mCallback = callback;
     CrashHandler();
 }
