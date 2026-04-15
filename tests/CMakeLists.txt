@@ -12,6 +12,18 @@ add_executable(lus_tests
     binary_io_tests.cpp
     string_helper_tests.cpp
     crc64_tests.cpp
+    stox_tests.cpp
+    utils_tests.cpp
+    bitconverter_tests.cpp
+    event_system_tests.cpp
+    sound_matrix_decoder_tests.cpp
+    path_file_helper_tests.cpp
+    archive_resource_tests.cpp
+    glob_tests.cpp
+    splittext_tests.cpp
+    path_diskfile_tests.cpp
+    resource_type_tests.cpp
+    archive_self_tests.cpp
 )
 
 if(NOT DISABLE_SCRIPTING)
