@@ -15,11 +15,24 @@
 
 namespace {
 static std::function<void(IEvent*)> gSlot[4];
-static void Slot0(IEvent* e) { if (gSlot[0]) gSlot[0](e); }
-static void Slot1(IEvent* e) { if (gSlot[1]) gSlot[1](e); }
-static void Slot2(IEvent* e) { if (gSlot[2]) gSlot[2](e); }
-static void Slot3(IEvent* e) { if (gSlot[3]) gSlot[3](e); }
-static void Noop(IEvent*) {}
+static void Slot0(IEvent* e) {
+    if (gSlot[0])
+        gSlot[0](e);
+}
+static void Slot1(IEvent* e) {
+    if (gSlot[1])
+        gSlot[1](e);
+}
+static void Slot2(IEvent* e) {
+    if (gSlot[2])
+        gSlot[2](e);
+}
+static void Slot3(IEvent* e) {
+    if (gSlot[3])
+        gSlot[3](e);
+}
+static void Noop(IEvent*) {
+}
 } // namespace
 
 // ============================================================

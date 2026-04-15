@@ -189,8 +189,7 @@ TEST_F(FileHelperTest, ExistsReturnsFalseForMissingFile) {
 }
 
 TEST_F(FileHelperTest, ExistsReturnsTrueAfterWrite) {
-    Ship::FileHelper::WriteAllBytes(mTestFile.string(),
-                                    std::vector<char>{ 0x01, 0x02, 0x03 });
+    Ship::FileHelper::WriteAllBytes(mTestFile.string(), std::vector<char>{ 0x01, 0x02, 0x03 });
     EXPECT_TRUE(Ship::FileHelper::Exists(mTestFile));
 }
 
