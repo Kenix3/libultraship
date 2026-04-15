@@ -84,8 +84,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
 #include <stdint.h>
 
 /** @brief Initial CRC64 seed value. Pass to update_crc64() as the starting @p crc. */

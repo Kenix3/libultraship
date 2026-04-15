@@ -234,7 +234,7 @@ class ResourceManager {
 
     /**
      * @brief Loads all resources whose paths match the given glob mask.
-     * @param searchMask Glob pattern (e.g. "textures/ui/*").
+     * @param searchMask Glob pattern (e.g. @c "textures/ui/\*" ).
      * @return Pointer to a vector of loaded IResource objects.
      */
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);

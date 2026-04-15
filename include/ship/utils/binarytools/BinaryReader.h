@@ -80,7 +80,11 @@ class BinaryReader {
     uint32_t GetBaseAddress();
 
     /**
-     * @brief Discards @p length bytes from the current position (advances without returning data).
+     * @brief Reads and discards @p length bytes from the current position.
+     *
+     * Internally allocates a temporary buffer to consume the bytes. This advances
+     * the stream position by @p length but does not return the data.
+     *
      * @param length Number of bytes to skip.
      */
     void Read(int32_t length);

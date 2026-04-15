@@ -23,12 +23,12 @@ class MemoryStream final : public Stream {
     MemoryStream();
 
     /**
-     * @brief Constructs a memory stream over a raw byte buffer.
+     * @brief Constructs a memory stream by copying a raw byte buffer.
      *
-     * The buffer is **not** copied — the caller must ensure it remains valid for
-     * the lifetime of this stream.
+     * The contents of the buffer are copied into an internal vector, so the
+     * caller is free to release the original buffer after construction.
      *
-     * @param nBuffer     Pointer to the raw byte buffer.
+     * @param nBuffer     Pointer to the raw byte buffer to copy.
      * @param nBufferSize Size of the buffer in bytes.
      */
     MemoryStream(char* nBuffer, size_t nBufferSize);
@@ -68,14 +68,17 @@ class MemoryStream final : public Stream {
 
     /**
      * @brief Reads @p length bytes into @p dest from the current position.
-     * @param dest   Destination buffer (must be at least @p length bytes).
+     * @param dest   Writable destination buffer (must be at least @p length bytes).
      * @param length Number of bytes to read.
      */
-    void Read(const char* dest, size_t length) override;
+    void Read(char* dest, size_t length) override;
 
     /**
      * @brief Reads a single signed byte and advances the position by one.
-     * @return The byte value, or -1 on end-of-stream.
+     *
+     * Throws std::out_of_range if the position is past the end of the buffer.
+     *
+     * @return The byte value at the current position.
      */
     int8_t ReadByte() override;
 
@@ -104,7 +107,7 @@ class MemoryStream final : public Stream {
     /** @brief No-op for in-memory streams; included for interface compliance. */
     void Flush() override;
 
-    /** @brief Resets the stream position to 0. */
+    /** @brief No-op for in-memory streams; the buffer remains valid after closing. */
     void Close() override;
 
   protected:

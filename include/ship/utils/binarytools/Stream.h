@@ -53,14 +53,17 @@ class Stream {
 
     /**
      * @brief Reads @p length bytes from the current position into a caller-supplied buffer.
-     * @param dest   Destination buffer (must be at least @p length bytes).
+     * @param dest   Writable destination buffer (must be at least @p length bytes).
      * @param length Number of bytes to read.
      */
-    virtual void Read(const char* dest, size_t length) = 0;
+    virtual void Read(char* dest, size_t length) = 0;
 
     /**
      * @brief Reads a single byte from the current position.
-     * @return The byte value, or -1 on end-of-stream.
+     *
+     * Throws std::out_of_range if the position is past the end of the stream.
+     *
+     * @return The byte value at the current position.
      */
     virtual int8_t ReadByte() = 0;
 
