@@ -35,6 +35,7 @@ struct ResourceIdentifier {
     friend struct ResourceIdentifierHash;
 
     ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
+    ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
     bool operator==(const ResourceIdentifier& rhs) const;
 
     // Must be an exact path. Passing a path with a wildcard will return a fail state
@@ -87,6 +88,7 @@ class ResourceManager : public Component {
                       BS::priority_t priority = BS::pr::normal, std::shared_ptr<ResourceInitData> initData = nullptr);
     size_t UnloadResource(const ResourceIdentifier& identifier);
     size_t UnloadResource(const std::string& filePath);
+    bool WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data, bool unloadFile);
 
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const std::string& searchMask);
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResources(const ResourceFilter& filter);

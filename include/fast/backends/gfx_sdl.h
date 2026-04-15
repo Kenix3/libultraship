@@ -57,6 +57,9 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     int mSdlToLusTable[512];
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
+#ifdef __OpenBSD__
+    int mBsdTick; // store kern.clockrate's tick (microseconds) to adjust sleep timing
+#endif
     // OTRTODO: These are redundant. Info can be queried from SDL.
     int mWindowWidth = 640;
     int mWindowHeight = 480;

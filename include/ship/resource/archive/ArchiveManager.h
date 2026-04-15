@@ -7,12 +7,15 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <stdint.h>
+#include <functional>
 #include "ship/resource/File.h"
 #include "ship/Component.h"
+#include "ship/security/Keystore.h"
 
 namespace Ship {
 struct File;
 class Archive;
+using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEntry& key)>;
 
 class ArchiveManager : public Component {
   public:
@@ -44,6 +47,8 @@ class ArchiveManager : public Component {
     const std::string* HashToString(uint64_t hash) const;
     const char* HashToCString(uint64_t hash) const;
     bool IsGameVersionValid(uint32_t gameVersion);
+    void SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler);
+    UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
 
   protected:
     static std::vector<std::string> GetArchiveListInPaths(const std::vector<std::string>& archivePaths);
@@ -57,5 +62,6 @@ class ArchiveManager : public Component {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
+    UntrustedArchiveHandler mUntrustedArchiveHandler;
 };
 } // namespace Ship

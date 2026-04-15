@@ -49,6 +49,12 @@ struct FramebufferOGL {
     GLuint fbo, clrbuf, clrbufMsaa, rbo;
 };
 
+struct TextureInfo {
+    uint16_t width;
+    uint16_t height;
+    uint16_t filtering;
+};
+
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   public:
     ~GfxRenderingAPIOGL() override = default;
@@ -57,9 +63,10 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
-    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) override;
+    ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
+    void ClearShaderCache() override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
@@ -83,6 +90,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
                          int dstX1, int dstY1) override;
     void ClearFramebuffer(bool color, bool depth) override;
+    void ClearDepthRegion(int x, int y, int w, int h) override;
     void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) override;
     void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) override;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
@@ -100,17 +108,17 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     std::string BuildFsShader(const CCFeatures& cc_features);
     void SetPerDrawUniforms();
 
-    struct TextureInfo {
-        uint16_t width;
-        uint16_t height;
-        uint16_t filtering;
-    } textures[1024];
-
-    GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES];
+    std::vector<TextureInfo> textures;
+    GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};
+    GLuint mLastBoundTextures[SHADER_MAX_TEXTURES] = {};
     uint8_t mCurrentTile;
+    int8_t mLastActiveTexture = -1;
+    int8_t mLastBlendEnabled = -1;
+    int8_t mLastScissorEnabled = -1;
 
     std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
     ShaderProgram* mCurrentShaderProgram;
+    ShaderProgram* mLastLoadedShader = nullptr;
 
     GLuint mOpenglVbo = 0;
 #if defined(__APPLE__) || defined(USE_OPENGLES)

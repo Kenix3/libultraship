@@ -20,6 +20,10 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/WasapiAudioPlayer.*")
 endif()
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/CoreAudioAudioPlayer.*")
+endif()
+
 source_group("audio" FILES ${Source_Files__Audio})
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
@@ -72,6 +76,26 @@ endif()
 
 source_group("utils" FILES ${Source_Files__Utils})
 target_sources(libultraship PRIVATE ${Source_Files__Utils})
+
+#=================== Events ===================
+
+file(GLOB_RECURSE Source_Files__Events RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "events/*.cpp")
+source_group("events" FILES ${Source_Files__Events})
+target_sources(libultraship PRIVATE ${Source_Files__Events})
+
+#=================== Scripting ===================
+
+if(NOT DISABLE_SCRIPTING)
+    file(GLOB_RECURSE Source_Files__Scripting RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "scripting/*.cpp")
+    source_group("scripting" FILES ${Source_Files__Scripting})
+    target_sources(libultraship PRIVATE ${Source_Files__Scripting})
+endif()
+
+#=================== Security ===================
+
+file(GLOB_RECURSE Source_Files__Security RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "security/*.cpp")
+source_group("security" FILES ${Source_Files__Security})
+target_sources(libultraship PRIVATE ${Source_Files__Security})
 
 #=================== Port ===================
 

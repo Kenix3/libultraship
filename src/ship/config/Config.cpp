@@ -154,9 +154,7 @@ void Config::SetBlock(const std::string& key, nlohmann::json block) {
             }
         }
     } else {
-        if (gjson.contains(key)) {
-            gjson[key] = block;
-        }
+        gjson[key] = block;
     }
     mFlattenedJson = gjson.flatten();
     Save();
@@ -245,6 +243,10 @@ AudioBackend Config::GetCurrentAudioBackend() {
         return AudioBackend::SDL;
     }
 
+    if (backendName == "coreaudio") {
+        return AudioBackend::COREAUDIO;
+    }
+
     if (backendName == "sdl") {
         return AudioBackend::SDL;
     }
@@ -259,15 +261,21 @@ AudioBackend Config::GetCurrentAudioBackend() {
     return AudioBackend::WASAPI;
 #endif
 
+#ifdef __APPLE__
+    return AudioBackend::COREAUDIO;
+#endif
+
     return AudioBackend::SDL;
 }
 
 AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
-    int32_t surround =
+    int32_t channelsSetting =
         GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
-    switch (surround) {
-        case AudioChannelsSetting::audioSurround51:
-            return AudioChannelsSetting::audioSurround51;
+    switch (channelsSetting) {
+        case AudioChannelsSetting::audioMatrix51:
+            return AudioChannelsSetting::audioMatrix51;
+        case AudioChannelsSetting::audioRaw51:
+            return AudioChannelsSetting::audioRaw51;
         case AudioChannelsSetting::audioStereo:
         case AudioChannelsSetting::audioMax:
         default:
@@ -279,6 +287,9 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
     switch (backend) {
         case AudioBackend::WASAPI:
             SetString("Window.AudioBackend", "wasapi");
+            break;
+        case AudioBackend::COREAUDIO:
+            SetString("Window.AudioBackend", "coreaudio");
             break;
         case AudioBackend::SDL:
             SetString("Window.AudioBackend", "sdl");

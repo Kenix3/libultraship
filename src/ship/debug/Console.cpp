@@ -2,6 +2,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 
 namespace Ship {
 Console::Console() : Component("Console") {
@@ -34,12 +35,13 @@ int32_t Console::Run(const std::string& command, std::string* output) {
     }
 
     const std::string& commandName = cmdArgs[0];
-    if (!mCommands.contains(commandName)) {
+    auto it = mCommands.find(commandName);
+    if (it == mCommands.end()) {
         SPDLOG_INFO("Command handler not found: {}", commandName);
         return false;
     }
 
-    const CommandEntry entry = mCommands[commandName];
+    const CommandEntry& entry = it->second;
     int32_t commandResult = entry.Handler(Context::GetInstance()->GetChildren().GetFirst<Console>(), cmdArgs, output);
     if (output) {
         SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
@@ -50,13 +52,7 @@ int32_t Console::Run(const std::string& command, std::string* output) {
 }
 
 bool Console::HasCommand(const std::string& command) {
-    for (const auto& value : mCommands) {
-        if (value.first == command) {
-            return true;
-        }
-    }
-
-    return false;
+    return mCommands.contains(command);
 }
 
 void Console::AddCommand(const std::string& command, CommandEntry entry) {
@@ -72,6 +68,10 @@ std::map<std::string, CommandEntry>& Console::GetCommands() {
 }
 
 CommandEntry& Console::GetCommand(const std::string& command) {
-    return mCommands[command];
+    auto it = mCommands.find(command);
+    if (it == mCommands.end()) {
+        throw std::out_of_range("Command not found: " + command);
+    }
+    return it->second;
 }
 } // namespace Ship

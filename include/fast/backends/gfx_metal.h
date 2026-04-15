@@ -29,6 +29,7 @@ class Device;
 class Function;
 class Buffer;
 class RenderPipelineState;
+class ComputePipelineState;
 class CommandQueue;
 class Viewport;
 } // namespace MTL
@@ -42,8 +43,8 @@ namespace NS {
 class AutoreleasePool;
 }
 
-static int cantor(uint64_t a, uint64_t b) {
-    return (a + b + 1.0) * (a + b) / 2 + b;
+static size_t cantor(uint64_t a, uint64_t b) {
+    return (a + b) * (a + b + 1) / 2 + b;
 }
 
 struct hash_pair_shader_ids {
@@ -58,11 +59,12 @@ namespace Fast {
 
 struct ShaderProgramMetal {
     uint64_t shader_id0;
-    uint32_t shader_id1;
+    uint64_t shader_id1;
 
     uint8_t numInputs;
     uint8_t numFloats;
     bool usedTextures[SHADER_MAX_TEXTURES];
+    bool markedForDeletion = false;
 
     // hashed by msaa_level
     MTL::RenderPipelineState* pipeline_state_variants[9];
@@ -74,6 +76,7 @@ struct TextureDataMetal {
     MTL::SamplerState* sampler;
     uint32_t width;
     uint32_t height;
+    uint32_t filtering;
     bool linear_filtering;
 };
 
@@ -103,11 +106,19 @@ struct FramebufferMetal {
     int8_t mLastDepthTest = -1;
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
+
+    // When true, command buffer is created on the readback queue (no enqueue ordering).
+    // First ReadFramebufferToCPU returns zeros and flips this; real data from frame 2+.
+    bool mUseReadbackQueue = false;
 };
 
 struct FrameUniforms {
     simd::int1 frameCount;
     simd::float1 noiseScale;
+};
+
+struct DrawUniforms {
+    simd::int1 textureFiltering[SHADER_MAX_TEXTURES];
 };
 
 struct CoordUniforms {
@@ -122,9 +133,10 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     GfxClipParameters GetClipParameters() override;
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
-    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) override;
-    ShaderProgram* LookupShader(uint64_t shaderId0, uint32_t shaderId1) override;
+    ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) override;
+    ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
+    void ClearShaderCache() override;
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
@@ -173,6 +185,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     CA::MetalLayer* mLayer; // CA::MetalLayer*
     MTL::Device* mDevice;
     MTL::CommandQueue* mCommandQueue;
+    MTL::CommandQueue* mReadbackQueue;
 
     int mCurrentVertexBufferPoolIndex = 0;
     MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize];
@@ -183,6 +196,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     std::vector<FramebufferMetal> mFramebuffers;
     FrameUniforms mFrameUniforms;
     CoordUniforms mCoordUniforms;
+    DrawUniforms mDrawUniforms;
     MTL::Buffer* mFrameUniformBuffer;
 
     uint32_t mMsaaNumQualityLevels[METAL_MAX_MULTISAMPLE_SAMPLE_COUNT];
@@ -193,6 +207,17 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     size_t mCoordBufferSize;
     MTL::Function* mDepthComputeFunction;
     MTL::Function* mConvertToRgb5a1Function;
+    MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
+
+    // Screen FB deferred readback: blit in EndFrame, CPU conversion next frame.
+    // mScreenReadbackCmdBuf retains the command buffer that encoded the blit so
+    // we can waitUntilCompleted before reading the shared buffer contents.
+    MTL::CommandBuffer* mScreenReadbackCmdBuf = nullptr;
+    MTL::Buffer* mScreenReadbackBuffer = nullptr;
+    uint32_t mScreenReadbackWidth = 0;
+    uint32_t mScreenReadbackHeight = 0;
+    bool mScreenReadbackDataReady = false;
+    bool mScreenReadbackRequested = false;
 
     // Current state
     struct ShaderProgramMetal* mShaderProgram;
@@ -203,7 +228,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     int mCurrentTile;
     uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
 
-    uint32_t mRenderTargetHeight;
+    int32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     size_t mCurrentVertexBufferOffset;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;

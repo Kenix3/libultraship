@@ -47,9 +47,11 @@ static void VertexArraySetAttribs(ShaderProgram* prg) {
     size_t pos = 0;
 
     for (int i = 0; i < prg->numAttribs; i++) {
-        glEnableVertexAttribArray(prg->attribLocations[i]);
-        glVertexAttribPointer(prg->attribLocations[i], prg->attribSizes[i], GL_FLOAT, GL_FALSE,
-                              numFloats * sizeof(float), (void*)(pos * sizeof(float)));
+        if (prg->attribLocations[i] >= 0) {
+            glEnableVertexAttribArray(prg->attribLocations[i]);
+            glVertexAttribPointer(prg->attribLocations[i], prg->attribSizes[i], GL_FLOAT, GL_FALSE,
+                                  numFloats * sizeof(float), (void*)(pos * sizeof(float)));
+        }
         pos += prg->attribSizes[i];
     }
 }
@@ -73,18 +75,24 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
 }
 
 void GfxRenderingAPIOGL::UnloadShader(ShaderProgram* old_prg) {
-    if (old_prg != nullptr) {
+    if (old_prg != nullptr && old_prg == mLastLoadedShader) {
         for (unsigned int i = 0; i < old_prg->numAttribs; i++) {
-            glDisableVertexAttribArray(old_prg->attribLocations[i]);
+            if (old_prg->attribLocations[i] >= 0) {
+                glDisableVertexAttribArray(old_prg->attribLocations[i]);
+            }
         }
+        mLastLoadedShader = nullptr;
     }
 }
 
 void GfxRenderingAPIOGL::LoadShader(ShaderProgram* new_prg) {
     // if (!new_prg) return;
     mCurrentShaderProgram = new_prg;
-    glUseProgram(new_prg->openglProgramId);
-    VertexArraySetAttribs(new_prg);
+    if (new_prg != mLastLoadedShader) {
+        glUseProgram(new_prg->openglProgramId);
+        VertexArraySetAttribs(new_prg);
+        mLastLoadedShader = new_prg;
+    }
     SetUniforms(new_prg);
 }
 
@@ -229,6 +237,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
 std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     prism::Processor processor;
     prism::ContextItems mContext = {
+        { "VERTEX_SHADER", false },
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
         { "o_fog", cc_features.opt_fog },
@@ -296,19 +305,15 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(
-            "shaders/opengl/default.shader.fs", true, init));
+    const char* shaderName = Fast::gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.glsl";
 
-    if (res == nullptr) {
-        SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
-        abort();
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".glsl";
     }
 
-    auto shader = static_cast<std::string*>(res->GetRawPointer());
-    processor.load(*shader);
-    processor.bind_include_loader(opengl_include_fs);
-    auto result = processor.process();
+    auto res = std::static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
     // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");
@@ -325,7 +330,8 @@ static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _, prism::ContextT
 static std::string BuildVsShader(const CCFeatures& cc_features) {
     numFloats = 4;
     prism::Processor processor;
-    prism::ContextItems mContext = { { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+    prism::ContextItems mContext = { { "VERTEX_SHADER", true },
+                                     { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
                                      { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
                                      { "o_fog", cc_features.opt_fog },
                                      { "o_grayscale", cc_features.opt_grayscale },
@@ -355,9 +361,15 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
+    const char* shaderName = Fast::gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/opengl/default.shader.glsl";
+
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".glsl";
+    }
+
     auto res = std::static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(
-            "shaders/opengl/default.shader.vs", true, init));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -374,7 +386,11 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     return result;
 }
 
-ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint32_t shader_id1) {
+void GfxRenderingAPIOGL::ClearShaderCache() {
+    mShaderProgramPool.clear();
+}
+
+ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
     CCFeatures cc_features;
     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
     const auto fs_buf = BuildFsShader(cc_features);
@@ -426,14 +442,14 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     for (int i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             char name[32];
-            sprintf(name, "aTexCoord%d", i);
+            snprintf(name, sizeof(name), "aTexCoord%d", i);
             prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
             prg->attribSizes[cnt] = 2;
             ++cnt;
 
             for (int j = 0; j < 2; j++) {
                 if (cc_features.clamp[i][j]) {
-                    sprintf(name, "aTexClamp%s%d", j == 0 ? "S" : "T", i);
+                    snprintf(name, sizeof(name), "aTexClamp%s%d", j == 0 ? "S" : "T", i);
                     prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
                     prg->attribSizes[cnt] = 1;
                     ++cnt;
@@ -456,7 +472,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
 
     for (int i = 0; i < cc_features.numInputs; i++) {
         char name[16];
-        sprintf(name, "aInput%d", i + 1);
+        snprintf(name, sizeof(name), "aInput%d", i + 1);
         prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
         prg->attribSizes[cnt] = cc_features.opt_alpha ? 4 : 3;
         ++cnt;
@@ -509,7 +525,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     return prg;
 }
 
-struct ShaderProgram* GfxRenderingAPIOGL::LookupShader(uint64_t shader_id0, uint32_t shader_id1) {
+struct ShaderProgram* GfxRenderingAPIOGL::LookupShader(uint64_t shader_id0, uint64_t shader_id1) {
     auto it = mShaderProgramPool.find(std::make_pair(shader_id0, shader_id1));
     return it == mShaderProgramPool.end() ? nullptr : &it->second;
 }
@@ -523,6 +539,7 @@ void GfxRenderingAPIOGL::ShaderGetInfo(struct ShaderProgram* prg, uint8_t* numIn
 GLuint GfxRenderingAPIOGL::NewTexture() {
     GLuint ret;
     glGenTextures(1, &ret);
+    textures.resize(std::max(textures.size(), (size_t)ret + 1));
     return ret;
 }
 
@@ -531,13 +548,22 @@ void GfxRenderingAPIOGL::DeleteTexture(uint32_t texID) {
 }
 
 void GfxRenderingAPIOGL::SelectTexture(int tile, GLuint texture_id) {
-    glActiveTexture(GL_TEXTURE0 + tile);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    if (mLastActiveTexture != tile) {
+        mLastActiveTexture = tile;
+        glActiveTexture(GL_TEXTURE0 + tile);
+    }
+    if (mLastBoundTextures[tile] != texture_id) {
+        mLastBoundTextures[tile] = texture_id;
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+    }
     mCurrentTextureIds[tile] = texture_id;
     mCurrentTile = tile;
 }
 
 void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width, uint32_t height) {
+    if (width == 0 || height == 0) {
+        return;
+    }
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
     textures[mCurrentTextureIds[mCurrentTile]].width = width;
     textures[mCurrentTextureIds[mCurrentTile]].height = height;
@@ -562,7 +588,10 @@ static uint32_t gfx_cm_to_opengl(uint32_t val) {
 }
 
 void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
-    glActiveTexture(GL_TEXTURE0 + tile);
+    if (mLastActiveTexture != tile) {
+        mLastActiveTexture = tile;
+        glActiveTexture(GL_TEXTURE0 + tile);
+    }
     const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
@@ -589,10 +618,14 @@ void GfxRenderingAPIOGL::SetScissor(int x, int y, int width, int height) {
 }
 
 void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
-    if (use_alpha) {
-        glEnable(GL_BLEND);
-    } else {
-        glDisable(GL_BLEND);
+    int8_t val = use_alpha ? 1 : 0;
+    if (mLastBlendEnabled != val) {
+        mLastBlendEnabled = val;
+        if (use_alpha) {
+            glEnable(GL_BLEND);
+        } else {
+            glDisable(GL_BLEND);
+        }
     }
 }
 
@@ -655,7 +688,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 }
 
 void GfxRenderingAPIOGL::Init() {
-#ifndef __linux__
+#if !defined(__linux__) && !defined(__OpenBSD__)
     glewInit();
 #endif
 
@@ -798,12 +831,37 @@ void GfxRenderingAPIOGL::StartDrawToFramebuffer(int fb_id, float noise_scale) {
 }
 
 void GfxRenderingAPIOGL::ClearFramebuffer(bool color, bool depth) {
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
     glDepthMask(GL_TRUE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
     glDepthMask(mCurrentDepthMask ? GL_TRUE : GL_FALSE);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
+}
+
+void GfxRenderingAPIOGL::ClearDepthRegion(int x, int y, int w, int h) {
+    // Save current scissor state so callers don't need to manually invalidate.
+    GLint prevScissor[4];
+    GLboolean scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    glGetIntegerv(GL_SCISSOR_BOX, prevScissor);
+
     glEnable(GL_SCISSOR_TEST);
+    glScissor(x, y, w, h);
+    glDepthMask(GL_TRUE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glDepthMask(mCurrentDepthMask ? GL_TRUE : GL_FALSE);
+
+    // Restore previous scissor state.
+    glScissor(prevScissor[0], prevScissor[1], prevScissor[2], prevScissor[3]);
+    if (!scissorWasEnabled) {
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
@@ -813,13 +871,19 @@ void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_sour
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_src.fbo);
 
     // Disabled for blit
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
 
     glBlitFramebuffer(0, 0, fb_src.width, fb_src.height, 0, 0, fb_dst.width, fb_dst.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, mCurrentFrameBuffer);
 
-    glEnable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
 }
 
 void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
@@ -828,8 +892,15 @@ void* GfxRenderingAPIOGL::GetFramebufferTextureId(int fb_id) {
 
 void GfxRenderingAPIOGL::SelectTextureFb(int fb_id) {
     // glDisable(GL_DEPTH_TEST);
-    glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, mFrameBuffers[fb_id].clrbuf);
+    int tile = 0;
+    GLuint texId = mFrameBuffers[fb_id].clrbuf;
+    // Ensure the textures metadata vector can hold this FB texture handle.
+    // FB color buffers are created outside NewTexture(), so the vector may
+    // not have been resized for them yet.
+    if (texId >= textures.size()) {
+        textures.resize((size_t)texId + 1);
+    }
+    SelectTexture(tile, texId);
 }
 
 void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -854,7 +925,10 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
     }
 
     // Disabled for blit
-    glDisable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 0) {
+        mLastScissorEnabled = 0;
+        glDisable(GL_SCISSOR_TEST);
+    }
 
     // For msaa enabled buffers we can't perform a scaled blit to a simple sample buffer
     // First do an unscaled blit to a msaa resolved buffer
@@ -895,7 +969,10 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
 
     glReadBuffer(GL_BACK);
 
-    glEnable(GL_SCISSOR_TEST);
+    if (mLastScissorEnabled != 1) {
+        mLastScissorEnabled = 1;
+        glEnable(GL_SCISSOR_TEST);
+    }
 }
 
 void GfxRenderingAPIOGL::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
@@ -903,8 +980,23 @@ void GfxRenderingAPIOGL::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_
         return;
     }
 
+    // Read as RGBA8 (GL_UNSIGNED_BYTE) then convert to RGBA16 (5551).
+    // GL_RGBA + GL_UNSIGNED_SHORT_5_5_5_1 writes 4 separate u16 components per pixel
+    // (8 bytes) on some drivers (NVIDIA), not the packed 2 bytes the spec implies.
+    // Reading as RGBA8 and converting matches the DX11 path's approach.
     glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[fb_id].fbo);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (void*)rgba16_buf);
+
+    std::vector<uint8_t> rgba8(width * height * 4);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba8.data());
+
+    for (uint32_t i = 0; i < width * height; i++) {
+        uint8_t r = (rgba8[i * 4 + 0] >> 3) & 0x1F;
+        uint8_t g = (rgba8[i * 4 + 1] >> 3) & 0x1F;
+        uint8_t b = (rgba8[i * 4 + 2] >> 3) & 0x1F;
+        uint8_t a = rgba8[i * 4 + 3] ? 1 : 0;
+        rgba16_buf[i] = (r << 11) | (g << 6) | (b << 1) | a;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
 }
 

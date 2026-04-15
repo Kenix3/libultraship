@@ -224,6 +224,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "SHADER_1", SHADER_1 },
         { "SHADER_COMBINED", SHADER_COMBINED },
         { "SHADER_NOISE", SHADER_NOISE },
+        { "FILTER_THREE_POINT", Fast::FILTER_THREE_POINT },
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
         { "o_fog", cc_features.opt_fog },
@@ -252,9 +253,15 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
+    const char* shaderName = Fast::gfx_get_shader(cc_features.shader_id);
+    std::string path = "shaders/metal/default.shader.metal";
+
+    if (nullptr != shaderName) {
+        path = std::string(shaderName) + ".metal";
+    }
+
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(
-            "shaders/metal/default.shader.metal", true, init));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");

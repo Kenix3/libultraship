@@ -45,29 +45,35 @@ std::string StringHelper::Strip(std::string s, const std::string& delimiter) {
 
     while ((pos = s.find(delimiter)) != std::string::npos) {
         token = s.substr(0, pos);
-        s.erase(pos, pos + delimiter.length());
+        s.erase(pos, delimiter.length());
     }
 
     return s;
 }
 
 std::string StringHelper::Replace(std::string str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return str;
+    }
     size_t start_pos = str.find(from);
 
     while (start_pos != std::string::npos) {
         str.replace(start_pos, from.length(), to);
-        start_pos = str.find(from);
+        start_pos = str.find(from, start_pos + to.length());
     }
 
     return str;
 }
 
 void StringHelper::ReplaceOriginal(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return;
+    }
     size_t start_pos = str.find(from);
 
     while (start_pos != std::string::npos) {
         str.replace(start_pos, from.length(), to);
-        start_pos = str.find(from);
+        start_pos = str.find(from, start_pos + to.length());
     }
 }
 
@@ -84,13 +90,14 @@ bool StringHelper::Contains(const std::string& s, const std::string& input) {
 }
 
 bool StringHelper::EndsWith(const std::string& s, const std::string& input) {
-    size_t inputLen = strlen(input.c_str());
-    return s.rfind(input) == (s.size() - inputLen);
+    if (input.size() > s.size()) {
+        return false;
+    }
+    return s.rfind(input) == (s.size() - input.size());
 }
 
 std::string StringHelper::Sprintf(const char* format, ...) {
     char buffer[32768];
-    // char buffer[2048];
     std::string output;
     va_list va;
 
@@ -103,12 +110,9 @@ std::string StringHelper::Sprintf(const char* format, ...) {
 }
 
 std::string StringHelper::Implode(std::vector<std::string>& elements, const char* const separator) {
-    return "";
-
-    // return std::accumulate(std::begin(elements), std::end(elements), std::string(),
-    //[separator](std::string& ss, std::string& s) {
-    // return ss.empty() ? s : ss + separator + s;
-    //});
+    return std::accumulate(
+        std::begin(elements), std::end(elements), std::string(),
+        [separator](const std::string& ss, const std::string& s) { return ss.empty() ? s : ss + separator + s; });
 }
 
 int64_t StringHelper::StrToL(const std::string& str, int32_t base) {
@@ -157,4 +161,27 @@ bool StringHelper::IsValidOffset(const std::string& str) {
 
 bool StringHelper::IEquals(const std::string& a, const std::string& b) {
     return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char a, char b) { return tolower(a) == tolower(b); });
+}
+
+std::vector<uint8_t> StringHelper::HexToBytes(const std::string& hex) {
+    std::vector<uint8_t> bytes;
+    for (size_t i = 0; i < hex.length(); i += 2) {
+        std::string byteString = hex.substr(i, 2);
+        uint8_t byte = static_cast<uint8_t>(strtol(byteString.c_str(), nullptr, 16));
+        bytes.push_back(byte);
+    }
+    return bytes;
+}
+
+std::string StringHelper::BytesToHex(const std::vector<unsigned char>& bytes) {
+    std::string hexString;
+    static const char sHexChars[] = "0123456789abcdef";
+    hexString.reserve(bytes.size() * 2);
+
+    for (unsigned char byte : bytes) {
+        hexString.push_back(sHexChars[(byte >> 4) & 0x0F]);
+        hexString.push_back(sHexChars[byte & 0x0F]);
+    }
+
+    return hexString;
 }

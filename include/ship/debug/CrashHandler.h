@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
+#include <memory>
 #include "ship/Component.h"
 
 #if (__linux__)
@@ -40,7 +41,7 @@ class CrashHandler : public Component {
 
   private:
     CrashHandlerCallback mCallback = nullptr;
-    char* mOutBuffer = nullptr;
+    std::unique_ptr<char[]> mOutBuffer;
     static constexpr size_t gMaxBufferSize = 32768;
     size_t mOutBuffersize = 0;
 

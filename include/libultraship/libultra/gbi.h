@@ -178,6 +178,9 @@
 #define G_FILLWIDERECT 0x38
 #define G_REGBLENDEDTEX 0x3f
 #define G_MOVEMEM_OTR 0x42
+#define G_LOADBLOCK_WIDE 0x47
+#define G_VTX_WIDE 0x48
+#define G_TRI1_WIDE 0x49
 
 /* GFX Effects */
 
@@ -189,9 +192,10 @@
 #define G_DL_INDEX 0x3d
 #define G_READFB 0x3e
 #define G_SETINTENSITY 0x40
-#define G_LOAD_SHADER 0x43
-#define G_SETTILESIZE_INTERP 0x44
-#define G_SETTARGETINTERPINDEX 0x45
+#define G_PUSH_SHADER 0x43
+#define G_POP_SHADER 0x44
+#define G_SETTILESIZE_INTERP 0x45
+#define G_SETTARGETINTERPINDEX 0x46
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -680,7 +684,7 @@
 #define G_BL_1 2
 #define G_BL_0 3
 
-#define GBL_c1(m1a, m1b, m2a, m2b) (m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
+#define GBL_c1(m1a, m1b, m2a, m2b) (uint32_t)(m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
 #define GBL_c2(m1a, m1b, m2a, m2b) (m1a) << 28 | (m1b) << 24 | (m2a) << 20 | (m2b) << 16
 
 #define RM_AA_ZB_OPA_SURF(clk)                                                  \
@@ -1013,7 +1017,11 @@
  * Vertex (set up for use with colors)
  */
 typedef struct {
+#ifndef GBI_FLOATS
     short ob[3]; /* x, y, z */
+#else
+    float ob[3]; /* x, y, z */
+#endif
     unsigned short flag;
     short tc[2];         /* texture coord */
     unsigned char cn[4]; /* color & alpha */
@@ -1023,7 +1031,11 @@ typedef struct {
  * Vertex (set up for use with normals)
  */
 typedef struct {
+#ifndef GBI_FLOATS
     short ob[3]; /* x, y, z */
+#else
+    float ob[3]; /* x, y, z */
+#endif
     unsigned short flag;
     short tc[2];      /* texture coord */
     signed char n[3]; /* normal */
@@ -1828,20 +1840,26 @@ typedef union Gfx {
     { (_SHIFTL(G_VTX, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
 
 #elif (defined(F3DEX_GBI) || defined(F3DLP_GBI))
-/*
- * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
- *
- *        +--------+--------+------+----------+
- *  G_VTX |  cmd:8 |  v0:8  |  n:6 |length:10 |
- *        +-+---+--+--------+------+----------+
- *        | |seg|          address            |
- *        +-+---+-----------------------------+
- */
+                 /*
+                  * F3DEX_GBI: G_VTX GBI format was changed to support 64 vertice.
+                  *
+                  *        +--------+--------+------+----------+
+                  *  G_VTX |  cmd:8 |  v0:8  |  n:6 |length:10 |
+                  *        +-+---+--+--------+------+----------+
+                  *        | |seg|          address            |
+                  *        +-+---+-----------------------------+
+                  */
 #define __gSPVertex(pkt, v, n, v0) gDma1p((pkt), G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #define gsSPVertex(v, n, v0) gsDma1p(G_VTX, (v), ((n) << 10) | (sizeof(Vtx) * (n)-1), (v0)*2)
 #else
-#define __gSPVertex(pkt, v, n, v0) gDma1p(pkt, G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
-#define gsSPVertex(v, n, v0) gsDma1p(G_VTX, v, sizeof(Vtx) * (n), ((n)-1) << 4 | (v0))
+#define __gSPVertex(pkt, v, n, v0)                                                                   \
+    _DW({                                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                                       \
+        _g->words.w0 = _SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7); \
+        _g->words.w1 = (uintptr_t)(v);                                                               \
+    })
+#define gsSPVertex(v, n, v0) \
+    { (_SHIFTL(G_VTX_WIDE, 24, 8) | _SHIFTL((n), 12, 8) | _SHIFTL((v0) + (n), 1, 7)), (uintptr_t)(v)MakeTrace() }
 #endif
 
 #ifdef F3DEX_GBI_2
@@ -1987,6 +2005,11 @@ typedef union Gfx {
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((v2)*10, 0, 8))
 #define __gsSPLine3D_w1f(v0, v1, wd, flag) \
     (_SHIFTL((flag), 24, 8) | _SHIFTL((v0)*10, 16, 8) | _SHIFTL((v1)*10, 8, 8) | _SHIFTL((wd), 0, 8))
+#define __gsSP1Triangle_w1_wide(v0, v1, v2) (_SHIFTL((v0)*2, 16, 8) | _SHIFTL((v1)*2, 8, 8) | _SHIFTL((v2)*2, 0, 8))
+#define __gsSP1Triangle_w1f_wide(v0, v1, v2, flag)         \
+    (((flag) == 0)   ? __gsSP1Triangle_w1_wide(v0, v1, v2) \
+     : ((flag) == 1) ? __gsSP1Triangle_w1_wide(v1, v2, v0) \
+                     : __gsSP1Triangle_w1_wide(v2, v0, v1))
 #endif
 
 #ifdef F3DEX_GBI_2
@@ -2056,6 +2079,7 @@ typedef union Gfx {
 /***
  ***  1 Triangle
  ***/
+#ifdef F3DEX_GBI
 #define gSP1Triangle(pkt, v0, v1, v2, flag)                   \
     {                                                         \
         Gfx* _g = (Gfx*)(pkt);                                \
@@ -2065,6 +2089,17 @@ typedef union Gfx {
     }
 #define gsSP1Triangle(v0, v1, v2, flag) \
     { _SHIFTL(G_TRI1, 24, 8), __gsSP1Triangle_w1f(v0, v1, v2, flag) }
+#else
+#define gSP1Triangle(pkt, v0, v1, v2, flag)                                                      \
+    _DW({                                                                                        \
+        Gfx* _g = (Gfx*)(pkt);                                                                   \
+                                                                                                 \
+        _g->words.w0 = _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag); \
+        _g->words.w1 = 0;                                                                        \
+    })
+#define gsSP1Triangle(v0, v1, v2, flag) \
+    { _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag), 0 }
+#endif
 
 /***
  ***  Line
@@ -2794,11 +2829,30 @@ typedef union Gfx {
 #define gsSPGrayscale(state) \
     { (_SHIFTL(G_SETGRAYSCALE, 24, 8)), (state) }
 
-#define gsSPLoadShader(shader, type) gsDma1p(G_LOAD_SHADER, shader, 0, type)
-#define gsSPUnloadShader() gsDma1p(G_LOAD_SHADER, 0, 0, 0)
+#define gsSPPushShader(shader)                                  \
+    { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (uintptr_t)(shader) }, { \
+        0, 0                                                    \
+    }
 
-#define gSPLoadShader(pkt, shader, type) gDma1p(pkt, G_LOAD_SHADER, shader, 0, type)
-#define gSPUnloadShader(pkt) gDma1p(pkt, G_LOAD_SHADER, 0, 0, 0)
+#define gSPPushShader(pkt, shader)                     \
+    {                                                  \
+        Gfx* _g0 = (Gfx*)(pkt);                        \
+                                                       \
+        _g0->words.w0 = _SHIFTL(G_PUSH_SHADER, 24, 8); \
+        _g0->words.w1 = (uintptr_t)(shader);           \
+    }
+
+#define gsSPPopShader()                      \
+    { (_SHIFTL(G_POP_SHADER, 24, 8)), 0 }, { \
+        0, 0                                 \
+    }
+
+#define gSPPopShader(pkt)                             \
+    {                                                 \
+        Gfx* _g0 = (Gfx*)(pkt);                       \
+                                                      \
+        _g0->words.w0 = _SHIFTL(G_POP_SHADER, 24, 8); \
+    }
 
 #define gSPExtraGeometryMode(pkt, c, s)                                                 \
     _DW({                                                                               \
@@ -3268,6 +3322,21 @@ typedef union Gfx {
     {                                                                                                      \
         (_SHIFTL(G_LOADBLOCK, 24, 8) | _SHIFTL(uls, 12, 12) | _SHIFTL(ult, 0, 12)),                        \
             (_SHIFTL(tile, 24, 3) | _SHIFTL((MIN(lrs, G_TX_LDBLK_MAX_TXL)), 12, 12) | _SHIFTL(dxt, 0, 12)) \
+    }
+
+#define gDPLoadBlockWide(pkt, tile, uls, ult, lrs, dxt)                           \
+    {                                                                             \
+        Gfx* _g0 = (Gfx*)(pkt);                                                   \
+        Gfx* _g1 = (Gfx*)(pkt) + 1;                                               \
+        _g0->words.w0 = _SHIFTL(G_LOADBLOCK_WIDE, 24, 8) | _SHIFTL((tile), 0, 3); \
+        _g0->words.w1 = (uint32_t)(lrs);                                          \
+        _g1->words.w0 = _SHIFTL((uls), 16, 16) | _SHIFTL((ult), 0, 16);           \
+        _g1->words.w1 = _SHIFTL((dxt), 0, 12);                                    \
+    }
+
+#define gsDPLoadBlockWide(tile, uls, ult, lrs, dxt)                                  \
+    { _SHIFTL(G_LOADBLOCK_WIDE, 24, 8) | _SHIFTL((tile), 0, 3), (uint32_t)(lrs) }, { \
+        _SHIFTL((uls), 16, 16) | _SHIFTL((ult), 0, 16), _SHIFTL((dxt), 0, 12)        \
     }
 
 #define gDPLoadTLUTCmd(pkt, tile, count)                                  \

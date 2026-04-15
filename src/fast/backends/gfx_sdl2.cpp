@@ -14,6 +14,11 @@
 #include "ship/window/FileDropMgr.h"
 #include "fast/backends/gfx_sdl.h"
 
+#ifdef __OpenBSD__
+#include <sys/sysctl.h>
+#include <sys/time.h>
+#endif
+
 #if FOR_WINDOWS
 #include <GL/glew.h>
 #include "SDL.h"
@@ -354,8 +359,17 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     }
 #endif
 
+#ifdef __OpenBSD__
+    int sysctlname[2] = { CTL_KERN, KERN_CLOCKRATE };
+    struct clockinfo clockinfo;
+    size_t clockinfo_size = sizeof(struct clockinfo);
+    if (sysctl(sysctlname, 2, &clockinfo, &clockinfo_size, NULL, 0) != -1) {
+        mBsdTick = clockinfo.tick;
+    }
+#endif
+
     char title[512];
-    int len = sprintf(title, "%s (%s)", gameName, gfxApiName);
+    int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
@@ -651,8 +665,10 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
 #elif defined(__APPLE__)
-    // Use macOS scheduler interval on macOS
+    // Use macOS scheduler interval on macOS. Don't trust sysctl on macOS
     left -= 10000UL;
+#elif defined(__OpenBSD__)
+    left -= mBsdTick * 10;
 #endif
     if (left > 0) {
 #ifndef _WIN32
@@ -667,14 +683,13 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 #endif
     }
 
-#ifdef _WIN32
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
+#ifdef _WIN32
     while (t < next) {
         YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
         t = qpc_to_100ns(SDL_GetPerformanceCounter());
     }
 #endif
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,
         // or inaccurate mTimer,

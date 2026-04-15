@@ -20,6 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mac-ccache-${{ github.ref }}
           ${{ runner.os }}-mac-ccache-
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt --break-system-packages || python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -32,8 +34,6 @@ jobs:
         path: build-cmake/src/*.a
         if-no-files-found: error
   build-ios:
-    # temporarily disable iOS CI
-    if: false 
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
@@ -47,6 +47,8 @@ jobs:
           ${{ runner.os }}-14-ios-build-
         path: |
           build-cmake
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt --break-system-packages || python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         cmake --no-warn-unused-cli -H. -Bbuild-cmake -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE:STRING=Release
@@ -92,6 +94,8 @@ jobs:
         cmake ..
         make
         sudo make install
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
     - name: Build libultraship
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -105,6 +109,50 @@ jobs:
       with:
         name: soh-linux
         path: build-cmake/src/*.a
+        if-no-files-found: error
+  build-android:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk/android-ndk-r29
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y $(cat .github/workflows/apt-deps.txt) unzip curl
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2.14
+      with:
+        key: ${{ runner.os }}-android-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-android-ccache-${{ github.ref }}
+          ${{ runner.os }}-android-ccache-
+    - name: Install Android NDK
+      run: |
+        curl -L https://dl.google.com/android/repository/android-ndk-r29-linux.zip -o android-ndk.zip
+        unzip -q android-ndk.zip
+        mkdir -p android-ndk
+        mv android-ndk-r29 android-ndk/
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
+    - name: Configure libultraship for Android
+      run: |
+        cmake --no-warn-unused-cli -S . -Bbuild-cmake-android -GNinja \
+          -DCMAKE_BUILD_TYPE:STRING=Release \
+          -DCMAKE_SYSTEM_NAME=Android \
+          -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
+          -DANDROID_NDK=${ANDROID_NDK_HOME} \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=latest \
+          -DANDROID_STL=c++_static
+    - name: Build libultraship for Android
+      run: |
+        cmake --build build-cmake-android --config Release --parallel 10
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: soh-android
+        path: build-cmake-android/src/*.a
         if-no-files-found: error
   build-windows-x64:
     runs-on: windows-latest
@@ -135,12 +183,15 @@ jobs:
           D:/a/vcpkg
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
+    - name: Install Python dependencies
+      run: python -m pip install -r requirements.txt
     - name: Build libultraship
       env:
         VCPKG_ROOT: D:/a/vcpkg
       run: |
-        set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
-        cmake --no-warn-unused-cli -S. -Bbuild-cmake-x64 -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64
+        $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+        $PY_EXE = (Get-Command python).Definition
+        cmake --no-warn-unused-cli -S. -Bbuild-cmake-x64 -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64 "-DPython3_EXECUTABLE=$PY_EXE" -DPython3_FIND_REGISTRY=NEVER
         cmake --build build-cmake-x64 --config Release --parallel 10
     - name: Upload build
       uses: actions/upload-artifact@v4
@@ -177,12 +228,15 @@ jobs:
             D:/a/vcpkg
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
       - name: Build libultraship
         env:
           VCPKG_ROOT: D:/a/vcpkg
         run: |
-          set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
-          cmake --no-warn-unused-cli -S. -Bbuild-cmake-arm64 -G "Visual Studio 17 2022" -T v143  -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64
+          $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+          $PY_EXE = (Get-Command python).Definition
+          cmake --no-warn-unused-cli -S. -Bbuild-cmake-arm64 -G "Visual Studio 17 2022" -T v143 -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=arm64 "-DPython3_EXECUTABLE=$PY_EXE" -DPython3_FIND_REGISTRY=NEVER
           cmake --build build-cmake-arm64 --config Release --parallel 10
       - name: Upload build
         uses: actions/upload-artifact@v4

@@ -58,6 +58,20 @@ static Gfx GsSpVertexOtR2P2(int vtxCnt, int vtxBufOffset, int vtxDataOffset) {
     return g;
 }
 
+static void GsSPPushShader(std::vector<Gfx>& gfx, const char* shader) {
+    Gfx g0;
+    g0.words.w0 = (uintptr_t)(_SHIFTL(G_PUSH_SHADER, 24, 8));
+    g0.words.w1 = (uintptr_t)(shader);
+    gfx.push_back(g0);
+}
+
+static void GsSPPopShader(std::vector<Gfx>& gfx) {
+    Gfx g0;
+    g0.words.w0 = (uintptr_t)(_SHIFTL(G_POP_SHADER, 24, 8));
+    g0.words.w1 = (uintptr_t)(nullptr);
+    gfx.push_back(g0);
+}
+
 uint32_t ResourceFactoryDisplayList::GetCombineLERPValue(const char* valStr) {
     static const char* strings[] = {
         "G_CCMUX_COMBINED",
@@ -177,7 +191,8 @@ ResourceFactoryBinaryDisplayListV0::ReadResource(std::shared_ptr<Ship::File> fil
 
         int8_t opcode = (int8_t)(command.words.w0 >> 24);
         bool isExpanded = opcode == G_SETTIMG_OTR_HASH || opcode == G_DL_OTR_HASH || opcode == G_VTX_OTR_HASH ||
-                          opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR;
+                          opcode == G_BRANCH_Z_OTR || opcode == G_MARKER || opcode == G_MTX_OTR ||
+                          opcode == G_MOVEMEM_OTR;
 
         // These are 128-bit commands, so read an extra 64 bits...
         if (isExpanded) {
@@ -417,6 +432,16 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             uint32_t dxt = child->IntAttribute("Dxt");
 
             g = gsDPLoadBlock(tile, uls, ult, lrs, dxt);
+        } else if (childName == "LoadBlockWide") {
+            uint32_t tile = child->IntAttribute("Tile");
+            uint32_t uls = child->IntAttribute("Uls");
+            uint32_t ult = child->IntAttribute("Ult");
+            uint32_t lrs = child->IntAttribute("Lrs");
+            uint32_t dxt = child->IntAttribute("Dxt");
+
+            Gfx g2[2] = { gsDPLoadBlockWide(tile, uls, ult, lrs, dxt) };
+            dl->Instructions.push_back(g2[0]);
+            g = g2[1];
         } else if (childName == "Triangle1") {
             int v00 = child->IntAttribute("V00");
             int v01 = child->IntAttribute("V01");
@@ -1133,6 +1158,11 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             std::string rawMode1 = child->Attribute("Mode1");
             std::string rawMode2 = child->Attribute("Mode2");
             g = gsDPSetRenderMode(renderModes[rawMode1], renderModes[rawMode2]);
+        } else if (childName == "PushShader") {
+            const char* shader = child->Attribute("Shader", nullptr);
+            GsSPPushShader(dl->Instructions, shader);
+        } else if (childName == "PopShader") {
+            GsSPPopShader(dl->Instructions);
         } else {
             printf("DisplayListXML: Unknown node %s\n", childName.c_str());
             g = gsDPPipeSync();

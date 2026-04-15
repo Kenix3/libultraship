@@ -7,7 +7,7 @@
 #include "ship/Component.h"
 
 namespace Ship {
-enum class AudioBackend { WASAPI, SDL, NUL };
+enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
 
 class Audio : public Component {
   public:
@@ -20,6 +20,11 @@ class Audio : public Component {
     AudioBackend GetCurrentAudioBackend();
     std::shared_ptr<std::vector<AudioBackend>> GetAvailableAudioBackends();
     void SetCurrentAudioBackend(AudioBackend backend);
+
+    // Set audio channels configuration and reinitialize audio player
+    // This can be called at runtime without restarting the game
+    void SetAudioChannels(AudioChannelsSetting channels);
+    AudioChannelsSetting GetAudioChannels() const;
 
   protected:
     void InitAudioPlayer();

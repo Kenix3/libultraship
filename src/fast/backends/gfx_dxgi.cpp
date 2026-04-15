@@ -24,13 +24,15 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
+#include "ship/window/FileDropMgr.h"
+
+#include "libultraship/bridge/controllerbridge.h"
 
 #include "fast/backends/gfx_window_manager_api.h"
 #include "fast/backends/gfx_rendering_api.h"
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_screen_config.h"
 #include "fast/interpreter.h"
-#include "ship/window/FileDropMgr.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "fast/backends/gfx_dxgi.h"
@@ -51,6 +53,8 @@
 #define HID_USAGE_GENERIC_MOUSE ((unsigned short)0x02)
 #endif
 using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
+
+#define ALLOW_BACKGROUND_INPUTS_BLOCK_ID 95237930
 
 namespace Fast {
 
@@ -353,7 +357,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     char fileName[256];
     Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
+    auto ctx = Ship::Context::GetInstance();
+    if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() &&
+        ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
+        ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
+    }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
     switch (message) {
@@ -486,11 +494,17 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_SETFOCUS:
             self->mInFocus = true;
+            ControllerUnblockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
             if (self->mIsMouseCaptured) {
                 self->ApplyMouseCaptureClip();
             }
             break;
         case WM_KILLFOCUS:
+            if (auto ctx = Ship::Context::GetInstance(); ctx && ctx->GetConsoleVariables()) {
+                if (!ctx->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                    ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
+                }
+            }
             self->mInFocus = false;
             break;
         default:
@@ -539,7 +553,7 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
 
     char title[512];
     wchar_t w_title[512];
-    int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
+    int len = snprintf(title, sizeof(title), "%s (%s)", game_name, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
 
     // Create window
@@ -947,7 +961,7 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
 
     QueryPerformanceCounter(&t2);
 
-    mZeroLatency = mPendingFrameStats.rbegin()->first == stats.PresentCount;
+    mZeroLatency = !mPendingFrameStats.empty() && mPendingFrameStats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
@@ -979,7 +993,7 @@ void GfxWindowBackendDXGI::SetMaxFrameLatency(int latency) {
 
 void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, class GfxRenderingAPIDX11* self,
                                                   bool (*createFunc)(class GfxRenderingAPIDX11* self,
-                                                                     IDXGIAdapter1* adapter, bool test_only)) {
+                                                                     bool SoftwareRenderer)) {
     if (CreateDXGIFactory2 != nullptr) {
         ThrowIfFailed(CreateDXGIFactory2(debug ? DXGI_CREATE_FACTORY_DEBUG : 0, __uuidof(IDXGIFactory2), &mFactory));
     } else {
@@ -999,19 +1013,14 @@ void GfxWindowBackendDXGI::CreateFactoryAndDevice(bool debug, int d3d_version, c
 
         mTearingSupport = SUCCEEDED(hr) && allowTearing;
     }
-
-    ComPtr<IDXGIAdapter1> adapter;
-    for (UINT i = 0; mFactory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; i++) {
-        DXGI_ADAPTER_DESC1 desc;
-        adapter->GetDesc1(&desc);
-        if (desc.Flags & 2 /*DXGI_ADAPTER_FLAG_SOFTWARE*/) { // declaration missing in mingw headers
-            continue;
-        }
-        if (createFunc(self, adapter.Get(), true)) {
-            break;
-        }
+    // Try preferred hardware adapter and then try software adapter (WARP), if that fails.
+    // Maybe we can try a different renderer (like OpenGL) here first before software?
+    if (!createFunc(self, false) && !createFunc(self, true)) {
+        SPDLOG_CRITICAL("Creating D3D renderer failed. Exiting");
+        MessageBoxA(self->mWindowBackend->GetWindowHandle(), "Creating D3D renderer failed. Exiting", "Error",
+                    MB_OK | MB_ICONERROR);
+        throw;
     }
-    createFunc(self, adapter.Get(), false);
 }
 
 void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn) {
@@ -1068,7 +1077,15 @@ bool GfxWindowBackendDXGI::CanDisableVsync() {
 }
 
 void GfxWindowBackendDXGI::Destroy() {
-    // TODO: destroy _any_ resources used by dxgi, including the window handle
+    // During messy teardowns, it doesn't take a huge tree to eat through the stack.
+    // Iteratively clear frame-stat containers to avoid MSVC's recursive _Erase_tree
+    // stack overflow on deep std::set/std::map trees during destruction.
+    while (!mPendingFrameStats.empty()) {
+        mPendingFrameStats.erase(mPendingFrameStats.begin());
+    }
+    while (!mFrameStats.empty()) {
+        mFrameStats.erase(mFrameStats.begin());
+    }
 }
 
 bool GfxWindowBackendDXGI::IsFullscreen() {
@@ -1087,7 +1104,7 @@ void ThrowIfFailed(HRESULT res) {
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
     if (FAILED(res)) {
         char full_message[256];
-        sprintf(full_message, "%s\n\nHRESULT: 0x%08X", message, res);
+        snprintf(full_message, sizeof(full_message), "%s\n\nHRESULT: 0x%08X", message, res);
         MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
         throw res;
     }

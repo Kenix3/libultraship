@@ -5,6 +5,9 @@ set_target_properties(libultraship PROPERTIES PREFIX "")
 set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 # Need to set C11 for libgfxd (_Alignas)
 set_property(TARGET libultraship PROPERTY C_STANDARD 11)
+set_target_properties(libultraship PROPERTIES ENABLE_EXPORTS TRUE)
+set_target_properties(libultraship PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
@@ -15,7 +18,28 @@ use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
 endif()
 
 #=================== Top-Level ===================
+
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/install_config.h @ONLY)
+
+file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
+set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)
+set(GENERATE_KEYS_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.py)
+get_filename_component(EMBEDDED_KEYS_DIR ${EMBEDDED_KEYS_HEADER} DIRECTORY)
+
+add_custom_command(
+    OUTPUT ${EMBEDDED_KEYS_HEADER}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
+    COMMAND Python3::Interpreter ${GENERATE_KEYS_SCRIPT} 
+            ${EMBEDDED_KEYS_HEADER}
+            ${SCRIPT_PUB_KEYS}
+    DEPENDS ${GENERATE_KEYS_SCRIPT} 
+            ${SCRIPT_PUB_KEYS}
+    COMMENT "Generating DefaultKeys.h from all keys in /keys/script/"
+    VERBATIM
+)
+
+add_custom_target(GenerateScriptKeys DEPENDS ${EMBEDDED_KEYS_HEADER})
+add_dependencies(libultraship GenerateScriptKeys)
 
 #=================== Fast ===================
 
@@ -89,20 +113,30 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     find_Library(OSX_AVFOUNDATION AVFoundation)
     find_library(METAL Metal)
     find_library(QUARTZCORE QuartzCore)
-    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${METAL} ${QUARTZCORE} ${CMAKE_DL_LIBS})
+    find_library(COREAUDIO CoreAudio)
+    find_library(AUDIOTOOLBOX AudioToolbox)
+    target_link_libraries(libultraship PRIVATE ${OSX_FOUNDATION} ${OSX_AVFOUNDATION} ${METAL} ${QUARTZCORE} ${COREAUDIO} ${AUDIOTOOLBOX} ${CMAKE_DL_LIBS})
 endif()
 
 if (USE_OPENGLES)
     if (CMAKE_SYSTEM_NAME STREQUAL "Android")
         find_library(OPENGLES_LIBRARY GLESv3)
         target_link_libraries(libultraship PRIVATE GLESv3)
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+        target_link_libraries(libultraship PRIVATE OpenGL::GLES2)
     else()
         find_library(OPENGLES_LIBRARY GLESv2)
         target_link_libraries(libultraship PRIVATE GLESv2)
     endif()
 endif()
 
-target_link_libraries(libultraship PUBLIC prism)
+target_link_libraries(libultraship PUBLIC prism monocypher)
+
+if(NOT DISABLE_SCRIPTING)
+    target_link_libraries(libultraship PUBLIC libtcc libtcc1)
+else()
+    target_compile_definitions(libultraship PUBLIC DISABLE_SCRIPTING)
+endif()
 
 #=================== Compile Options & Defs ===================
 
@@ -140,19 +174,17 @@ set(SPDLOG_LEVEL_ERROR 4)
 set(SPDLOG_LEVEL_CRITICAL 5)
 set(SPDLOG_LEVEL_OFF 6)
 set(LOG_LEVELS "SPDLOG_LEVEL_TRACE;SPDLOG_LEVEL_DEBUG;SPDLOG_LEVEL_INFO;SPDLOG_LEVEL_WARN;SPDLOG_LEVEL_ERROR;SPDLOG_LEVEL_CRITICAL;SPDLOG_LEVEL_OFF")
-set(LOG_LEVEL SPDLOG_LEVEL_TRACE CACHE STRING "The spdlog level that prints will be logged out. Overriden to SPDLOG_LEVEL_ERROR on Release builds.")
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS ${LOG_LEVELS})
-if(NOT LOG_LEVEL IN_LIST LOG_LEVELS)
-    message(FATAL_ERROR "LOG_LEVEL must be one of ${LOG_LEVELS}")
+set(SPDLOG_MIN_CUTOFF SPDLOG_LEVEL_TRACE CACHE STRING "The minimum log level that will be available to a build. Can be overridden in cmake or in InitLogging")
+set_property(CACHE SPDLOG_MIN_CUTOFF PROPERTY STRINGS ${LOG_LEVELS})
+if(NOT SPDLOG_MIN_CUTOFF IN_LIST LOG_LEVELS)
+    message(FATAL_ERROR "SPDLOG_MIN_CUTOFF must be one of ${LOG_LEVELS}")
 endif()
-set(SPDLOG_ACTIVE_LEVEL ${${LOG_LEVEL}})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(libultraship PRIVATE
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=${SPDLOG_ACTIVE_LEVEL}>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=4>
+        SPDLOG_ACTIVE_LEVEL=${SPDLOG_MIN_CUTOFF}
         __IOS__
     )
 
@@ -181,8 +213,7 @@ else()
         ENABLE_OPENGL
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=${SPDLOG_ACTIVE_LEVEL}>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=4>
+        SPDLOG_ACTIVE_LEVEL=${SPDLOG_MIN_CUTOFF}
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
         $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )

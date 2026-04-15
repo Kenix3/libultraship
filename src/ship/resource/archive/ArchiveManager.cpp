@@ -155,9 +155,6 @@ bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::stri
     if (archive) {
         if (archive->WriteFile(filePath, data)) {
             auto hash = CRC64(filePath.c_str());
-            archive->Unload();
-            archive->Load();
-            AddArchive(archive);
             mHashes[hash] = filePath;
             mFileToArchive[hash] = archive;
             return true; // Successfully wrote file
@@ -211,13 +208,19 @@ std::vector<std::string> ArchiveManager::GetArchiveListInPaths(const std::vector
     for (const auto& archivePath : archivePaths) {
         if (archivePath.length() > 0) {
             if (std::filesystem::is_directory(archivePath)) {
-                for (const auto& p : std::filesystem::recursive_directory_iterator(archivePath)) {
+                bool hasAssetFiles = false;
+                for (const auto& p : std::filesystem::directory_iterator(archivePath)) {
                     if (StringHelper::IEquals(p.path().extension().string(), ".otr") ||
                         StringHelper::IEquals(p.path().extension().string(), ".zip") ||
                         StringHelper::IEquals(p.path().extension().string(), ".mpq") ||
                         StringHelper::IEquals(p.path().extension().string(), ".o2r")) {
                         fileList.push_back(std::filesystem::absolute(p).string());
+                        hasAssetFiles = true;
                     }
+                }
+
+                if (!hasAssetFiles) {
+                    fileList.push_back(std::filesystem::absolute(archivePath).string());
                 }
             } else if (std::filesystem::is_regular_file(archivePath)) {
                 fileList.push_back(std::filesystem::absolute(archivePath).string());
@@ -291,6 +294,14 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
 
 bool ArchiveManager::IsGameVersionValid(uint32_t gameVersion) {
     return mValidGameVersions.empty() || mValidGameVersions.contains(gameVersion);
+}
+
+void ArchiveManager::SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler) {
+    mUntrustedArchiveHandler = handler;
+}
+
+UntrustedArchiveHandler ArchiveManager::GetUntrustedArchiveHandler() const {
+    return mUntrustedArchiveHandler;
 }
 
 } // namespace Ship

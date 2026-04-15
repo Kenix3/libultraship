@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <spdlog/spdlog.h>
 #include "ship/window/gui/Gui.h"
+#include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/Component.h"
 
@@ -32,6 +33,7 @@ class Window : public Component {
     Window();
     Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
     Window(std::shared_ptr<Gui> gui);
+    Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager);
     virtual ~Window();
 
     virtual void Init() = 0;
@@ -82,6 +84,7 @@ class Window : public Component {
     int32_t GetMouseCaptureScancode();
     void SetFullscreenScancode(int32_t scancode);
     void SetMouseCaptureScancode(int32_t scancode);
+    std::shared_ptr<MouseStateManager> GetMouseStateManager();
 
   protected:
     void SetWindowBackend(WindowBackend backend);
@@ -91,12 +94,11 @@ class Window : public Component {
     std::shared_ptr<Gui> mGui;
     int32_t mLastScancode = -1;
     WindowBackend mWindowBackend;
+    std::shared_ptr<MouseStateManager> mMouseStateManager;
     std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;
-    bool mAutoCaptureMouse = false;
-    bool mForceCursorVisibility = false;
     int32_t mFullscreenScancode;
     int32_t mMouseCaptureScancode;
 };

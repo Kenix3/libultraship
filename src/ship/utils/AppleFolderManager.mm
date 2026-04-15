@@ -18,6 +18,20 @@ FolderManager::~FolderManager() {
     [(NSAutoreleasePool *)m_autoreleasePool release];
 }
 
+void FolderManager::CreateAppSupportDirectory(const char * appName) {
+    NSString *appNameString = [NSString stringWithUTF8String:appName];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *appSupportDirectory = [NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory::NSApplicationSupportDirectory, Ship::NSUserDomainMask, YES) firstObject];
+    NSString *appSpecificDir = [appSupportDirectory stringByAppendingPathComponent:appNameString];
+
+    NSError *error = nil;
+    if (![fileManager fileExistsAtPath:appSpecificDir]) {
+        if (![fileManager createDirectoryAtPath:appSpecificDir withIntermediateDirectories:NO attributes:Nil error:&error]) {
+            NSLog(@"Error creating directory: %@", error);
+        }
+    }
+}
+
 const char * FolderManager::getMainBundlePath() {
     NSString *bundlePath = [[NSBundle mainBundle] resourcePath];
     return [bundlePath UTF8String];

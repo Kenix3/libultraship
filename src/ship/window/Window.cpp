@@ -12,10 +12,14 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui) : Component("Window") {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) : Component("Window") {
     mGui = gui;
+    mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+}
+
+Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
 }
 
 Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Window(std::make_shared<Gui>(guiWindows)) {
@@ -84,19 +88,19 @@ bool Window::IsAvailableWindowBackend(int32_t backendId) {
 }
 
 bool Window::ShouldAutoCaptureMouse() {
-    return mAutoCaptureMouse;
+    return mMouseStateManager->ShouldAutoCaptureMouse();
 }
 
 void Window::SetAutoCaptureMouse(bool capture) {
-    mAutoCaptureMouse = capture;
+    mMouseStateManager->SetAutoCaptureMouse(capture);
 }
 
 bool Window::ShouldForceCursorVisibility() {
-    return mForceCursorVisibility;
+    return mMouseStateManager->ShouldForceCursorVisibility();
 }
 
 void Window::SetForceCursorVisibility(bool visible) {
-    mForceCursorVisibility = visible;
+    mMouseStateManager->SetForceCursorVisibility(visible);
 }
 
 int32_t Window::GetFullscreenScancode() {
@@ -113,6 +117,10 @@ void Window::SetFullscreenScancode(int32_t scancode) {
 
 void Window::SetMouseCaptureScancode(int32_t scancode) {
     mMouseCaptureScancode = scancode;
+}
+
+std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
+    return mMouseStateManager;
 }
 
 void Window::SetWindowBackend(WindowBackend backend) {
