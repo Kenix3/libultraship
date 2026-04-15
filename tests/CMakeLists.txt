@@ -13,6 +13,9 @@ add_executable(lus_tests
     string_helper_tests.cpp
     crc64_tests.cpp
     script_test.cpp
+    stox_tests.cpp
+    utils_tests.cpp
+    bitconverter_tests.cpp
 )
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)

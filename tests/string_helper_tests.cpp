@@ -185,3 +185,163 @@ TEST(StringHelperImplode, SingleElement) {
     std::vector<std::string> v = { "a" };
     EXPECT_EQ(StringHelper::Implode(v, ","), "a");
 }
+
+// ============================================================
+// ReplaceOriginal
+// ============================================================
+
+TEST(StringHelperReplaceOriginal, ReplacesInPlace) {
+    std::string s = "hello world world";
+    StringHelper::ReplaceOriginal(s, "world", "LUS");
+    EXPECT_EQ(s, "hello LUS LUS");
+}
+
+TEST(StringHelperReplaceOriginal, NoMatchUnchanged) {
+    std::string s = "hello";
+    StringHelper::ReplaceOriginal(s, "xyz", "abc");
+    EXPECT_EQ(s, "hello");
+}
+
+// ============================================================
+// Sprintf
+// ============================================================
+
+TEST(StringHelperSprintf, FormatsInteger) {
+    std::string result = StringHelper::Sprintf("%d", 42);
+    EXPECT_EQ(result, "42");
+}
+
+TEST(StringHelperSprintf, FormatsString) {
+    std::string result = StringHelper::Sprintf("hello %s", "world");
+    EXPECT_EQ(result, "hello world");
+}
+
+TEST(StringHelperSprintf, FormatsMultipleArgs) {
+    std::string result = StringHelper::Sprintf("%d + %d = %d", 1, 2, 3);
+    EXPECT_EQ(result, "1 + 2 = 3");
+}
+
+// ============================================================
+// StrToL
+// ============================================================
+
+TEST(StringHelperStrToL, DecimalBase) {
+    EXPECT_EQ(StringHelper::StrToL("255", 10), 255LL);
+}
+
+TEST(StringHelperStrToL, HexBase) {
+    EXPECT_EQ(StringHelper::StrToL("ff", 16), 255LL);
+}
+
+TEST(StringHelperStrToL, OctalBase) {
+    EXPECT_EQ(StringHelper::StrToL("10", 8), 8LL);
+}
+
+TEST(StringHelperStrToL, AutoDetectHexPrefix) {
+    // base=0 lets strtoull auto-detect; StrToL uses base as-is
+    EXPECT_EQ(StringHelper::StrToL("0xff", 16), 255LL);
+}
+
+// ============================================================
+// HasOnlyDigits
+// ============================================================
+
+TEST(StringHelperHasOnlyDigits, AllDigits) {
+    EXPECT_TRUE(StringHelper::HasOnlyDigits("1234567890"));
+}
+
+TEST(StringHelperHasOnlyDigits, ContainsLetter) {
+    EXPECT_FALSE(StringHelper::HasOnlyDigits("123a"));
+}
+
+TEST(StringHelperHasOnlyDigits, EmptyString) {
+    EXPECT_TRUE(StringHelper::HasOnlyDigits(""));
+}
+
+TEST(StringHelperHasOnlyDigits, WithSpaces) {
+    EXPECT_FALSE(StringHelper::HasOnlyDigits("12 34"));
+}
+
+// ============================================================
+// HexToBytes / BytesToHex
+// ============================================================
+
+TEST(StringHelperHexToBytes, BasicConversion) {
+    auto bytes = StringHelper::HexToBytes("deadbeef");
+    ASSERT_EQ(bytes.size(), 4u);
+    EXPECT_EQ(bytes[0], 0xDE);
+    EXPECT_EQ(bytes[1], 0xAD);
+    EXPECT_EQ(bytes[2], 0xBE);
+    EXPECT_EQ(bytes[3], 0xEF);
+}
+
+TEST(StringHelperHexToBytes, SingleByte) {
+    auto bytes = StringHelper::HexToBytes("ff");
+    ASSERT_EQ(bytes.size(), 1u);
+    EXPECT_EQ(bytes[0], 0xFF);
+}
+
+TEST(StringHelperBytesToHex, BasicConversion) {
+    std::vector<unsigned char> bytes = { 0xDE, 0xAD, 0xBE, 0xEF };
+    EXPECT_EQ(StringHelper::BytesToHex(bytes), "deadbeef");
+}
+
+TEST(StringHelperBytesToHex, EmptyVector) {
+    std::vector<unsigned char> bytes = {};
+    EXPECT_EQ(StringHelper::BytesToHex(bytes), "");
+}
+
+TEST(StringHelperBytesToHex, SingleByte) {
+    std::vector<unsigned char> bytes = { 0x0A };
+    EXPECT_EQ(StringHelper::BytesToHex(bytes), "0a");
+}
+
+TEST(StringHelperHexRoundTrip, BytesToHexAndBack) {
+    std::vector<unsigned char> original = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
+    std::string hex = StringHelper::BytesToHex(original);
+    auto recovered = StringHelper::HexToBytes(hex);
+    ASSERT_EQ(recovered.size(), original.size());
+    for (size_t i = 0; i < original.size(); i++) {
+        EXPECT_EQ(recovered[i], original[i]);
+    }
+}
+
+// ============================================================
+// Split (string_view overload)
+// ============================================================
+
+TEST(StringHelperSplitView, BasicDelimiter) {
+    std::string_view input = "a.b.c";
+    auto parts = StringHelper::Split(input, ".");
+    ASSERT_EQ(parts.size(), 3u);
+    EXPECT_EQ(parts[0], "a");
+    EXPECT_EQ(parts[1], "b");
+    EXPECT_EQ(parts[2], "c");
+}
+
+TEST(StringHelperSplitView, NoDelimiter) {
+    std::string_view input = "abc";
+    auto parts = StringHelper::Split(input, ".");
+    ASSERT_EQ(parts.size(), 1u);
+    EXPECT_EQ(parts[0], "abc");
+}
+
+TEST(StringHelperSplitView, MultiCharDelimiter) {
+    std::string_view input = "foo::bar::baz";
+    auto parts = StringHelper::Split(input, "::");
+    ASSERT_EQ(parts.size(), 3u);
+    EXPECT_EQ(parts[1], "bar");
+}
+
+// ============================================================
+// EndsWith edge cases
+// ============================================================
+
+TEST(StringHelperEndsWith, SuffixLongerThanString) {
+    EXPECT_FALSE(StringHelper::EndsWith("hi", "hello world"));
+}
+
+TEST(StringHelperEndsWith, EmptySuffix) {
+    // An empty suffix is always a suffix
+    EXPECT_TRUE(StringHelper::EndsWith("hello", ""));
+}
