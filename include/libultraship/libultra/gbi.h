@@ -2079,6 +2079,17 @@ typedef union Gfx {
 /***
  ***  1 Triangle
  ***/
+#ifdef F3DEX_GBI
+#define gSP1Triangle(pkt, v0, v1, v2, flag)                   \
+    {                                                         \
+        Gfx* _g = (Gfx*)(pkt);                                \
+                                                              \
+        _g->words.w0 = _SHIFTL(G_TRI1, 24, 8);                \
+        _g->words.w1 = __gsSP1Triangle_w1f(v0, v1, v2, flag); \
+    }
+#define gsSP1Triangle(v0, v1, v2, flag) \
+    { _SHIFTL(G_TRI1, 24, 8), __gsSP1Triangle_w1f(v0, v1, v2, flag) }
+#else
 #define gSP1Triangle(pkt, v0, v1, v2, flag)                                                      \
     _DW({                                                                                        \
         Gfx* _g = (Gfx*)(pkt);                                                                   \
@@ -2088,6 +2099,7 @@ typedef union Gfx {
     })
 #define gsSP1Triangle(v0, v1, v2, flag) \
     { _SHIFTL(G_TRI1_WIDE, 24, 8) | __gsSP1Triangle_w1f_wide(v0, v1, v2, flag), 0 }
+#endif
 
 /***
  ***  Line
