@@ -10,23 +10,68 @@ Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CO
 ## Versioning
 We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h.
 
-## Building on Linux/Mac
+## Building
+
+### Prerequisites
+Install system dependencies before building.
+
+**Linux (Debian/Ubuntu):**
+```
+sudo apt-get install $(cat .github/workflows/apt-deps.txt)
+```
+
+**macOS:**
+```
+brew install $(cat .github/workflows/brew-deps.txt)
+```
+
+Then install the required Python packages (needed to generate asset keys):
+```
+pip install -r requirements.txt
+```
+
+### Linux / macOS
 ```
 cmake -H. -Bbuild
 cmake --build build
 ```
 
-## Generating a Visual Studio `.sln` on Windows
-```
-# Visual Studio 2022
-& 'C:\Program Files\CMake\bin\cmake' -DUSE_AUTO_VCPKG=true -S . -B "build/x64" -G "Visual Studio 17 2022" -T v142 -A x64
-# Visual Studio 2019
-& 'C:\Program Files\CMake\bin\cmake' -DUSE_AUTO_VCPKG=true -S . -B "build/x64" -G "Visual Studio 16 2019" -T v142 -A x64
+### Windows
+
+On Windows, LUS uses [vcpkg](https://vcpkg.io) to manage C++ dependencies. Pass `-DUSE_AUTO_VCPKG=ON` to have CMake download and bootstrap vcpkg automatically. Alternatively, set the `VCPKG_ROOT` environment variable to point to an existing vcpkg installation and omit the flag.
+
+#### Generating a Visual Studio solution (x64)
+```powershell
+& 'C:\Program Files\CMake\bin\cmake' -DUSE_AUTO_VCPKG=ON -S . -B "build/x64" -G "Visual Studio 17 2022" -T v143 -A x64
 ```
 
-## To build on Windows
-```
+#### Building
+```powershell
 & 'C:\Program Files\CMake\bin\cmake' --build .\build\x64
+```
+
+### iOS
+
+Requires Xcode on macOS. Set `CMAKE_OSX_DEPLOYMENT_TARGET` to the minimum iOS version you wish to support.
+
+```
+cmake -H. -Bbuild -GXcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
+cmake --build build --config Release
+```
+
+### Android
+
+Requires the [Android NDK](https://developer.android.com/ndk/downloads). Set `ANDROID_NDK_HOME` to the path of the extracted NDK directory.
+
+```
+cmake -S . -Bbuild-android -GNinja \
+  -DCMAKE_SYSTEM_NAME=Android \
+  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+  -DANDROID_NDK=$ANDROID_NDK_HOME \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=latest \
+  -DANDROID_STL=c++_static
+cmake --build build-android --config Release
 ```
 
 ## Sponsors
