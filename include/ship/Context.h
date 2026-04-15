@@ -33,20 +33,20 @@ class Keystore;
 class Context {
   public:
     static std::shared_ptr<Context> GetInstance();
-    static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
-                                                   const std::string configFilePath,
+    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
+                                                   const std::string& configFilePath,
                                                    const std::vector<std::string>& archivePaths = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
                                                    uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
                                                    std::shared_ptr<Window> window = nullptr,
                                                    std::shared_ptr<ControlDeck> controlDeck = nullptr);
-    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
-                                                                const std::string configFilePath);
+    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string& name, const std::string& shortName,
+                                                                const std::string& configFilePath);
     static std::string GetAppBundlePath();
-    static std::string GetAppDirectoryPath(std::string appName = "");
-    static std::string GetPathRelativeToAppDirectory(const std::string path, std::string appName = "");
-    static std::string GetPathRelativeToAppBundle(const std::string path);
-    static std::string LocateFileAcrossAppDirs(const std::string path, std::string appName = "");
+    static std::string GetAppDirectoryPath(const std::string& appName = "");
+    static std::string GetPathRelativeToAppDirectory(const std::string& path, const std::string& appName = "");
+    static std::string GetPathRelativeToAppBundle(const std::string& path);
+    static std::string LocateFileAcrossAppDirs(const std::string& path, const std::string& appName = "");
 
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
@@ -55,23 +55,23 @@ class Context {
               uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window = nullptr,
               std::shared_ptr<ControlDeck> controlDeck = nullptr);
 
-    std::shared_ptr<spdlog::logger> GetLogger();
-    std::shared_ptr<Config> GetConfig();
-    std::shared_ptr<ConsoleVariable> GetConsoleVariables();
-    std::shared_ptr<ResourceManager> GetResourceManager();
-    std::shared_ptr<ControlDeck> GetControlDeck();
-    std::shared_ptr<CrashHandler> GetCrashHandler();
-    std::shared_ptr<Window> GetWindow();
-    std::shared_ptr<Console> GetConsole();
-    std::shared_ptr<Audio> GetAudio();
-    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
-    std::shared_ptr<FileDropMgr> GetFileDropMgr();
-    std::shared_ptr<EventSystem> GetEventSystem();
-    std::shared_ptr<ScriptLoader> GetScriptLoader();
-    std::shared_ptr<Keystore> GetKeystore();
+    std::shared_ptr<spdlog::logger> GetLogger() const;
+    std::shared_ptr<Config> GetConfig() const;
+    std::shared_ptr<ConsoleVariable> GetConsoleVariables() const;
+    std::shared_ptr<ResourceManager> GetResourceManager() const;
+    std::shared_ptr<ControlDeck> GetControlDeck() const;
+    std::shared_ptr<CrashHandler> GetCrashHandler() const;
+    std::shared_ptr<Window> GetWindow() const;
+    std::shared_ptr<Console> GetConsole() const;
+    std::shared_ptr<Audio> GetAudio() const;
+    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() const;
+    std::shared_ptr<FileDropMgr> GetFileDropMgr() const;
+    std::shared_ptr<EventSystem> GetEventSystem() const;
+    std::shared_ptr<ScriptLoader> GetScriptLoader() const;
+    std::shared_ptr<Keystore> GetKeystore() const;
 
-    std::string GetName();
-    std::string GetShortName();
+    std::string GetName() const;
+    std::string GetShortName() const;
 
     bool InitLogging(spdlog::level::level_enum debugBuildLogLevel = spdlog::level::debug,
                      spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
