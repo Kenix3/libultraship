@@ -38,7 +38,7 @@ cmake --build build
 
 ### Windows
 
-On Windows, LUS uses [vcpkg](https://vcpkg.io) to manage C++ dependencies. Pass `-DUSE_AUTO_VCPKG=ON` to have CMake download and bootstrap vcpkg automatically. Alternatively, set the `VCPKG_ROOT` environment variable to point to an existing vcpkg installation and omit the flag.
+On Windows, LUS uses [vcpkg](https://vcpkg.io) to manage C++ dependencies. Pass `-DUSE_AUTO_VCPKG=ON` to have CMake download and bootstrap vcpkg automatically. Alternatively, install the required ports manually with an existing vcpkg installation and pass `-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake` instead.
 
 #### Generating a Visual Studio solution (x64)
 ```powershell
@@ -70,8 +70,9 @@ cmake -S . -Bbuild-android -GNinja \
   -DANDROID_NDK=$ANDROID_NDK_HOME \
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_PLATFORM=latest \
-  -DANDROID_STL=c++_static
-cmake --build build-android --config Release
+  -DANDROID_STL=c++_static \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build-android
 ```
 
 ## Sponsors
