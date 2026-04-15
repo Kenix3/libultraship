@@ -2,14 +2,21 @@
 
 #ifdef __cplusplus
 namespace Ship {
+/**
+ * @brief Byte order used for multi-byte reads and writes.
+ *
+ * The @c Native enumerator resolves at compile time to whichever byte order the
+ * target platform uses, allowing code to request "native" endianness without
+ * hard-coding a specific value.
+ */
 enum class Endianness {
-    Little = 0,
-    Big = 1,
+    Little = 0, ///< Least-significant byte stored first.
+    Big = 1,    ///< Most-significant byte stored first.
 
 #if (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)) || defined(__BIG_ENDIAN__)
-    Native = Big,
+    Native = Big,    ///< Platform is big-endian; Native resolves to Big.
 #else
-    Native = Little,
+    Native = Little, ///< Platform is little-endian; Native resolves to Little.
 #endif
 };
 } // namespace Ship
