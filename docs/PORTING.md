@@ -24,7 +24,7 @@ LUS supports the following platforms and rendering backends:
 ## Prerequisites
 
 1.  **A Game Decompilation:** You must have the source code of the game (e.g., *Star Fox 64*, *Banjo-Kazooie*) ready to build.
-2.  **Template Project:** Use [**Ghostship**](https://github.com/HarbourMasters/Ghostship) as your reference. This is the standard example project used by existing ports to handle CMake configurations and asset management. Ghostship is a separate repository; it is not included in this one.
+2.  **Template Project:** Use [**Ghostship**](https://github.com/HarbourMasters/Ghostship) as your reference. This is the standard example project used by existing ports to handle CMake configurations and asset management. Ghostship is a separate repository and is not included in this one.
 
 ---
 
