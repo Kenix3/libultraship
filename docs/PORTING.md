@@ -42,7 +42,7 @@ The initial goal is not a playable game, but simply a functional executable that
       ```c
       #include <libultraship/libultraship.h>
       ```
-    * The shorter form `#include <libultraship.h>` also works because CMake adds the appropriate include search path, but the canonical form above is recommended.
+    * Use the public include path shown above unless you have explicitly configured your project's include directories to support a different form.
 
 3.  **Compile & Fix:**
     * Attempt to build. You will encounter thousands of errors.
