@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef DISABLE_SCRIPTING
+
 #include "stdint.h"
 #include "ship/Api.h"
 
@@ -23,3 +25,5 @@ API_EXPORT void* ScriptGetFunction(const char* module, const char* function);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // DISABLE_SCRIPTING

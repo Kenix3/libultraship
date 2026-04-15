@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
+#include <memory>
 
 #if (__linux__)
 #include <csignal>
@@ -95,7 +96,7 @@ class CrashHandler {
 
   private:
     CrashHandlerCallback mCallback = nullptr;
-    char* mOutBuffer = nullptr;
+    std::unique_ptr<char[]> mOutBuffer;
     static constexpr size_t gMaxBufferSize = 32768;
     size_t mOutBuffersize = 0;
 

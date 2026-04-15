@@ -27,7 +27,9 @@ class Config;
 class ResourceManager;
 class FileDropMgr;
 class EventSystem;
+#ifndef DISABLE_SCRIPTING
 class ScriptLoader;
+#endif
 class Keystore;
 
 /**
@@ -67,8 +69,8 @@ class Context {
      * @param controlDeck       Optional pre-constructed ControlDeck; if nullptr a default is created.
      * @return Shared pointer to the fully initialized Context.
      */
-    static std::shared_ptr<Context> CreateInstance(const std::string name, const std::string shortName,
-                                                   const std::string configFilePath,
+    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
+                                                   const std::string& configFilePath,
                                                    const std::vector<std::string>& archivePaths = {},
                                                    const std::unordered_set<uint32_t>& validHashes = {},
                                                    uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
@@ -85,8 +87,8 @@ class Context {
      * @param configFilePath Path to the JSON configuration file.
      * @return Shared pointer to the uninitialized Context.
      */
-    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string name, const std::string shortName,
-                                                                const std::string configFilePath);
+    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string& name, const std::string& shortName,
+                                                                const std::string& configFilePath);
 
     /**
      * @brief Returns the platform-specific application bundle directory (e.g. the .app bundle on macOS).
@@ -99,7 +101,7 @@ class Context {
      * @param appName Override the application name used to build the path; defaults to the current app name.
      * @return Absolute path string.
      */
-    static std::string GetAppDirectoryPath(std::string appName = "");
+    static std::string GetAppDirectoryPath(const std::string& appName = "");
 
     /**
      * @brief Resolves a path relative to the application data directory.
@@ -107,14 +109,14 @@ class Context {
      * @param appName Override the application name used to build the base path.
      * @return Absolute path string.
      */
-    static std::string GetPathRelativeToAppDirectory(const std::string path, std::string appName = "");
+    static std::string GetPathRelativeToAppDirectory(const std::string& path, const std::string& appName = "");
 
     /**
      * @brief Resolves a path relative to the application bundle directory.
      * @param path Relative path to resolve.
      * @return Absolute path string.
      */
-    static std::string GetPathRelativeToAppBundle(const std::string path);
+    static std::string GetPathRelativeToAppBundle(const std::string& path);
 
     /**
      * @brief Searches common application directories for a file and returns its absolute path.
@@ -122,7 +124,7 @@ class Context {
      * @param appName Override the application name used to search.
      * @return Absolute path to the first match found, or an empty string if not found.
      */
-    static std::string LocateFileAcrossAppDirs(const std::string path, std::string appName = "");
+    static std::string LocateFileAcrossAppDirs(const std::string& path, const std::string& appName = "");
 
     /**
      * @brief Constructs a Context with the given identifiers but does not initialize subsystems.
@@ -152,38 +154,40 @@ class Context {
               std::shared_ptr<ControlDeck> controlDeck = nullptr);
 
     /** @brief Returns the application-wide spdlog logger. */
-    std::shared_ptr<spdlog::logger> GetLogger();
+    std::shared_ptr<spdlog::logger> GetLogger() const;
     /** @brief Returns the Config subsystem. */
-    std::shared_ptr<Config> GetConfig();
+    std::shared_ptr<Config> GetConfig() const;
     /** @brief Returns the ConsoleVariable subsystem (CVars). */
-    std::shared_ptr<ConsoleVariable> GetConsoleVariables();
+    std::shared_ptr<ConsoleVariable> GetConsoleVariables() const;
     /** @brief Returns the ResourceManager subsystem. */
-    std::shared_ptr<ResourceManager> GetResourceManager();
+    std::shared_ptr<ResourceManager> GetResourceManager() const;
     /** @brief Returns the ControlDeck subsystem. */
-    std::shared_ptr<ControlDeck> GetControlDeck();
+    std::shared_ptr<ControlDeck> GetControlDeck() const;
     /** @brief Returns the CrashHandler subsystem. */
-    std::shared_ptr<CrashHandler> GetCrashHandler();
+    std::shared_ptr<CrashHandler> GetCrashHandler() const;
     /** @brief Returns the Window subsystem. */
-    std::shared_ptr<Window> GetWindow();
+    std::shared_ptr<Window> GetWindow() const;
     /** @brief Returns the developer Console subsystem. */
-    std::shared_ptr<Console> GetConsole();
+    std::shared_ptr<Console> GetConsole() const;
     /** @brief Returns the Audio subsystem. */
-    std::shared_ptr<Audio> GetAudio();
+    std::shared_ptr<Audio> GetAudio() const;
     /** @brief Returns the graphics debugger. */
-    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
+    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() const;
     /** @brief Returns the FileDropMgr subsystem for handling drag-and-drop file events. */
-    std::shared_ptr<FileDropMgr> GetFileDropMgr();
+    std::shared_ptr<FileDropMgr> GetFileDropMgr() const;
     /** @brief Returns the EventSystem subsystem. */
-    std::shared_ptr<EventSystem> GetEventSystem();
+    std::shared_ptr<EventSystem> GetEventSystem() const;
+#ifndef DISABLE_SCRIPTING
     /** @brief Returns the ScriptLoader subsystem. */
-    std::shared_ptr<ScriptLoader> GetScriptLoader();
+    std::shared_ptr<ScriptLoader> GetScriptLoader() const;
+#endif
     /** @brief Returns the Keystore subsystem used for archive signature verification. */
-    std::shared_ptr<Keystore> GetKeystore();
+    std::shared_ptr<Keystore> GetKeystore() const;
 
     /** @brief Returns the human-readable application name. */
-    std::string GetName();
+    std::string GetName() const;
     /** @brief Returns the short application identifier. */
-    std::string GetShortName();
+    std::string GetShortName() const;
 
     /**
      * @brief Initializes the spdlog logging backend.
@@ -248,6 +252,7 @@ class Context {
     /** @brief Initializes the EventSystem subsystem. @return true on success. */
     bool InitEventSystem();
 
+#ifndef DISABLE_SCRIPTING
     /**
      * @brief Initializes the ScriptLoader subsystem for runtime script compilation.
      * @param compileDefines  Preprocessor defines passed to the compiler.
@@ -261,6 +266,7 @@ class Context {
     bool InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1,
                           std::string buildOptions = "-g -Wl", std::vector<std::string> includePaths = {},
                           std::vector<std::string> libraryPaths = {}, std::vector<std::string> libraries = {});
+#endif
 
     /** @brief Initializes the Keystore used for verifying signed archives. @return true on success. */
     bool InitKeystore();
@@ -283,7 +289,9 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
+#ifndef DISABLE_SCRIPTING
     std::shared_ptr<ScriptLoader> mScriptLoader;
+#endif
     std::shared_ptr<Keystore> mKeystore;
 
     std::string mConfigFilePath;

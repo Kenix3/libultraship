@@ -52,22 +52,28 @@ std::string StringHelper::Strip(std::string s, const std::string& delimiter) {
 }
 
 std::string StringHelper::Replace(std::string str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return str;
+    }
     size_t start_pos = str.find(from);
 
     while (start_pos != std::string::npos) {
         str.replace(start_pos, from.length(), to);
-        start_pos = str.find(from);
+        start_pos = str.find(from, start_pos + to.length());
     }
 
     return str;
 }
 
 void StringHelper::ReplaceOriginal(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return;
+    }
     size_t start_pos = str.find(from);
 
     while (start_pos != std::string::npos) {
         str.replace(start_pos, from.length(), to);
-        start_pos = str.find(from);
+        start_pos = str.find(from, start_pos + to.length());
     }
 }
 
@@ -84,13 +90,14 @@ bool StringHelper::Contains(const std::string& s, const std::string& input) {
 }
 
 bool StringHelper::EndsWith(const std::string& s, const std::string& input) {
-    size_t inputLen = strlen(input.c_str());
-    return s.rfind(input) == (s.size() - inputLen);
+    if (input.size() > s.size()) {
+        return false;
+    }
+    return s.rfind(input) == (s.size() - input.size());
 }
 
 std::string StringHelper::Sprintf(const char* format, ...) {
     char buffer[32768];
-    // char buffer[2048];
     std::string output;
     va_list va;
 
