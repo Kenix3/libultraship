@@ -38,14 +38,12 @@ class Context : public Component, public Tickable {
      * CrashHandler, Console, Window, Audio, GfxDebugger, EventSystem, FileDropMgr,
      * ScriptLoader (if enabled), and Keystore.
      */
-    static std::shared_ptr<Context> CreateDefaultInstance(const std::string& name, const std::string& shortName,
-                                                          const std::string& configFilePath,
-                                                          const std::vector<std::string>& archivePaths = {},
-                                                          const std::unordered_set<uint32_t>& validHashes = {},
-                                                          uint32_t reservedThreadCount = 1,
-                                                          AudioSettings audioSettings = {},
-                                                          std::shared_ptr<Component> window = nullptr,
-                                                          std::shared_ptr<Component> controlDeck = nullptr);
+    static std::shared_ptr<Context>
+    CreateDefaultInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
+                          const std::vector<std::string>& archivePaths = {},
+                          const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1,
+                          AudioSettings audioSettings = {}, std::shared_ptr<Component> window = nullptr,
+                          std::shared_ptr<Component> controlDeck = nullptr);
 
     /**
      * @brief Creates and stores the global Context instance without adding any default components.

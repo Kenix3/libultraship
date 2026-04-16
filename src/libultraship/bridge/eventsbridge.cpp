@@ -10,9 +10,8 @@ EventID EventSystemRegisterEvent(const char* name) {
 
 ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file,
                                        int line) {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::EventSystem>()->RegisterListener(id, callback,
-                                                                                                       priority, file,
-                                                                                                       line);
+    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::EventSystem>()->RegisterListener(
+        id, callback, priority, file, line);
 }
 
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {

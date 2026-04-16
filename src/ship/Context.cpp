@@ -66,12 +66,13 @@ Context::~Context() {
     spdlog::shutdown();
 }
 
-std::shared_ptr<Context>
-Context::CreateDefaultInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
-                               const std::vector<std::string>& archivePaths,
-                               const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount,
-                               AudioSettings audioSettings, std::shared_ptr<Component> window,
-                               std::shared_ptr<Component> controlDeck) {
+std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name, const std::string& shortName,
+                                                        const std::string& configFilePath,
+                                                        const std::vector<std::string>& archivePaths,
+                                                        const std::unordered_set<uint32_t>& validHashes,
+                                                        uint32_t reservedThreadCount, AudioSettings audioSettings,
+                                                        std::shared_ptr<Component> window,
+                                                        std::shared_ptr<Component> controlDeck) {
     if (!mContext.expired()) {
         SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
         return GetInstance();
@@ -230,16 +231,16 @@ Context::CreateDefaultInstance(const std::string& name, const std::string& short
 
 #ifndef DISABLE_SCRIPTING
     // ---- Script Loader ----
-    shared->AddChild(std::make_shared<ScriptLoader>(
-        std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
-        std::vector<std::string>{}, std::vector<std::string>{}, std::vector<std::string>{}));
+    shared->AddChild(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
+                                                    std::vector<std::string>{}, std::vector<std::string>{},
+                                                    std::vector<std::string>{}));
 #endif
 
     return shared;
 }
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
-                                                  const std::string& configFilePath) {
+                                                 const std::string& configFilePath) {
     if (!mContext.expired()) {
         SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
         return GetInstance();
