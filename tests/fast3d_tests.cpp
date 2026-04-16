@@ -547,11 +547,13 @@ class TextureTestFixture : public ::testing::Test {
         // Set tile line_size_bytes (used as fallback by GetEffectiveLineSize)
         interp->mRdp->texture_tile[tile].line_size_bytes = tileLineSizeBytes ? tileLineSizeBytes : lineSizeBytes;
 
-        // Set tile size to zero (no clamping)
+        // Set tile size large enough to prevent tile-dimension clamping.
+        // tile_w = (lrs - uls + 4) / 4, so lrs = 4*maxDim - 4 gives tile_w = maxDim.
+        // Use 1024 as a safe upper bound.
         interp->mRdp->texture_tile[tile].uls = 0;
         interp->mRdp->texture_tile[tile].ult = 0;
-        interp->mRdp->texture_tile[tile].lrs = 0;
-        interp->mRdp->texture_tile[tile].lrt = 0;
+        interp->mRdp->texture_tile[tile].lrs = 4 * 1024 - 4;
+        interp->mRdp->texture_tile[tile].lrt = 4 * 1024 - 4;
     }
 
     std::unique_ptr<Fast::Interpreter> interp;
