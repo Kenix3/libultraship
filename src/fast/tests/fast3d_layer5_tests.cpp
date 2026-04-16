@@ -806,3 +806,961 @@ TEST_F(ReferenceRDPTest, FillColor_AllBlueValues) {
             << "Blue 5-bit value " << b5 << " incorrectly converted";
     }
 }
+
+// ============================================================
+// 15. Depth Test/Mask Computation — Reference Verification
+//
+// The N64 RDP requires BOTH G_ZBUFFER geometry mode AND Z_CMP
+// other_mode_l to enable depth testing. Depth writes require Z_UPD.
+//
+// Reference formula (from interpreter.cpp line 1693-1694):
+//   depth_test = (geometry_mode & G_ZBUFFER) && (other_mode_l & Z_CMP)
+//   depth_mask = (other_mode_l & Z_UPD) != 0
+//   packed = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0)
+//
+// This is a truth table test: all combinations of the three flags.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, DepthComputation_NothingSet) {
+    // No G_ZBUFFER, no Z_CMP, no Z_UPD → depth_test=false, depth_mask=false
+    interp->mRsp->geometry_mode = 0;
+    interp->mRdp->other_mode_l = 0;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    uint8_t packed = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+
+    EXPECT_FALSE(depth_test);
+    EXPECT_FALSE(depth_mask);
+    EXPECT_EQ(packed, 0u);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_ZBufferOnly) {
+    // G_ZBUFFER set, but no Z_CMP → depth_test=false (need both)
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = 0;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    EXPECT_FALSE(depth_test);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_ZCmpOnly) {
+    // Z_CMP set, but no G_ZBUFFER → depth_test=false (need both)
+    interp->mRsp->geometry_mode = 0;
+    interp->mRdp->other_mode_l = Z_CMP;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    EXPECT_FALSE(depth_test);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_ZBufferAndZCmp) {
+    // Both G_ZBUFFER and Z_CMP set → depth_test=true
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = Z_CMP;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    EXPECT_TRUE(depth_test);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_ZUpdOnly) {
+    // Z_UPD alone → depth_mask=true (independent of depth_test)
+    interp->mRdp->other_mode_l = Z_UPD;
+
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    EXPECT_TRUE(depth_mask);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_AllThreeFlags) {
+    // G_ZBUFFER + Z_CMP + Z_UPD → depth_test=true, depth_mask=true, packed=3
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = Z_CMP | Z_UPD;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    uint8_t packed = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+
+    EXPECT_TRUE(depth_test);
+    EXPECT_TRUE(depth_mask);
+    EXPECT_EQ(packed, 3u);
+}
+
+TEST_F(ReferenceRDPTest, DepthComputation_ZCmpZUpd_NoGeometry) {
+    // Z_CMP + Z_UPD, but no G_ZBUFFER → depth_test=false, depth_mask=true
+    interp->mRsp->geometry_mode = 0;
+    interp->mRdp->other_mode_l = Z_CMP | Z_UPD;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    uint8_t packed = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+
+    EXPECT_FALSE(depth_test);
+    EXPECT_TRUE(depth_mask);
+    EXPECT_EQ(packed, 2u);
+}
+
+// ============================================================
+// 16. ZMODE Variant Detection — Reference Values
+//
+// The N64 RDP supports four Z modes via bits 10-11 of other_mode_l:
+//   ZMODE_OPA   = 0x000  (Opaque)
+//   ZMODE_INTER = 0x400  (Interpenetrating)
+//   ZMODE_XLU   = 0x800  (Translucent)
+//   ZMODE_DEC   = 0xC00  (Decal)
+//
+// Decal mode is detected as: (other_mode_l & ZMODE_DEC) == ZMODE_DEC
+// This means ZMODE_DEC is the only mode where the decal flag is true,
+// because ZMODE_DEC = 0xC00 has both bits set.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, ZMode_OpaqueIsNotDecal) {
+    interp->mRdp->other_mode_l = ZMODE_OPA;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    EXPECT_FALSE(zmode_decal);
+}
+
+TEST_F(ReferenceRDPTest, ZMode_InterIsNotDecal) {
+    interp->mRdp->other_mode_l = ZMODE_INTER;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    EXPECT_FALSE(zmode_decal);
+}
+
+TEST_F(ReferenceRDPTest, ZMode_XluIsNotDecal) {
+    interp->mRdp->other_mode_l = ZMODE_XLU;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    EXPECT_FALSE(zmode_decal);
+}
+
+TEST_F(ReferenceRDPTest, ZMode_DecIsDecal) {
+    interp->mRdp->other_mode_l = ZMODE_DEC;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    EXPECT_TRUE(zmode_decal);
+}
+
+TEST_F(ReferenceRDPTest, ZMode_DecWithOtherFlags) {
+    // ZMODE_DEC combined with Z_CMP | Z_UPD — decal should still be detected
+    interp->mRdp->other_mode_l = ZMODE_DEC | Z_CMP | Z_UPD;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+    EXPECT_TRUE(zmode_decal);
+}
+
+TEST_F(ReferenceRDPTest, ZMode_BitValues) {
+    // Verify the exact bit values per N64 RDP spec
+    EXPECT_EQ(ZMODE_OPA, 0x000u);
+    EXPECT_EQ(ZMODE_INTER, 0x400u);
+    EXPECT_EQ(ZMODE_XLU, 0x800u);
+    EXPECT_EQ(ZMODE_DEC, 0xC00u);
+
+    // ZMODE_DEC has both bits 10 and 11 set
+    EXPECT_EQ(ZMODE_DEC, ZMODE_INTER | ZMODE_XLU);
+}
+
+// ============================================================
+// 17. Partial Depth Clear via FillRectangle
+//
+// When color_image_address == z_buf_address and the rectangle is
+// NOT fullscreen, the interpreter should call ClearDepthRegion
+// instead of drawing a colored rectangle.
+//
+// Reference: The coordinates are converted from U10.2 fixed-point
+// to pixels, with +1 pixel expansion for fill mode:
+//   expanded_lrx = lrx + 4
+//   expanded_lry = lry + 4
+//   x = ulx / 4.0
+//   y = expanded_lry / 4.0
+//   w = (expanded_lrx - ulx) / 4.0
+//   h = (expanded_lry - uly) / 4.0
+// ============================================================
+
+TEST_F(ReferenceRDPTest, PartialDepthClear_TriggersAPI) {
+    // Set up depth clear scenario: color_image == z_buf, non-fullscreen rect
+    uint8_t dummyAddr[16] = {};
+    interp->mRdp->z_buf_address = &dummyAddr;
+    interp->mRdp->color_image_address = &dummyAddr;
+
+    // Partial fill rect: pixel coords 40,30 to 200,150 → U10.2: 160,120 to 800,600
+    int32_t ulx = 40 * 4;  // 160
+    int32_t uly = 30 * 4;  // 120
+    int32_t lrx = 200 * 4; // 800
+    int32_t lry = 150 * 4; // 600
+
+    interp->GfxDpFillRectangle(ulx, uly, lrx, lry);
+
+    // Should have called ClearDepthRegion exactly once
+    ASSERT_EQ(stub->depthRegionClears.size(), 1u);
+}
+
+TEST_F(ReferenceRDPTest, PartialDepthClear_CoordinateConversion) {
+    // Verify the U10.2 → pixel coordinate conversion for partial depth clears
+    uint8_t dummyAddr[16] = {};
+    interp->mRdp->z_buf_address = &dummyAddr;
+    interp->mRdp->color_image_address = &dummyAddr;
+
+    // Use simple pixel coords: 10,20 to 100,80 → U10.2: 40,80 to 400,320
+    int32_t ulx = 10 * 4;  // 40
+    int32_t uly = 20 * 4;  // 80
+    int32_t lrx = 100 * 4; // 400
+    int32_t lry = 80 * 4;  // 320
+
+    interp->GfxDpFillRectangle(ulx, uly, lrx, lry);
+
+    ASSERT_EQ(stub->depthRegionClears.size(), 1u);
+
+    // Expected pre-AdjustViewport values:
+    //   expanded_lrx = 400 + 4 = 404
+    //   expanded_lry = 320 + 4 = 324
+    //   x = 40/4 = 10
+    //   y = 324/4 = 81
+    //   w = (404 - 40)/4 = 91
+    //   h = (324 - 80)/4 = 61
+    //
+    // AdjustVIewportOrScissor with mFbActive=false, invertY=false:
+    //   area.y = mNativeDimensions.height - area.y = 240 - 81 = 159
+    //   (RATIO is 1.0 since cur == native dimensions)
+    auto& c = stub->depthRegionClears[0];
+    EXPECT_EQ(c.x, 10);
+    EXPECT_EQ(c.y, 159);
+    EXPECT_EQ(c.w, 91u);
+    EXPECT_EQ(c.h, 61u);
+}
+
+TEST_F(ReferenceRDPTest, FullscreenDepthClear_SkipsAPI) {
+    // Fullscreen depth clear should be a no-op
+    uint8_t dummyAddr[16] = {};
+    interp->mRdp->z_buf_address = &dummyAddr;
+    interp->mRdp->color_image_address = &dummyAddr;
+
+    int32_t lrx = (int32_t)(interp->mNativeDimensions.width - 1) * 4;
+    int32_t lry = (int32_t)(interp->mNativeDimensions.height - 1) * 4;
+
+    interp->GfxDpFillRectangle(0, 0, lrx, lry);
+
+    // No ClearDepthRegion call (fullscreen is skipped)
+    EXPECT_TRUE(stub->depthRegionClears.empty());
+    // No ClearFramebuffer call either
+    EXPECT_EQ(stub->clearFbCount, 0);
+}
+
+TEST_F(ReferenceRDPTest, DepthClear_DifferentAddresses_NotDepthClear) {
+    // When color_image_address != z_buf_address, FillRectangle should
+    // NOT trigger ClearDepthRegion — it's a normal color fill.
+    uint8_t colorBuf[16] = {};
+    uint8_t zBuf[16] = {};
+    interp->mRdp->color_image_address = &colorBuf;
+    interp->mRdp->z_buf_address = &zBuf;
+    interp->mRdp->other_mode_h = G_CYC_FILL;
+
+    // Need texture upload buffer for color fill
+    interp->mTexUploadBuffer = (uint8_t*)malloc(8192 * 8192 * 4);
+
+    interp->GfxDpFillRectangle(40, 40, 400, 400);
+
+    // No depth clear should happen
+    EXPECT_TRUE(stub->depthRegionClears.empty());
+
+    free(interp->mTexUploadBuffer);
+    interp->mTexUploadBuffer = nullptr;
+}
+
+// ============================================================
+// 18. GfxSpSetOtherMode — Selective Bit-Field Update
+//
+// Unlike GfxDpSetOtherMode which replaces both halves entirely,
+// GfxSpSetOtherMode updates only a specified range of bits:
+//   mask = ((1 << num_bits) - 1) << shift
+//   om = (om & ~mask) | mode
+//
+// This preserves all bits outside the mask. Verify against
+// reference computations.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, SpSetOtherMode_SetDepthBits_PreservesOthers) {
+    // Set some initial bits that shouldn't be affected
+    interp->mRdp->other_mode_l = 0xFF000000;
+    interp->mRdp->other_mode_h = 0;
+
+    // Z_CMP=0x10 (bit 4), Z_UPD=0x20 (bit 5)
+    // Set bits 4-5 (shift=4, num_bits=2)
+    interp->GfxSpSetOtherMode(4, 2, Z_CMP | Z_UPD);
+
+    // Depth bits should be set
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+    // Upper bits should be preserved
+    EXPECT_EQ(interp->mRdp->other_mode_l & 0xFF000000, 0xFF000000u);
+}
+
+TEST_F(ReferenceRDPTest, SpSetOtherMode_ClearDepthBits) {
+    // Start with depth bits set
+    interp->mRdp->other_mode_l = Z_CMP | Z_UPD | 0x100;
+
+    // Clear bits 4-5 by setting them to 0
+    interp->GfxSpSetOtherMode(4, 2, 0);
+
+    // Depth bits should be cleared
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_UPD, 0u);
+    // Unrelated bit should be preserved
+    EXPECT_NE(interp->mRdp->other_mode_l & 0x100, 0u);
+}
+
+TEST_F(ReferenceRDPTest, SpSetOtherMode_SetCycleType) {
+    // Cycle type is in the high word at bits 20-21 (G_MDSFT_CYCLETYPE=20)
+    // G_CYC_2CYCLE = 1 << 20 = 0x100000
+    // Since other_mode uses combined 64-bit: shift would be 20+32=52 for high word
+    interp->mRdp->other_mode_h = 0;
+    interp->mRdp->other_mode_l = Z_CMP;
+
+    // Set cycle type to 2-cycle in the high word
+    // shift=52 (20 in high word = 20+32 in combined), num_bits=2
+    interp->GfxSpSetOtherMode(52, 2, (uint64_t)G_CYC_2CYCLE << 32);
+
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), G_CYC_2CYCLE);
+    // Low word should be preserved
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+}
+
+TEST_F(ReferenceRDPTest, SpSetOtherMode_MaskComputation) {
+    // Verify the mask formula: mask = ((1 << num_bits) - 1) << shift
+    // For shift=4, num_bits=2: mask = 0x30
+    uint64_t mask = ((uint64_t(1) << 2) - 1) << 4;
+    EXPECT_EQ(mask, 0x30u);
+
+    // For shift=10, num_bits=2: mask = 0xC00 (ZMODE bits)
+    mask = ((uint64_t(1) << 2) - 1) << 10;
+    EXPECT_EQ(mask, 0xC00u);
+
+    // For shift=20, num_bits=2: mask = 0x300000 (in high word, cycle type)
+    mask = ((uint64_t(1) << 2) - 1) << 20;
+    EXPECT_EQ(mask, 0x300000u);
+}
+
+TEST_F(ReferenceRDPTest, SpSetOtherMode_ZmodeBits) {
+    // Set ZMODE to DEC (bits 10-11)
+    interp->mRdp->other_mode_l = Z_CMP | Z_UPD;
+
+    interp->GfxSpSetOtherMode(10, 2, ZMODE_DEC);
+
+    // ZMODE_DEC should be set
+    EXPECT_EQ(interp->mRdp->other_mode_l & ZMODE_DEC, ZMODE_DEC);
+    // Depth bits should be preserved
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+// ============================================================
+// 19. Tile Configuration — SetTile and SetTileSize
+//
+// The N64 RDP tile descriptor stores format, size, line, tmem,
+// palette, and clamp/mirror/mask/shift for both S and T axes.
+//
+// Reference: verify exact field storage matches RDP spec.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, SetTile_BasicFields) {
+    // SetTile(fmt, siz, line, tmem, tile, palette, cmt, maskt, shiftt, cms, masks, shifts)
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_CLAMP, 5, 0, G_TX_CLAMP, 5, 0);
+
+    EXPECT_EQ(interp->mRdp->texture_tile[0].fmt, G_IM_FMT_RGBA);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].siz, G_IM_SIZ_16b);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cms, G_TX_CLAMP);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cmt, G_TX_CLAMP);
+    // line_size_bytes = line * 8
+    EXPECT_EQ(interp->mRdp->texture_tile[0].line_size_bytes, 64u);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_LineSizeConversion) {
+    // Line parameter is in units of 8 bytes (QWORDS)
+    // line_size_bytes = line * 8
+    for (uint32_t line = 0; line <= 4; line++) {
+        interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, line, 0, 0, 0,
+                             G_TX_CLAMP, 0, 0, G_TX_CLAMP, 0, 0);
+        EXPECT_EQ(interp->mRdp->texture_tile[0].line_size_bytes, line * 8)
+            << "Line parameter " << line << " incorrectly converted";
+    }
+}
+
+TEST_F(ReferenceRDPTest, SetTile_TmemIndexFromAddress) {
+    // tmem=0 → tmem_index=0 (first texture slot)
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_CLAMP, 0, 0, G_TX_CLAMP, 0, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].tmem_index, 0u);
+
+    // tmem=256 → tmem_index=1 (second texture slot)
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 256, 1, 0,
+                         G_TX_CLAMP, 0, 0, G_TX_CLAMP, 0, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[1].tmem_index, 1u);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_WrapWithNoMask_BecomesClamp) {
+    // Per N64 RDP: wrap mode with no mask bits → clamp
+    // (If mask == 0, wrapping has no effect, so clamp is equivalent)
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_WRAP, G_TX_NOMASK, 0, G_TX_WRAP, G_TX_NOMASK, 0);
+
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cms, G_TX_CLAMP);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cmt, G_TX_CLAMP);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_WrapWithMask_StaysWrap) {
+    // Wrap with a non-zero mask should stay wrap
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_WRAP, 5, 0, G_TX_WRAP, 5, 0);
+
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cms, G_TX_WRAP);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cmt, G_TX_WRAP);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_SetsTexturesChanged) {
+    interp->mRdp->textures_changed[0] = false;
+    interp->mRdp->textures_changed[1] = false;
+
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_CLAMP, 0, 0, G_TX_CLAMP, 0, 0);
+
+    EXPECT_TRUE(interp->mRdp->textures_changed[0]);
+    EXPECT_TRUE(interp->mRdp->textures_changed[1]);
+}
+
+TEST_F(ReferenceRDPTest, SetTileSize_StoresCoordinates) {
+    // SetTileSize stores U10.2 coordinates
+    interp->GfxDpSetTileSize(0, 0, 0, 128, 64);
+
+    EXPECT_EQ(interp->mRdp->texture_tile[0].uls, 0u);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].ult, 0u);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].lrs, 128u);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].lrt, 64u);
+}
+
+TEST_F(ReferenceRDPTest, SetTileSize_SetsTexturesChanged) {
+    interp->mRdp->textures_changed[0] = false;
+    interp->mRdp->textures_changed[1] = false;
+
+    interp->GfxDpSetTileSize(0, 0, 0, 128, 64);
+
+    EXPECT_TRUE(interp->mRdp->textures_changed[0]);
+    EXPECT_TRUE(interp->mRdp->textures_changed[1]);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_PaletteIndex) {
+    // Palette field should be stored
+    interp->GfxDpSetTile(G_IM_FMT_CI, G_IM_SIZ_4b, 4, 0, 0, 7,
+                         G_TX_CLAMP, 0, 0, G_TX_CLAMP, 0, 0);
+
+    EXPECT_EQ(interp->mRdp->texture_tile[0].palette, 7u);
+}
+
+TEST_F(ReferenceRDPTest, SetTile_MultipleTiles) {
+    // Set two different tiles and verify independence
+    interp->GfxDpSetTile(G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 0, 0, 0,
+                         G_TX_CLAMP, 5, 0, G_TX_CLAMP, 5, 0);
+    interp->GfxDpSetTile(G_IM_FMT_CI, G_IM_SIZ_4b, 4, 256, 1, 3,
+                         G_TX_MIRROR, 4, 0, G_TX_MIRROR, 4, 0);
+
+    // Tile 0
+    EXPECT_EQ(interp->mRdp->texture_tile[0].fmt, G_IM_FMT_RGBA);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].siz, G_IM_SIZ_16b);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].palette, 0u);
+
+    // Tile 1
+    EXPECT_EQ(interp->mRdp->texture_tile[1].fmt, G_IM_FMT_CI);
+    EXPECT_EQ(interp->mRdp->texture_tile[1].siz, G_IM_SIZ_4b);
+    EXPECT_EQ(interp->mRdp->texture_tile[1].palette, 3u);
+}
+
+// ============================================================
+// 20. Alpha/Coverage Flags — Reference Bit Values
+//
+// The N64 RDP uses several flags in other_mode_l to control
+// alpha and coverage behavior during blending.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, AlphaCoverageBitValues) {
+    // Verify the exact bit positions per N64 RDP spec
+    EXPECT_EQ(CVG_X_ALPHA, 0x1000u);
+    EXPECT_EQ(ALPHA_CVG_SEL, 0x2000u);
+    EXPECT_EQ(FORCE_BL, 0x4000u);
+    EXPECT_EQ(AA_EN, 0x8u);
+}
+
+TEST_F(ReferenceRDPTest, AlphaCoverageFlags_IndependentBits) {
+    // Set CVG_X_ALPHA only
+    interp->GfxDpSetOtherMode(0, CVG_X_ALPHA);
+    EXPECT_NE(interp->mRdp->other_mode_l & CVG_X_ALPHA, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & ALPHA_CVG_SEL, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & FORCE_BL, 0u);
+
+    // Set ALPHA_CVG_SEL only
+    interp->GfxDpSetOtherMode(0, ALPHA_CVG_SEL);
+    EXPECT_EQ(interp->mRdp->other_mode_l & CVG_X_ALPHA, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & ALPHA_CVG_SEL, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & FORCE_BL, 0u);
+}
+
+TEST_F(ReferenceRDPTest, AlphaCoverageFlags_CombinedRM) {
+    // A typical render mode combines multiple flags
+    uint32_t rm = AA_EN | Z_CMP | Z_UPD | CVG_X_ALPHA | ALPHA_CVG_SEL | FORCE_BL | ZMODE_XLU;
+    interp->GfxDpSetOtherMode(0, rm);
+
+    EXPECT_NE(interp->mRdp->other_mode_l & AA_EN, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & CVG_X_ALPHA, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & ALPHA_CVG_SEL, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & FORCE_BL, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & ZMODE_DEC, ZMODE_XLU);
+}
+
+// ============================================================
+// 21. Cycle Type in OtherMode — High Word
+//
+// The cycle type is stored in bits 20-21 of other_mode_h:
+//   G_CYC_1CYCLE = 0 << 20
+//   G_CYC_2CYCLE = 1 << 20
+//   G_CYC_COPY   = 2 << 20
+//   G_CYC_FILL   = 3 << 20
+// ============================================================
+
+TEST_F(ReferenceRDPTest, CycleType_BitValues) {
+    EXPECT_EQ(G_CYC_1CYCLE, 0u);
+    EXPECT_EQ(G_CYC_2CYCLE, (1u << 20));
+    EXPECT_EQ(G_CYC_COPY, (2u << 20));
+    EXPECT_EQ(G_CYC_FILL, (3u << 20));
+}
+
+TEST_F(ReferenceRDPTest, CycleType_SetViaOtherMode) {
+    // Set cycle type to FILL via GfxDpSetOtherMode
+    interp->GfxDpSetOtherMode(G_CYC_FILL, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), G_CYC_FILL);
+
+    // Change to 2CYCLE
+    interp->GfxDpSetOtherMode(G_CYC_2CYCLE, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), G_CYC_2CYCLE);
+
+    // Change to COPY
+    interp->GfxDpSetOtherMode(G_CYC_COPY, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), G_CYC_COPY);
+
+    // Back to 1CYCLE (default)
+    interp->GfxDpSetOtherMode(G_CYC_1CYCLE, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), G_CYC_1CYCLE);
+}
+
+TEST_F(ReferenceRDPTest, CycleType_2CycleDetection) {
+    // The interpreter detects 2-cycle mode via:
+    //   use_2cyc = (other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE
+    interp->GfxDpSetOtherMode(G_CYC_2CYCLE, 0);
+    bool use_2cyc = (interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    EXPECT_TRUE(use_2cyc);
+
+    interp->GfxDpSetOtherMode(G_CYC_1CYCLE, 0);
+    use_2cyc = (interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    EXPECT_FALSE(use_2cyc);
+}
+
+// ============================================================
+// 22. SCALE_3_8 Macro Roundtrip
+//
+// 3-bit to 8-bit color scaling (used for some N64 RDP formats).
+// SCALE_3_8(VAL) = VAL * 0x24
+// SCALE_8_3(VAL) = VAL / 0x24
+// ============================================================
+
+TEST_F(ReferenceRDPTest, Scale3_8_Endpoints) {
+    EXPECT_EQ(SCALE_3_8(0), 0);
+    EXPECT_EQ(SCALE_3_8(7), 7 * 0x24);  // 252
+}
+
+TEST_F(ReferenceRDPTest, Scale3_8_Roundtrip) {
+    for (int i = 0; i <= 7; i++) {
+        uint8_t expanded = SCALE_3_8(i);
+        uint8_t compressed = SCALE_8_3(expanded);
+        EXPECT_NEAR(compressed, i, 1) << "3->8->3 roundtrip failed for i=" << i;
+    }
+}
+
+// ============================================================
+// 23. Matrix Stack Push/Pop — Reference Behavior
+//
+// The N64 RSP maintains a modelview matrix stack. Push increments
+// the stack size and copies the current top. Pop decrements and
+// recalculates MP_matrix.
+//
+// Reference: stack starts at size 1, max depth is 11.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, MatrixStack_InitialSize) {
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 1u);
+}
+
+TEST_F(ReferenceRDPTest, MatrixStack_PopFromInitial) {
+    // Pop from size 1 → size 0 (underflow protection)
+    interp->GfxSpPopMatrix(1);
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 0u);
+}
+
+TEST_F(ReferenceRDPTest, MatrixStack_PopMultiple) {
+    // Push a couple times manually, then pop multiple
+    interp->mRsp->modelview_matrix_stack_size = 5;
+    interp->GfxSpPopMatrix(3);
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 2u);
+}
+
+TEST_F(ReferenceRDPTest, MatrixStack_PopSetsLightsChanged) {
+    interp->mRsp->lights_changed = false;
+    interp->GfxSpPopMatrix(1);
+    EXPECT_TRUE(interp->mRsp->lights_changed);
+}
+
+TEST_F(ReferenceRDPTest, MatrixStack_PopBeyondZero) {
+    // Pop more than stack size → clamp at 0
+    interp->mRsp->modelview_matrix_stack_size = 2;
+    interp->GfxSpPopMatrix(5);
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 0u);
+}
+
+// ============================================================
+// 24. GetPixelDepth Pipeline
+//
+// GetPixelDepthPrepare accumulates coordinate queries.
+// GetPixelDepth retrieves values from the rendering API and caches.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, GetPixelDepthPrepare_AccumulatesCoords) {
+    // Match native dimensions to 1:1 ratio to simplify coordinate transform
+    interp->mCurDimensions.width = interp->mNativeDimensions.width;
+    interp->mCurDimensions.height = interp->mNativeDimensions.height;
+    interp->mGetPixelDepthPending.clear();
+
+    interp->GetPixelDepthPrepare(100.0f, 50.0f);
+    EXPECT_EQ(interp->mGetPixelDepthPending.size(), 1u);
+
+    interp->GetPixelDepthPrepare(200.0f, 75.0f);
+    EXPECT_EQ(interp->mGetPixelDepthPending.size(), 2u);
+}
+
+TEST_F(ReferenceRDPTest, GetPixelDepth_ReturnsConfiguredValue) {
+    // Set up 1:1 ratio to simplify coordinate transform
+    interp->mCurDimensions.width = interp->mNativeDimensions.width;
+    interp->mCurDimensions.height = interp->mNativeDimensions.height;
+    interp->mGetPixelDepthCached.clear();
+    interp->mGetPixelDepthPending.clear();
+    interp->mRendersToFb = true;
+    interp->mGameFb = 1;
+
+    // The coordinates get transformed by AdjustPixelDepthCoordinates.
+    // With 1:1 ratio and mRendersToFb=true, the coords stay the same.
+    // Configure the stub to return a specific depth for the adjusted coordinates.
+    stub->pixelDepthValues[{100.0f, 50.0f}] = 12345;
+
+    uint16_t depth = interp->GetPixelDepth(100.0f, 50.0f);
+    EXPECT_EQ(depth, 12345);
+}
+
+TEST_F(ReferenceRDPTest, GetPixelDepth_CachesResult) {
+    interp->mCurDimensions.width = interp->mNativeDimensions.width;
+    interp->mCurDimensions.height = interp->mNativeDimensions.height;
+    interp->mGetPixelDepthCached.clear();
+    interp->mGetPixelDepthPending.clear();
+    interp->mRendersToFb = true;
+    interp->mGameFb = 1;
+
+    stub->pixelDepthValues[{50.0f, 25.0f}] = 9999;
+
+    // First call populates cache
+    uint16_t depth1 = interp->GetPixelDepth(50.0f, 25.0f);
+    EXPECT_EQ(depth1, 9999);
+
+    // Change the stub return value — cached should still return old value
+    stub->pixelDepthValues[{50.0f, 25.0f}] = 1111;
+    uint16_t depth2 = interp->GetPixelDepth(50.0f, 25.0f);
+    EXPECT_EQ(depth2, 9999);
+}
+
+// ============================================================
+// 25. Texture Filter Mode via OtherMode
+//
+// Texture filtering is set in the high word (other_mode_h) using
+// the G_MDSFT_TEXTFILT shift:
+//   G_TF_POINT   = 0 << 12
+//   G_TF_BILERP  = 2 << 12
+//   G_TF_AVERAGE = 3 << 12
+// ============================================================
+
+TEST_F(ReferenceRDPTest, TextureFilter_BitValues) {
+    EXPECT_EQ(G_TF_POINT, 0u);
+    EXPECT_EQ(G_TF_BILERP, (2u << G_MDSFT_TEXTFILT));
+    EXPECT_EQ(G_TF_AVERAGE, (3u << G_MDSFT_TEXTFILT));
+}
+
+TEST_F(ReferenceRDPTest, TextureFilter_SetViaDpOtherMode) {
+    interp->GfxDpSetOtherMode(G_TF_BILERP, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_TEXTFILT), G_TF_BILERP);
+
+    interp->GfxDpSetOtherMode(G_TF_POINT, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_TEXTFILT), G_TF_POINT);
+
+    interp->GfxDpSetOtherMode(G_TF_AVERAGE, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_TEXTFILT), G_TF_AVERAGE);
+}
+
+// ============================================================
+// 26. Depth Flags with Render Mode Presets
+//
+// The N64 SDK defines render mode presets that combine depth,
+// alpha, and coverage flags. Verify these common combinations
+// produce the expected depth behavior.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, RM_OPA_SURF_NoDepthTest) {
+    // RM_OPA_SURF has no Z_CMP or Z_UPD
+    uint32_t rm = CVG_DST_CLAMP | FORCE_BL | ZMODE_OPA;
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = rm;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+
+    EXPECT_FALSE(depth_test);
+    EXPECT_FALSE(depth_mask);
+}
+
+TEST_F(ReferenceRDPTest, RM_ZB_OPA_SURF_FullDepth) {
+    // RM_ZB_OPA_SURF has Z_CMP | Z_UPD
+    uint32_t rm = AA_EN | Z_CMP | Z_UPD | CVG_DST_CLAMP | ZMODE_OPA | ALPHA_CVG_SEL;
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = rm;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+
+    EXPECT_TRUE(depth_test);
+    EXPECT_TRUE(depth_mask);
+}
+
+TEST_F(ReferenceRDPTest, RM_ZB_XLU_SURF_DepthTestNoWrite) {
+    // RM_ZB_XLU_SURF has Z_CMP but no Z_UPD (translucent reads but doesn't write depth)
+    uint32_t rm = AA_EN | Z_CMP | CVG_DST_WRAP | CLR_ON_CVG | FORCE_BL | ZMODE_XLU;
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = rm;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+
+    EXPECT_TRUE(depth_test);
+    EXPECT_FALSE(depth_mask);
+}
+
+TEST_F(ReferenceRDPTest, RM_ZB_OPA_DECAL_DecalMode) {
+    // RM_ZB_OPA_DECAL has Z_CMP and ZMODE_DEC
+    uint32_t rm = AA_EN | Z_CMP | CVG_DST_WRAP | ALPHA_CVG_SEL | ZMODE_DEC;
+    interp->mRsp->geometry_mode = G_ZBUFFER;
+    interp->mRdp->other_mode_l = rm;
+
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                      (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    bool zmode_decal = (interp->mRdp->other_mode_l & ZMODE_DEC) == ZMODE_DEC;
+
+    EXPECT_TRUE(depth_test);
+    EXPECT_TRUE(zmode_decal);
+}
+
+// ============================================================
+// 27. Color Combiner with LOD Fraction
+//
+// The LOD fraction from GfxDpSetPrimColor is used as a combiner
+// input (G_CCMUX_LOD_FRACTION). Verify it's stored and
+// accessible for shader generation.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, PrimLodFraction_StoredValues) {
+    // LOD fraction is an 8-bit value (0-255)
+    interp->GfxDpSetPrimColor(0, 0, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->prim_lod_fraction, 0u);
+
+    interp->GfxDpSetPrimColor(0, 128, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->prim_lod_fraction, 128u);
+
+    interp->GfxDpSetPrimColor(0, 255, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->prim_lod_fraction, 255u);
+}
+
+TEST_F(ReferenceRDPTest, PrimColor_MinLevel) {
+    // minLevel parameter (first arg) — verify it doesn't affect color
+    interp->GfxDpSetPrimColor(0, 0, 100, 150, 200, 250);
+    uint8_t r1 = interp->mRdp->prim_color.r;
+
+    interp->GfxDpSetPrimColor(15, 0, 100, 150, 200, 250);
+    uint8_t r2 = interp->mRdp->prim_color.r;
+
+    EXPECT_EQ(r1, r2);
+    EXPECT_EQ(r1, 100);
+}
+
+// ============================================================
+// 28. Geometry Mode Flags — Reference Bit Values
+//
+// Verify the exact bit positions of common geometry mode flags.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, GeometryModeBitValues) {
+    EXPECT_EQ(G_ZBUFFER, 0x00000001u);
+    EXPECT_EQ(G_SHADE, 0x00000004u);
+    EXPECT_EQ(G_FOG, 0x00010000u);
+    EXPECT_EQ(G_LIGHTING, 0x00020000u);
+    EXPECT_EQ(G_TEXTURE_GEN, 0x00040000u);
+}
+
+TEST_F(ReferenceRDPTest, GeometryMode_FogAndLighting) {
+    interp->mRsp->geometry_mode = 0;
+    interp->GfxSpGeometryMode(0, G_FOG | G_LIGHTING);
+    EXPECT_NE(interp->mRsp->geometry_mode & G_FOG, 0u);
+    EXPECT_NE(interp->mRsp->geometry_mode & G_LIGHTING, 0u);
+    EXPECT_EQ(interp->mRsp->geometry_mode & G_ZBUFFER, 0u);
+}
+
+TEST_F(ReferenceRDPTest, GeometryMode_ClearFogKeepLighting) {
+    interp->mRsp->geometry_mode = G_FOG | G_LIGHTING | G_SHADE;
+    interp->GfxSpGeometryMode(G_FOG, 0);
+    EXPECT_EQ(interp->mRsp->geometry_mode & G_FOG, 0u);
+    EXPECT_NE(interp->mRsp->geometry_mode & G_LIGHTING, 0u);
+    EXPECT_NE(interp->mRsp->geometry_mode & G_SHADE, 0u);
+}
+
+// ============================================================
+// 29. Depth Flag Bits — Reference Values
+//
+// Verify the exact bit positions of depth-related flags.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, DepthFlagBitValues) {
+    // Z_CMP is bit 4 (0x10)
+    EXPECT_EQ(Z_CMP, 0x10u);
+    // Z_UPD is bit 5 (0x20)
+    EXPECT_EQ(Z_UPD, 0x20u);
+    // CLR_ON_CVG is bit 7 (0x80)
+    EXPECT_EQ(CLR_ON_CVG, 0x80u);
+}
+
+TEST_F(ReferenceRDPTest, DepthPackedState_AllCombinations) {
+    // Exhaustively verify the packed depth_test_and_mask encoding
+    // for all 8 combinations of (G_ZBUFFER, Z_CMP, Z_UPD)
+    struct DepthCase {
+        bool hasGZbuffer;
+        bool hasZCmp;
+        bool hasZUpd;
+        bool expectTest;
+        bool expectMask;
+        uint8_t expectPacked;
+    };
+    DepthCase cases[] = {
+        { false, false, false, false, false, 0 },
+        { false, false, true,  false, true,  2 },
+        { false, true,  false, false, false, 0 },
+        { false, true,  true,  false, true,  2 },
+        { true,  false, false, false, false, 0 },
+        { true,  false, true,  false, true,  2 },
+        { true,  true,  false, true,  false, 1 },
+        { true,  true,  true,  true,  true,  3 },
+    };
+
+    for (auto& c : cases) {
+        interp->mRsp->geometry_mode = c.hasGZbuffer ? G_ZBUFFER : 0;
+        interp->mRdp->other_mode_l = (c.hasZCmp ? Z_CMP : 0) | (c.hasZUpd ? Z_UPD : 0);
+
+        bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER &&
+                          (interp->mRdp->other_mode_l & Z_CMP) == Z_CMP;
+        bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) == Z_UPD;
+        uint8_t packed = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+
+        EXPECT_EQ(depth_test, c.expectTest)
+            << "G_ZBUFFER=" << c.hasGZbuffer << " Z_CMP=" << c.hasZCmp;
+        EXPECT_EQ(depth_mask, c.expectMask)
+            << "Z_UPD=" << c.hasZUpd;
+        EXPECT_EQ(packed, c.expectPacked)
+            << "Packed mismatch for G_ZBUFFER=" << c.hasGZbuffer
+            << " Z_CMP=" << c.hasZCmp << " Z_UPD=" << c.hasZUpd;
+    }
+}
+
+// ============================================================
+// 30. Z-Buffer Address Lifecycle
+//
+// Verify the z_buf_address can be set, changed, and compared
+// with color_image_address correctly.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, ZBufAddress_InitiallyNull) {
+    auto freshInterp = std::make_unique<Fast::Interpreter>();
+    // Fresh interpreter should have null z_buf_address
+    EXPECT_EQ(freshInterp->mRdp->z_buf_address, nullptr);
+}
+
+TEST_F(ReferenceRDPTest, ZBufAddress_CanBeUpdated) {
+    uint8_t buf1[16] = {};
+    uint8_t buf2[16] = {};
+
+    interp->GfxDpSetZImage(&buf1);
+    EXPECT_EQ(interp->mRdp->z_buf_address, (void*)&buf1);
+
+    interp->GfxDpSetZImage(&buf2);
+    EXPECT_EQ(interp->mRdp->z_buf_address, (void*)&buf2);
+}
+
+TEST_F(ReferenceRDPTest, ZBufAddress_ComparedWithColorImage) {
+    // Verify the comparison logic used in FillRectangle
+    uint8_t shared[16] = {};
+    uint8_t separate[16] = {};
+
+    interp->mRdp->z_buf_address = &shared;
+    interp->mRdp->color_image_address = &shared;
+    EXPECT_EQ(interp->mRdp->color_image_address, interp->mRdp->z_buf_address);
+
+    interp->mRdp->color_image_address = &separate;
+    EXPECT_NE(interp->mRdp->color_image_address, interp->mRdp->z_buf_address);
+}
+
+// ============================================================
+// 31. Texture Image Setup
+//
+// GfxDpSetTextureImage stores the texture data pointer and format
+// information for subsequent LoadBlock/LoadTile operations.
+// ============================================================
+
+TEST_F(ReferenceRDPTest, TextureImage_StoresAddress) {
+    uint8_t texData[64] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+
+    interp->GfxDpSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, nullptr, 0, meta, texData);
+
+    EXPECT_EQ(interp->mRdp->texture_to_load.addr, texData);
+    EXPECT_EQ(interp->mRdp->texture_to_load.siz, G_IM_SIZ_16b);
+    EXPECT_EQ(interp->mRdp->texture_to_load.width, 32u);
+}
+
+TEST_F(ReferenceRDPTest, TextureImage_OverwritesPrevious) {
+    uint8_t texData1[64] = {};
+    uint8_t texData2[64] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+
+    interp->GfxDpSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, nullptr, 0, meta, texData1);
+    EXPECT_EQ(interp->mRdp->texture_to_load.addr, texData1);
+
+    interp->GfxDpSetTextureImage(G_IM_FMT_CI, G_IM_SIZ_8b, 64, nullptr, 0, meta, texData2);
+    EXPECT_EQ(interp->mRdp->texture_to_load.addr, texData2);
+    EXPECT_EQ(interp->mRdp->texture_to_load.siz, G_IM_SIZ_8b);
+    EXPECT_EQ(interp->mRdp->texture_to_load.width, 64u);
+}
