@@ -1156,9 +1156,11 @@ class VertexTransformTest : public ::testing::Test {
         interp->mRsp->texture_scaling_factor.s = 0;
         interp->mRsp->texture_scaling_factor.t = 0;
 
-        // Set native dimensions to avoid division by zero in aspect ratio
+        // Set native and current dimensions to avoid division by zero in aspect ratio
         interp->mNativeDimensions.width = SCREEN_WIDTH;
         interp->mNativeDimensions.height = SCREEN_HEIGHT;
+        interp->mCurDimensions.width = SCREEN_WIDTH;
+        interp->mCurDimensions.height = SCREEN_HEIGHT;
         interp->mFbActive = false;
     }
 
@@ -1683,7 +1685,7 @@ TEST_F(GfxSpMatrixTest, LoadProjectionMatrix) {
     FloatToFixedPoint(scale2, fixedPt);
 
     // F3DEX attribute values: MTX_PROJECTION=0x01, MTX_LOAD=0x02
-    uint8_t params = F3DEX_G_MTX_PROJECTION | F3DEX_G_MTX_LOAD;
+    uint8_t params = Fast::F3DEX2_G_MTX_PROJECTION | Fast::F3DEX2_G_MTX_LOAD;
     interp->GfxSpMatrix(params, fixedPt);
 
     // P_matrix should now be the 2x scale matrix
@@ -1706,7 +1708,7 @@ TEST_F(GfxSpMatrixTest, LoadModelviewMatrix) {
     FloatToFixedPoint(trans, fixedPt);
 
     // Modelview load (not projection, is load)
-    uint8_t params = F3DEX_G_MTX_LOAD; // no MTX_PROJECTION → modelview
+    uint8_t params = Fast::F3DEX2_G_MTX_LOAD; // no MTX_PROJECTION → modelview
     interp->GfxSpMatrix(params, fixedPt);
 
     // Should load into top of modelview stack
@@ -1724,7 +1726,7 @@ TEST_F(GfxSpMatrixTest, PushModelviewMatrix) {
     FloatToFixedPoint(identity, fixedPt);
 
     // Push + Load modelview
-    uint8_t params = F3DEX_G_MTX_PUSH | F3DEX_G_MTX_LOAD;
+    uint8_t params = Fast::F3DEX2_G_MTX_PUSH | Fast::F3DEX2_G_MTX_LOAD;
     interp->GfxSpMatrix(params, fixedPt);
 
     EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 2u);
@@ -1742,7 +1744,7 @@ TEST_F(GfxSpMatrixTest, MultiplyProjectionMatrix) {
     FloatToFixedPoint(scale3, fixedPt);
 
     // Projection, multiply (not load)
-    uint8_t params = F3DEX_G_MTX_PROJECTION; // no MTX_LOAD → multiply
+    uint8_t params = Fast::F3DEX2_G_MTX_PROJECTION; // no MTX_LOAD → multiply
     interp->GfxSpMatrix(params, fixedPt);
 
     // Identity * scale3 = scale3
@@ -1760,14 +1762,14 @@ TEST_F(GfxSpMatrixTest, PushThenPopRoundTrip) {
     FloatToFixedPoint(trans, fixedPt);
 
     // Load the translation into modelview
-    interp->GfxSpMatrix(F3DEX_G_MTX_LOAD, fixedPt);
+    interp->GfxSpMatrix(Fast::F3DEX2_G_MTX_LOAD, fixedPt);
     EXPECT_NEAR(interp->mRsp->modelview_matrix_stack[0][3][0], 5.0f, 1e-3f);
 
     // Push and load identity
     float identity[4][4] = {};
     for (int i = 0; i < 4; i++) identity[i][i] = 1.0f;
     FloatToFixedPoint(identity, fixedPt);
-    interp->GfxSpMatrix(F3DEX_G_MTX_PUSH | F3DEX_G_MTX_LOAD, fixedPt);
+    interp->GfxSpMatrix(Fast::F3DEX2_G_MTX_PUSH | Fast::F3DEX2_G_MTX_LOAD, fixedPt);
 
     EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 2u);
     // Top of stack should be identity
@@ -1933,7 +1935,7 @@ TEST_F(RdpStateTest, MovememF3dex2_LoadLight) {
     light.l.dir[1] = 127;
     light.l.dir[2] = 0;
 
-    interp->GfxSpMovememF3dex2(F3DEX2_G_MV_LIGHT, 48, &light);
+    interp->GfxSpMovememF3dex2(Fast::F3DEX2_G_MV_LIGHT, 48, &light);
 
     EXPECT_EQ(interp->mRsp->current_lights[0].l.col[0], 200);
     EXPECT_EQ(interp->mRsp->current_lights[0].l.col[1], 100);
@@ -1951,14 +1953,14 @@ TEST_F(RdpStateTest, MovememF3dex2_LoadSecondLight) {
     light.l.dir[1] = 0;
     light.l.dir[2] = 0;
 
-    interp->GfxSpMovememF3dex2(F3DEX2_G_MV_LIGHT, 72, &light);
+    interp->GfxSpMovememF3dex2(Fast::F3DEX2_G_MV_LIGHT, 72, &light);
 
     EXPECT_EQ(interp->mRsp->current_lights[1].l.col[1], 255);
     EXPECT_EQ(interp->mRsp->current_lights[1].l.dir[0], 127);
 }
 
 TEST_F(RdpStateTest, MovememF3d_LoadLight0) {
-    // F3D: light 0 uses F3DEX_G_MV_L0
+    // F3D: light 0 uses Fast::F3DEX_G_MV_L0
     Fast::F3DLight_t light = {};
     light.col[0] = 128;
     light.col[1] = 64;
@@ -1967,9 +1969,9 @@ TEST_F(RdpStateTest, MovememF3d_LoadLight0) {
     light.dir[1] = 0;
     light.dir[2] = 127;
 
-    interp->GfxSpMovememF3d(F3DEX_G_MV_L0, 0, &light);
+    interp->GfxSpMovememF3d(Fast::F3DEX_G_MV_L0, 0, &light);
 
-    // F3D: index = (F3DEX_G_MV_L0 - F3DEX_G_MV_L0) / 2 = 0
+    // F3D: index = (Fast::F3DEX_G_MV_L0 - Fast::F3DEX_G_MV_L0) / 2 = 0
     EXPECT_EQ(interp->mRsp->current_lights[0].l.col[0], 128);
     EXPECT_EQ(interp->mRsp->current_lights[0].l.dir[2], 127);
 }
@@ -1980,9 +1982,9 @@ TEST_F(RdpStateTest, MovememF3d_LoadLight1) {
     light.col[1] = 0;
     light.col[2] = 255;
 
-    interp->GfxSpMovememF3d(F3DEX_G_MV_L1, 0, &light);
+    interp->GfxSpMovememF3d(Fast::F3DEX_G_MV_L1, 0, &light);
 
-    // index = (F3DEX_G_MV_L1 - F3DEX_G_MV_L0) / 2 = 1
+    // index = (Fast::F3DEX_G_MV_L1 - Fast::F3DEX_G_MV_L0) / 2 = 1
     EXPECT_EQ(interp->mRsp->current_lights[1].l.col[0], 255);
     EXPECT_EQ(interp->mRsp->current_lights[1].l.col[2], 255);
 }
@@ -1993,7 +1995,7 @@ TEST_F(RdpStateTest, MovememF3d_LoadLookat) {
     lookat.dir[1] = 50;
     lookat.dir[2] = 25;
 
-    interp->GfxSpMovememF3d(F3DEX_G_MV_LOOKATY, 0, &lookat);
+    interp->GfxSpMovememF3d(Fast::F3DEX_G_MV_LOOKATY, 0, &lookat);
 
     EXPECT_EQ(interp->mRsp->lookat[0].dir[0], 100);
     EXPECT_EQ(interp->mRsp->lookat[0].dir[1], 50);
@@ -2516,4 +2518,169 @@ TEST_F(TextureTestFixture, LoadBlock_ThenImportRgba16) {
     EXPECT_EQ(stub->uploads[0].data[5], 0);
     EXPECT_EQ(stub->uploads[0].data[6], 0);
     EXPECT_EQ(stub->uploads[0].data[7], 255);
+}
+
+// ============================================================
+// Layer 3: Display List Command Dispatch Tests
+// These tests build F3DGfx command arrays and process them
+// through the interpreter's display list execution loop.
+// ============================================================
+
+// Helper to build a display list command word
+static Fast::F3DGfx MakeCmd(uintptr_t w0, uintptr_t w1) {
+    Fast::F3DGfx cmd = {};
+    cmd.words.w0 = w0;
+    cmd.words.w1 = w1;
+    return cmd;
+}
+
+class DisplayListTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_shared<Fast::Interpreter>();
+        stub = new StubRenderingAPI();
+        interp->mRapi = stub;
+
+        // Register as the global instance (required by gfx_step handlers)
+        Fast::GfxSetInstance(interp);
+
+        // Set dimensions
+        interp->mNativeDimensions.width = SCREEN_WIDTH;
+        interp->mNativeDimensions.height = SCREEN_HEIGHT;
+        interp->mCurDimensions.width = SCREEN_WIDTH;
+        interp->mCurDimensions.height = SCREEN_HEIGHT;
+        interp->mFbActive = false;
+    }
+
+    void TearDown() override {
+        Fast::GfxSetInstance(nullptr);
+        interp->mRapi = nullptr;
+        delete stub;
+        interp.reset();
+    }
+
+    std::shared_ptr<Fast::Interpreter> interp;
+    StubRenderingAPI* stub;
+    std::unordered_map<Mtx*, MtxF> emptyMtxReplacements;
+};
+
+TEST_F(DisplayListTest, SetEnvColor_ViaDisplayList) {
+    // Build a display list: G_SETENVCOLOR(r=255, g=128, b=64, a=32), G_ENDDL
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24,
+                    (255u << 24) | (128u << 16) | (64u << 8) | 32u);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->env_color.r, 255);
+    EXPECT_EQ(interp->mRdp->env_color.g, 128);
+    EXPECT_EQ(interp->mRdp->env_color.b, 64);
+    EXPECT_EQ(interp->mRdp->env_color.a, 32);
+}
+
+TEST_F(DisplayListTest, SetFogColor_ViaDisplayList) {
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFOGCOLOR << 24,
+                    (100u << 24) | (200u << 16) | (50u << 8) | 255u);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->fog_color.r, 100);
+    EXPECT_EQ(interp->mRdp->fog_color.g, 200);
+    EXPECT_EQ(interp->mRdp->fog_color.b, 50);
+    EXPECT_EQ(interp->mRdp->fog_color.a, 255);
+}
+
+TEST_F(DisplayListTest, SetPrimColor_ViaDisplayList) {
+    // G_SETPRIMCOLOR encodes minlevel and primlevel in w0, rgba in w1
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETPRIMCOLOR << 24 | (5u << 8) | 10u,
+                    (200u << 24) | (150u << 16) | (100u << 8) | 50u);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->prim_color.r, 200);
+    EXPECT_EQ(interp->mRdp->prim_color.g, 150);
+    EXPECT_EQ(interp->mRdp->prim_color.b, 100);
+    EXPECT_EQ(interp->mRdp->prim_color.a, 50);
+}
+
+TEST_F(DisplayListTest, SetFillColor_ViaDisplayList) {
+    // G_SETFILLCOLOR: w1 is the packed color
+    // For RGBA16: red opaque = 0xF801F801
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFILLCOLOR << 24, 0xF801F801u);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    // SetFillColor decodes RGBA16: R=0xF8>>3=31, scaled to 255
+    EXPECT_EQ(interp->mRdp->fill_color.r, 255);
+    EXPECT_EQ(interp->mRdp->fill_color.g, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.b, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.a, 255);
+}
+
+TEST_F(DisplayListTest, GeometryMode_ViaDisplayList) {
+    // F3DEX2 G_GEOMETRYMODE: w0 = (opcode<<24) | ~clear_bits (24 bits), w1 = set_bits
+    // Clear nothing (~0 = 0xFFFFFF in 24 bits), set G_LIGHTING (0x00020000)
+    uint32_t clearBits = 0; // ~clearBits & 0xFFFFFF = 0xFFFFFF (clear nothing)
+    uint32_t setBits = G_LIGHTING;
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF),
+                    setBits);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_NE(interp->mRsp->geometry_mode & G_LIGHTING, 0u);
+}
+
+TEST_F(DisplayListTest, MultipleCommands_ViaDisplayList) {
+    // Test a sequence of multiple RDP commands in one display list
+    Fast::F3DGfx dl[4];
+    // Set env color to red
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24,
+                    (255u << 24) | (0u << 16) | (0u << 8) | 255u);
+    // Set fog color to blue
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFOGCOLOR << 24,
+                    (0u << 24) | (0u << 16) | (255u << 8) | 255u);
+    // Set prim color to green
+    dl[2] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETPRIMCOLOR << 24,
+                    (0u << 24) | (255u << 16) | (0u << 8) | 255u);
+    dl[3] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->env_color.r, 255);
+    EXPECT_EQ(interp->mRdp->env_color.g, 0);
+    EXPECT_EQ(interp->mRdp->env_color.b, 0);
+
+    EXPECT_EQ(interp->mRdp->fog_color.r, 0);
+    EXPECT_EQ(interp->mRdp->fog_color.g, 0);
+    EXPECT_EQ(interp->mRdp->fog_color.b, 255);
+
+    EXPECT_EQ(interp->mRdp->prim_color.r, 0);
+    EXPECT_EQ(interp->mRdp->prim_color.g, 255);
+    EXPECT_EQ(interp->mRdp->prim_color.b, 0);
+}
+
+TEST_F(DisplayListTest, SetScissor_ViaDisplayList) {
+    // G_SETSCISSOR: w0 = (opcode<<24) | (ulx<<12) | uly, w1 = (mode<<24) | (lrx<<12) | lry
+    // Full screen scissor: ulx=0, uly=0, lrx=320*4=1280, lry=240*4=960
+    uint32_t ulx = 0, uly = 0;
+    uint32_t lrx = 320 * 4, lry = 240 * 4;
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETSCISSOR << 24 | (ulx << 12) | uly,
+                    (0u << 24) | (lrx << 12) | lry);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_TRUE(interp->mRdp->viewport_or_scissor_changed);
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.width, 320.0f);
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.height, 240.0f);
 }
