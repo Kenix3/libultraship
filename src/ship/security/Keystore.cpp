@@ -9,7 +9,7 @@
 
 namespace Ship {
 
-Keystore::Keystore() {
+Keystore::Keystore() : Component("Keystore") {
     Load();
     for (const auto entry : AllDefaultKeys) {
         AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), KeyOrigin::System);

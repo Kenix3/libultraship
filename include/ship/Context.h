@@ -12,42 +12,49 @@
 #include "ship/Component.h"
 #include "ship/Tickable.h"
 
-namespace Fast {
-class GfxDebugger;
-}
-
 namespace Ship {
 
 class TickableComponent;
 
-class Console;
-class ConsoleVariable;
-class ControlDeck;
-class CrashHandler;
-class Window;
-class Config;
-class ResourceManager;
-class FileDropMgr;
-class LoggerComponent;
-class ThreadPoolComponent;
-class EventSystem;
-#ifndef DISABLE_SCRIPTING
-class ScriptLoader;
-#endif
-class Keystore;
-
+/**
+ * @brief Central singleton context for the libultraship engine.
+ *
+ * Context is the root Component that owns all subsystems as children. Consumers
+ * should create their own components and pass them in via AddChild(). Use
+ * CreateDefaultInstance() for a default set of components matching the original
+ * initialization order.
+ *
+ * Subsystems are retrieved via GetChildren().GetFirst<T>().
+ */
 class Context : public Component, public Tickable {
   public:
     static std::shared_ptr<Context> GetInstance();
+
+    /**
+     * @brief Creates and stores the global Context instance with the default set of components.
+     *
+     * This is the convenience factory that replicates the original initialization order:
+     * Logging, Config, ConsoleVariables, ThreadPool, ResourceManager, ControlDeck,
+     * CrashHandler, Console, Window, Audio, GfxDebugger, EventSystem, FileDropMgr,
+     * ScriptLoader (if enabled), and Keystore.
+     */
+    static std::shared_ptr<Context> CreateDefaultInstance(const std::string& name, const std::string& shortName,
+                                                          const std::string& configFilePath,
+                                                          const std::vector<std::string>& archivePaths = {},
+                                                          const std::unordered_set<uint32_t>& validHashes = {},
+                                                          uint32_t reservedThreadCount = 1,
+                                                          AudioSettings audioSettings = {},
+                                                          std::shared_ptr<Component> window = nullptr,
+                                                          std::shared_ptr<Component> controlDeck = nullptr);
+
+    /**
+     * @brief Creates and stores the global Context instance without adding any default components.
+     *
+     * Consumers should add their own components via AddChild() after creation.
+     */
     static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
-                                                   const std::string& configFilePath,
-                                                   const std::vector<std::string>& archivePaths = {},
-                                                   const std::unordered_set<uint32_t>& validHashes = {},
-                                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
-                                                   std::shared_ptr<Window> window = nullptr,
-                                                   std::shared_ptr<ControlDeck> controlDeck = nullptr);
-    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string& name, const std::string& shortName,
-                                                                const std::string& configFilePath);
+                                                   const std::string& configFilePath);
+
     static std::string GetAppBundlePath();
     static std::string GetAppDirectoryPath(const std::string& appName = "");
     static std::string GetPathRelativeToAppDirectory(const std::string& path, const std::string& appName = "");
@@ -57,44 +64,11 @@ class Context : public Component, public Tickable {
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
 
-    bool Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window = nullptr,
-              std::shared_ptr<ControlDeck> controlDeck = nullptr);
-
-    std::shared_ptr<EventSystem> GetEventSystem() const;
-#ifndef DISABLE_SCRIPTING
-    std::shared_ptr<ScriptLoader> GetScriptLoader() const;
-#endif
-    std::shared_ptr<Keystore> GetKeystore() const;
-
     std::string GetName() const;
     std::string GetShortName() const;
-
-    bool InitLogging(spdlog::level::level_enum debugBuildLogLevel = spdlog::level::debug,
-                     spdlog::level::level_enum releaseBuildLogLevel = spdlog::level::warn);
-    bool InitConfiguration();
-    bool InitConsoleVariables();
-    bool InitResourceManager(const std::vector<std::string>& archivePaths = {},
-                             const std::unordered_set<uint32_t>& validHashes = {}, uint32_t reservedThreadCount = 1,
-                             const bool allowEmptyPaths = false);
-    bool InitControlDeck(std::shared_ptr<ControlDeck> controlDeck = nullptr);
-    bool InitCrashHandler();
-    bool InitAudio(AudioSettings settings);
-    bool InitGfxDebugger();
-    bool InitConsole();
-    bool InitWindow(std::shared_ptr<Window> window = nullptr);
-    bool InitFileDropMgr();
-    bool InitThreadPool(uint32_t reservedThreadCount = 1);
-    bool InitEventSystem();
-#ifndef DISABLE_SCRIPTING
-    bool InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines = {}, int codeVersion = 1,
-                          std::string buildOptions = "-g -Wl", std::vector<std::string> includePaths = {},
-                          std::vector<std::string> libraryPaths = {}, std::vector<std::string> libraries = {});
-#endif
-    bool InitKeystore();
+    std::string GetConfigFilePath() const;
 
     // ---- TickableComponent list ----
-    // Access tickable components via this list directly.
     PartList<TickableComponent>& GetTickableComponents();
     const PartList<TickableComponent>& GetTickableComponents() const;
     Context& SortTickableComponents();
@@ -105,16 +79,7 @@ class Context : public Component, public Tickable {
   private:
     static std::weak_ptr<Context> mContext;
 
-    std::shared_ptr<EventSystem> mEventSystem;
-#ifndef DISABLE_SCRIPTING
-    std::shared_ptr<ScriptLoader> mScriptLoader;
-#endif
-    std::shared_ptr<Keystore> mKeystore;
-
     std::string mConfigFilePath;
-    std::string mMainPath;
-    std::string mPatchesPath;
-
     std::string mName;
     std::string mShortName;
 

@@ -187,7 +187,7 @@ void Archive::Validate() {
         return;
     }
 
-    auto keystore = Context::GetInstance()->GetKeystore();
+    auto keystore = Context::GetInstance()->GetChildren().GetFirst<Keystore>();
     auto manager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager();
     std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
 

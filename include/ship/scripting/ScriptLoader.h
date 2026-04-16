@@ -4,6 +4,7 @@
 
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/LibraryLoader.h"
+#include "ship/Component.h"
 
 #include <unordered_map>
 #include <string>
@@ -29,7 +30,7 @@ enum class SafeLevel {
  * (Tiny C Compiler), then loads the resulting shared objects at runtime so their
  * exported functions can be called by the engine via GetFunction().
  */
-class ScriptLoader {
+class ScriptLoader : public Component {
   public:
     /**
      * @brief Constructs a ScriptLoader with the given compiler configuration.
@@ -43,8 +44,9 @@ class ScriptLoader {
     ScriptLoader(const std::unordered_map<std::string, std::string>& compileDefines, const uint32_t codeVersion,
                  const std::string& buildOptions, const std::vector<std::string>& includePaths,
                  const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries)
-        : mCodeVersion(codeVersion), mBuildOptions(buildOptions), mIncludePaths(includePaths),
-          mLibraryPaths(libraryPaths), mLibraries(libraries), mCompileDefines(compileDefines) {
+        : Component("ScriptLoader"), mCodeVersion(codeVersion), mBuildOptions(buildOptions),
+          mIncludePaths(includePaths), mLibraryPaths(libraryPaths), mLibraries(libraries),
+          mCompileDefines(compileDefines) {
     }
 
     /**

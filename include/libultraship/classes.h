@@ -48,6 +48,13 @@
 #include "ship/audio/WasapiAudioPlayer.h"
 #endif
 #include "ship/audio/SDLAudioPlayer.h"
+#include "ship/events/EventSystem.h"
+#include "ship/security/Keystore.h"
+#include "ship/log/LoggerComponent.h"
+#include "ship/thread/ThreadPoolComponent.h"
+#ifndef DISABLE_SCRIPTING
+#include "ship/scripting/ScriptLoader.h"
+#endif
 #ifdef __APPLE__
 #include "ship/utils/AppleFolderManager.h"
 #endif
