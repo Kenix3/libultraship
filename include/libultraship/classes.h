@@ -1,3 +1,11 @@
+/**
+ * @file classes.h
+ * @brief Convenience umbrella header that includes all major public libultraship headers.
+ *
+ * Include this single header to gain access to the full public API surface of
+ * libultraship: archives, resources, windowing, GUI, controllers, audio, and
+ * configuration.
+ */
 #pragma once
 #ifdef __cplusplus
 
