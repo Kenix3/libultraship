@@ -163,7 +163,7 @@ void GfxWindowBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool ca
             ShowWindow(h_wnd, SW_MAXIMIZE);
         } else {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = Ship::Context::GetInstance()->GetConfig();
+            auto conf = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>();
             current_width = conf->GetInt("Window.Width", 640);
             current_height = conf->GetInt("Window.Height", 480);
             mPosX = conf->GetInt("Window.PositionX", 100);
@@ -358,8 +358,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     Ship::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     auto ctx = Ship::Context::GetInstance();
-    if (ctx && ctx->GetWindow() && ctx->GetWindow()->GetGui()) {
-        ctx->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() && ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
+        ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
     }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
@@ -483,7 +483,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetFileDropMgr()->SetDroppedFile(fileName);
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDropMgr>()->SetDroppedFile(fileName);
             break;
         case WM_DISPLAYCHANGE:
             self->monitor_list = GetMonitorList();
@@ -883,7 +883,10 @@ void GfxWindowBackendDXGI::SwapBuffersBegin() {
     // mLengthInVsyncFrames (now mVsyncEnabled) was used as present interval. Present interval >1 (aka fractional
     // V-Sync) breaks VRR and introduces even more input lag than capping via normal V-Sync does. Get the present
     // interval the user wants instead (V-Sync toggle).
-    mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
+    mVsyncEnabled =
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1)
+            ? 1
+            : 0;
 
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);

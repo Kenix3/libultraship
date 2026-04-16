@@ -25,8 +25,9 @@ void GfxDebuggerWindow::InitElement() {
 
 void GfxDebuggerWindow::UpdateElement() {
     if (mInterpreter.lock() == nullptr) {
-        mInterpreter =
-            dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetInterpreterWeak();
+        mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(
+                           Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>())
+                           ->GetInterpreterWeak();
     }
 }
 
@@ -42,7 +43,7 @@ static const char* GetOpName(int8_t op) {
 void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfxPath,
                                       float parentPosY = 0) const {
     const F3DGfx* dlStart = cmd;
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
 
     auto nodeWithText = [dbg, dlStart, parentPosY, this, &gfxPath](const F3DGfx* cmd, const std::string& text,
                                                                    const F3DGfx* sub = nullptr) mutable {
@@ -399,8 +400,10 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 if (texAddr == 0) {
                     nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: clear all entries"));
                 } else {
-                    if (((uintptr_t)texAddr & 1) == 0 &&
-                        Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(texAddr)) {
+                    if (((uintptr_t)texAddr & 1) == 0 && Ship::Context::GetInstance()
+                                                             ->GetChildren()
+                                                             .GetFirst<Ship::ResourceManager>()
+                                                             ->OtrSignatureCheck(texAddr)) {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: {}", texAddr));
                     } else {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: 0x{:x}", (uintptr_t)texAddr));
@@ -521,7 +524,8 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 uint8_t* mask = (uint8_t*)cmd->words.w0;
                 uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
 
-                if (Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(timg)) {
+                if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->OtrSignatureCheck(
+                        timg)) {
                     timg += 7;
                     nodeWithText(cmd0, fmt::format("G_REGBLENDEDTEX: src {}, mask {}, blended {}", timg, (void*)mask,
                                                    (void*)replacementTex));
@@ -586,7 +590,7 @@ static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<cons
 
 void GfxDebuggerWindow::DrawDisas() {
 
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
     auto dlist = dbg->GetDisplayList();
     ImGui::Text("dlist: %p", dlist);
     std::string bp = "";
@@ -604,7 +608,7 @@ void GfxDebuggerWindow::DrawDisas() {
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
     const F3DGfx* cmd = dlist;
-    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+    auto gui = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui();
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
     {
@@ -707,7 +711,7 @@ void GfxDebuggerWindow::DrawDisas() {
 }
 
 void GfxDebuggerWindow::DrawElement() {
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
     // const ImVec2 pos = ImGui::GetWindowPos();
     // const ImVec2 size = ImGui::GetWindowSize();
 

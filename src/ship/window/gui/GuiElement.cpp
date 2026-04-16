@@ -3,10 +3,11 @@
 #include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
-GuiElement::GuiElement(bool isVisible) : mIsVisible(isVisible), mIsInitialized(false) {
+GuiElement::GuiElement(const std::string& name, bool isVisible)
+    : Component(name), mIsVisible(isVisible), mIsInitialized(false) {
 }
 
-GuiElement::GuiElement() : GuiElement(false) {
+GuiElement::GuiElement(const std::string& name) : GuiElement(name, false) {
 }
 
 GuiElement::~GuiElement() {

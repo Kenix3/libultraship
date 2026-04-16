@@ -140,6 +140,14 @@ endif()
 
 #=================== Compile Options & Defs ===================
 
+if(INCLUDE_PROFILING)
+    target_compile_definitions(libultraship PUBLIC INCLUDE_PROFILING)
+endif()
+
+if(COMPONENT_THREAD_SAFE)
+    target_compile_definitions(libultraship PUBLIC COMPONENT_THREAD_SAFE)
+endif()
+
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

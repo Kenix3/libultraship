@@ -19,15 +19,17 @@ SDLAxisDirectionToAxisDirectionMapping::SDLAxisDirectionToAxisDirectionMapping(u
 }
 
 float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+    if (Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GamepadGameInputBlocked()) {
         return 0.0f;
     }
 
     // todo: i don't like making a vector here, not sure what a better solution is
     std::vector<float> normalizedValues = {};
-    for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+    for (const auto& [instanceId, gamepad] : Context::GetInstance()
+                                                 ->GetChildren()
+                                                 .GetFirst<ControlDeck>()
+                                                 ->GetConnectedPhysicalDeviceManager()
+                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
         if ((mAxisDirection == POSITIVE && axisValue < 0) || (mAxisDirection == NEGATIVE && axisValue > 0)) {
@@ -54,33 +56,33 @@ std::string SDLAxisDirectionToAxisDirectionMapping::GetAxisDirectionMappingId() 
 
 void SDLAxisDirectionToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
         "SDLAxisDirectionToAxisDirectionMapping");
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void SDLAxisDirectionToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 int8_t SDLAxisDirectionToAxisDirectionMapping::GetMappingType() {

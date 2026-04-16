@@ -57,7 +57,7 @@ std::vector<KeystoreEntry> Keystore::GetAllKeys() const {
 }
 
 void Keystore::Load() {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
     conf->Reload();
 
     nlohmann::json rootJson = conf->GetNestedJson();
@@ -78,7 +78,7 @@ void Keystore::Load() {
 }
 
 void Keystore::Save() {
-    std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();
+    std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
     for (const auto& [keyName, entry] : mKeys) {
         std::string hexString = StringHelper::BytesToHex(entry.Data);
         conf->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);

@@ -95,14 +95,15 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
             CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
-            Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(axisDirectionMappingIdsCvarKey.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+                axisDirectionMappingIdsCvarKey.c_str());
         } else {
-            Ship::Context::GetInstance()->GetConsoleVariables()->SetString(axisDirectionMappingIdsCvarKey.c_str(),
-                                                                           axisDirectionMappingIdListString.c_str());
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+                axisDirectionMappingIdsCvarKey.c_str(), axisDirectionMappingIdListString.c_str());
         }
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerStick::ClearAxisDirectionMappingId(Direction direction, std::string id) {
@@ -173,26 +174,27 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
-            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
+            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+                axisDirectionMappingIdsCvarKey.c_str(), ""));
         std::string axisDirectionMappingIdString;
         while (getline(axisDirectionMappingIdsStringStream, axisDirectionMappingIdString, ',')) {
             LoadAxisDirectionMappingFromConfig(axisDirectionMappingIdString);
         }
     }
 
-    SetSensitivity(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+    SetSensitivity(Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
         DEFAULT_STICK_SENSITIVITY_PERCENTAGE));
 
-    SetDeadzone(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+    SetDeadzone(Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
         DEFAULT_STICK_DEADZONE_PERCENTAGE));
 
-    SetNotchSnapAngle(Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+    SetNotchSnapAngle(Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
@@ -279,8 +281,8 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
-    } else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
-               Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
+    } else if (!Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverAnyGuiItem() &&
+               Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                           mMouseButtonForNewMapping);
@@ -311,8 +313,8 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     SaveAxisDirectionMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
     return true;
 }
 
@@ -387,12 +389,12 @@ bool ControllerStick::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
     mSensitivity = sensitivityPercentage / 100.0f;
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
         mSensitivityPercentage);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerStick::ResetSensitivityToDefault() {
@@ -410,12 +412,12 @@ bool ControllerStick::SensitivityIsDefault() {
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
         mDeadzonePercentage);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerStick::ResetDeadzoneToDefault() {
@@ -432,12 +434,12 @@ bool ControllerStick::DeadzoneIsDefault() {
 
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
                               stickIndexToConfigStickIndexName[mStickIndex].c_str())
             .c_str(),
         mNotchSnapAngle);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerStick::ResetNotchSnapAngleToDefault() {

@@ -15,7 +15,7 @@
 namespace fs = std::filesystem;
 
 namespace Ship {
-Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false) {
+Config::Config(std::string path) : Component("Config"), mPath(std::move(path)), mIsNewInstance(false) {
     Reload();
 }
 
@@ -305,7 +305,7 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
 WindowBackend Config::GetWindowBackend() {
     WindowBackend backend;
     auto backendId = GetInt("Window.Backend.Id", -1);
-    if (Context::GetInstance()->GetWindow()->IsAvailableWindowBackend(backendId)) {
+    if (Context::GetInstance()->GetChildren().GetFirst<Window>()->IsAvailableWindowBackend(backendId)) {
         return static_cast<WindowBackend>(backendId);
     }
 

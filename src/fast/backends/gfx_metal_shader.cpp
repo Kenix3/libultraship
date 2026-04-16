@@ -190,7 +190,7 @@ std::optional<std::string> metal_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -261,7 +261,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");

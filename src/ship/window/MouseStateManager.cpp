@@ -17,7 +17,7 @@ void MouseStateManager::StartFrame() {
 void MouseStateManager::CursorVisibilityTimeoutTick() {
     static Coords sPrevMousePos;
 
-    std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
+    std::shared_ptr<Window> wnd = Context::GetInstance()->GetChildren().GetFirst<Window>();
     if (ShouldForceCursorVisibility() || wnd->IsMouseCaptured()) {
         return;
     }
@@ -60,12 +60,12 @@ void MouseStateManager::SetForceCursorVisibility(bool visible) {
 }
 
 void MouseStateManager::ToggleMouseCaptureOverride() {
-    const std::shared_ptr<Window> window = Context::GetInstance()->GetWindow();
+    const std::shared_ptr<Window> window = Context::GetInstance()->GetChildren().GetFirst<Window>();
     window->SetMouseCapture(!window->IsMouseCaptured());
 }
 
 void MouseStateManager::UpdateMouseCapture() {
-    const std::shared_ptr<Window> window = Context::GetInstance()->GetWindow();
+    const std::shared_ptr<Window> window = Context::GetInstance()->GetChildren().GetFirst<Window>();
     if (!window->GetGui()->GetMenuOrMenubarVisible()) {
         window->SetMouseCapture(ShouldAutoCaptureMouse());
     } else {

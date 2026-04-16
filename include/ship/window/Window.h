@@ -9,6 +9,7 @@
 #include "ship/window/gui/Gui.h"
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -39,7 +40,7 @@ class Config;
  * The window is created by Context::InitWindow() and is accessible via
  * Context::GetWindow().
  */
-class Window {
+class Window : public Component {
     friend class Context;
 
   public:
@@ -200,18 +201,19 @@ class Window {
      * @param scancode Platform scancode.
      */
     void SetMouseCaptureScancode(int32_t scancode);
-    /** @brief Returns the MouseStateManager used to track mouse button and position state. */
+    /** @brief Returns the mouse state manager. */
     std::shared_ptr<MouseStateManager> GetMouseStateManager();
 
   protected:
     /**
-     * @brief Records the active graphics backend. Called by subclass constructors.
-     * @param backend The backend in use.
+     * @brief Sets the active window backend.
+     * @param backend Backend identifier to set.
      */
     void SetWindowBackend(WindowBackend backend);
+
     /**
-     * @brief Adds a backend to the list of backends available on this platform.
-     * @param backend Backend to mark as available.
+     * @brief Registers a backend as available on this platform.
+     * @param backend Backend identifier to add.
      */
     void AddAvailableWindowBackend(WindowBackend backend);
 
