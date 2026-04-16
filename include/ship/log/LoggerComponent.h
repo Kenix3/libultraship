@@ -20,7 +20,7 @@ class LoggerComponent : public Component {
   public:
     /**
      * @brief Constructs a LoggerComponent wrapping the given logger.
-     * @param logger The spdlog logger to wrap. The logger's name is used as the Component name.
+     * @param logger The spdlog logger instance to wrap.
      */
     explicit LoggerComponent(std::shared_ptr<spdlog::logger> logger);
     ~LoggerComponent() override = default;
