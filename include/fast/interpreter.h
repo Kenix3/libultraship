@@ -370,6 +370,8 @@ class Interpreter {
     void StartFrame();
     void RunGuiOnly();
     void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+    // Lightweight display list execution for testing — no Ship::Context or GfxDebugger needed.
+    void RunDisplayListForTest(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
     void EndFrame();
     void HandleWindowEvents();
     bool IsFrameReady();
@@ -540,6 +542,7 @@ void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);
 const char* GfxGetOpcodeName(int8_t opcode);
+void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
 } // namespace Fast
 

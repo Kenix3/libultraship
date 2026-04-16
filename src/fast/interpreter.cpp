@@ -4843,6 +4843,17 @@ void Interpreter::RunGuiOnly() {
     }
 }
 
+void Interpreter::RunDisplayListForTest(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+    SpReset();
+    mCurMtxReplacements = &mtx_replacements;
+    mRdp->viewport_or_scissor_changed = true;
+
+    g_exec_stack.start((F3DGfx*)commands);
+    while (!g_exec_stack.cmd_stack.empty()) {
+        gfx_step();
+    }
+}
+
 void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
     SpReset();
 
