@@ -19,6 +19,8 @@
 #include "fast/interpreter.h"
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
+#include "fast/f3dex.h"
+#include "fast/f3dex2.h"
 
 // ============================================================
 // Re-define the SCALE macros here (they are local to interpreter.cpp)
@@ -1603,4 +1605,915 @@ TEST_F(RdpStateTest, SpReset) {
     interp->SpReset();
 
     EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 1);
+}
+
+// ============================================================
+// Layer 2: GfxSpMatrix Tests
+// ============================================================
+
+class GfxSpMatrixTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+        memset(interp->mRsp, 0, sizeof(Fast::RSP));
+        interp->mRsp->modelview_matrix_stack_size = 1;
+
+        // GfxSpMatrix reads from mCurMtxReplacements — provide an empty map
+        static const std::unordered_map<Mtx*, MtxF> emptyReplacements;
+        interp->mCurMtxReplacements = &emptyReplacements;
+
+        // Identity for P_matrix and modelview stack
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) {
+                interp->mRsp->P_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+                interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+            }
+    }
+
+    // Build a fixed-point identity matrix (N64 format: 16 int32s)
+    // Layout: 4 rows x 2 columns of int32 (integer parts), then 4 rows x 2 columns (fraction parts)
+    void MakeFixedPointIdentity(int32_t* out) {
+        memset(out, 0, 16 * sizeof(int32_t));
+        // Integer parts: row i, columns j,j+1 packed into int32
+        // Identity: diagonal entries are 1.0 = 0x00010000 integer + 0x00000000 fraction
+        // addr[i*2 + j/2] = (int_part[i][j] << 16) | int_part[i][j+1]
+        out[0] = 0x00010000; // [0][0]=1, [0][1]=0
+        out[1] = 0x00000000; // [0][2]=0, [0][3]=0
+        out[2] = 0x00000000; // [1][0]=0, [1][1]=1
+        out[3] = 0x00010000; // becomes: int_part = addr[3] => row1 cols2,3
+        // Wait — let me re-derive the formula:
+        // matrix[i][j]     = (int32_t)((addr[i*2+j/2] & 0xffff0000) | (addr[8+i*2+j/2] >> 16)) / 65536.0f
+        // matrix[i][j+1]   = (int32_t)((addr[i*2+j/2] << 16)       | (addr[8+i*2+j/2] & 0xffff)) / 65536.0f
+        // For identity, matrix[i][j] = (i==j) ? 1.0 : 0.0
+        // 1.0 = 65536 / 65536 => the combined int32 should be 65536 = 0x00010000
+        // So for diagonal (i,i):
+        //   if i is even (j=i): high 16 bits of addr[i*2+i/2] = 1 => addr[i*2+i/2] |= 0x00010000
+        //   if i is odd (j+1=i): low 16 bits of addr[i*2+(i-1)/2] = 1 => addr[...] |= 0x0001
+        //   frac parts (addr[8+...]) all zero for integer values
+    }
+
+    // Build a fixed-point matrix encoding the given float matrix (N64 format)
+    void FloatToFixedPoint(const float src[4][4], int32_t* out) {
+        memset(out, 0, 16 * sizeof(int32_t));
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j += 2) {
+                int32_t val0 = (int32_t)(src[i][j] * 65536.0f);
+                int32_t val1 = (int32_t)(src[i][j + 1] * 65536.0f);
+                // integer part: high 16 bits of each value
+                out[i * 2 + j / 2] = (val0 & (int32_t)0xffff0000) | ((uint32_t)(val1 & (int32_t)0xffff0000) >> 16);
+                // fraction part: low 16 bits of each value
+                out[8 + i * 2 + j / 2] =
+                    ((val0 & 0xffff) << 16) | (val1 & 0xffff);
+            }
+        }
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+};
+
+TEST_F(GfxSpMatrixTest, LoadProjectionMatrix) {
+    // Create a 2x scale matrix in fixed-point format
+    float scale2[4][4] = {};
+    scale2[0][0] = 2.0f;
+    scale2[1][1] = 2.0f;
+    scale2[2][2] = 2.0f;
+    scale2[3][3] = 1.0f;
+
+    int32_t fixedPt[16];
+    FloatToFixedPoint(scale2, fixedPt);
+
+    // F3DEX attribute values: MTX_PROJECTION=0x01, MTX_LOAD=0x02
+    uint8_t params = F3DEX_G_MTX_PROJECTION | F3DEX_G_MTX_LOAD;
+    interp->GfxSpMatrix(params, fixedPt);
+
+    // P_matrix should now be the 2x scale matrix
+    EXPECT_NEAR(interp->mRsp->P_matrix[0][0], 2.0f, 1e-3f);
+    EXPECT_NEAR(interp->mRsp->P_matrix[1][1], 2.0f, 1e-3f);
+    EXPECT_NEAR(interp->mRsp->P_matrix[2][2], 2.0f, 1e-3f);
+    EXPECT_NEAR(interp->mRsp->P_matrix[3][3], 1.0f, 1e-3f);
+    EXPECT_NEAR(interp->mRsp->P_matrix[0][1], 0.0f, 1e-3f);
+}
+
+TEST_F(GfxSpMatrixTest, LoadModelviewMatrix) {
+    float trans[4][4] = {};
+    trans[0][0] = 1.0f;
+    trans[1][1] = 1.0f;
+    trans[2][2] = 1.0f;
+    trans[3][3] = 1.0f;
+    trans[3][0] = 10.0f; // translate X by 10
+
+    int32_t fixedPt[16];
+    FloatToFixedPoint(trans, fixedPt);
+
+    // Modelview load (not projection, is load)
+    uint8_t params = F3DEX_G_MTX_LOAD; // no MTX_PROJECTION → modelview
+    interp->GfxSpMatrix(params, fixedPt);
+
+    // Should load into top of modelview stack
+    auto& mv = interp->mRsp->modelview_matrix_stack[interp->mRsp->modelview_matrix_stack_size - 1];
+    EXPECT_NEAR(mv[3][0], 10.0f, 1e-3f);
+    EXPECT_NEAR(mv[0][0], 1.0f, 1e-3f);
+}
+
+TEST_F(GfxSpMatrixTest, PushModelviewMatrix) {
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 1u);
+
+    float identity[4][4] = {};
+    for (int i = 0; i < 4; i++) identity[i][i] = 1.0f;
+    int32_t fixedPt[16];
+    FloatToFixedPoint(identity, fixedPt);
+
+    // Push + Load modelview
+    uint8_t params = F3DEX_G_MTX_PUSH | F3DEX_G_MTX_LOAD;
+    interp->GfxSpMatrix(params, fixedPt);
+
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 2u);
+}
+
+TEST_F(GfxSpMatrixTest, MultiplyProjectionMatrix) {
+    // Start with identity P_matrix, multiply by 3x scale
+    float scale3[4][4] = {};
+    scale3[0][0] = 3.0f;
+    scale3[1][1] = 3.0f;
+    scale3[2][2] = 3.0f;
+    scale3[3][3] = 1.0f;
+
+    int32_t fixedPt[16];
+    FloatToFixedPoint(scale3, fixedPt);
+
+    // Projection, multiply (not load)
+    uint8_t params = F3DEX_G_MTX_PROJECTION; // no MTX_LOAD → multiply
+    interp->GfxSpMatrix(params, fixedPt);
+
+    // Identity * scale3 = scale3
+    EXPECT_NEAR(interp->mRsp->P_matrix[0][0], 3.0f, 1e-3f);
+    EXPECT_NEAR(interp->mRsp->P_matrix[1][1], 3.0f, 1e-3f);
+}
+
+TEST_F(GfxSpMatrixTest, PushThenPopRoundTrip) {
+    // Set modelview to a translation matrix
+    float trans[4][4] = {};
+    for (int i = 0; i < 4; i++) trans[i][i] = 1.0f;
+    trans[3][0] = 5.0f;
+
+    int32_t fixedPt[16];
+    FloatToFixedPoint(trans, fixedPt);
+
+    // Load the translation into modelview
+    interp->GfxSpMatrix(F3DEX_G_MTX_LOAD, fixedPt);
+    EXPECT_NEAR(interp->mRsp->modelview_matrix_stack[0][3][0], 5.0f, 1e-3f);
+
+    // Push and load identity
+    float identity[4][4] = {};
+    for (int i = 0; i < 4; i++) identity[i][i] = 1.0f;
+    FloatToFixedPoint(identity, fixedPt);
+    interp->GfxSpMatrix(F3DEX_G_MTX_PUSH | F3DEX_G_MTX_LOAD, fixedPt);
+
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 2u);
+    // Top of stack should be identity
+    EXPECT_NEAR(interp->mRsp->modelview_matrix_stack[1][3][0], 0.0f, 1e-3f);
+    // Previous entry should still have translation
+    EXPECT_NEAR(interp->mRsp->modelview_matrix_stack[0][3][0], 5.0f, 1e-3f);
+
+    // Pop back
+    interp->GfxSpPopMatrix(1);
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 1u);
+    // Top should be the original translation
+    EXPECT_NEAR(interp->mRsp->modelview_matrix_stack[0][3][0], 5.0f, 1e-3f);
+}
+
+// ============================================================
+// Layer 2: SetZImage Test
+// ============================================================
+
+TEST_F(RdpStateTest, SetZImage) {
+    int dummy;
+    interp->GfxDpSetZImage(&dummy);
+    EXPECT_EQ(interp->mRdp->z_buf_address, &dummy);
+}
+
+// ============================================================
+// Layer 2: AdjustWidthHeightForScale Tests
+// ============================================================
+
+TEST_F(RdpStateTest, AdjustWidthHeightForScale_1to1) {
+    // Native 320x240, current 320x240 → 1:1 ratio → no change
+    interp->mCurDimensions.width = 320;
+    interp->mCurDimensions.height = 240;
+
+    uint32_t w = 100, h = 50;
+    interp->AdjustWidthHeightForScale(w, h, 320, 240);
+    EXPECT_EQ(w, 100u);
+    EXPECT_EQ(h, 50u);
+}
+
+TEST_F(RdpStateTest, AdjustWidthHeightForScale_2x) {
+    // Native 320x240, current 640x480 → 2:1 ratio
+    interp->mCurDimensions.width = 640;
+    interp->mCurDimensions.height = 480;
+
+    uint32_t w = 100, h = 50;
+    interp->AdjustWidthHeightForScale(w, h, 320, 240);
+    EXPECT_EQ(w, 200u);
+    EXPECT_EQ(h, 100u);
+}
+
+TEST_F(RdpStateTest, AdjustWidthHeightForScale_ZeroClamped) {
+    // Very small result would be 0 — should clamp to 1
+    interp->mCurDimensions.width = 1;
+    interp->mCurDimensions.height = 1;
+
+    uint32_t w = 1, h = 1;
+    interp->AdjustWidthHeightForScale(w, h, 320, 240);
+    EXPECT_GE(w, 1u);
+    EXPECT_GE(h, 1u);
+}
+
+// ============================================================
+// Layer 2: Scissor Tests (with StubRenderingAPI)
+// ============================================================
+
+class ScissorViewportTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+        stub = new StubRenderingAPI();
+        interp->mRapi = stub;
+
+        // Set dimensions to match native (1:1 ratio)
+        interp->mNativeDimensions.width = 320;
+        interp->mNativeDimensions.height = 240;
+        interp->mCurDimensions.width = 320;
+        interp->mCurDimensions.height = 240;
+        interp->mFbActive = false;
+        interp->mRendersToFb = false;
+        interp->mMsaaLevel = 1;
+        interp->mGameWindowViewport = {};
+        interp->mGfxCurrentWindowDimensions = {};
+    }
+
+    void TearDown() override {
+        interp->mRapi = nullptr;
+        delete stub;
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+    StubRenderingAPI* stub;
+};
+
+TEST_F(ScissorViewportTest, SetScissor_Basic) {
+    // SetScissor coordinates are in 10.2 fixed-point (multiply by 4)
+    // ulx=0, uly=0, lrx=320*4=1280, lry=240*4=960
+    interp->GfxDpSetScissor(0, 0, 0, 1280, 960);
+
+    // Before AdjustVIewportOrScissor:
+    //   x = 0/4 = 0, y = 960/4 = 240, width = 1280/4 = 320, height = 960/4 = 240
+    // After adjustment (invertY=false, 1:1 ratio):
+    //   y = nativeHeight - y = 240 - 240 = 0
+    //   All multiplied by 1:1 ratio = unchanged
+    // The viewport_or_scissor_changed flag should be set
+    EXPECT_TRUE(interp->mRdp->viewport_or_scissor_changed);
+
+    // With invertY=false and 1:1 ratio:
+    // scissor.width should be 320, scissor.height should be 240
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.width, 320.0f);
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.height, 240.0f);
+}
+
+TEST_F(ScissorViewportTest, SetScissor_SubRegion) {
+    // Scissor from (40,30) to (280,210) → width=240, height=180
+    uint32_t ulx = 40 * 4;
+    uint32_t uly = 30 * 4;
+    uint32_t lrx = 280 * 4;
+    uint32_t lry = 210 * 4;
+    interp->GfxDpSetScissor(0, ulx, uly, lrx, lry);
+
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.width, 240.0f);
+    EXPECT_FLOAT_EQ(interp->mRdp->scissor.height, 180.0f);
+}
+
+// ============================================================
+// Layer 2: CalcAndSetViewport Tests
+// ============================================================
+
+TEST_F(ScissorViewportTest, CalcAndSetViewport_FullScreen) {
+    // Standard N64 viewport: vscale = {SCREEN_WD/2 * 4, SCREEN_HT/2 * 4, ...}
+    //                        vtrans = {SCREEN_WD/2 * 4, SCREEN_HT/2 * 4, ...}
+    Fast::F3DVp_t vp = {};
+    vp.vscale[0] = 160 * 4; // half-width * 4
+    vp.vscale[1] = 120 * 4; // half-height * 4
+    vp.vtrans[0] = 160 * 4;
+    vp.vtrans[1] = 120 * 4;
+
+    interp->CalcAndSetViewport(&vp);
+
+    // width = 2 * vscale[0] / 4 = 2 * 640 / 4 = 320
+    // height = 2 * vscale[1] / 4 = 2 * 480 / 4 = 240
+    // x = vtrans[0]/4 - width/2 = 160 - 160 = 0
+    // y = vtrans[1]/4 + height/2 = 120 + 120 = 240
+    // After AdjustVIewportOrScissor: y = nativeHeight - y = 240 - 240 = 0
+    EXPECT_TRUE(interp->mRdp->viewport_or_scissor_changed);
+    EXPECT_FLOAT_EQ(interp->mRdp->viewport.width, 320.0f);
+    EXPECT_FLOAT_EQ(interp->mRdp->viewport.height, 240.0f);
+}
+
+// ============================================================
+// Layer 2: GfxSpMovemem Light Loading Tests
+// ============================================================
+
+TEST_F(RdpStateTest, MovememF3dex2_LoadLight) {
+    // F3DEX2: lightidx = offset / 24 - 2
+    // offset = (lightidx + 2) * 24
+    // For light 0: offset = 2 * 24 = 48
+    Fast::F3DLight light = {};
+    light.l.col[0] = 200;
+    light.l.col[1] = 100;
+    light.l.col[2] = 50;
+    light.l.dir[0] = 0;
+    light.l.dir[1] = 127;
+    light.l.dir[2] = 0;
+
+    interp->GfxSpMovememF3dex2(F3DEX2_G_MV_LIGHT, 48, &light);
+
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.col[0], 200);
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.col[1], 100);
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.col[2], 50);
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.dir[1], 127);
+}
+
+TEST_F(RdpStateTest, MovememF3dex2_LoadSecondLight) {
+    // Light 1: offset = (1+2) * 24 = 72
+    Fast::F3DLight light = {};
+    light.l.col[0] = 0;
+    light.l.col[1] = 255;
+    light.l.col[2] = 0;
+    light.l.dir[0] = 127;
+    light.l.dir[1] = 0;
+    light.l.dir[2] = 0;
+
+    interp->GfxSpMovememF3dex2(F3DEX2_G_MV_LIGHT, 72, &light);
+
+    EXPECT_EQ(interp->mRsp->current_lights[1].l.col[1], 255);
+    EXPECT_EQ(interp->mRsp->current_lights[1].l.dir[0], 127);
+}
+
+TEST_F(RdpStateTest, MovememF3d_LoadLight0) {
+    // F3D: light 0 uses F3DEX_G_MV_L0
+    Fast::F3DLight_t light = {};
+    light.col[0] = 128;
+    light.col[1] = 64;
+    light.col[2] = 32;
+    light.dir[0] = 0;
+    light.dir[1] = 0;
+    light.dir[2] = 127;
+
+    interp->GfxSpMovememF3d(F3DEX_G_MV_L0, 0, &light);
+
+    // F3D: index = (F3DEX_G_MV_L0 - F3DEX_G_MV_L0) / 2 = 0
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.col[0], 128);
+    EXPECT_EQ(interp->mRsp->current_lights[0].l.dir[2], 127);
+}
+
+TEST_F(RdpStateTest, MovememF3d_LoadLight1) {
+    Fast::F3DLight_t light = {};
+    light.col[0] = 255;
+    light.col[1] = 0;
+    light.col[2] = 255;
+
+    interp->GfxSpMovememF3d(F3DEX_G_MV_L1, 0, &light);
+
+    // index = (F3DEX_G_MV_L1 - F3DEX_G_MV_L0) / 2 = 1
+    EXPECT_EQ(interp->mRsp->current_lights[1].l.col[0], 255);
+    EXPECT_EQ(interp->mRsp->current_lights[1].l.col[2], 255);
+}
+
+TEST_F(RdpStateTest, MovememF3d_LoadLookat) {
+    Fast::F3DLight_t lookat = {};
+    lookat.dir[0] = 100;
+    lookat.dir[1] = 50;
+    lookat.dir[2] = 25;
+
+    interp->GfxSpMovememF3d(F3DEX_G_MV_LOOKATY, 0, &lookat);
+
+    EXPECT_EQ(interp->mRsp->lookat[0].dir[0], 100);
+    EXPECT_EQ(interp->mRsp->lookat[0].dir[1], 50);
+    EXPECT_EQ(interp->mRsp->lookat[0].dir[2], 25);
+}
+
+// ============================================================
+// Layer 2: LoadBlock Tests
+// ============================================================
+
+class LoadBlockTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+};
+
+TEST_F(LoadBlockTest, LoadBlock_16bit_Basic) {
+    // Set up texture_to_load state
+    uint8_t texData[128] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_16b, 1, nullptr, 0, meta, texData);
+
+    // Set up tile 0 at tmem=0
+    interp->GfxDpSetTile(0, G_IM_SIZ_16b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // LoadBlock: lrs = pixel_count - 1 = 31 (32 pixels of 16-bit = 64 bytes)
+    interp->GfxDpLoadBlock(0, 0, 0, 31, 0);
+
+    // size_bytes = (31+1) << 1 = 64 bytes
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].size_bytes, 64u);
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].addr, texData);
+    EXPECT_TRUE(interp->mRdp->textures_changed[0]);
+}
+
+TEST_F(LoadBlockTest, LoadBlock_32bit) {
+    uint8_t texData[256] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_32b, 1, nullptr, 0, meta, texData);
+    interp->GfxDpSetTile(0, G_IM_SIZ_32b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // 16 pixels of 32-bit = 64 bytes
+    interp->GfxDpLoadBlock(0, 0, 0, 15, 0);
+
+    // size_bytes = (15+1) << 2 = 64
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].size_bytes, 64u);
+}
+
+TEST_F(LoadBlockTest, LoadBlock_8bit) {
+    uint8_t texData[64] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_8b, 1, nullptr, 0, meta, texData);
+    interp->GfxDpSetTile(0, G_IM_SIZ_8b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // 64 pixels of 8-bit = 64 bytes
+    interp->GfxDpLoadBlock(0, 0, 0, 63, 0);
+
+    // size_bytes = (63+1) << 0 = 64
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].size_bytes, 64u);
+}
+
+TEST_F(LoadBlockTest, LoadBlock_WithLineSize) {
+    // When texture_to_load.width > 1, line_size_bytes should be calculated
+    uint8_t texData[256] = {};
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+    // Set width=16 pixels, 16-bit format → line = 16 * 2 = 32 bytes
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_16b, 16, nullptr, 0, meta, texData);
+    interp->GfxDpSetTile(0, G_IM_SIZ_16b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // Load 16*8=128 pixels → (127+1)*2 = 256 bytes total
+    interp->GfxDpLoadBlock(0, 0, 0, 127, 0);
+
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].size_bytes, 256u);
+    // line_size should be 32 (16 pixels * 2 bytes) since 32 < 256 and 256 % 32 == 0
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].line_size_bytes, 32u);
+}
+
+// ============================================================
+// Layer 2: LoadTlut (Palette Load) Tests
+// ============================================================
+
+TEST_F(RdpStateTest, LoadTlut_CI4_SinglePalette) {
+    // Set up a 16-entry CI4 palette (32 bytes)
+    uint8_t palData[32] = {};
+    palData[0] = 0xFF; palData[1] = 0xFF; // Entry 0: white opaque
+
+    Fast::RawTexMetadata meta = {};
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_16b, 0, nullptr, 0, meta, palData);
+
+    // Set tile tmem=256 (start of palette area)
+    interp->GfxDpSetTile(0, G_IM_SIZ_16b, 0, 256, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // Load 16 entries (high_index=15)
+    interp->GfxDpLoadTlut(0, 15);
+
+    // Should have loaded into palette_staging[0] at offset (256-256)*2 = 0
+    EXPECT_EQ(interp->mRdp->palettes[0], interp->mRdp->palette_staging[0]);
+    EXPECT_EQ(interp->mRdp->palette_staging[0][0], 0xFF);
+    EXPECT_EQ(interp->mRdp->palette_staging[0][1], 0xFF);
+}
+
+TEST_F(RdpStateTest, LoadTlut_CI8_FullPalette) {
+    // CI8: 256 entries = 512 bytes spanning both halves
+    uint8_t palData[512] = {};
+    palData[0] = 0xAA;     // First entry
+    palData[256] = 0xBB;   // First entry of second half
+
+    Fast::RawTexMetadata meta = {};
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_16b, 0, nullptr, 0, meta, palData);
+    interp->GfxDpSetTile(0, G_IM_SIZ_16b, 0, 256, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // Load all 256 entries
+    interp->GfxDpLoadTlut(0, 255);
+
+    EXPECT_EQ(interp->mRdp->palettes[0], interp->mRdp->palette_staging[0]);
+    EXPECT_EQ(interp->mRdp->palettes[1], interp->mRdp->palette_staging[1]);
+    EXPECT_EQ(interp->mRdp->palette_staging[0][0], 0xAA);
+    EXPECT_EQ(interp->mRdp->palette_staging[1][0], 0xBB);
+}
+
+// ============================================================
+// Layer 3: Vertex Transform with Lighting
+// ============================================================
+
+class VertexLightingTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+        stub = new StubRenderingAPI();
+        interp->mRapi = stub;
+        memset(interp->mRsp, 0, sizeof(Fast::RSP));
+        interp->mRsp->modelview_matrix_stack_size = 1;
+
+        // Identity matrices
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) {
+                interp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+                interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+                interp->mRsp->P_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+            }
+
+        // Set native dimensions
+        interp->mNativeDimensions.width = SCREEN_WIDTH;
+        interp->mNativeDimensions.height = SCREEN_HEIGHT;
+        interp->mCurDimensions.width = SCREEN_WIDTH;
+        interp->mCurDimensions.height = SCREEN_HEIGHT;
+        interp->mFbActive = false;
+
+        // Enable lighting
+        interp->mRsp->geometry_mode = G_LIGHTING;
+
+        // Set up 1 directional light + ambient
+        interp->mRsp->current_num_lights = 2; // 1 directional + 1 ambient
+        interp->mRsp->lights_changed = true;
+
+        // Directional light 0: white, pointing along +Y
+        interp->mRsp->current_lights[0].l.col[0] = 255;
+        interp->mRsp->current_lights[0].l.col[1] = 255;
+        interp->mRsp->current_lights[0].l.col[2] = 255;
+        interp->mRsp->current_lights[0].l.dir[0] = 0;
+        interp->mRsp->current_lights[0].l.dir[1] = 127;
+        interp->mRsp->current_lights[0].l.dir[2] = 0;
+
+        // Ambient light (last light = index 1)
+        interp->mRsp->current_lights[1].l.col[0] = 40;
+        interp->mRsp->current_lights[1].l.col[1] = 40;
+        interp->mRsp->current_lights[1].l.col[2] = 40;
+
+        // Initialize lookat directions
+        interp->mRsp->lookat[0].dir[0] = 0;
+        interp->mRsp->lookat[0].dir[1] = 127;
+        interp->mRsp->lookat[0].dir[2] = 0;
+        interp->mRsp->lookat[1].dir[0] = 127;
+        interp->mRsp->lookat[1].dir[1] = 0;
+        interp->mRsp->lookat[1].dir[2] = 0;
+    }
+
+    void TearDown() override {
+        interp->mRapi = nullptr;
+        delete stub;
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+    StubRenderingAPI* stub;
+};
+
+TEST_F(VertexLightingTest, DirectionalLight_NormalFacingLight) {
+    // Vertex with normal pointing along +Y (same as light direction)
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+    // Normal (as signed bytes): pointing +Y
+    vtx.n.n[0] = 0;
+    vtx.n.n[1] = 127;
+    vtx.n.n[2] = 0;
+    vtx.v.cn[3] = 255; // alpha
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    Fast::LoadedVertex& lv = interp->mRsp->loaded_vertices[0];
+    // With normal facing directly toward light:
+    // dot product = 1.0 → full directional contribution = 255
+    // total = ambient(40) + directional(255) = 295 → clamped to 255
+    EXPECT_GE(lv.color.r, 200); // Should be near 255
+    EXPECT_GE(lv.color.g, 200);
+    EXPECT_GE(lv.color.b, 200);
+}
+
+TEST_F(VertexLightingTest, DirectionalLight_NormalAwayFromLight) {
+    // Normal pointing -Y (away from light direction +Y)
+    Fast::F3DVtx vtx = {};
+    vtx.n.n[0] = 0;
+    vtx.n.n[1] = -127;
+    vtx.n.n[2] = 0;
+    vtx.v.cn[3] = 255;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    Fast::LoadedVertex& lv = interp->mRsp->loaded_vertices[0];
+    // dot product = -1.0 → no directional contribution (clamped to 0)
+    // total = ambient only = 40
+    EXPECT_EQ(lv.color.r, 40);
+    EXPECT_EQ(lv.color.g, 40);
+    EXPECT_EQ(lv.color.b, 40);
+}
+
+TEST_F(VertexLightingTest, DirectionalLight_NormalPerpendicular) {
+    // Normal pointing +X (perpendicular to light +Y)
+    Fast::F3DVtx vtx = {};
+    vtx.n.n[0] = 127;
+    vtx.n.n[1] = 0;
+    vtx.n.n[2] = 0;
+    vtx.v.cn[3] = 255;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    Fast::LoadedVertex& lv = interp->mRsp->loaded_vertices[0];
+    // dot product = 0 → no directional contribution
+    // total = ambient only = 40
+    EXPECT_EQ(lv.color.r, 40);
+    EXPECT_EQ(lv.color.g, 40);
+    EXPECT_EQ(lv.color.b, 40);
+}
+
+// ============================================================
+// Layer 3: Vertex Texture Coordinate Tests
+// ============================================================
+
+TEST_F(VertexTransformTest, TextureCoordinates) {
+    // Set texture scaling factor (U0.16 format)
+    interp->mRsp->texture_scaling_factor.s = 0x8000; // 0.5 in U0.16
+    interp->mRsp->texture_scaling_factor.t = 0x4000; // 0.25 in U0.16
+
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+    vtx.v.tc[0] = 1024; // texture coordinate S
+    vtx.v.tc[1] = 2048; // texture coordinate T
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    Fast::LoadedVertex& lv = interp->mRsp->loaded_vertices[0];
+    // U = tc[0] * s >> 16 = 1024 * 0x8000 >> 16 = 1024 * 32768 >> 16 = 512
+    EXPECT_EQ(lv.u, 512);
+    // V = tc[1] * t >> 16 = 2048 * 0x4000 >> 16 = 2048 * 16384 >> 16 = 512
+    EXPECT_EQ(lv.v, 512);
+}
+
+TEST_F(VertexTransformTest, TextureCoordinates_NoScaling) {
+    // Zero scaling = no texture coords
+    interp->mRsp->texture_scaling_factor.s = 0;
+    interp->mRsp->texture_scaling_factor.t = 0;
+
+    Fast::F3DVtx vtx = {};
+    vtx.v.tc[0] = 1024;
+    vtx.v.tc[1] = 2048;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].u, 0);
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].v, 0);
+}
+
+// ============================================================
+// Layer 3: Vertex Clip Rejection Tests
+// ============================================================
+
+TEST_F(VertexTransformTest, ClipRejection_InsideFrustum) {
+    // Vertex at origin with identity matrix → x=0,y=0,z=0,w=1
+    // All within [-w, w] → no clip flags
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].clip_rej, 0);
+}
+
+TEST_F(VertexTransformTest, ClipRejection_FarClip) {
+    // Set up matrix that will produce z > w (far clip)
+    // With identity matrix, w = 1.0. z > w when z > 1
+    // z = ob[2] * MP[2][2] + MP[3][2] = ob[2] * 1 = ob[2]
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 2; // z=2 > w=1
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // clip_rej should have CLIP_FAR (bit 5 = 32)
+    EXPECT_NE(interp->mRsp->loaded_vertices[0].clip_rej & 32, 0);
+}
+
+TEST_F(VertexTransformTest, ClipRejection_LeftClip) {
+    // With identity: x = ob[0] * 1 = ob[0], w = 1
+    // x < -w when x < -1
+    // But AdjXForAspectRatio adjusts x, so use a large negative value
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = -100; // will be < -w after aspect ratio adjustment
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Should have CLIP_LEFT (bit 0 = 1)
+    EXPECT_NE(interp->mRsp->loaded_vertices[0].clip_rej & 1, 0);
+}
+
+TEST_F(VertexTransformTest, ClipRejection_RightClip) {
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 100; // will be > w after aspect ratio adjustment
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Should have CLIP_RIGHT (bit 1 = 2)
+    EXPECT_NE(interp->mRsp->loaded_vertices[0].clip_rej & 2, 0);
+}
+
+TEST_F(VertexTransformTest, ClipRejection_TopClip) {
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 100; // y > w=1
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Should have CLIP_TOP (bit 3 = 8)
+    EXPECT_NE(interp->mRsp->loaded_vertices[0].clip_rej & 8, 0);
+}
+
+TEST_F(VertexTransformTest, ClipRejection_BottomClip) {
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = -100; // y < -w=−1
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Should have CLIP_BOTTOM (bit 2 = 4)
+    EXPECT_NE(interp->mRsp->loaded_vertices[0].clip_rej & 4, 0);
+}
+
+// ============================================================
+// Layer 3: Vertex Fog Calculation Tests
+// ============================================================
+
+class VertexFogTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+        memset(interp->mRsp, 0, sizeof(Fast::RSP));
+        interp->mRsp->modelview_matrix_stack_size = 1;
+
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) {
+                interp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+                interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+            }
+
+        interp->mNativeDimensions.width = SCREEN_WIDTH;
+        interp->mNativeDimensions.height = SCREEN_HEIGHT;
+        interp->mCurDimensions.width = SCREEN_WIDTH;
+        interp->mCurDimensions.height = SCREEN_HEIGHT;
+        interp->mFbActive = false;
+
+        // Enable fog
+        interp->mRsp->geometry_mode = G_FOG;
+        interp->mRsp->fog_mul = 256;
+        interp->mRsp->fog_offset = 0;
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+};
+
+TEST_F(VertexFogTest, FogAtOrigin) {
+    // Vertex at origin: z=0, w=1 → fog_z = 0*1*256 + 0 = 0 → clamped to 0
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+    vtx.v.cn[3] = 200; // original alpha (overwritten by fog)
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Fog should replace alpha
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].color.a, 0);
+}
+
+TEST_F(VertexFogTest, FogWithOffset) {
+    // Set fog_offset to push fog value up
+    interp->mRsp->fog_mul = 0;
+    interp->mRsp->fog_offset = 128;
+
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 0;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // fog_z = z * winv * fog_mul + fog_offset = 0 * 1 * 0 + 128 = 128
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].color.a, 128);
+}
+
+TEST_F(VertexFogTest, FogClampedTo255) {
+    interp->mRsp->fog_mul = 0;
+    interp->mRsp->fog_offset = 500; // above 255
+
+    Fast::F3DVtx vtx = {};
+    interp->GfxSpVertex(1, 0, &vtx);
+
+    // Should be clamped to 255
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].color.a, 255);
+}
+
+// ============================================================
+// Layer 3: Dest Index Offset in GfxSpVertex
+// ============================================================
+
+TEST_F(VertexTransformTest, DestIndexOffset) {
+    // Load vertex at dest_index=5
+    Fast::F3DVtx vtx = {};
+    vtx.v.ob[0] = 42;
+    vtx.v.ob[1] = 0;
+    vtx.v.ob[2] = 0;
+
+    interp->GfxSpVertex(1, 5, &vtx);
+
+    // Verify vertex was stored at index 5
+    EXPECT_FLOAT_EQ(interp->mRsp->loaded_vertices[5].z, 0.0f);
+    EXPECT_FLOAT_EQ(interp->mRsp->loaded_vertices[5].w, 1.0f);
+}
+
+// ============================================================
+// Layer 3: Combined LoadBlock → ImportTexture Pipeline
+// ============================================================
+
+TEST_F(TextureTestFixture, LoadBlock_ThenImportRgba16) {
+    // Simulate a realistic pipeline: SetTextureImage → SetTile → LoadBlock → ImportTexture
+    uint8_t texData[8] = {};
+    // Pixel 0: white opaque (R=31,G=31,B=31,A=1 → 0xFFFF)
+    texData[0] = 0xFF; texData[1] = 0xFF;
+    // Pixel 1: red opaque (R=31,G=0,B=0,A=1 → 0xF801)
+    texData[2] = 0xF8; texData[3] = 0x01;
+    // Pixel 2: black opaque (R=0,G=0,B=0,A=1 → 0x0001)
+    texData[4] = 0x00; texData[5] = 0x01;
+    // Pixel 3: transparent (0x0000)
+    texData[6] = 0x00; texData[7] = 0x00;
+
+    // Step 1: SetTextureImage
+    Fast::RawTexMetadata meta = {};
+    meta.h_byte_scale = 1.0f;
+    meta.v_pixel_scale = 1.0f;
+    interp->GfxDpSetTextureImage(0, G_IM_SIZ_16b, 2 /*width=2 pixels*/, nullptr, 0, meta, texData);
+
+    // Step 2: SetTile (tile=0, tmem=0, line=1 means 8 bytes per row)
+    interp->GfxDpSetTile(0, G_IM_SIZ_16b, 1 /*line*/, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    // Step 3: LoadBlock (4 pixels of 16-bit = 8 bytes)
+    interp->GfxDpLoadBlock(0, 0, 0, 3, 0);
+
+    // Verify loaded_texture state
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].size_bytes, 8u);
+    EXPECT_EQ(interp->mRdp->loaded_texture[0].addr, texData);
+
+    // Step 4: Set tile size for a 2x2 texture
+    interp->GfxDpSetTileSize(0, 0, 0, (2 - 1) * 4, (2 - 1) * 4);
+
+    // Step 5: Import the texture
+    interp->ImportTextureRgba16(0, false);
+
+    ASSERT_EQ(stub->uploads.size(), 1u);
+    EXPECT_EQ(stub->uploads[0].width, 2u);
+    EXPECT_EQ(stub->uploads[0].height, 2u);
+
+    // Pixel 0: white opaque
+    EXPECT_EQ(stub->uploads[0].data[0], 255);
+    EXPECT_EQ(stub->uploads[0].data[1], 255);
+    EXPECT_EQ(stub->uploads[0].data[2], 255);
+    EXPECT_EQ(stub->uploads[0].data[3], 255);
+
+    // Pixel 1: red opaque
+    EXPECT_EQ(stub->uploads[0].data[4], 255);
+    EXPECT_EQ(stub->uploads[0].data[5], 0);
+    EXPECT_EQ(stub->uploads[0].data[6], 0);
+    EXPECT_EQ(stub->uploads[0].data[7], 255);
 }
