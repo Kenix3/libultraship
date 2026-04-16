@@ -476,8 +476,29 @@ class StubRenderingAPI : public Fast::GfxRenderingAPI {
         uploads.push_back(std::move(tex));
     }
     void SetSamplerParameters(int, bool, uint32_t, uint32_t) override {}
-    void SetDepthTestAndMask(bool, bool) override {}
-    void SetZmodeDecal(bool) override {}
+    // Depth/framebuffer tracking
+    bool lastDepthTest = false;
+    bool lastDepthMask = false;
+    int depthCallCount = 0;
+    bool lastDecalMode = false;
+    int decalCallCount = 0;
+    int lastFbId = -1;
+    float lastFbNoiseScale = 0.0f;
+    int fbCreateCount = 0;
+    int fbStartDrawCount = 0;
+    bool lastClearColor = false;
+    bool lastClearDepth = false;
+    int clearFbCount = 0;
+
+    void SetDepthTestAndMask(bool depthTest, bool depthMask) override {
+        lastDepthTest = depthTest;
+        lastDepthMask = depthMask;
+        depthCallCount++;
+    }
+    void SetZmodeDecal(bool decal) override {
+        lastDecalMode = decal;
+        decalCallCount++;
+    }
     void SetViewport(int, int, int, int) override {}
     void SetScissor(int, int, int, int) override {}
     void SetUseAlpha(bool) override {}
@@ -487,11 +508,19 @@ class StubRenderingAPI : public Fast::GfxRenderingAPI {
     void StartFrame() override {}
     void EndFrame() override {}
     void FinishRender() override {}
-    int CreateFramebuffer() override { return 0; }
+    int CreateFramebuffer() override { return ++fbCreateCount; }
     void UpdateFramebufferParameters(int, uint32_t, uint32_t, uint32_t, bool, bool, bool, bool) override {}
-    void StartDrawToFramebuffer(int, float) override {}
+    void StartDrawToFramebuffer(int fb, float noiseScale) override {
+        lastFbId = fb;
+        lastFbNoiseScale = noiseScale;
+        fbStartDrawCount++;
+    }
     void CopyFramebuffer(int, int, int, int, int, int, int, int, int, int) override {}
-    void ClearFramebuffer(bool, bool) override {}
+    void ClearFramebuffer(bool color, bool depth) override {
+        lastClearColor = color;
+        lastClearDepth = depth;
+        clearFbCount++;
+    }
     void ReadFramebufferToCPU(int, uint32_t, uint32_t, uint16_t*) override {}
     void ResolveMSAAColorBuffer(int, int) override {}
     std::unordered_map<std::pair<float, float>, uint16_t, Fast::hash_pair_ff>
@@ -2683,4 +2712,242 @@ TEST_F(DisplayListTest, SetScissor_ViaDisplayList) {
     EXPECT_TRUE(interp->mRdp->viewport_or_scissor_changed);
     EXPECT_FLOAT_EQ(interp->mRdp->scissor.width, 320.0f);
     EXPECT_FLOAT_EQ(interp->mRdp->scissor.height, 240.0f);
+}
+
+// ============================================================
+// Depth and Framebuffer Tests
+// ============================================================
+
+// ----- Layer 2: OtherMode Depth Flag Tests -----
+
+TEST_F(RdpStateTest, SetOtherMode_DepthCompareAndUpdate) {
+    // Set Z_CMP | Z_UPD via GfxDpSetOtherMode
+    interp->GfxDpSetOtherMode(0, Z_CMP | Z_UPD);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_DepthCompareOnly) {
+    // Set only Z_CMP (no Z_UPD)
+    interp->GfxDpSetOtherMode(0, Z_CMP);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_DepthUpdateOnly) {
+    // Set only Z_UPD (no Z_CMP)
+    interp->GfxDpSetOtherMode(0, Z_UPD);
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_ZmodeDecal) {
+    // ZMODE_DEC = 0xC00
+    interp->GfxDpSetOtherMode(0, ZMODE_DEC);
+    EXPECT_EQ(interp->mRdp->other_mode_l & ZMODE_DEC, ZMODE_DEC);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_NoDepthFlags) {
+    // Clear state first with depth flags, then set with none
+    interp->GfxDpSetOtherMode(0, Z_CMP | Z_UPD | ZMODE_DEC);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+
+    // Now clear all
+    interp->GfxDpSetOtherMode(0, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & Z_UPD, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & ZMODE_DEC, ZMODE_DEC);
+}
+
+TEST_F(RdpStateTest, SpSetOtherMode_DepthBitsViaMask) {
+    // Use GfxSpSetOtherMode to set specific bits via shift/width
+    // Z_CMP is bit 4 (0x10), Z_UPD is bit 5 (0x20)
+    // Set bits 4-5 to 0x30 (both Z_CMP and Z_UPD)
+    interp->mRdp->other_mode_l = 0;
+    interp->mRdp->other_mode_h = 0;
+    interp->GfxSpSetOtherMode(4, 2, Z_CMP | Z_UPD);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+TEST_F(RdpStateTest, SpSetOtherMode_PreservesUnrelatedBits) {
+    // Set some bits first, then modify only depth bits
+    interp->mRdp->other_mode_l = 0xFF000000;
+    interp->mRdp->other_mode_h = 0;
+    interp->GfxSpSetOtherMode(4, 2, Z_CMP | Z_UPD);
+    // Upper bits should be preserved
+    EXPECT_EQ(interp->mRdp->other_mode_l & 0xFF000000, 0xFF000000u);
+    // Depth bits should be set
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+}
+
+// ----- Layer 2: SetZImage and SetColorImage Tests -----
+
+TEST_F(RdpStateTest, SetZImage_ChangesAddress) {
+    int dummy1, dummy2;
+    interp->GfxDpSetZImage(&dummy1);
+    EXPECT_EQ(interp->mRdp->z_buf_address, &dummy1);
+    interp->GfxDpSetZImage(&dummy2);
+    EXPECT_EQ(interp->mRdp->z_buf_address, &dummy2);
+}
+
+TEST_F(RdpStateTest, SetColorImage_StoresFormatSizeWidth) {
+    int dummy;
+    // format=2, size=1, width=640
+    interp->GfxDpSetColorImage(2, 1, 640, &dummy);
+    EXPECT_EQ(interp->mRdp->color_image_address, &dummy);
+}
+
+TEST_F(RdpStateTest, SetColorImage_NullAddress) {
+    interp->GfxDpSetColorImage(0, 0, 320, nullptr);
+    EXPECT_EQ(interp->mRdp->color_image_address, nullptr);
+}
+
+// ----- Layer 2: AdjustWidthHeightForScale fractional tests -----
+
+TEST_F(RdpStateTest, AdjustWidthHeightForScale_1_5x) {
+    // Native 320x240, current 480x360 → 1.5:1 ratio
+    interp->mCurDimensions.width = 480;
+    interp->mCurDimensions.height = 360;
+
+    uint32_t w = 100, h = 100;
+    interp->AdjustWidthHeightForScale(w, h, 320, 240);
+    EXPECT_EQ(w, 150u);
+    EXPECT_EQ(h, 150u);
+}
+
+TEST_F(RdpStateTest, AdjustWidthHeightForScale_Asymmetric) {
+    // Non-uniform scaling: width doubled, height tripled
+    interp->mCurDimensions.width = 640;
+    interp->mCurDimensions.height = 720;
+
+    uint32_t w = 100, h = 100;
+    interp->AdjustWidthHeightForScale(w, h, 320, 240);
+    EXPECT_EQ(w, 200u);
+    EXPECT_EQ(h, 300u);
+}
+
+// ----- Layer 3: Display List Depth Tests -----
+
+TEST_F(DisplayListTest, SetZImage_ViaDisplayList) {
+    // G_SETZIMG: w0 = (opcode<<24), w1 = address
+    int dummyZBuf;
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETZIMG << 24, (uintptr_t)&dummyZBuf);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->z_buf_address, &dummyZBuf);
+}
+
+TEST_F(DisplayListTest, SetColorImage_ViaDisplayList) {
+    // G_SETCIMG: w0 = (opcode<<24) | (format<<21) | (size<<19) | width, w1 = address
+    int dummyCBuf;
+    uint32_t format = 0; // RGBA
+    uint32_t size = 2;   // 16-bit
+    uint32_t width = 319; // width-1 encoded
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETCIMG << 24 | (format << 21) | (size << 19) | (width & 0x7FF),
+                    (uintptr_t)&dummyCBuf);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->color_image_address, &dummyCBuf);
+}
+
+TEST_F(DisplayListTest, DepthMode_ViaDisplayList_SetOtherModeRDP) {
+    // RDP_G_RDPSETOTHERMODE: w0 = (opcode<<24) | other_mode_h (low 24), w1 = other_mode_l
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24,
+                    Z_CMP | Z_UPD);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+}
+
+TEST_F(DisplayListTest, ZmodeDecal_ViaDisplayList) {
+    Fast::F3DGfx dl[2];
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24,
+                    ZMODE_DEC);
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    EXPECT_EQ(interp->mRdp->other_mode_l & ZMODE_DEC, ZMODE_DEC);
+}
+
+TEST_F(DisplayListTest, DepthAndGeometryZBuffer_ViaDisplayList) {
+    // Set G_ZBUFFER in geometry mode and depth flags in other_mode
+    // This combination is what triggers depth_test in the triangle pipeline
+    Fast::F3DGfx dl[3];
+    // Set geometry mode with G_ZBUFFER
+    uint32_t clearBits = 0;
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF),
+                    G_ZBUFFER);
+    // Set other_mode_l with Z_CMP | Z_UPD
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24,
+                    Z_CMP | Z_UPD);
+    dl[2] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
+
+    interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
+
+    // Verify both conditions for depth test are met
+    EXPECT_NE(interp->mRsp->geometry_mode & G_ZBUFFER, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_CMP, 0u);
+    EXPECT_NE(interp->mRdp->other_mode_l & Z_UPD, 0u);
+
+    // Compute expected depth flags the same way the interpreter does
+    bool depth_test = (interp->mRsp->geometry_mode & G_ZBUFFER) && (interp->mRdp->other_mode_l & Z_CMP);
+    bool depth_mask = (interp->mRdp->other_mode_l & Z_UPD) != 0;
+    EXPECT_TRUE(depth_test);
+    EXPECT_TRUE(depth_mask);
+}
+
+// ----- Layer 2: Framebuffer Info Tests -----
+
+TEST_F(RdpStateTest, FrameBufferMap_EmptyByDefault) {
+    EXPECT_TRUE(interp->mFrameBuffers.empty());
+}
+
+TEST_F(RdpStateTest, FrameBufferInfo_StoreAndRetrieve) {
+    // Insert a framebuffer entry and verify its properties
+    Fast::FBInfo fbInfo = { 320, 240, 640, 480, 320, 240, true };
+    interp->mFrameBuffers[1] = fbInfo;
+
+    EXPECT_EQ(interp->mFrameBuffers.size(), 1u);
+    auto it = interp->mFrameBuffers.find(1);
+    EXPECT_NE(it, interp->mFrameBuffers.end());
+    EXPECT_EQ(it->second.orig_width, 320u);
+    EXPECT_EQ(it->second.orig_height, 240u);
+    EXPECT_EQ(it->second.applied_width, 640u);
+    EXPECT_EQ(it->second.applied_height, 480u);
+    EXPECT_TRUE(it->second.resize);
+}
+
+TEST_F(RdpStateTest, FrameBufferInfo_MultipleEntries) {
+    Fast::FBInfo fb1 = { 320, 240, 640, 480, 320, 240, true };
+    Fast::FBInfo fb2 = { 160, 120, 320, 240, 160, 120, false };
+    interp->mFrameBuffers[1] = fb1;
+    interp->mFrameBuffers[2] = fb2;
+
+    EXPECT_EQ(interp->mFrameBuffers.size(), 2u);
+    EXPECT_EQ(interp->mFrameBuffers[1].orig_width, 320u);
+    EXPECT_EQ(interp->mFrameBuffers[2].orig_width, 160u);
+    EXPECT_FALSE(interp->mFrameBuffers[2].resize);
+}
+
+TEST_F(RdpStateTest, FbActiveDefault) {
+    // mFbActive should default to false
+    EXPECT_FALSE(interp->mFbActive);
+}
+
+TEST_F(RdpStateTest, RenderingState_DepthDefault) {
+    // RenderingState depth_test_and_mask should start at 0
+    EXPECT_EQ(interp->mRenderingState.depth_test_and_mask, 0u);
+    EXPECT_FALSE(interp->mRenderingState.decal_mode);
 }
