@@ -136,8 +136,7 @@ class ArchiveManager : public Component {
      * @param filePath Virtual path of the file.
      * @return Shared pointer to the owning Archive, or nullptr if not found.
      */
-    std::shared_ptr<Archive>
-    GetArchiveFromFile(const std::string& filePath);
+    std::shared_ptr<Archive> GetArchiveFromFile(const std::string& filePath);
 
     /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.

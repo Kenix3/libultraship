@@ -314,6 +314,16 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
 
     auto res = std::static_pointer_cast<Ship::Shader>(
         Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
+
+    if (res == nullptr) {
+        SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
+        abort();
+    }
+
+    auto shader = static_cast<std::string*>(res->GetRawPointer());
+    processor.load(*shader);
+    processor.bind_include_loader(opengl_include_fs);
+    auto result = processor.process();
     // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");

@@ -19,13 +19,13 @@ namespace Ship {
  * Part was actually added/removed; == 0 means the list is unchanged (duplicate).
  */
 enum class ListReturnCode : int32_t {
-    ForcedSuccess = 2,   /**< @brief Operation succeeded via force override. */
-    Success = 1,         /**< @brief Operation succeeded normally. */
-    Duplicate = 0,       /**< @brief Part already present; list unchanged. */
-    NoItemsProvided = -1,/**< @brief The input collection was empty. */
-    NotPermitted = -2,   /**< @brief Operation blocked by a permission check. */
-    NotFound = -3,       /**< @brief The specified Part was not found. */
-    Failed = -4          /**< @brief General failure (e.g. null pointer). */
+    ForcedSuccess = 2,    /**< @brief Operation succeeded via force override. */
+    Success = 1,          /**< @brief Operation succeeded normally. */
+    Duplicate = 0,        /**< @brief Part already present; list unchanged. */
+    NoItemsProvided = -1, /**< @brief The input collection was empty. */
+    NotPermitted = -2,    /**< @brief Operation blocked by a permission check. */
+    NotFound = -3,        /**< @brief The specified Part was not found. */
+    Failed = -4           /**< @brief General failure (e.g. null pointer). */
 };
 
 /**

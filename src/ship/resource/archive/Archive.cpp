@@ -181,12 +181,6 @@ void Archive::IndexFile(const std::string& filePath) {
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
-std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
-    const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
-    return LoadFile(filePath);
-}
-
 void Archive::Validate() {
     if (mManifest.Checksum.empty()) {
         SPDLOG_WARN("Archive {} does not have a checksum in its metadata, skipping validation", GetPath());
