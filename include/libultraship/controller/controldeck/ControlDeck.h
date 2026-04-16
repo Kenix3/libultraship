@@ -52,7 +52,7 @@ class ControlDeck final : public Ship::ControlDeck {
     /**
      * @brief Returns a pointer to the OSContPad buffer (one pad per port).
      *
-     * The buffer is updated by WriteToPad() at the start of each game frame.
+     * The buffer should be updated by WriteToPad() at the start of each game frame.
      * The lifetime of the returned pointer is tied to this ControlDeck.
      */
     OSContPad* GetPads();
