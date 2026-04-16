@@ -24,13 +24,14 @@ add_executable(lus_tests
     path_diskfile_tests.cpp
     resource_type_tests.cpp
     archive_self_tests.cpp
-    fast3d_tests.cpp
-    fast3d_layer4_tests.cpp
 )
 
 if(NOT DISABLE_SCRIPTING)
     target_sources(lus_tests PRIVATE script_test.cpp)
 endif()
+
+# Fast3D tests (split by layer, in the Fast3D directory)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../src/fast/tests ${CMAKE_CURRENT_BINARY_DIR}/fast3d_tests)
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
 
