@@ -19,6 +19,10 @@
 #include <prism/processor.h>
 #include "fast/interpreter.h"
 
+// Every prism template must start with a @prism(...) header line.
+// This macro prepends the required header to test template strings.
+#define PRISM_HDR "@prism(type='test', name='unit_test')\n\n"
+
 // ============================================================
 // Basic Prism Processor Tests
 // ============================================================
@@ -29,7 +33,7 @@ TEST(PrismProcessor, SimpleVariableSubstitution) {
         { "name", std::string("Fast3D") },
     };
     processor.populate(ctx);
-    processor.load("Hello @{name}!");
+    processor.load(PRISM_HDR "Hello @{name}!");
     std::string result = processor.process();
     EXPECT_NE(result.find("Hello Fast3D!"), std::string::npos);
 }
@@ -40,7 +44,7 @@ TEST(PrismProcessor, IntegerVariableSubstitution) {
         { "count", 42 },
     };
     processor.populate(ctx);
-    processor.load("Count is @{count}.");
+    processor.load(PRISM_HDR "Count is @{count}.");
     std::string result = processor.process();
     EXPECT_NE(result.find("Count is 42."), std::string::npos);
 }
@@ -51,7 +55,7 @@ TEST(PrismProcessor, BooleanVariable_True) {
         { "enabled", true },
     };
     processor.populate(ctx);
-    processor.load("@if(enabled)YES@end");
+    processor.load(PRISM_HDR "@if(enabled)YES@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("YES"), std::string::npos);
 }
@@ -62,7 +66,7 @@ TEST(PrismProcessor, BooleanVariable_False) {
         { "enabled", false },
     };
     processor.populate(ctx);
-    processor.load("@if(enabled)YES@end");
+    processor.load(PRISM_HDR "@if(enabled)YES@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("YES"), std::string::npos);
 }
@@ -73,7 +77,7 @@ TEST(PrismProcessor, IfElseBlock) {
         { "debug", false },
     };
     processor.populate(ctx);
-    processor.load("@if(debug)DEBUG@else RELEASE@end");
+    processor.load(PRISM_HDR "@if(debug)DEBUG@else RELEASE@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("DEBUG"), std::string::npos);
     EXPECT_NE(result.find("RELEASE"), std::string::npos);
@@ -85,7 +89,7 @@ TEST(PrismProcessor, IfElseBlock_TrueBranch) {
         { "debug", true },
     };
     processor.populate(ctx);
-    processor.load("@if(debug)DEBUG@else RELEASE@end");
+    processor.load(PRISM_HDR "@if(debug)DEBUG@else RELEASE@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("DEBUG"), std::string::npos);
 }
@@ -94,7 +98,7 @@ TEST(PrismProcessor, ForLoop_Range) {
     prism::Processor processor;
     prism::ContextItems ctx = {};
     processor.populate(ctx);
-    processor.load("@for(i in 0..3)[@{i}]@end");
+    processor.load(PRISM_HDR "@for(i in 0..3)[@{i}]@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("[0]"), std::string::npos);
     EXPECT_NE(result.find("[1]"), std::string::npos);
@@ -109,7 +113,7 @@ TEST(PrismProcessor, ForLoop_WithVariable) {
         { "max", 2 },
     };
     processor.populate(ctx);
-    processor.load("@for(i in 0..max)X@{i} @end");
+    processor.load(PRISM_HDR "@for(i in 0..max)X@{i} @end");
     std::string result = processor.process();
     EXPECT_NE(result.find("X0"), std::string::npos);
     EXPECT_NE(result.find("X1"), std::string::npos);
@@ -123,7 +127,7 @@ TEST(PrismProcessor, NestedIfInFor) {
         { "flags", M_ARRAY(flags, bool, 3) },
     };
     processor.populate(ctx);
-    processor.load("@for(i in 0..3)@if(flags[i])Y@{i}@end @end");
+    processor.load(PRISM_HDR "@for(i in 0..3)\n@if(flags[i])\nY@{i}\n@end\n@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("Y0"), std::string::npos);
     EXPECT_EQ(result.find("Y1"), std::string::npos);
@@ -136,7 +140,7 @@ TEST(PrismProcessor, IntegerComparison) {
         { "val", 5 },
     };
     processor.populate(ctx);
-    processor.load("@if(val == 5)FIVE@end");
+    processor.load(PRISM_HDR "@if(val == 5)FIVE@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("FIVE"), std::string::npos);
 }
@@ -147,7 +151,7 @@ TEST(PrismProcessor, IntegerComparison_NotEqual) {
         { "val", 3 },
     };
     processor.populate(ctx);
-    processor.load("@if(val == 5)FIVE@end");
+    processor.load(PRISM_HDR "@if(val == 5)FIVE@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("FIVE"), std::string::npos);
 }
@@ -158,7 +162,7 @@ TEST(PrismProcessor, StringVariableInTemplate) {
         { "version", std::string("#version 130") },
     };
     processor.populate(ctx);
-    processor.load("@{version}\nvoid main() {}");
+    processor.load(PRISM_HDR "@{version}\nvoid main() {}");
     std::string result = processor.process();
     EXPECT_NE(result.find("#version 130"), std::string::npos);
     EXPECT_NE(result.find("void main() {}"), std::string::npos);
@@ -168,7 +172,7 @@ TEST(PrismProcessor, EmptyTemplate) {
     prism::Processor processor;
     prism::ContextItems ctx = {};
     processor.populate(ctx);
-    processor.load("");
+    processor.load(PRISM_HDR "");
     std::string result = processor.process();
     EXPECT_TRUE(result.empty() || result.find_first_not_of(" \n\r\t") == std::string::npos);
 }
@@ -177,7 +181,7 @@ TEST(PrismProcessor, PlainTextPassthrough) {
     prism::Processor processor;
     prism::ContextItems ctx = {};
     processor.populate(ctx);
-    processor.load("plain text with no directives");
+    processor.load(PRISM_HDR "plain text with no directives");
     std::string result = processor.process();
     EXPECT_NE(result.find("plain text with no directives"), std::string::npos);
 }
@@ -190,10 +194,10 @@ TEST(PrismProcessor, IncludeLoader_BasicInclude) {
     prism::Processor processor;
     prism::ContextItems ctx = {};
     processor.populate(ctx);
-    processor.load("@include(\"test_include\")");
+    processor.load(PRISM_HDR "@include(\"test_include\")");
     processor.bind_include_loader([](const std::string& path) -> std::optional<std::string> {
         if (path == "test_include") {
-            return "INCLUDED_CONTENT";
+            return PRISM_HDR "INCLUDED_CONTENT";
         }
         return std::nullopt;
     });
@@ -201,17 +205,16 @@ TEST(PrismProcessor, IncludeLoader_BasicInclude) {
     EXPECT_NE(result.find("INCLUDED_CONTENT"), std::string::npos);
 }
 
-TEST(PrismProcessor, IncludeLoader_NotFound_ReturnsEmpty) {
+TEST(PrismProcessor, IncludeLoader_NotFound_Throws) {
     prism::Processor processor;
     prism::ContextItems ctx = {};
     processor.populate(ctx);
-    processor.load("BEFORE@include(\"nonexistent\")AFTER");
+    processor.load(PRISM_HDR "@include(\"nonexistent\")");
     processor.bind_include_loader([](const std::string&) -> std::optional<std::string> {
         return std::nullopt;
     });
-    std::string result = processor.process();
-    EXPECT_NE(result.find("BEFORE"), std::string::npos);
-    EXPECT_NE(result.find("AFTER"), std::string::npos);
+    // Prism throws when an include cannot be resolved
+    EXPECT_THROW(processor.process(), std::exception);
 }
 
 // ============================================================
@@ -230,7 +233,7 @@ TEST(PrismProcessor, InvokeFunc_BasicCall) {
         { "add", (InvokeFunc)testAddFunc },
     };
     processor.populate(ctx);
-    processor.load("Result: @{add(3, 4)}");
+    processor.load(PRISM_HDR "Result: @{add(3, 4)}");
     std::string result = processor.process();
     EXPECT_NE(result.find("Result: 7"), std::string::npos);
 }
@@ -246,7 +249,7 @@ TEST(PrismProcessor, InvokeFunc_ReturnsString) {
         { "make_name", (InvokeFunc)testStringFunc },
     };
     processor.populate(ctx);
-    processor.load("Name: @{make_name(5)}");
+    processor.load(PRISM_HDR "Name: @{make_name(5)}");
     std::string result = processor.process();
     EXPECT_NE(result.find("Name: item_5"), std::string::npos);
 }
@@ -262,7 +265,7 @@ TEST(PrismProcessor, MTDArray_1D_BoolAccess) {
         { "arr", M_ARRAY(arr, bool, 3) },
     };
     processor.populate(ctx);
-    processor.load("@if(arr[0])A@end @if(arr[1])B@end @if(arr[2])C@end");
+    processor.load(PRISM_HDR "@if(arr[0])A@end @if(arr[1])B@end @if(arr[2])C@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("A"), std::string::npos);
     EXPECT_EQ(result.find("B"), std::string::npos);
@@ -276,7 +279,7 @@ TEST(PrismProcessor, MTDArray_2D_BoolAccess) {
         { "grid", M_ARRAY(arr, bool, 2, 2) },
     };
     processor.populate(ctx);
-    processor.load("@if(grid[0][0])TL@end @if(grid[0][1])TR@end @if(grid[1][0])BL@end @if(grid[1][1])BR@end");
+    processor.load(PRISM_HDR "@if(grid[0][0])TL@end @if(grid[0][1])TR@end @if(grid[1][0])BL@end @if(grid[1][1])BR@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("TL"), std::string::npos);
     EXPECT_EQ(result.find("TR"), std::string::npos);
@@ -291,7 +294,7 @@ TEST(PrismProcessor, MTDArray_IntAccess) {
         { "vals", M_ARRAY(arr, int, 4) },
     };
     processor.populate(ctx);
-    processor.load("@{vals[2]}");
+    processor.load(PRISM_HDR "@{vals[2]}");
     std::string result = processor.process();
     EXPECT_NE(result.find("30"), std::string::npos);
 }
@@ -346,7 +349,7 @@ TEST(PrismShaderPattern, VertexShader_TextureAttribs) {
         "@end\n"
         "@end\n";
 
-    processor.load(tmpl);
+    processor.load(PRISM_HDR + tmpl);
     std::string result = processor.process();
 
     // Texture 0 is enabled → should have aTexCoord0
@@ -394,7 +397,7 @@ TEST(PrismShaderPattern, VertexShader_WithFogAndAlpha) {
         "@end\n"
         "@end\n";
 
-    processor.load(tmpl);
+    processor.load(PRISM_HDR + tmpl);
     std::string result = processor.process();
 
     // Fog enabled
@@ -420,7 +423,7 @@ TEST(PrismShaderPattern, FragmentShader_NotVertexShader) {
         "FRAGMENT\n"
         "@end\n";
 
-    processor.load(tmpl);
+    processor.load(PRISM_HDR + tmpl);
     std::string result = processor.process();
 
     EXPECT_EQ(result.find("VERTEX"), std::string::npos);
@@ -472,7 +475,7 @@ TEST(PrismShaderPattern, CCFeatures_AllDisabled) {
         "@end\n"
         "@end\n";
 
-    processor.load(tmpl);
+    processor.load(PRISM_HDR + tmpl);
     std::string result = processor.process();
 
     EXPECT_EQ(result.find("HAS_TEX"), std::string::npos);
@@ -508,7 +511,7 @@ TEST(PrismShaderPattern, CCFeatures_WithTexturesAndGrayscale) {
         "@end\n"
         "@end\n";
 
-    processor.load(tmpl);
+    processor.load(PRISM_HDR + tmpl);
     std::string result = processor.process();
 
     EXPECT_NE(result.find("HAS_TEX0"), std::string::npos);
@@ -526,7 +529,7 @@ TEST(PrismProcessor, ArithmeticInExpression) {
         { "base", 10 },
     };
     processor.populate(ctx);
-    processor.load("@{base + 5}");
+    processor.load(PRISM_HDR "@{base + 5}");
     std::string result = processor.process();
     EXPECT_NE(result.find("15"), std::string::npos);
 }
@@ -537,7 +540,7 @@ TEST(PrismProcessor, MultiplicationInExpression) {
         { "x", 3 },
     };
     processor.populate(ctx);
-    processor.load("@{x * 4}");
+    processor.load(PRISM_HDR "@{x * 4}");
     std::string result = processor.process();
     EXPECT_NE(result.find("12"), std::string::npos);
 }
@@ -552,7 +555,7 @@ TEST(PrismProcessor, ElseIf_FirstBranch) {
         { "val", 1 },
     };
     processor.populate(ctx);
-    processor.load("@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
+    processor.load(PRISM_HDR "@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("ONE"), std::string::npos);
     EXPECT_EQ(result.find("TWO"), std::string::npos);
@@ -565,7 +568,7 @@ TEST(PrismProcessor, ElseIf_SecondBranch) {
         { "val", 2 },
     };
     processor.populate(ctx);
-    processor.load("@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
+    processor.load(PRISM_HDR "@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("ONE"), std::string::npos);
     EXPECT_NE(result.find("TWO"), std::string::npos);
@@ -578,7 +581,7 @@ TEST(PrismProcessor, ElseIf_ElseBranch) {
         { "val", 99 },
     };
     processor.populate(ctx);
-    processor.load("@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
+    processor.load(PRISM_HDR "@if(val == 1)ONE@elseif(val == 2)TWO@else OTHER@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("ONE"), std::string::npos);
     EXPECT_EQ(result.find("TWO"), std::string::npos);
@@ -595,7 +598,7 @@ TEST(PrismProcessor, NegatedCondition) {
         { "flag", false },
     };
     processor.populate(ctx);
-    processor.load("@if(!flag)NEGATED@end");
+    processor.load(PRISM_HDR "@if(!flag)NEGATED@end");
     std::string result = processor.process();
     EXPECT_NE(result.find("NEGATED"), std::string::npos);
 }
@@ -606,7 +609,7 @@ TEST(PrismProcessor, NegatedCondition_True) {
         { "flag", true },
     };
     processor.populate(ctx);
-    processor.load("@if(!flag)NEGATED@end");
+    processor.load(PRISM_HDR "@if(!flag)NEGATED@end");
     std::string result = processor.process();
     EXPECT_EQ(result.find("NEGATED"), std::string::npos);
 }
