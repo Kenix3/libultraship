@@ -25,6 +25,7 @@ add_executable(lus_tests
     resource_type_tests.cpp
     archive_self_tests.cpp
     fast3d_tests.cpp
+    fast3d_layer4_tests.cpp
 )
 
 if(NOT DISABLE_SCRIPTING)
