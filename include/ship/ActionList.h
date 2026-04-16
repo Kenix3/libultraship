@@ -10,14 +10,37 @@
 
 namespace Ship {
 
+/**
+ * @brief Extends PartList<Action> with action-type-based lookup helpers.
+ *
+ * Provides overloaded Has() and Get() methods that filter Actions by their
+ * numeric type identifier (see ActionType).
+ */
 class ActionList : public PartList<Action> {
   public:
     using PartList<Action>::PartList;
     using PartList<Action>::Has;
     using PartList<Action>::Get;
 
+    /**
+     * @brief Checks whether any Action of the given type is in the list.
+     * @param actionType The numeric action type to search for.
+     * @return True if at least one matching Action is present.
+     */
     bool Has(const uint32_t actionType) const;
+
+    /**
+     * @brief Returns all Actions of the given type.
+     * @param actionType The numeric action type to filter by.
+     * @return A vector of matching Actions.
+     */
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const uint32_t actionType) const;
+
+    /**
+     * @brief Returns all Actions matching any of the given types.
+     * @param actionTypes A vector of numeric action types to filter by.
+     * @return A vector of matching Actions.
+     */
     std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<uint32_t>& actionTypes) const;
 };
 

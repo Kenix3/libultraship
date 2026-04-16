@@ -11,56 +11,174 @@
 
 namespace Ship {
 
-// >= 0 means the Part is guaranteed to be in the list after running.
-// < 0 is an error scenario.
-// > 0 means a Part was actually added to the list.
-// == 0 means the list is unchanged (duplicate).
+/**
+ * @brief Return codes for PartList add/remove operations.
+ *
+ * Non-negative values (>= 0) indicate the Part is guaranteed to be in the list
+ * after the operation. Negative values indicate an error. A value > 0 means a
+ * Part was actually added/removed; == 0 means the list is unchanged (duplicate).
+ */
 enum class ListReturnCode : int32_t {
-    ForcedSuccess = 2,
-    Success = 1,
-    Duplicate = 0,
-    NoItemsProvided = -1,
-    NotPermitted = -2,
-    NotFound = -3,
-    Failed = -4
+    ForcedSuccess = 2,   /**< @brief Operation succeeded via force override. */
+    Success = 1,         /**< @brief Operation succeeded normally. */
+    Duplicate = 0,       /**< @brief Part already present; list unchanged. */
+    NoItemsProvided = -1,/**< @brief The input collection was empty. */
+    NotPermitted = -2,   /**< @brief Operation blocked by a permission check. */
+    NotFound = -3,       /**< @brief The specified Part was not found. */
+    Failed = -4          /**< @brief General failure (e.g. null pointer). */
 };
 
-// PartList is a non-thread-safe ordered list.
-// Thread safety is the caller's responsibility.
-// C must be derived from Part.
+/**
+ * @brief A non-thread-safe ordered list of Parts.
+ *
+ * Provides add, remove, and lookup operations for a collection of Part-derived
+ * objects stored as shared_ptr. Thread safety is the caller's responsibility.
+ *
+ * @tparam C The element type; must be derived from Part.
+ */
 template <typename C = Part> class PartList : public Part {
   public:
+    /**
+     * @brief Constructs a PartList, optionally pre-allocating storage.
+     * @param initialAllocation Number of elements to reserve up front.
+     */
     explicit PartList(const size_t initialAllocation = 0);
     virtual ~PartList() = default;
 
+    /**
+     * @brief Checks whether a specific Part is in the list.
+     * @param part The Part to search for.
+     * @return True if the Part is present.
+     */
     bool Has(std::shared_ptr<C> part) const;
+
+    /**
+     * @brief Checks whether any Part of type T is in the list.
+     * @tparam T The derived type to search for via dynamic_cast.
+     * @return True if at least one matching Part is found.
+     */
     template <typename T> bool Has() const;
+
+    /**
+     * @brief Checks whether a Part with the given ID is in the list.
+     * @param id The unique Part ID to search for.
+     * @return True if found.
+     */
     bool Has(const uint64_t id) const;
+
+    /**
+     * @brief Checks whether a Part with the given name is in the list.
+     * @param name The name to search for.
+     * @return True if found.
+     */
     bool Has(const std::string& name) const;
+
+    /**
+     * @brief Checks whether a Part of type T with the given name is in the list.
+     * @tparam T The derived type to match via dynamic_cast.
+     * @param name The name to search for.
+     * @return True if a matching Part is found.
+     */
     template <typename T> bool Has(const std::string& name) const;
+
+    /** @brief Checks whether the list contains any Parts at all. */
     bool Has() const;
+
+    /** @brief Returns the number of Parts in the list. */
     size_t GetCount() const;
 
+    /**
+     * @brief Retrieves a Part by its unique ID.
+     * @param id The Part ID to look up.
+     * @return The matching Part, or nullptr if not found.
+     */
     std::shared_ptr<C> Get(const uint64_t id) const;
+
+    /** @brief Returns a snapshot (copy) of all Parts in the list. */
     std::shared_ptr<std::vector<std::shared_ptr<C>>> Get() const;
+
+    /**
+     * @brief Returns all Parts that can be dynamic_cast to type T.
+     * @tparam T The target derived type.
+     * @return A vector of matching Parts cast to T.
+     */
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Get() const;
+
+    /**
+     * @brief Returns all Parts whose IDs appear in the given vector.
+     * @param ids The IDs to filter by.
+     * @return A vector of matching Parts.
+     */
     std::shared_ptr<std::vector<std::shared_ptr<C>>> Get(const std::vector<uint64_t>& ids) const;
 
-    // Returns the first item in the list that can be dynamic_cast to T, or nullptr.
+    /**
+     * @brief Returns the first Part that can be dynamic_cast to T.
+     * @tparam T The target derived type.
+     * @return The first matching Part, or nullptr if none found.
+     */
     template <typename T> std::shared_ptr<T> GetFirst() const;
 
+    /**
+     * @brief Adds a Part to the list if not already present.
+     * @param part The Part to add.
+     * @return ListReturnCode indicating the result.
+     */
     ListReturnCode Add(std::shared_ptr<C> part);
+
+    /**
+     * @brief Adds multiple Parts to the list.
+     * @param parts The Parts to add.
+     * @return The aggregate ListReturnCode for the batch operation.
+     */
     ListReturnCode Add(const std::vector<std::shared_ptr<C>>& parts);
+
+    /**
+     * @brief Removes a specific Part from the list.
+     * @param part The Part to remove.
+     * @return ListReturnCode indicating the result.
+     */
     ListReturnCode Remove(std::shared_ptr<C> part);
+
+    /**
+     * @brief Removes a Part by its unique ID.
+     * @param id The Part ID to remove.
+     * @return ListReturnCode indicating the result.
+     */
     ListReturnCode Remove(const uint64_t id);
+
+    /** @brief Removes all Parts from the list. */
     ListReturnCode Remove();
+
+    /**
+     * @brief Removes multiple Parts from the list.
+     * @param parts The Parts to remove.
+     * @return The aggregate ListReturnCode for the batch operation.
+     */
     ListReturnCode Remove(const std::vector<std::shared_ptr<C>>& parts);
+
+    /**
+     * @brief Removes all Parts that can be dynamic_cast to type T.
+     * @tparam T The derived type to match for removal.
+     * @return ListReturnCode indicating the result.
+     */
     template <typename T> ListReturnCode Remove();
+
+    /**
+     * @brief Removes all Parts whose IDs appear in the given vector.
+     * @param ids The IDs to remove.
+     * @return The aggregate ListReturnCode for the batch operation.
+     */
     ListReturnCode Remove(const std::vector<uint64_t>& ids);
 
-    // Direct access to the underlying vector for efficient iteration.
-    // Thread safety is the caller's responsibility.
+    /**
+     * @brief Direct access to the underlying vector for efficient iteration.
+     *
+     * Thread safety is the caller's responsibility.
+     * @return A mutable reference to the internal vector.
+     */
     std::vector<std::shared_ptr<C>>& GetList();
+
+    /** @brief Direct const access to the underlying vector. */
     const std::vector<std::shared_ptr<C>>& GetList() const;
 
   private:
