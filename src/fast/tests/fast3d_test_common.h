@@ -76,6 +76,15 @@ class StubRenderingAPI : public Fast::GfxRenderingAPI {
     bool lastClearDepth = false;
     int clearFbCount = 0;
 
+    // ClearDepthRegion tracking
+    struct DepthRegionClear {
+        int x, y, w, h;
+    };
+    std::vector<DepthRegionClear> depthRegionClears;
+
+    // Configurable pixel depth return values for GetPixelDepth tests
+    std::unordered_map<std::pair<float, float>, uint16_t, Fast::hash_pair_ff> pixelDepthValues;
+
     void SetDepthTestAndMask(bool depthTest, bool depthMask) override {
         lastDepthTest = depthTest;
         lastDepthMask = depthMask;
@@ -107,10 +116,24 @@ class StubRenderingAPI : public Fast::GfxRenderingAPI {
         lastClearDepth = depth;
         clearFbCount++;
     }
+    void ClearDepthRegion(int x, int y, int w, int h) override {
+        depthRegionClears.push_back({ x, y, w, h });
+    }
     void ReadFramebufferToCPU(int, uint32_t, uint32_t, uint16_t*) override {}
     void ResolveMSAAColorBuffer(int, int) override {}
     std::unordered_map<std::pair<float, float>, uint16_t, Fast::hash_pair_ff>
-    GetPixelDepth(int, const std::set<std::pair<float, float>>&) override { return {}; }
+    GetPixelDepth(int, const std::set<std::pair<float, float>>& coords) override {
+        std::unordered_map<std::pair<float, float>, uint16_t, Fast::hash_pair_ff> result;
+        for (auto& c : coords) {
+            auto it = pixelDepthValues.find(c);
+            if (it != pixelDepthValues.end()) {
+                result[c] = it->second;
+            } else {
+                result[c] = 0;
+            }
+        }
+        return result;
+    }
     void* GetFramebufferTextureId(int) override { return nullptr; }
     void SelectTextureFb(int) override {}
     void DeleteTexture(uint32_t) override {}
