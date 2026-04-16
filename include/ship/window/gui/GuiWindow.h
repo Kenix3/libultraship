@@ -17,6 +17,19 @@ namespace Ship {
  *
  * Subclass GuiWindow and implement DrawElement() to add custom ImGui content.
  * Register the window with Gui::AddGuiWindow() so it participates in the draw loop.
+ *
+ * @code
+ * class MyWindow : public Ship::GuiWindow {
+ *   public:
+ *     using GuiWindow::GuiWindow;
+ *   protected:
+ *     void InitElement() override { }
+ *     void UpdateElement() override { }
+ *     void DrawElement() override {
+ *         ImGui::Text("Hello World");
+ *     }
+ * };
+ * @endcode
  */
 class GuiWindow : public GuiElement {
   public:

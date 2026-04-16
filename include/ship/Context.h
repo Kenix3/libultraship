@@ -28,6 +28,10 @@ class TickableComponent;
  */
 class Context : public Component, public Tickable {
   public:
+    /**
+     * @brief Returns the currently active global Context instance.
+     * @return Shared pointer to the Context, or an empty pointer if none exists.
+     */
     static std::shared_ptr<Context> GetInstance();
 
     /**
@@ -53,17 +57,52 @@ class Context : public Component, public Tickable {
     static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
                                                    const std::string& configFilePath);
 
+    /**
+     * @brief Returns the platform-specific application bundle directory (e.g. the .app bundle on macOS).
+     * @return Absolute path string, or an empty string on platforms without the concept of a bundle.
+     */
     static std::string GetAppBundlePath();
+    /**
+     * @brief Returns the platform-specific directory where the application stores its data.
+     * @param appName Override the application name used to build the path; defaults to the current app name.
+     * @return Absolute path string.
+     */
     static std::string GetAppDirectoryPath(const std::string& appName = "");
+    /**
+     * @brief Resolves a path relative to the application data directory.
+     * @param path    Relative path to resolve.
+     * @param appName Override the application name used to build the base path.
+     * @return Absolute path string.
+     */
     static std::string GetPathRelativeToAppDirectory(const std::string& path, const std::string& appName = "");
+    /**
+     * @brief Resolves a path relative to the application bundle directory.
+     * @param path Relative path to resolve.
+     * @return Absolute path string.
+     */
     static std::string GetPathRelativeToAppBundle(const std::string& path);
+    /**
+     * @brief Searches common application directories for a file and returns its absolute path.
+     * @param path    Filename or relative path to locate.
+     * @param appName Override the application name used to search.
+     * @return Absolute path to the first match found, or an empty string if not found.
+     */
     static std::string LocateFileAcrossAppDirs(const std::string& path, const std::string& appName = "");
 
+    /**
+     * @brief Constructs a Context with the given identifiers but does not initialize subsystems.
+     * @param name           Human-readable application name.
+     * @param shortName      Short application identifier.
+     * @param configFilePath Path to the JSON configuration file.
+     */
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
 
+    /** @brief Returns the human-readable application name. */
     std::string GetName() const;
+    /** @brief Returns the short application identifier. */
     std::string GetShortName() const;
+    /** @brief Returns the path to the JSON configuration file. */
     std::string GetConfigFilePath() const;
 
     // ---- TickableComponent list ----

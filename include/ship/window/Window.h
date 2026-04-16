@@ -201,19 +201,18 @@ class Window : public Component {
      * @param scancode Platform scancode.
      */
     void SetMouseCaptureScancode(int32_t scancode);
-    /** @brief Returns the mouse state manager. */
+    /** @brief Returns the MouseStateManager used to track mouse button and position state. */
     std::shared_ptr<MouseStateManager> GetMouseStateManager();
 
   protected:
     /**
-     * @brief Sets the active window backend.
-     * @param backend Backend identifier to set.
+     * @brief Records the active graphics backend. Called by subclass constructors.
+     * @param backend The backend in use.
      */
     void SetWindowBackend(WindowBackend backend);
-
     /**
-     * @brief Registers a backend as available on this platform.
-     * @param backend Backend identifier to add.
+     * @brief Adds a backend to the list of backends available on this platform.
+     * @param backend Backend to mark as available.
      */
     void AddAvailableWindowBackend(WindowBackend backend);
 
