@@ -11,18 +11,56 @@
 
 namespace Ship {
 
+/**
+ * @brief An ImGui window for editing, binding, and testing controller mappings.
+ *
+ * InputEditorWindow provides a tab-based UI that allows the user to:
+ * - View and remap button bindings for each controller port.
+ * - View and remap analog stick axis bindings with sensitivity/dead-zone controls.
+ * - Test, enable, and configure rumble mappings.
+ * - Configure LED colour mappings.
+ * - View gyroscope input and assign a gyro mapping.
+ *
+ * The window is added to the GUI by Context::Init() and is accessible via
+ * Gui::GetGuiWindow("Input Editor").
+ */
 class InputEditorWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
     virtual ~InputEditorWindow();
 
+    /**
+     * @brief Renders a small coloured chip labelled with @p buttonName.
+     *
+     * Used to represent a single physical button within the editor layout.
+     *
+     * @param buttonName Human-readable button label.
+     * @param color      Background colour of the chip.
+     */
     void DrawInputChip(const char* buttonName, ImVec4 color);
+
+    /**
+     * @brief Renders a circular analog-stick preview widget.
+     * @param label    Label displayed above the preview.
+     * @param stick    Current stick position (X and Y in the range [-128, 127]).
+     * @param deadzone Deadzone radius drawn as an inner circle (0 = no deadzone ring).
+     * @param gyro     If true, renders the preview in "gyro" style.
+     */
     void DrawAnalogPreview(const char* label, ImVec2 stick, float deadzone = 0, bool gyro = false);
+
+    /**
+     * @brief Returns true while the rumble test is actively playing.
+     */
     bool TestingRumble();
 
   protected:
+    /** @brief Registers button bitmasks and performs initial population of mapping tables. */
     void InitElement() override;
+
+    /** @brief Renders the full port-tabbed input editor UI. */
     void DrawElement() override;
+
+    /** @brief Refreshes cached mapping-ID tables and manages the rumble test timer. */
     void UpdateElement() override;
 
   private:

@@ -56,8 +56,8 @@ std::unique_ptr<char[]> Ship::MemoryStream::Read(size_t length) {
     return result;
 }
 
-void Ship::MemoryStream::Read(const char* dest, size_t length) {
-    memcpy_s((void*)dest, length, &mBuffer->at(mBaseAddress), length);
+void Ship::MemoryStream::Read(char* dest, size_t length) {
+    memcpy_s(dest, length, &mBuffer->at(mBaseAddress), length);
     mBaseAddress += length;
 }
 
