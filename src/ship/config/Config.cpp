@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <any>
+#include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
@@ -207,7 +208,13 @@ void Config::Reload() {
     try {
         mNestedJson = nlohmann::json::parse(ifs);
         mFlattenedJson = mNestedJson.flatten();
-    } catch (...) { mFlattenedJson = nlohmann::json::object(); }
+    } catch (const nlohmann::json::exception& e) {
+        SPDLOG_ERROR("Failed to parse config file {}: {}", mPath, e.what());
+        mFlattenedJson = nlohmann::json::object();
+    } catch (const std::exception& e) {
+        SPDLOG_ERROR("Unexpected error loading config file {}: {}", mPath, e.what());
+        mFlattenedJson = nlohmann::json::object();
+    }
 }
 
 void Config::Save() {
