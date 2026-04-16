@@ -842,7 +842,7 @@ TEST_F(TriangleRenderTest, FullPipeline_DepthModeSwitch_TwoDrawCalls) {
 
 TEST_F(TriangleRenderTest, TriangleDraw_CombineModeChange_FlushesAndUpdates) {
     // Use alternating shaders so the interpreter sees distinct ShaderProgram*
-    // pointers when combine_mode changes, which triggers a flush + LoadShader.
+    // pointers when combine_mode changes, which triggers a flush.
     rec->alternateShaders = true;
 
     LoadTriangleVertices();
@@ -851,7 +851,7 @@ TEST_F(TriangleRenderTest, TriangleDraw_CombineModeChange_FlushesAndUpdates) {
     interp->GfxSpTri1(0, 1, 2, false);
 
     size_t drawsBefore = rec->drawCalls.size();
-    int loadsBefore = rec->shaderLoadCount;
+    int createsBefore = rec->createShaderCount;
 
     // Change combine_mode to a different value
     interp->mRdp->combine_mode = 0x1234;
@@ -862,9 +862,9 @@ TEST_F(TriangleRenderTest, TriangleDraw_CombineModeChange_FlushesAndUpdates) {
 
     // The combine_mode change should have caused:
     //  1. A flush (draw call for the first triangle)
-    //  2. A new shader lookup/creation + load
+    //  2. A new shader creation (since LookupShader returns nullptr and combine_mode changed)
     EXPECT_GT(rec->drawCalls.size(), drawsBefore);
-    EXPECT_GT(rec->shaderLoadCount, loadsBefore);
+    EXPECT_GT(rec->createShaderCount, createsBefore);
 }
 
 TEST_F(TriangleRenderTest, TriangleDraw_ShaderCreatedWhenNotCached) {
