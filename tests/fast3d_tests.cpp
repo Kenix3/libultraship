@@ -292,30 +292,28 @@ TEST(MatrixMath, NormalizeVector_LargeVector) {
 
 TEST(MatrixConversion, FixedPointToFloat_Identity) {
     // N64 Mtx format: 16.16 fixed-point stored as:
-    //   First 8 int32s: high 16 bits of each pair
-    //   Next 8 int32s: low 16 bits (fractional)
-    // For identity matrix:
-    //   [1,0] [0,0] [0,1] [0,0] [0,0] [0,0] [0,0] [0,1] (int parts)
-    //   [0,0] [0,0] [0,0] [0,0] [0,0] [0,0] [0,0] [0,0] (frac parts)
-
-    // Build identity in N64 fixed-point format
+    //   First 8 int32s: integer parts
+    //   Next 8 int32s: fractional parts
+    // addr[i*2+j/2] packs two columns per 32-bit word:
+    //   high 16 bits = column j, low 16 bits = column j+1
+    //
+    // Identity matrix: only diagonal elements are 1.0
+    //   matrix[0][0]=1: addr[0] high word = 1 → addr[0] = 0x00010000
+    //   matrix[1][1]=1: addr[2] low word = 1  → addr[2] = 0x00000001
+    //   matrix[2][2]=1: addr[5] high word = 1 → addr[5] = 0x00010000
+    //   matrix[3][3]=1: addr[7] low word = 1  → addr[7] = 0x00000001
     int32_t mtx[16] = {};
-    // Integer parts (first 8 words):
-    // row0: col0=1.0, col1=0.0 → packed as (1<<16 | 0) = 0x00010000
     mtx[0] = 0x00010000; // row0: [1, 0]
     mtx[1] = 0x00000000; // row0: [0, 0]
-    mtx[2] = 0x00000000; // row1: [0, 0]
-    mtx[3] = 0x00010000; // row1: [0, 1]
+    mtx[2] = 0x00000001; // row1: [0, 1]
+    mtx[3] = 0x00000000; // row1: [0, 0]
     mtx[4] = 0x00000000; // row2: [0, 0]
-    mtx[5] = 0x00000000; // row2: [0, 0]
+    mtx[5] = 0x00010000; // row2: [1, 0]
     mtx[6] = 0x00000000; // row3: [0, 0]
-    mtx[7] = 0x00010000; // row3: [0, 1]
+    mtx[7] = 0x00000001; // row3: [0, 1]
+    // Fractional parts: all zero
+    for (int i = 8; i < 16; i++) mtx[i] = 0;
 
-    // Fractional parts (next 8 words): all zero for integer values
-    for (int i = 8; i < 16; i++)
-        mtx[i] = 0;
-
-    // Manually decode like GfxSpMatrix does (without the mtx_replacement path)
     float matrix[4][4];
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j += 2) {
@@ -326,7 +324,6 @@ TEST(MatrixConversion, FixedPointToFloat_Identity) {
         }
     }
 
-    // Should be identity
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             EXPECT_NEAR(matrix[i][j], (i == j) ? 1.0f : 0.0f, 1e-5f)
@@ -334,17 +331,16 @@ TEST(MatrixConversion, FixedPointToFloat_Identity) {
 }
 
 TEST(MatrixConversion, FixedPointToFloat_Scale2x) {
-    // Scale by 2.0 on all axes
+    // Scale by 2.0 on all diagonal axes
+    //   matrix[0][0]=2: addr[0] high word = 2 → addr[0] = 0x00020000
+    //   matrix[1][1]=2: addr[2] low word = 2  → addr[2] = 0x00000002
+    //   matrix[2][2]=2: addr[5] high word = 2 → addr[5] = 0x00020000
+    //   matrix[3][3]=1: addr[7] low word = 1  → addr[7] = 0x00000001
     int32_t mtx[16] = {};
-    // 2.0 in 16.16 = 0x00020000 for high word, 0 for low
     mtx[0] = 0x00020000; // row0: [2, 0]
-    mtx[1] = 0x00000000; // row0: [0, 0]
-    mtx[2] = 0x00000000; // row1: [0, 0]
-    mtx[3] = 0x00020000; // row1: [0, 2]
-    mtx[4] = 0x00000000; // row2: [0, 0]
-    mtx[5] = 0x00000000; // row2: [0, 0]
-    mtx[6] = 0x00000000; // row3: [0, 0]
-    mtx[7] = 0x00010000; // row3: [0, 1]
+    mtx[2] = 0x00000002; // row1: [0, 2]
+    mtx[5] = 0x00020000; // row2: [2, 0]
+    mtx[7] = 0x00000001; // row3: [0, 1]
     for (int i = 8; i < 16; i++) mtx[i] = 0;
 
     float matrix[4][4];
@@ -359,8 +355,11 @@ TEST(MatrixConversion, FixedPointToFloat_Scale2x) {
 
     EXPECT_NEAR(matrix[0][0], 2.0f, 1e-5f);
     EXPECT_NEAR(matrix[1][1], 2.0f, 1e-5f);
-    EXPECT_NEAR(matrix[2][2], 0.0f, 1e-5f); // row2 is all zeros
+    EXPECT_NEAR(matrix[2][2], 2.0f, 1e-5f);
     EXPECT_NEAR(matrix[3][3], 1.0f, 1e-5f);
+    // Off-diagonals should be zero
+    EXPECT_NEAR(matrix[0][1], 0.0f, 1e-5f);
+    EXPECT_NEAR(matrix[1][0], 0.0f, 1e-5f);
 }
 
 TEST(MatrixConversion, FixedPointToFloat_FractionalValue) {
@@ -527,10 +526,15 @@ class TextureTestFixture : public ::testing::Test {
         delete stub;
     }
 
-    // Helper to set up loaded_texture state for a given tile and tmem_index
+    // Helper to set up loaded_texture state for a given tile and tmem_index.
+    // For most formats, use lineSizeBytes = bytes_per_pixel * width.
+    // For single-line textures (sizeBytes == lineSizeBytes), be aware that
+    // GetEffectiveLineSize falls back to tile.line_size_bytes, so set both
+    // line sizes correctly.
     void SetupLoadedTexture(int tile, int tmemIndex,
                             const uint8_t* addr, uint32_t sizeBytes,
-                            uint32_t lineSizeBytes, uint32_t fullImageLineSizeBytes) {
+                            uint32_t lineSizeBytes, uint32_t fullImageLineSizeBytes,
+                            uint32_t tileLineSizeBytes = 0) {
         interp->mRdp->texture_tile[tile].tmem_index = tmemIndex;
         interp->mRdp->loaded_texture[tmemIndex].addr = addr;
         interp->mRdp->loaded_texture[tmemIndex].size_bytes = sizeBytes;
@@ -540,10 +544,10 @@ class TextureTestFixture : public ::testing::Test {
         interp->mRdp->loaded_texture[tmemIndex].raw_tex_metadata.h_byte_scale = 1.0f;
         interp->mRdp->loaded_texture[tmemIndex].raw_tex_metadata.v_pixel_scale = 1.0f;
 
-        // Set tile line_size_bytes (used as fallback)
-        interp->mRdp->texture_tile[tile].line_size_bytes = lineSizeBytes;
+        // Set tile line_size_bytes (used as fallback by GetEffectiveLineSize)
+        interp->mRdp->texture_tile[tile].line_size_bytes = tileLineSizeBytes ? tileLineSizeBytes : lineSizeBytes;
 
-        // Set tile size to match (no clamping)
+        // Set tile size to zero (no clamping)
         interp->mRdp->texture_tile[tile].uls = 0;
         interp->mRdp->texture_tile[tile].ult = 0;
         interp->mRdp->texture_tile[tile].lrs = 0;
@@ -614,6 +618,10 @@ TEST_F(TextureTestFixture, ImportTextureRgba16_2x2) {
     // Pixel (1,1): R=0, G=0, B=0, A=0 → transparent black
     texData[6] = 0x00; texData[7] = 0x00;
 
+    // For 2x2: line_size_bytes=4 (one row), size_bytes=8 (total), full_image=4
+    // GetEffectiveLineSize(4, 4, 8, tile_ls) → line_size != size → returns 4
+    // But we need full_image_line_size_bytes != size_bytes so it doesn't reset stride.
+    // Use full_image=4 which != size=8: good.
     SetupLoadedTexture(0, 0, texData, 8, 4, 4);
     interp->ImportTextureRgba16(0, false);
 
@@ -637,7 +645,10 @@ TEST_F(TextureTestFixture, ImportTextureRgba16_2x2) {
 // --- RGBA32 ---
 TEST_F(TextureTestFixture, ImportTextureRgba32_SinglePixel) {
     uint8_t texData[4] = { 0xAA, 0xBB, 0xCC, 0xDD };
-    SetupLoadedTexture(0, 0, texData, 4, 4, 4);
+    // For RGBA32 single-pixel: GetEffectiveLineSize is called with tile.line_size_bytes*2.
+    // Since line==full==size (all 4), it falls to tile.line_size_bytes*2 = tileLS*2.
+    // We need tileLS*2 = 4 (4 bytes per pixel), so tileLS = 2.
+    SetupLoadedTexture(0, 0, texData, 4, 4, 4, /*tileLineSizeBytes=*/2);
     interp->ImportTextureRgba32(0, false);
 
     ASSERT_EQ(stub->uploads.size(), 1u);
@@ -651,7 +662,9 @@ TEST_F(TextureTestFixture, ImportTextureRgba32_SinglePixel) {
 
 TEST_F(TextureTestFixture, ImportTextureRgba32_2x1) {
     uint8_t texData[8] = { 255, 0, 0, 255,   0, 255, 0, 128 };
-    SetupLoadedTexture(0, 0, texData, 8, 8, 8);
+    // 2x1 RGBA32: 8 bytes per line, single line
+    // GetEffectiveLineSize with tile.line_size_bytes*2 → need tileLS*2 = 8 → tileLS = 4
+    SetupLoadedTexture(0, 0, texData, 8, 8, 8, /*tileLineSizeBytes=*/4);
     interp->ImportTextureRgba32(0, false);
 
     ASSERT_EQ(stub->uploads.size(), 1u);
@@ -910,7 +923,7 @@ TEST_F(TextureTestFixture, ImportTextureCi8_SinglePixel) {
 // ============================================================
 
 TEST(ColorCombiner, GenerateCC_AllZero) {
-    Fast::ColorCombinerKey key = {};
+    ColorCombinerKey key = {};
     key.combine_mode = 0;
     key.options = 0;
     key.shader_id = 0;
@@ -943,7 +956,7 @@ TEST(ColorCombiner, GenerateCC_Modulate) {
     combine_mode |= ((uint64_t)G_ACMUX_SHADE << 22);    // C=4
     combine_mode |= ((uint64_t)G_ACMUX_0 << 25);        // D=7
 
-    Fast::ColorCombinerKey key = {};
+    ColorCombinerKey key = {};
     key.combine_mode = combine_mode;
     key.options = 0;
 
@@ -1150,7 +1163,7 @@ class VertexTransformTest : public ::testing::Test {
 
 TEST_F(VertexTransformTest, IdentityTransform) {
     // Create a vertex at (100, 200, 50) with identity MP_matrix
-    F3DVtx vtx = {};
+    Fast::F3DVtx vtx = {};
     vtx.v.ob[0] = 100;
     vtx.v.ob[1] = 200;
     vtx.v.ob[2] = 50;
@@ -1183,7 +1196,7 @@ TEST_F(VertexTransformTest, ScaleTransform) {
     interp->mRsp->MP_matrix[2][2] = 2.0f;
     interp->mRsp->MP_matrix[3][3] = 1.0f;
 
-    F3DVtx vtx = {};
+    Fast::F3DVtx vtx = {};
     vtx.v.ob[0] = 10;
     vtx.v.ob[1] = 20;
     vtx.v.ob[2] = 30;
@@ -1197,7 +1210,7 @@ TEST_F(VertexTransformTest, ScaleTransform) {
 }
 
 TEST_F(VertexTransformTest, MultipleVertices) {
-    F3DVtx vtxs[3] = {};
+    Fast::F3DVtx vtxs[3] = {};
     vtxs[0].v.ob[0] = 1; vtxs[0].v.ob[1] = 2; vtxs[0].v.ob[2] = 3;
     vtxs[1].v.ob[0] = 4; vtxs[1].v.ob[1] = 5; vtxs[1].v.ob[2] = 6;
     vtxs[2].v.ob[0] = 7; vtxs[2].v.ob[1] = 8; vtxs[2].v.ob[2] = 9;
