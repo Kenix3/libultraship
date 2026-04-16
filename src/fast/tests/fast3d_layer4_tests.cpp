@@ -101,7 +101,7 @@ class RecordingRenderingAPI : public Fast::GfxRenderingAPI {
     bool alternateShaders = false;
 
     const char* GetName() override { return "Recording"; }
-    int GetMaxTextureSize() override { return 8192; }
+    int GetMaxTextureSize() override { return 64; }
     Fast::GfxClipParameters GetClipParameters() override { return { false, false }; }
 
     void UnloadShader(Fast::ShaderProgram*) override { shaderUnloadCount++; }

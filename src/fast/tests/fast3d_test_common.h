@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstring>
 #include <array>
+#include <set>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 
@@ -44,7 +46,7 @@ class StubRenderingAPI : public Fast::GfxRenderingAPI {
     std::vector<UploadedTexture> uploads;
 
     const char* GetName() override { return "Stub"; }
-    int GetMaxTextureSize() override { return 8192; }
+    int GetMaxTextureSize() override { return 64; }
     Fast::GfxClipParameters GetClipParameters() override { return { false, false }; }
     void UnloadShader(Fast::ShaderProgram*) override {}
     void LoadShader(Fast::ShaderProgram*) override {}
