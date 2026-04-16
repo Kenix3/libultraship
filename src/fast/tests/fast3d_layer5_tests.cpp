@@ -650,7 +650,8 @@ TEST_F(ReferenceRDPTest, DepthClear_DifferentAddresses_NotDepthClear) {
     interp->mRdp->color_image_address = &colorBuf;
     interp->mRdp->z_buf_address = &zBuf;
     interp->mRdp->other_mode_h = G_CYC_FILL;
-    interp->mTexUploadBuffer = (uint8_t*)malloc(8192 * 8192 * 4);
+    int maxTex = stub->GetMaxTextureSize();
+    interp->mTexUploadBuffer = (uint8_t*)malloc(maxTex * maxTex * 4);
     interp->GfxDpFillRectangle(40, 40, 400, 400);
     EXPECT_TRUE(stub->depthRegionClears.empty());
     free(interp->mTexUploadBuffer);
@@ -1298,7 +1299,8 @@ TEST_F(ReferenceRDPTest, FillRect_SetsVertexColorsToFillColor) {
     uint8_t zBuf[16] = {};
     interp->mRdp->color_image_address = &colorBuf;
     interp->mRdp->z_buf_address = &zBuf;
-    interp->mTexUploadBuffer = (uint8_t*)malloc(8192 * 8192 * 4);
+    int maxTex = stub->GetMaxTextureSize();
+    interp->mTexUploadBuffer = (uint8_t*)malloc(maxTex * maxTex * 4);
     interp->GfxDpFillRectangle(40, 40, 400, 400);
     uint8_t expectedR = SCALE_5_8(15);
     uint8_t expectedG = SCALE_5_8(20);
