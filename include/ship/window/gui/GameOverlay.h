@@ -28,7 +28,7 @@ struct Overlay {
 };
 
 /**
- * @brief Renders on-screen text labels, images, and timed notification messages.
+ * @brief Renders on-screen timed notification messages.
  *
  * GameOverlay draws directly into the "game" ImGui viewport using a custom font
  * loaded from the archive. It is owned by Gui and is accessible via
