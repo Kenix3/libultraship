@@ -33,7 +33,7 @@ class HResultException : public std::runtime_error {
 
     static std::string FormatMessage(HRESULT hr) {
         char buf[64];
-        std::snprintf(buf, sizeof(buf), "HRESULT failure: 0x%08lX", static_cast<unsigned long>(hr));
+        std::snprintf(buf, sizeof(buf), "HRESULT failure: 0x%08X", static_cast<unsigned int>(hr));
         return buf;
     }
 };
