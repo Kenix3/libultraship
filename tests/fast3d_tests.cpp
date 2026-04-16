@@ -1223,3 +1223,384 @@ TEST_F(VertexTransformTest, MultipleVertices) {
     EXPECT_FLOAT_EQ(interp->mRsp->loaded_vertices[1].y, 5.0f);
     EXPECT_FLOAT_EQ(interp->mRsp->loaded_vertices[2].y, 8.0f);
 }
+
+// ============================================================
+// Phase 3: RDP Color Setting Tests
+// ============================================================
+
+class RdpStateTest : public ::testing::Test {
+  protected:
+    void SetUp() override {
+        interp = std::make_unique<Fast::Interpreter>();
+    }
+
+    std::unique_ptr<Fast::Interpreter> interp;
+};
+
+TEST_F(RdpStateTest, SetEnvColor) {
+    interp->GfxDpSetEnvColor(10, 20, 30, 40);
+    EXPECT_EQ(interp->mRdp->env_color.r, 10);
+    EXPECT_EQ(interp->mRdp->env_color.g, 20);
+    EXPECT_EQ(interp->mRdp->env_color.b, 30);
+    EXPECT_EQ(interp->mRdp->env_color.a, 40);
+}
+
+TEST_F(RdpStateTest, SetPrimColor) {
+    interp->GfxDpSetPrimColor(0, 128, 100, 150, 200, 250);
+    EXPECT_EQ(interp->mRdp->prim_color.r, 100);
+    EXPECT_EQ(interp->mRdp->prim_color.g, 150);
+    EXPECT_EQ(interp->mRdp->prim_color.b, 200);
+    EXPECT_EQ(interp->mRdp->prim_color.a, 250);
+    EXPECT_EQ(interp->mRdp->prim_lod_fraction, 128);
+}
+
+TEST_F(RdpStateTest, SetFogColor) {
+    interp->GfxDpSetFogColor(55, 66, 77, 88);
+    EXPECT_EQ(interp->mRdp->fog_color.r, 55);
+    EXPECT_EQ(interp->mRdp->fog_color.g, 66);
+    EXPECT_EQ(interp->mRdp->fog_color.b, 77);
+    EXPECT_EQ(interp->mRdp->fog_color.a, 88);
+}
+
+TEST_F(RdpStateTest, SetGrayscaleColor) {
+    interp->GfxDpSetGrayscaleColor(11, 22, 33, 44);
+    EXPECT_EQ(interp->mRdp->grayscale_color.r, 11);
+    EXPECT_EQ(interp->mRdp->grayscale_color.g, 22);
+    EXPECT_EQ(interp->mRdp->grayscale_color.b, 33);
+    EXPECT_EQ(interp->mRdp->grayscale_color.a, 44);
+}
+
+TEST_F(RdpStateTest, SetFillColor_RedOpaque) {
+    // RGBA5551: R=31,G=0,B=0,A=1 → 0xF801
+    // packed_color lower 16 bits used: 0xF801
+    uint32_t packed = 0xF801;
+    interp->GfxDpSetFillColor(packed);
+    EXPECT_EQ(interp->mRdp->fill_color.r, 255); // SCALE_5_8(31)
+    EXPECT_EQ(interp->mRdp->fill_color.g, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.b, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.a, 255);
+}
+
+TEST_F(RdpStateTest, SetFillColor_Transparent) {
+    // A=0: alpha bit is 0
+    // R=0,G=0,B=0,A=0 → 0x0000
+    interp->GfxDpSetFillColor(0x0000);
+    EXPECT_EQ(interp->mRdp->fill_color.r, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.g, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.b, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.a, 0);
+}
+
+TEST_F(RdpStateTest, SetFillColor_GreenOpaque) {
+    // R=0,G=31,B=0,A=1 → (0 << 11) | (31 << 6) | (0 << 1) | 1 = 0x07C1
+    uint32_t packed = 0x07C1;
+    interp->GfxDpSetFillColor(packed);
+    EXPECT_EQ(interp->mRdp->fill_color.r, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.g, 255); // SCALE_5_8(31)
+    EXPECT_EQ(interp->mRdp->fill_color.b, 0);
+    EXPECT_EQ(interp->mRdp->fill_color.a, 255);
+}
+
+TEST_F(RdpStateTest, SetFillColor_WhiteOpaque) {
+    // R=31,G=31,B=31,A=1 → 0xFFFF
+    interp->GfxDpSetFillColor(0xFFFF);
+    EXPECT_EQ(interp->mRdp->fill_color.r, 255);
+    EXPECT_EQ(interp->mRdp->fill_color.g, 255);
+    EXPECT_EQ(interp->mRdp->fill_color.b, 255);
+    EXPECT_EQ(interp->mRdp->fill_color.a, 255);
+}
+
+// ============================================================
+// Other Mode Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SetOtherMode_Direct) {
+    interp->GfxDpSetOtherMode(0x12345678, 0xABCDEF01);
+    EXPECT_EQ(interp->mRdp->other_mode_h, 0x12345678u);
+    EXPECT_EQ(interp->mRdp->other_mode_l, 0xABCDEF01u);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_Masked) {
+    // Start with known state
+    interp->GfxDpSetOtherMode(0, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_h, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l, 0u);
+
+    // Set cycle type to 2-cycle (bits 20-21 in other_mode_h)
+    // GfxSpSetOtherMode: shift is from bit 0 of the 64-bit combined mode
+    // other_mode = other_mode_l | (other_mode_h << 32)
+    // G_MDSFT_CYCLETYPE = 20, in other_mode_h → shift = 20 + 32 = 52
+    interp->GfxSpSetOtherMode(52, 2, (uint64_t)G_CYC_2CYCLE << 32);
+    EXPECT_EQ(interp->mRdp->other_mode_h & (3u << G_MDSFT_CYCLETYPE), (uint32_t)G_CYC_2CYCLE);
+}
+
+TEST_F(RdpStateTest, SetOtherMode_PreservesOtherBits) {
+    // Set all bits
+    interp->GfxDpSetOtherMode(0xFFFFFFFF, 0xFFFFFFFF);
+
+    // Clear just 4 bits at position 0 of the low word
+    interp->GfxSpSetOtherMode(0, 4, 0);
+    EXPECT_EQ(interp->mRdp->other_mode_l & 0xF, 0u);
+    EXPECT_EQ(interp->mRdp->other_mode_l & ~0xFu, ~0xFu); // rest preserved
+    EXPECT_EQ(interp->mRdp->other_mode_h, 0xFFFFFFFFu);    // high word unchanged
+}
+
+// ============================================================
+// Tile Configuration Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SetTileSize) {
+    interp->GfxDpSetTileSize(2, 10, 20, 300, 400);
+    EXPECT_EQ(interp->mRdp->texture_tile[2].uls, 10);
+    EXPECT_EQ(interp->mRdp->texture_tile[2].ult, 20);
+    EXPECT_EQ(interp->mRdp->texture_tile[2].lrs, 300);
+    EXPECT_EQ(interp->mRdp->texture_tile[2].lrt, 400);
+    EXPECT_TRUE(interp->mRdp->textures_changed[0]);
+    EXPECT_TRUE(interp->mRdp->textures_changed[1]);
+}
+
+TEST_F(RdpStateTest, SetTile_Basic) {
+    // line=2, tmem=0, tile=3, palette=5
+    interp->GfxDpSetTile(0 /*fmt*/, 2 /*siz*/, 2 /*line*/, 0 /*tmem*/, 3 /*tile*/, 5 /*palette*/,
+                         G_TX_CLAMP /*cmt*/, 4 /*maskt*/, 1 /*shiftt*/,
+                         G_TX_WRAP /*cms*/, 3 /*masks*/, 2 /*shifts*/);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].fmt, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].siz, 2);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].palette, 5);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].line_size_bytes, 16u); // line * 8
+    EXPECT_EQ(interp->mRdp->texture_tile[3].shifts, 2);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].shiftt, 1);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].cmt, G_TX_CLAMP);
+    // cms = G_TX_WRAP with masks != G_TX_NOMASK → stays as G_TX_WRAP
+    EXPECT_EQ(interp->mRdp->texture_tile[3].cms, G_TX_WRAP);
+    EXPECT_EQ(interp->mRdp->texture_tile[3].tmem_index, 0); // tmem=0 → index 0
+}
+
+TEST_F(RdpStateTest, SetTile_WrapNoMaskBecomesClamp) {
+    // When cms==G_TX_WRAP and masks==G_TX_NOMASK, cms should become G_TX_CLAMP
+    interp->GfxDpSetTile(0, 2, 1, 0, 0, 0,
+                         G_TX_WRAP /*cmt*/, G_TX_NOMASK /*maskt*/, 0,
+                         G_TX_WRAP /*cms*/, G_TX_NOMASK /*masks*/, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cms, G_TX_CLAMP);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].cmt, G_TX_CLAMP);
+}
+
+TEST_F(RdpStateTest, SetTile_TmemIndexMapping) {
+    // tmem=0 → tmem_index=0
+    interp->GfxDpSetTile(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[0].tmem_index, 0);
+
+    // tmem=256 → tmem_index=1
+    interp->GfxDpSetTile(0, 0, 0, 256, 1, 0, 0, 0, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[1].tmem_index, 1);
+
+    // tmem=1 → tmem_index=1 (any non-zero → 1)
+    interp->GfxDpSetTile(0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0);
+    EXPECT_EQ(interp->mRdp->texture_tile[2].tmem_index, 1);
+}
+
+// ============================================================
+// Texture Scaling Factor Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SpTexture) {
+    interp->GfxSpTexture(0x8000, 0x4000, 0, 2, 1);
+    EXPECT_EQ(interp->mRsp->texture_scaling_factor.s, 0x8000);
+    EXPECT_EQ(interp->mRsp->texture_scaling_factor.t, 0x4000);
+    EXPECT_EQ(interp->mRdp->first_tile_index, 2);
+}
+
+TEST_F(RdpStateTest, SpTexture_ChangeTileTriggersTextureChanged) {
+    interp->mRdp->first_tile_index = 0;
+    interp->mRdp->textures_changed[0] = false;
+    interp->mRdp->textures_changed[1] = false;
+
+    // Changing to a different tile should set textures_changed
+    interp->GfxSpTexture(0xFFFF, 0xFFFF, 0, 3, 1);
+    EXPECT_TRUE(interp->mRdp->textures_changed[0]);
+    EXPECT_TRUE(interp->mRdp->textures_changed[1]);
+}
+
+TEST_F(RdpStateTest, SpTexture_SameTileNoChange) {
+    interp->mRdp->first_tile_index = 5;
+    interp->mRdp->textures_changed[0] = false;
+    interp->mRdp->textures_changed[1] = false;
+
+    // Same tile — textures_changed should NOT be set
+    interp->GfxSpTexture(0xFFFF, 0xFFFF, 0, 5, 1);
+    EXPECT_FALSE(interp->mRdp->textures_changed[0]);
+    EXPECT_FALSE(interp->mRdp->textures_changed[1]);
+}
+
+// ============================================================
+// Fog Parameter Tests
+// ============================================================
+
+TEST_F(RdpStateTest, FogParametersF3dex2) {
+    // GfxSpMovewordF3dex2 with G_MW_FOG
+    uint16_t mul = 0x7FFF;   // fog_mul
+    uint16_t offset = 0x0100; // fog_offset
+    uintptr_t data = ((uintptr_t)mul << 16) | offset;
+    interp->GfxSpMovewordF3dex2(G_MW_FOG, 0, data);
+    EXPECT_EQ(interp->mRsp->fog_mul, (int16_t)0x7FFF);
+    EXPECT_EQ(interp->mRsp->fog_offset, (int16_t)0x0100);
+}
+
+TEST_F(RdpStateTest, FogParametersF3d) {
+    uint16_t mul = 0x8000;   // negative in int16
+    uint16_t offset = 0xFFF0;
+    uintptr_t data = ((uintptr_t)mul << 16) | offset;
+    interp->GfxSpMovewordF3d(G_MW_FOG, 0, data);
+    EXPECT_EQ(interp->mRsp->fog_mul, (int16_t)0x8000);
+    EXPECT_EQ(interp->mRsp->fog_offset, (int16_t)0xFFF0);
+}
+
+// ============================================================
+// Num Lights Tests
+// ============================================================
+
+TEST_F(RdpStateTest, NumLightsF3dex2) {
+    // F3DEX2: num_lights = data / 24 + 1
+    interp->GfxSpMovewordF3dex2(G_MW_NUMLIGHT, 0, 48); // 48/24 + 1 = 3
+    EXPECT_EQ(interp->mRsp->current_num_lights, 3u);
+    EXPECT_TRUE(interp->mRsp->lights_changed);
+}
+
+TEST_F(RdpStateTest, NumLightsF3d) {
+    // F3D: num_lights = (data - 0x80000000) / 32
+    interp->GfxSpMovewordF3d(G_MW_NUMLIGHT, 0, 0x80000000U + 64); // 64/32 = 2
+    EXPECT_EQ(interp->mRsp->current_num_lights, 2u);
+    EXPECT_TRUE(interp->mRsp->lights_changed);
+}
+
+// ============================================================
+// Segment Pointer Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SegmentPointerF3dex2) {
+    // G_MW_SEGMENT: segNumber = offset / 4
+    interp->GfxSpMovewordF3dex2(G_MW_SEGMENT, 4 * 3, 0xDEADBEEF);
+    EXPECT_EQ(interp->mSegmentPointers[3], (uintptr_t)0xDEADBEEF);
+}
+
+TEST_F(RdpStateTest, SegmentPointerF3d) {
+    interp->GfxSpMovewordF3d(G_MW_SEGMENT, 4 * 5, 0x12345678);
+    EXPECT_EQ(interp->mSegmentPointers[5], (uintptr_t)0x12345678);
+}
+
+// ============================================================
+// Modify Vertex Tests
+// ============================================================
+
+TEST_F(RdpStateTest, ModifyVertex_ST) {
+    // Prepare a loaded vertex at index 0
+    interp->mRsp->loaded_vertices[0].u = 0;
+    interp->mRsp->loaded_vertices[0].v = 0;
+
+    // val: high 16 bits = s, low 16 bits = t
+    int16_t s = 1024;
+    int16_t t = -512;
+    uint32_t val = ((uint32_t)(uint16_t)s << 16) | (uint16_t)t;
+
+    interp->GfxSpModifyVertex(0, G_MWO_POINT_ST, val);
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].u, 1024);
+    EXPECT_EQ(interp->mRsp->loaded_vertices[0].v, -512);
+}
+
+// ============================================================
+// CalculateNormalDir Tests
+// ============================================================
+
+TEST_F(RdpStateTest, CalculateNormalDir_IdentityModelview) {
+    // Set up identity modelview matrix at top of stack
+    interp->mRsp->modelview_matrix_stack_size = 1;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+
+    Fast::F3DLight_t light = {};
+    light.dir[0] = 127;
+    light.dir[1] = 0;
+    light.dir[2] = 0;
+
+    float coeffs[3];
+    interp->CalculateNormalDir(&light, coeffs);
+
+    // With identity modelview, the light direction should pass through normalized
+    EXPECT_NEAR(coeffs[0], 1.0f, 1e-3f);
+    EXPECT_NEAR(coeffs[1], 0.0f, 1e-3f);
+    EXPECT_NEAR(coeffs[2], 0.0f, 1e-3f);
+}
+
+TEST_F(RdpStateTest, CalculateNormalDir_DiagonalLight) {
+    interp->mRsp->modelview_matrix_stack_size = 1;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+
+    // Light dir pointing equally along x, y, z
+    Fast::F3DLight_t light = {};
+    light.dir[0] = 73; // ~ 127 / sqrt(3)
+    light.dir[1] = 73;
+    light.dir[2] = 73;
+
+    float coeffs[3];
+    interp->CalculateNormalDir(&light, coeffs);
+
+    // Should be normalized to unit length
+    float len = sqrtf(coeffs[0] * coeffs[0] + coeffs[1] * coeffs[1] + coeffs[2] * coeffs[2]);
+    EXPECT_NEAR(len, 1.0f, 1e-3f);
+    // All components should be equal
+    EXPECT_NEAR(coeffs[0], coeffs[1], 1e-3f);
+    EXPECT_NEAR(coeffs[1], coeffs[2], 1e-3f);
+}
+
+// ============================================================
+// Color Image Address Test
+// ============================================================
+
+TEST_F(RdpStateTest, SetColorImage) {
+    int dummy;
+    interp->GfxDpSetColorImage(0, 0, 320, &dummy);
+    EXPECT_EQ(interp->mRdp->color_image_address, &dummy);
+}
+
+// ============================================================
+// GfxDpSetCombineMode Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SetCombineMode) {
+    interp->GfxDpSetCombineMode(0x12345678, 0x9ABCDEF0, 0x11111111, 0x22222222);
+    // The combine mode is set as a 64-bit value constructed from the RGB and alpha parts
+    // This just verifies it doesn't crash and sets some state
+    // (Internal representation may differ from raw args)
+}
+
+// ============================================================
+// SetTextureImage Tests
+// ============================================================
+
+TEST_F(RdpStateTest, SetTextureImage) {
+    uint8_t fakeData[16] = {};
+    Fast::RawTexMetadata meta = {};
+    interp->GfxDpSetTextureImage(0 /*format*/, 2 /*size*/, 64 /*width*/,
+                                 nullptr /*texPath*/, 0 /*texFlags*/, meta,
+                                 fakeData /*addr*/);
+    EXPECT_EQ(interp->mRdp->texture_to_load.addr, fakeData);
+    EXPECT_EQ(interp->mRdp->texture_to_load.siz, 2);
+    EXPECT_EQ(interp->mRdp->texture_to_load.width, 64u);
+}
+
+// ============================================================
+// SpReset Test
+// ============================================================
+
+TEST_F(RdpStateTest, SpReset) {
+    // Modify some RSP state, then verify SpReset clears it
+    interp->mRsp->geometry_mode = 0xFFFFFFFF;
+    interp->mRsp->modelview_matrix_stack_size = 5;
+
+    interp->SpReset();
+
+    EXPECT_EQ(interp->mRsp->modelview_matrix_stack_size, 1);
+}
