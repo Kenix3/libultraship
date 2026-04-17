@@ -1,4 +1,6 @@
 #include "ship/Component.h"
+#include "ship/Context.h"
+#include "ship/TickableComponent.h"
 
 #ifdef COMPONENT_THREAD_SAFE
 #include <shared_mutex>
@@ -24,6 +26,15 @@ void ChildList::Added(std::shared_ptr<Component> part, const bool forced) {
     if (!part->GetParents().Has(ownerShared)) {
         part->GetParents().Add(ownerShared, forced);
     }
+
+    // Auto-register TickableComponents with the Context's global TickableList
+    auto tickable = std::dynamic_pointer_cast<TickableComponent>(part);
+    if (tickable) {
+        auto context = Context::GetInstance();
+        if (context && !context->GetTickableComponents().Has(tickable)) {
+            context->GetTickableComponents().Add(tickable);
+        }
+    }
 }
 
 void ChildList::Removed(std::shared_ptr<Component> part, const bool forced) {
@@ -34,6 +45,15 @@ void ChildList::Removed(std::shared_ptr<Component> part, const bool forced) {
     auto ownerShared = mOwner->shared_from_this();
     if (part->GetParents().Has(ownerShared)) {
         part->GetParents().Remove(ownerShared, forced);
+    }
+
+    // Auto-unregister TickableComponents from the Context's global TickableList
+    auto tickable = std::dynamic_pointer_cast<TickableComponent>(part);
+    if (tickable) {
+        auto context = Context::GetInstance();
+        if (context && context->GetTickableComponents().Has(tickable)) {
+            context->GetTickableComponents().Remove(tickable);
+        }
     }
 }
 
