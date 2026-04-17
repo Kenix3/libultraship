@@ -38,6 +38,17 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
+
+#ifdef ENABLE_PRESS_TO_JOIN
+    // POC: apply SDLGamepad defaults to all other ports so press-to-join works
+    // out of the box. A proper solution would let games define per-port defaults
+    // via ControllerDefaultMappings rather than hardcoding this loop in library code.
+    for (size_t i = 1; i < mPorts.size(); i++) {
+        if (!mPorts[i]->GetConnectedController()->HasConfig()) {
+            mPorts[i]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
+        }
+    }
+#endif
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
