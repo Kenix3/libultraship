@@ -201,7 +201,10 @@ void ConnectedPhysicalDeviceManager::StopMultiplayer() {
     mMultiplayerPortCount = 1;
     mPressToJoinAssignments.clear();
 
-    // Restore default all-on-port-0 behavior
+    // Wipe multiplayer-era ignore state so port 0 doesn't keep ignoring devices
+    // that weren't the one assigned. RefreshConnectedSDLGamepads refills ports
+    // 1-3 with every connected device to restore the all-on-port-0 default.
+    mIgnoredInstanceIds.clear();
     RefreshConnectedSDLGamepads();
 
     SPDLOG_INFO("Press-to-join: stopped multiplayer, restored single player mode");
@@ -225,18 +228,70 @@ int8_t ConnectedPhysicalDeviceManager::GetPortDeviceStatus(uint8_t port) {
 }
 
 void ConnectedPhysicalDeviceManager::PollPressToJoin() {
+    // Fire assignment on the release edge of a press rather than the press itself.
+    // If we assigned on press, ReadToPad immediately after would read the held button
+    // and the game would treat the join press as a confirm/select on the same frame.
+    static constexpr int32_t AXIS_DEADZONE = 16000;
+    static bool wasActiveLastFrame = false;
+    static uint32_t framesSinceActivation = 0;
+    static std::unordered_set<int32_t> lastFrameInputHeld;
+
+    if (mPressToJoinActive && !wasActiveLastFrame) {
+        framesSinceActivation = 0;
+        lastFrameInputHeld.clear();
+    }
+    wasActiveLastFrame = mPressToJoinActive;
+
     if (!mPressToJoinActive) {
         return;
     }
 
-    static constexpr int32_t AXIS_DEADZONE = 16000;
+    // Snapshot who has any input held right now
+    std::unordered_set<int32_t> currentInputHeld;
+    for (const auto& [instanceId, gamepad] : mConnectedSDLGamepads) {
+        bool hasInput = false;
+        for (int btn = 0; btn < SDL_CONTROLLER_BUTTON_MAX; btn++) {
+            if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(btn))) {
+                hasInput = true;
+                break;
+            }
+        }
+        if (!hasInput) {
+            for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
+                auto value = SDL_GameControllerGetAxis(gamepad, static_cast<SDL_GameControllerAxis>(axis));
+                if (abs(value) > AXIS_DEADZONE) {
+                    hasInput = true;
+                    break;
+                }
+            }
+        }
+        if (hasInput) {
+            currentInputHeld.insert(instanceId);
+        }
+    }
+
+    // During the post-activation grace period, track input state but don't assign yet
+    if (framesSinceActivation < 15) {
+        framesSinceActivation++;
+        lastFrameInputHeld = currentInputHeld;
+        return;
+    }
+
+    // Release edge = had input last frame, no input now
+    std::unordered_set<int32_t> releasedThisFrame;
+    for (auto instanceId : lastFrameInputHeld) {
+        if (!currentInputHeld.contains(instanceId)) {
+            releasedThisFrame.insert(instanceId);
+        }
+    }
 
     for (uint8_t port = 0; port < mMultiplayerPortCount; port++) {
         if (mPressToJoinAssignments.contains(port)) {
-            continue; // port already filled
+            continue;
         }
 
-        // Check keyboard for this port
+        // Keyboard uses GetLastScancode which is already event-based (fires once per press),
+        // so it doesn't need release-edge treatment.
         if (PortHasKeyboardMappings(port)) {
             auto lastScancode = Context::GetInstance()->GetWindow()->GetLastScancode();
             if (lastScancode != -1) {
@@ -246,9 +301,8 @@ void ConnectedPhysicalDeviceManager::PollPressToJoin() {
             }
         }
 
-        // Check unassigned SDL gamepads
-        for (const auto& [instanceId, gamepad] : mConnectedSDLGamepads) {
-            // Skip if already assigned to any port
+        int32_t pickedInstanceId = -1;
+        for (auto instanceId : releasedThisFrame) {
             bool alreadyAssigned = false;
             for (const auto& [assignedPort, assignedId] : mPressToJoinAssignments) {
                 if (assignedId == instanceId) {
@@ -259,34 +313,17 @@ void ConnectedPhysicalDeviceManager::PollPressToJoin() {
             if (alreadyAssigned) {
                 continue;
             }
-
-            // Check any button pressed
-            bool inputDetected = false;
-            for (int btn = 0; btn < SDL_CONTROLLER_BUTTON_MAX; btn++) {
-                if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(btn))) {
-                    inputDetected = true;
-                    break;
-                }
-            }
-
-            // Check any axis past deadzone
-            if (!inputDetected) {
-                for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
-                    auto value = SDL_GameControllerGetAxis(gamepad, static_cast<SDL_GameControllerAxis>(axis));
-                    if (abs(value) > AXIS_DEADZONE) {
-                        inputDetected = true;
-                        break;
-                    }
-                }
-            }
-
-            if (inputDetected) {
-                AssignDeviceToPort(instanceId, port);
-                SPDLOG_INFO("Press-to-join: gamepad {} assigned to port {}", instanceId, port);
-                break; // one assignment per frame per port
-            }
+            pickedInstanceId = instanceId;
+            break;
+        }
+        if (pickedInstanceId != -1) {
+            AssignDeviceToPort(pickedInstanceId, port);
+            SPDLOG_INFO("Press-to-join: gamepad {} assigned to port {}", pickedInstanceId, port);
+            releasedThisFrame.erase(pickedInstanceId);
         }
     }
+
+    lastFrameInputHeld = currentInputHeld;
 }
 
 void ConnectedPhysicalDeviceManager::AssignDeviceToPort(int32_t instanceId, uint8_t port) {
