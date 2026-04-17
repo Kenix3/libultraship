@@ -223,6 +223,89 @@ TEST(ComponentTest, RemoveWithForce) {
     EXPECT_FALSE(parent->GetChildren().Has(child));
 }
 
+// ---- Bidirectional relationship tests ----
+
+TEST(ComponentTest, AddChildCreatesParent) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    parent->GetChildren().Add(child);
+    EXPECT_TRUE(child->GetParents().Has(parent));
+    EXPECT_EQ(child->GetParents().GetCount(), 1u);
+}
+
+TEST(ComponentTest, AddParentCreatesChild) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    child->GetParents().Add(parent);
+    EXPECT_TRUE(parent->GetChildren().Has(child));
+    EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
+}
+
+TEST(ComponentTest, RemoveChildRemovesParent) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    parent->GetChildren().Add(child);
+    EXPECT_TRUE(child->GetParents().Has(parent));
+
+    parent->GetChildren().Remove(child);
+    EXPECT_FALSE(child->GetParents().Has(parent));
+    EXPECT_EQ(child->GetParents().GetCount(), 0u);
+}
+
+TEST(ComponentTest, RemoveParentRemovesChild) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    child->GetParents().Add(parent);
+    EXPECT_TRUE(parent->GetChildren().Has(child));
+
+    child->GetParents().Remove(parent);
+    EXPECT_FALSE(parent->GetChildren().Has(child));
+    EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
+}
+
+TEST(ComponentTest, BidirectionalMultipleParents) {
+    auto p1 = std::make_shared<TestComponent>("Parent1");
+    auto p2 = std::make_shared<TestComponent>("Parent2");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    child->GetParents().Add(p1);
+    child->GetParents().Add(p2);
+
+    EXPECT_TRUE(p1->GetChildren().Has(child));
+    EXPECT_TRUE(p2->GetChildren().Has(child));
+    EXPECT_EQ(p1->GetChildren().GetCount(), 1u);
+    EXPECT_EQ(p2->GetChildren().GetCount(), 1u);
+}
+
+TEST(ComponentTest, BidirectionalMultipleChildren) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto c1 = std::make_shared<TestComponent>("C1");
+    auto c2 = std::make_shared<TestComponent>("C2");
+
+    parent->GetChildren().Add(c1);
+    parent->GetChildren().Add(c2);
+
+    EXPECT_TRUE(c1->GetParents().Has(parent));
+    EXPECT_TRUE(c2->GetParents().Has(parent));
+}
+
+TEST(ComponentTest, BidirectionalRemoveAllChildren) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto c1 = std::make_shared<TestComponent>("C1");
+    auto c2 = std::make_shared<TestComponent>("C2");
+
+    parent->GetChildren().Add(c1);
+    parent->GetChildren().Add(c2);
+
+    parent->GetChildren().Remove();
+    EXPECT_EQ(c1->GetParents().GetCount(), 0u);
+    EXPECT_EQ(c2->GetParents().GetCount(), 0u);
+}
+
 // ---- ComponentList tests ----
 
 #include "ship/ComponentList.h"

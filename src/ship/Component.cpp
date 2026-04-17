@@ -10,8 +10,64 @@
 
 namespace Ship {
 
+// ---- ChildList ----
+
+ChildList::ChildList(Component* owner) : PartList<Component>(), mOwner(owner) {
+}
+
+void ChildList::Added(std::shared_ptr<Component> part, const bool forced) {
+    if (!part || !mOwner) {
+        return;
+    }
+    // Add the owner as a parent of the child (if not already present)
+    auto ownerShared = mOwner->shared_from_this();
+    if (!part->GetParents().Has(ownerShared)) {
+        part->GetParents().Add(ownerShared, forced);
+    }
+}
+
+void ChildList::Removed(std::shared_ptr<Component> part, const bool forced) {
+    if (!part || !mOwner) {
+        return;
+    }
+    // Remove the owner from the child's parent list
+    auto ownerShared = mOwner->shared_from_this();
+    if (part->GetParents().Has(ownerShared)) {
+        part->GetParents().Remove(ownerShared, forced);
+    }
+}
+
+// ---- ParentList ----
+
+ParentList::ParentList(Component* owner) : PartList<Component>(), mOwner(owner) {
+}
+
+void ParentList::Added(std::shared_ptr<Component> part, const bool forced) {
+    if (!part || !mOwner) {
+        return;
+    }
+    // Add the owner as a child of the parent (if not already present)
+    auto ownerShared = mOwner->shared_from_this();
+    if (!part->GetChildren().Has(ownerShared)) {
+        part->GetChildren().Add(ownerShared, forced);
+    }
+}
+
+void ParentList::Removed(std::shared_ptr<Component> part, const bool forced) {
+    if (!part || !mOwner) {
+        return;
+    }
+    // Remove the owner from the parent's child list
+    auto ownerShared = mOwner->shared_from_this();
+    if (part->GetChildren().Has(ownerShared)) {
+        part->GetChildren().Remove(ownerShared, forced);
+    }
+}
+
+// ---- Component ----
+
 Component::Component(const std::string& name)
-    : Part(), mName(name), mParents(), mChildren()
+    : Part(), mName(name), mParents(this), mChildren(this)
 #ifdef COMPONENT_THREAD_SAFE
       ,
       mMutex()
