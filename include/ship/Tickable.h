@@ -150,8 +150,8 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
 #endif
 
-    ActionList mActions;
     bool mIsTicking;
+    ActionList mActions;
     mutable std::mutex mMutex;
 #ifdef INCLUDE_PROFILING
     std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<size_t>(ClockType::ClockMax)];
@@ -167,11 +167,13 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    const std::lock_guard<std::mutex> lock(mMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
-    for (const auto& action : mActions.GetList()) {
-        if (std::dynamic_pointer_cast<T>(action)) {
-            result->push_back(action);
+    {
+        const std::lock_guard<std::recursive_mutex> lock(mActions.GetMutex());
+        for (const auto& action : mActions.GetList()) {
+            if (std::dynamic_pointer_cast<T>(action)) {
+                result->push_back(action);
+            }
         }
     }
     for (const auto& action : *result) {
@@ -193,7 +195,6 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<uint3
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    const std::lock_guard<std::mutex> lock(mMutex);
     auto allActions = mActions.Get(actionTypes);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
@@ -215,7 +216,6 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick, c
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    const std::lock_guard<std::mutex> lock(mMutex);
     auto allActions = mActions.Get(actionType);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {

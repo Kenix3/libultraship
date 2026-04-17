@@ -91,11 +91,7 @@ double Tickable::Run(const double durationSinceLastTick) {
         return 0.0;
     }
 
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> actions;
-    {
-        const std::lock_guard<std::mutex> lock(mMutex);
-        actions = mActions.Get();
-    }
+    auto actions = mActions.Get();
     std::stable_sort(
         actions->begin(), actions->end(),
         [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
@@ -118,11 +114,7 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<uint3
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> actions;
-    {
-        const std::lock_guard<std::mutex> lock(mMutex);
-        actions = mActions.Get(actionTypes);
-    }
+    auto actions = mActions.Get(actionTypes);
     std::stable_sort(
         actions->begin(), actions->end(),
         [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
@@ -144,11 +136,7 @@ double Tickable::Run(const double durationSinceLastTick, const uint32_t actionTy
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> actions;
-    {
-        const std::lock_guard<std::mutex> lock(mMutex);
-        actions = mActions.Get(actionType);
-    }
+    auto actions = mActions.Get(actionType);
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }

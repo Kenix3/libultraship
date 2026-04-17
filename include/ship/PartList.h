@@ -5,6 +5,7 @@
 #include <memory>
 #include <type_traits>
 #include <algorithm>
+#include <mutex>
 #include <stdint.h>
 
 #include "ship/Part.h"
@@ -29,10 +30,11 @@ enum class ListReturnCode : int32_t {
 };
 
 /**
- * @brief A non-thread-safe ordered list of Parts.
+ * @brief A thread-safe ordered list of Parts.
  *
  * Provides add, remove, and lookup operations for a collection of Part-derived
- * objects stored as shared_ptr. Thread safety is the caller's responsibility.
+ * objects stored as shared_ptr. All public methods are guarded by an internal
+ * recursive mutex for thread safety.
  *
  * @tparam C The element type; must be derived from Part.
  */
@@ -169,13 +171,22 @@ template <typename C = Part> class PartList : public Part {
     /**
      * @brief Direct access to the underlying vector for efficient iteration.
      *
-     * Thread safety is the caller's responsibility.
+     * The caller must hold the PartList mutex (via GetMutex()) when using this
+     * reference to ensure thread safety.
      * @return A mutable reference to the internal vector.
      */
     std::vector<std::shared_ptr<C>>& GetList();
 
     /** @brief Direct const access to the underlying vector. */
     const std::vector<std::shared_ptr<C>>& GetList() const;
+
+    /**
+     * @brief Returns a reference to the internal mutex for external synchronization.
+     *
+     * Use this when you need to hold the lock across multiple operations, e.g.
+     * iterating via GetList().
+     */
+    std::recursive_mutex& GetMutex() const;
 
     /**
      * @brief Permission hook called before adding a Part. Override to deny.
@@ -207,11 +218,12 @@ template <typename C = Part> class PartList : public Part {
 
   private:
     std::vector<std::shared_ptr<C>> mList;
+    mutable std::recursive_mutex mMutex;
 };
 
 // ---- Inline implementations ----
 
-template <typename C> PartList<C>::PartList(const size_t initialAllocation) : Part(), mList() {
+template <typename C> PartList<C>::PartList(const size_t initialAllocation) : Part(), mList(), mMutex() {
     mList.reserve(initialAllocation);
 }
 
@@ -219,45 +231,49 @@ template <typename C> bool PartList<C>::Has(std::shared_ptr<C> part) const {
     if (!part) {
         return false;
     }
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(), [&part](const std::shared_ptr<C>& item) {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    return std::find_if(mList.begin(), mList.end(), [&part](const std::shared_ptr<C>& item) {
                return item->GetId() == part->GetId();
-           }) != list.end();
+           }) != mList.end();
 }
 
 template <typename C> template <typename T> bool PartList<C>::Has() const {
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(), [](const std::shared_ptr<C>& item) {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    return std::find_if(mList.begin(), mList.end(), [](const std::shared_ptr<C>& item) {
                return std::dynamic_pointer_cast<T>(item) != nullptr;
-           }) != list.end();
+           }) != mList.end();
 }
 
 template <typename C> bool PartList<C>::Has(const uint64_t id) const {
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(),
-                        [id](const std::shared_ptr<C>& item) { return item->GetId() == id; }) != list.end();
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    return std::find_if(mList.begin(), mList.end(),
+                        [id](const std::shared_ptr<C>& item) { return item->GetId() == id; }) != mList.end();
 }
 
 template <typename C> bool PartList<C>::Has() const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return !mList.empty();
 }
 
 template <typename C> size_t PartList<C>::GetCount() const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return mList.size();
 }
 
 template <typename C> std::shared_ptr<C> PartList<C>::Get(const uint64_t id) const {
-    const auto& list = GetList();
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     auto it =
-        std::find_if(list.begin(), list.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
-    return it != list.end() ? *it : nullptr;
+        std::find_if(mList.begin(), mList.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
+    return it != mList.end() ? *it : nullptr;
 }
 
 template <typename C> std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get() const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return std::make_shared<std::vector<std::shared_ptr<C>>>(mList);
 }
 
 template <typename C> template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> PartList<C>::Get() const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
     for (const auto& item : mList) {
         auto typed = std::dynamic_pointer_cast<T>(item);
@@ -269,6 +285,7 @@ template <typename C> template <typename T> std::shared_ptr<std::vector<std::sha
 }
 
 template <typename C> template <typename T> std::shared_ptr<T> PartList<C>::GetFirst() const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     for (const auto& item : mList) {
         auto typed = std::dynamic_pointer_cast<T>(item);
         if (typed) {
@@ -280,6 +297,7 @@ template <typename C> template <typename T> std::shared_ptr<T> PartList<C>::GetF
 
 template <typename C>
 std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get(const std::vector<uint64_t>& ids) const {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     auto result = std::make_shared<std::vector<std::shared_ptr<C>>>();
     for (const auto& item : mList) {
         const uint64_t id = item->GetId();
@@ -294,7 +312,10 @@ template <typename C> ListReturnCode PartList<C>::Add(std::shared_ptr<C> part, c
     if (!part) {
         return ListReturnCode::Failed;
     }
-    if (Has(part)) {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (std::find_if(mList.begin(), mList.end(), [&part](const std::shared_ptr<C>& item) {
+            return item->GetId() == part->GetId();
+        }) != mList.end()) {
         return ListReturnCode::Duplicate;
     }
     const bool canAdd = CanAdd(part);
@@ -328,10 +349,10 @@ template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part
     if (!part) {
         return ListReturnCode::Failed;
     }
-    auto& list = GetList();
-    auto it = std::find_if(list.begin(), list.end(),
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    auto it = std::find_if(mList.begin(), mList.end(),
                            [&part](const std::shared_ptr<C>& item) { return item->GetId() == part->GetId(); });
-    if (it == list.end()) {
+    if (it == mList.end()) {
         return ListReturnCode::NotFound;
     }
     const bool canRemove = CanRemove(part);
@@ -339,16 +360,16 @@ template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part
         return ListReturnCode::NotPermitted;
     }
     const bool forced = !canRemove && force;
-    list.erase(it);
+    mList.erase(it);
     Removed(part, forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
 template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id, const bool force) {
-    auto& list = GetList();
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     auto it =
-        std::find_if(list.begin(), list.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
-    if (it == list.end()) {
+        std::find_if(mList.begin(), mList.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
+    if (it == mList.end()) {
         return ListReturnCode::NotFound;
     }
     auto part = *it;
@@ -357,12 +378,13 @@ template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id, cons
         return ListReturnCode::NotPermitted;
     }
     const bool forced = !canRemove && force;
-    list.erase(it);
+    mList.erase(it);
     Removed(part, forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
 template <typename C> ListReturnCode PartList<C>::Remove(const bool force) {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mList.empty()) {
         return ListReturnCode::NotFound;
     }
@@ -400,10 +422,10 @@ ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts,
 }
 
 template <typename C> template <typename T> ListReturnCode PartList<C>::Remove(const bool force) {
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     // Collect matching items first
-    auto& list = GetList();
     auto snapshot = std::vector<std::shared_ptr<C>>();
-    for (const auto& item : list) {
+    for (const auto& item : mList) {
         if (std::dynamic_pointer_cast<T>(item) != nullptr) {
             snapshot.push_back(item);
         }
@@ -428,10 +450,10 @@ template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<uint6
     if (ids.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     // Collect matching items first
-    auto& list = GetList();
     auto snapshot = std::vector<std::shared_ptr<C>>();
-    for (const auto& item : list) {
+    for (const auto& item : mList) {
         if (std::find(ids.begin(), ids.end(), item->GetId()) != ids.end()) {
             snapshot.push_back(item);
         }
@@ -458,6 +480,10 @@ template <typename C> std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
 
 template <typename C> const std::vector<std::shared_ptr<C>>& PartList<C>::GetList() const {
     return mList;
+}
+
+template <typename C> std::recursive_mutex& PartList<C>::GetMutex() const {
+    return mMutex;
 }
 
 template <typename C> bool PartList<C>::CanAdd(std::shared_ptr<C> part) {
