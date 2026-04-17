@@ -428,12 +428,60 @@ public:
         processor_->wait_for_timeline(processor_->signal_timeline());
     }
 
+    // Submit setup commands, multiple multi-word commands (e.g. triangles),
+    // and teardown commands in a single frame context. This avoids the state
+    // loss that occurs when begin_frame_context() is called between triangles.
+    void SubmitMultiTriCommands(const std::vector<RDPCommand>& setup,
+                                const std::vector<std::vector<uint32_t>>& triWordsList,
+                                const std::vector<RDPCommand>& teardown) {
+        if (!available_) return;
+        processor_->begin_frame_context();
+        for (auto& cmd : setup) {
+            uint32_t w[2] = { cmd.w0, cmd.w1 };
+            processor_->enqueue_command(2, w);
+        }
+        for (auto& triWords : triWordsList) {
+            if (!triWords.empty()) {
+                processor_->enqueue_command(triWords.size(), triWords.data());
+            }
+        }
+        for (auto& cmd : teardown) {
+            uint32_t w[2] = { cmd.w0, cmd.w1 };
+            processor_->enqueue_command(2, w);
+        }
+        processor_->wait_for_timeline(processor_->signal_timeline());
+    }
+
+    // Submit an interleaved sequence of 2-word RDP commands and multi-word
+    // raw commands (triangles) in a single frame context. Each element is
+    // either a pair of {RDPCommand list, raw word vector}. This preserves
+    // RDP state across the entire sequence (no begin_frame_context between steps).
+    struct CommandStep {
+        std::vector<RDPCommand> cmds;     // 2-word commands to send
+        std::vector<uint32_t> rawWords;   // multi-word command (e.g., triangle)
+    };
+
+    void SubmitSequence(const std::vector<CommandStep>& steps) {
+        if (!available_) return;
+        processor_->begin_frame_context();
+        for (auto& step : steps) {
+            for (auto& cmd : step.cmds) {
+                uint32_t w[2] = { cmd.w0, cmd.w1 };
+                processor_->enqueue_command(2, w);
+            }
+            if (!step.rawWords.empty()) {
+                processor_->enqueue_command(step.rawWords.size(), step.rawWords.data());
+            }
+        }
+        processor_->wait_for_timeline(processor_->signal_timeline());
+    }
+
     std::vector<uint16_t> ReadFramebuffer(uint32_t addr, uint32_t width, uint32_t height) {
         std::vector<uint16_t> fb(width * height);
         if (!available_) return fb;
-        const uint8_t* base = rdram_.data() + addr;
-        for (uint32_t i = 0; i < width * height; i++)
-            fb[i] = (base[i * 2] << 8) | base[i * 2 + 1];
+        // ParallelRDP writes RDRAM in host byte order (little-endian on x86).
+        // Use memcpy to preserve native byte order rather than manual big-endian decode.
+        memcpy(fb.data(), rdram_.data() + addr, width * height * sizeof(uint16_t));
         return fb;
     }
 
@@ -587,12 +635,31 @@ static constexpr CombinerCycle CC_TEXEL0_SHADE  = { 1, 0, 4, 0,  1, 0, 4, 0 };
 static constexpr CombinerCycle CC_OUTPUT_ZERO   = { 0, 0, 0, 7,  0, 0, 0, 7 };  // D=Zero(7) → outputs black
 
 // SET_OTHER_MODES helpers for common render modes
+// The cycle type bits occupy bits 20-21 of the hi parameter, which maps to
+// bits 52-53 of the full SET_OTHER_MODES command. The RDP_CYCLE_* constants
+// already have the cycle type at bit position 20, so pass them directly.
 static RDPCommand MakeOtherModes1Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_1CYC >> 24, RDP_FORCE_BLEND | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_1CYC, RDP_FORCE_BLEND | extraLo);
 }
 
 static RDPCommand MakeOtherModes2Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_2CYC >> 24, RDP_FORCE_BLEND | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_2CYC, RDP_FORCE_BLEND | extraLo);
+}
+
+// Build an RDP command sequence that fills the Z buffer with maximum depth.
+// This is needed before rendering with Z_CMP, since ClearRDRAM() zeros the
+// Z buffer (depth=0 = nearest), causing all incoming fragments to be rejected.
+static std::vector<RDPCommand> BuildZBufferInit() {
+    std::vector<RDPCommand> cmds;
+    cmds.push_back(MakeSetColorImage(RDP_FMT_RGBA, RDP_SIZ_16b, FB_WIDTH, ZBUF_ADDR));
+    cmds.push_back(MakeSyncPipe());
+    cmds.push_back(MakeSetOtherModes(RDP_CYCLE_FILL, 0));
+    cmds.push_back(MakeSetFillColor(0xFFFEFFFE));   // max Z value per pixel pair
+    cmds.push_back(MakeSetScissor(0, 0, FB_WIDTH * 4, FB_HEIGHT * 4));
+    cmds.push_back(MakeFillRectangle(0, 0, (FB_WIDTH - 1) * 4, (FB_HEIGHT - 1) * 4));
+    cmds.push_back(MakeSyncPipe());
+    cmds.push_back(MakeSetColorImage(RDP_FMT_RGBA, RDP_SIZ_16b, FB_WIDTH, FB_ADDR));
+    return cmds;
 }
 
 // Run PRDP with a sequence of setup commands + a multi-word triangle + sync,
@@ -2261,8 +2328,20 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatRed_1Cycle) {
     // Count non-black pixels — the triangle should have rendered something
     uint32_t nonBlackPixels = 0;
     uint32_t redPixels = 0;
+    bool dumpedSample = false;
     for (auto px : prdpFb) {
-        if (px != 0) nonBlackPixels++;
+        if (px != 0) {
+            nonBlackPixels++;
+            if (!dumpedSample) {
+                int sr = (px >> 11) & 0x1F;
+                int sg = (px >> 6) & 0x1F;
+                int sb = (px >> 1) & 0x1F;
+                int sa = px & 1;
+                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec
+                          << " R=" << sr << " G=" << sg << " B=" << sb << " A=" << sa << "\n";
+                dumpedSample = true;
+            }
+        }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
@@ -2299,14 +2378,29 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatGreen_1Cycle) {
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t greenPixels = 0;
+    uint32_t nonBlack = 0;
+    bool dumpedSample = false;
     for (auto px : prdpFb) {
+        if (px != 0) {
+            nonBlack++;
+            if (!dumpedSample) {
+                int sr = (px >> 11) & 0x1F;
+                int sg = (px >> 6) & 0x1F;
+                int sb = (px >> 1) & 0x1F;
+                int sa = px & 1;
+                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec
+                          << " R=" << sr << " G=" << sg << " B=" << sb << " A=" << sa << "\n";
+                dumpedSample = true;
+            }
+        }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
         if (g > 20 && r < 5 && b < 5) greenPixels++;
     }
 
-    std::cout << "  [INFO] ShadeTriangle_FlatGreen: " << greenPixels << " green pixels\n";
+    std::cout << "  [INFO] ShadeTriangle_FlatGreen: " << nonBlack << " non-black, "
+              << greenPixels << " green pixels\n";
     EXPECT_GT(greenPixels, 0u) << "Green triangle should have rendered pixels";
 }
 
@@ -2321,7 +2415,7 @@ TEST_F(ParallelRDPComparisonTest, FillTriangle_1Cycle) {
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
-    setup.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL >> 24, 0));
+    setup.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
     uint16_t blue5551 = (0 << 11) | (0 << 6) | (31 << 1) | 1;
     setup.push_back(prdp::MakeSetFillColor(((uint32_t)blue5551 << 16) | blue5551));
 
@@ -2564,7 +2658,10 @@ TEST_F(ParallelRDPComparisonTest, Depth_FrontOccludesBack) {
 
     uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
 
+    // Initialize Z buffer to max depth, then set up for triangle rendering
+    auto zbufInit = prdp::BuildZBufferInit();
     std::vector<prdp::RDPCommand> setup;
+    setup.insert(setup.end(), zbufInit.begin(), zbufInit.end());
     setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                              prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
@@ -2580,8 +2677,7 @@ TEST_F(ParallelRDPComparisonTest, Depth_FrontOccludesBack) {
 
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
-    prdp.SubmitMixedCommands(setup, backTri, {});
-    prdp.SubmitMixedCommands({}, frontTri, { prdp::MakeSyncFull() });
+    prdp.SubmitMultiTriCommands(setup, {backTri, frontTri}, { prdp::MakeSyncFull() });
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
@@ -2608,7 +2704,10 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 
     uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
 
+    // Initialize Z buffer to max depth, then set up for triangle rendering
+    auto zbufInit = prdp::BuildZBufferInit();
     std::vector<prdp::RDPCommand> setup;
+    setup.insert(setup.end(), zbufInit.begin(), zbufInit.end());
     setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                              prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
@@ -2647,14 +2746,10 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
-    // Create a 4x4 RGBA16 solid cyan texture
+    // Create a 4x4 RGBA16 solid cyan texture in native byte order
     uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
-    std::vector<uint8_t> texBytes(4 * 4 * 2);
-    for (int i = 0; i < 4 * 4; i++) {
-        texBytes[i * 2 + 0] = (cyan5551 >> 8) & 0xFF;
-        texBytes[i * 2 + 1] = cyan5551 & 0xFF;
-    }
-    prdp.WriteRDRAM(prdp::TEX_ADDR, texBytes.data(), texBytes.size());
+    std::vector<uint16_t> texData(4 * 4, cyan5551);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -2706,16 +2801,14 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     uint16_t red5551   = (31 << 11) | (0 << 6) | (0 << 1) | 1;
     uint16_t white5551 = (31 << 11) | (31 << 6) | (31 << 1) | 1;
 
-    std::vector<uint8_t> texBytes(4 * 4 * 2);
+    // Write texture data in native byte order (ParallelRDP uses host byte order)
+    std::vector<uint16_t> texData(4 * 4);
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
-            uint16_t c = ((x + y) & 1) ? white5551 : red5551;
-            size_t idx = (y * 4 + x) * 2;
-            texBytes[idx + 0] = (c >> 8) & 0xFF;
-            texBytes[idx + 1] = c & 0xFF;
+            texData[y * 4 + x] = ((x + y) & 1) ? white5551 : red5551;
         }
     }
-    prdp.WriteRDRAM(prdp::TEX_ADDR, texBytes.data(), texBytes.size());
+    prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -2922,26 +3015,46 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
         GTEST_SKIP() << "Vulkan not available";
     }
 
-    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | prdp::RDP_ZMODE_DECAL;
+    // Draw first triangle in opaque mode to establish depth in the Z buffer,
+    // then switch to decal mode and draw the second triangle at the same Z.
+    // Decal mode only passes the Z test when the incoming depth matches the
+    // existing Z buffer value (within tolerance), so it needs prior geometry.
+    auto zbufInit = prdp::BuildZBufferInit();
 
-    std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
-    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
-    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
-    setup.push_back(prdp::MakeSyncPipe());
-    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
-    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    // Step 1: Z buffer init + common setup + opaque mode + first triangle
+    std::vector<prdp::RDPCommand> step1Cmds;
+    step1Cmds.insert(step1Cmds.end(), zbufInit.begin(), zbufInit.end());
+    step1Cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::FB_ADDR));
+    step1Cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    step1Cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    step1Cmds.push_back(prdp::MakeSyncPipe());
+    uint32_t opaqueBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
+    step1Cmds.push_back(prdp::MakeOtherModes1Cycle(opaqueBits));
+    step1Cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
     auto tri1 = prdp::MakeShadeZbuffTriangleWords(
         20, 20, 200, 200, 255, 0, 0, 255, 0x40000000u);
+
+    // Step 2: switch to decal Z mode + second triangle
+    std::vector<prdp::RDPCommand> step2Cmds;
+    step2Cmds.push_back(prdp::MakeSyncPipe());
+    uint32_t decalBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | prdp::RDP_ZMODE_DECAL;
+    step2Cmds.push_back(prdp::MakeOtherModes1Cycle(decalBits));
+
     auto tri2 = prdp::MakeShadeZbuffTriangleWords(
         60, 60, 240, 220, 0, 255, 0, 255, 0x40000000u);
 
+    // Step 3: sync
+    std::vector<prdp::RDPCommand> step3Cmds = { prdp::MakeSyncFull() };
+
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
-    prdp.SubmitMixedCommands(setup, tri1, {});
-    prdp.SubmitMixedCommands({}, tri2, { prdp::MakeSyncFull() });
+    prdp.SubmitSequence({
+        { step1Cmds, tri1 },
+        { step2Cmds, tri2 },
+        { step3Cmds, {} },
+    });
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
