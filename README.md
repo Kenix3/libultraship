@@ -75,6 +75,12 @@ cmake -S . -Bbuild-android -GNinja \
 cmake --build build-android
 ```
 
+## CI
+
+CI uses [ParallelRDP](https://github.com/Themaister/parallel-rdp-standalone) (MIT) with
+[lavapipe](https://docs.mesa3d.org/drivers/llvmpipe.html) (Mesa software Vulkan) to run
+Fast3D rendering tests on the CPU without a physical GPU.
+
 ## Sponsors
 Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
 
@@ -102,3 +108,4 @@ LUS makes use of the following third party libraries and resources:
 - [glew](https://github.com/nigels-com/glew/blob/master/LICENSE.txt) (modified BSD-3-Clause and MIT) OpenGL extension loading library.
 - [libtcc](https://repo.or.cz/tinycc.git/blob/HEAD:/COPYING) (LGPL-2.1) C compiler used for the script system.
 - [monocypher](https://github.com/LoupVaillant/Monocypher/blob/master/LICENSE) (CC-0) cryptography library used for the modding system.
+- [parallel-rdp-standalone](https://github.com/Themaister/parallel-rdp-standalone/blob/master/COPYING) (MIT) GPU-accelerated N64 RDP emulator used in CI rendering tests.
