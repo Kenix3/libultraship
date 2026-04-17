@@ -145,6 +145,6 @@ TEST(ActionListTest, GetByMultipleTypes) {
     list.Add(std::make_shared<TestAction>(static_cast<uint32_t>(ActionType::DrawDebugMenu), tickable));
 
     auto result = list.Get(std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
-                                                   static_cast<uint32_t>(ActionType::DrawDebugMenu) });
+                                                  static_cast<uint32_t>(ActionType::DrawDebugMenu) });
     EXPECT_EQ(result->size(), 2u);
 }

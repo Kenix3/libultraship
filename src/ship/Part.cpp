@@ -1,9 +1,9 @@
 #include "ship/Part.h"
 
 namespace Ship {
-std::atomic<uint64_t> Part::NextPartId = 0;
+std::atomic<uint64_t> Part::sNextPartId = 0;
 
-Part::Part() : mId(NextPartId++) {
+Part::Part() : mId(sNextPartId++) {
 }
 
 uint64_t Part::GetId() const {

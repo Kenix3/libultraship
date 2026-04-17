@@ -230,9 +230,9 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
 #ifndef DISABLE_SCRIPTING
     // ---- Script Loader ----
-    shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
-                                                    std::vector<std::string>{}, std::vector<std::string>{},
-                                                    std::vector<std::string>{}));
+    shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1,
+                                                             "-g -Wl", std::vector<std::string>{},
+                                                             std::vector<std::string>{}, std::vector<std::string>{}));
 #endif
 
     return shared;

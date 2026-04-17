@@ -31,7 +31,7 @@ class Part {
     bool operator==(const Part& other) const;
 
   private:
-    static std::atomic<uint64_t> NextPartId;
+    static std::atomic<uint64_t> sNextPartId;
     uint64_t mId;
 };
 

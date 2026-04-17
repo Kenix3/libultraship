@@ -42,7 +42,7 @@ class TickableComponent : public Tickable, public Component {
      */
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
-                      const TickPriority priority = TickPriority::TickPriorityDefault, const bool isTicking = true,
+                      const TickPriority tickPriority = TickPriority::TickPriorityDefault, const bool isTicking = true,
                       const bool isDrawing = true, const bool isDrawingDebugMenu = true);
 
     /**

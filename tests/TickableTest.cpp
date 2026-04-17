@@ -178,9 +178,8 @@ TEST(TickableTest, RunByMultipleActionTypes) {
     t->GetActionList().Add(draw);
     t->GetActionList().Add(debug);
 
-    t->Run(0.016,
-            std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
-                                   static_cast<uint32_t>(ActionType::DrawDebugMenu) });
+    t->Run(0.016, std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
+                                         static_cast<uint32_t>(ActionType::DrawDebugMenu) });
     EXPECT_EQ(tick->mRunCount, 1);
     EXPECT_EQ(draw->mRunCount, 0);
     EXPECT_EQ(debug->mRunCount, 1);
@@ -250,9 +249,8 @@ TEST(TickableTest, RunByTemplateTypeAndMultipleActionTypes) {
     t->GetActionList().Add(special2);
     t->GetActionList().Add(special3);
 
-    t->Run<SpecialAction>(0.016,
-                           std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
-                                                  static_cast<uint32_t>(ActionType::DrawDebugMenu) });
+    t->Run<SpecialAction>(0.016, std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
+                                                        static_cast<uint32_t>(ActionType::DrawDebugMenu) });
     EXPECT_EQ(regular->mRunCount, 0);
     EXPECT_EQ(special1->mRunCount, 1);
     EXPECT_EQ(special2->mRunCount, 0);
