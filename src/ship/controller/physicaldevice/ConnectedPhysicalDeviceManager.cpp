@@ -1,5 +1,12 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include <spdlog/spdlog.h>
+#ifdef ENABLE_PRESS_TO_JOIN
+#include "ship/Context.h"
+#include "ship/window/Window.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/controller/controldevice/controller/mapping/ControllerMapping.h"
+#include "libultraship/bridge/consolevariablebridge.h"
+#endif
 
 namespace Ship {
 ConnectedPhysicalDeviceManager::ConnectedPhysicalDeviceManager() {
@@ -46,6 +53,17 @@ void ConnectedPhysicalDeviceManager::HandlePhysicalDeviceConnect(int32_t sdlDevi
 }
 
 void ConnectedPhysicalDeviceManager::HandlePhysicalDeviceDisconnect(int32_t sdlJoystickInstanceId) {
+#ifdef ENABLE_PRESS_TO_JOIN
+    // If press-to-join is active, free any port that had this device so it can be re-joined
+    if (mPressToJoinActive) {
+        for (auto& [port, assignedId] : mPressToJoinAssignments) {
+            if (assignedId == sdlJoystickInstanceId) {
+                UnassignPort(port);
+                break;
+            }
+        }
+    }
+#endif
     RefreshConnectedSDLGamepads();
 }
 
@@ -100,9 +118,242 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = gamepadName;
 
-        for (uint8_t port = 1; port < 4; port++) {
+#ifdef ENABLE_PRESS_TO_JOIN
+        if (!mMultiplayerActive) {
+#endif
+            for (uint8_t port = 1; port < 4; port++) {
+                mIgnoredInstanceIds[port].insert(instanceId);
+            }
+#ifdef ENABLE_PRESS_TO_JOIN
+        }
+#endif
+    }
+
+#ifdef ENABLE_PRESS_TO_JOIN
+    if (mMultiplayerActive) {
+        RebuildIgnoreListsFromAssignments();
+    }
+#endif
+}
+#ifdef ENABLE_PRESS_TO_JOIN
+static const char* CVAR_PRESS_TO_JOIN_ENABLED = "gPressToJoinEnabled";
+
+void ConnectedPhysicalDeviceManager::StartMultiplayer(uint8_t portCount) {
+    if (!CVarGetInteger(CVAR_PRESS_TO_JOIN_ENABLED, 1)) {
+        return;
+    }
+
+    mMultiplayerActive = true;
+    mPressToJoinActive = true;
+    mMultiplayerPortCount = portCount;
+    mPressToJoinAssignments.clear();
+
+    // Ignore all devices on all active ports — everyone starts unassigned
+    for (uint8_t port = 0; port < mMultiplayerPortCount; port++) {
+        for (const auto& [instanceId, gamepad] : mConnectedSDLGamepads) {
+            mIgnoredInstanceIds[port].insert(instanceId);
+        }
+    }
+
+    SPDLOG_INFO("Press-to-join: started multiplayer with {} ports", portCount);
+}
+
+void ConnectedPhysicalDeviceManager::StopPressToJoin() {
+    if (!mMultiplayerActive) {
+        return;
+    }
+
+    mPressToJoinActive = false;
+    SPDLOG_INFO("Press-to-join: stopped (assignments locked)");
+}
+
+void ConnectedPhysicalDeviceManager::StartPressToJoin() {
+    if (!mMultiplayerActive) {
+        return;
+    }
+
+    if (!CVarGetInteger(CVAR_PRESS_TO_JOIN_ENABLED, 1)) {
+        return;
+    }
+
+    mPressToJoinActive = true;
+
+    // Free any ports whose devices have disconnected
+    std::vector<uint8_t> portsToFree;
+    for (const auto& [port, instanceId] : mPressToJoinAssignments) {
+        if (instanceId == KEYBOARD_PSEUDO_INSTANCE_ID) {
+            continue;
+        }
+        if (!mConnectedSDLGamepads.contains(instanceId)) {
+            portsToFree.push_back(port);
+        }
+    }
+    for (auto port : portsToFree) {
+        UnassignPort(port);
+    }
+
+    SPDLOG_INFO("Press-to-join: re-enabled");
+}
+
+void ConnectedPhysicalDeviceManager::StopMultiplayer() {
+    mMultiplayerActive = false;
+    mPressToJoinActive = false;
+    mMultiplayerPortCount = 1;
+    mPressToJoinAssignments.clear();
+
+    // Restore default all-on-port-0 behavior
+    RefreshConnectedSDLGamepads();
+
+    SPDLOG_INFO("Press-to-join: stopped multiplayer, restored single player mode");
+}
+
+int8_t ConnectedPhysicalDeviceManager::GetPortDeviceStatus(uint8_t port) {
+    if (!mPressToJoinAssignments.contains(port)) {
+        return 0; // unassigned
+    }
+
+    auto instanceId = mPressToJoinAssignments[port];
+    if (instanceId == KEYBOARD_PSEUDO_INSTANCE_ID) {
+        return 1; // keyboard is always "connected"
+    }
+
+    if (mConnectedSDLGamepads.contains(instanceId)) {
+        return 1; // assigned and connected
+    }
+
+    return -1; // assigned but disconnected
+}
+
+void ConnectedPhysicalDeviceManager::PollPressToJoin() {
+    if (!mPressToJoinActive) {
+        return;
+    }
+
+    static constexpr int32_t AXIS_DEADZONE = 16000;
+
+    for (uint8_t port = 0; port < mMultiplayerPortCount; port++) {
+        if (mPressToJoinAssignments.contains(port)) {
+            continue; // port already filled
+        }
+
+        // Check keyboard for this port
+        if (PortHasKeyboardMappings(port)) {
+            auto lastScancode = Context::GetInstance()->GetWindow()->GetLastScancode();
+            if (lastScancode != -1) {
+                AssignDeviceToPort(KEYBOARD_PSEUDO_INSTANCE_ID, port);
+                SPDLOG_INFO("Press-to-join: keyboard assigned to port {}", port);
+                continue;
+            }
+        }
+
+        // Check unassigned SDL gamepads
+        for (const auto& [instanceId, gamepad] : mConnectedSDLGamepads) {
+            // Skip if already assigned to any port
+            bool alreadyAssigned = false;
+            for (const auto& [assignedPort, assignedId] : mPressToJoinAssignments) {
+                if (assignedId == instanceId) {
+                    alreadyAssigned = true;
+                    break;
+                }
+            }
+            if (alreadyAssigned) {
+                continue;
+            }
+
+            // Check any button pressed
+            bool inputDetected = false;
+            for (int btn = 0; btn < SDL_CONTROLLER_BUTTON_MAX; btn++) {
+                if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(btn))) {
+                    inputDetected = true;
+                    break;
+                }
+            }
+
+            // Check any axis past deadzone
+            if (!inputDetected) {
+                for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
+                    auto value = SDL_GameControllerGetAxis(gamepad, static_cast<SDL_GameControllerAxis>(axis));
+                    if (abs(value) > AXIS_DEADZONE) {
+                        inputDetected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (inputDetected) {
+                AssignDeviceToPort(instanceId, port);
+                SPDLOG_INFO("Press-to-join: gamepad {} assigned to port {}", instanceId, port);
+                break; // one assignment per frame per port
+            }
+        }
+    }
+}
+
+void ConnectedPhysicalDeviceManager::AssignDeviceToPort(int32_t instanceId, uint8_t port) {
+    mPressToJoinAssignments[port] = instanceId;
+
+    if (instanceId != KEYBOARD_PSEUDO_INSTANCE_ID) {
+        // Unignore this device on the target port
+        UnignoreInstanceIdForPort(port, instanceId);
+
+        // Ignore it on all other active ports
+        for (uint8_t otherPort = 0; otherPort < mMultiplayerPortCount; otherPort++) {
+            if (otherPort != port) {
+                IgnoreInstanceIdForPort(otherPort, instanceId);
+            }
+        }
+    }
+}
+
+void ConnectedPhysicalDeviceManager::UnassignPort(uint8_t port) {
+    if (!mPressToJoinAssignments.contains(port)) {
+        return;
+    }
+
+    auto instanceId = mPressToJoinAssignments[port];
+    mPressToJoinAssignments.erase(port);
+
+    if (instanceId != KEYBOARD_PSEUDO_INSTANCE_ID) {
+        // Re-ignore this device on the port it was assigned to
+        IgnoreInstanceIdForPort(port, instanceId);
+    }
+
+    SPDLOG_INFO("Press-to-join: port {} unassigned", port);
+}
+
+void ConnectedPhysicalDeviceManager::RebuildIgnoreListsFromAssignments() {
+    // Clear ignore lists for all active ports
+    for (uint8_t port = 0; port < mMultiplayerPortCount; port++) {
+        mIgnoredInstanceIds[port].clear();
+    }
+
+    // For each active port, ignore all devices except the one assigned to it
+    for (uint8_t port = 0; port < mMultiplayerPortCount; port++) {
+        for (const auto& [instanceId, gamepad] : mConnectedSDLGamepads) {
+            if (mPressToJoinAssignments.contains(port) &&
+                mPressToJoinAssignments[port] == instanceId) {
+                continue; // don't ignore the assigned device
+            }
             mIgnoredInstanceIds[port].insert(instanceId);
         }
     }
 }
+
+bool ConnectedPhysicalDeviceManager::PortHasKeyboardMappings(uint8_t port) {
+    auto controller = Context::GetInstance()->GetControlDeck()->GetControllerByPort(port);
+    if (controller == nullptr) {
+        return false;
+    }
+
+    for (const auto& [bitmask, button] : controller->GetAllButtons()) {
+        for (const auto& [id, mapping] : button->GetAllButtonMappings()) {
+            if (mapping->GetMappingType() == MAPPING_TYPE_KEYBOARD) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+#endif
 } // namespace Ship

@@ -57,6 +57,10 @@ void ControlDeck::WriteToOSContPad(OSContPad* pad) {
     SDL_PumpEvents();
     Ship::WheelHandler::GetInstance()->Update();
 
+#ifdef ENABLE_PRESS_TO_JOIN
+    GetConnectedPhysicalDeviceManager()->PollPressToJoin();
+#endif
+
     if (AllGameInputBlocked()) {
         return;
     }

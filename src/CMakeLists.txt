@@ -113,6 +113,10 @@ target_link_libraries(libultraship PUBLIC prism)
 
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
 
+if (ENABLE_PRESS_TO_JOIN)
+    target_compile_definitions(libultraship PUBLIC ENABLE_PRESS_TO_JOIN)
+endif()
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         WIN32
