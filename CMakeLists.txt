@@ -70,7 +70,12 @@ add_subdirectory("src")
 
 # =========== Tests =============
 option(LUS_BUILD_TESTS "Build unit tests" OFF)
+option(LUS_BUILD_PRDP_TESTS "Build ParallelRDP comparison tests (requires Vulkan)" OFF)
 if(LUS_BUILD_TESTS)
     enable_testing()
+    if(LUS_BUILD_PRDP_TESTS)
+        find_package(Threads REQUIRED)
+        include(cmake/dependencies/parallel-rdp.cmake)
+    endif()
     add_subdirectory("tests")
 endif()
