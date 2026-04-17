@@ -1,8 +1,9 @@
 // Fast3D Layer 5 Tests — Reference RDP Implementation Comparison
 //
 // Layer 5 verifies Fast3D's RDP processing against hand-computed reference
-// values derived from the N64 RDP specification and Dillonb's softrdp
-// (https://github.com/Dillonb/n64, src/rdp/softrdp.cpp).
+// values derived from the N64 RDP hardware specification (see docs/ in the
+// N64 programming manual) and cross-checked against Themaister's
+// ParallelRDP (https://github.com/Themaister/parallel-rdp-standalone, MIT).
 //
 // These tests compare Fast3D's internal state and output against what the
 // real N64 RDP hardware would produce for the same commands. This catches

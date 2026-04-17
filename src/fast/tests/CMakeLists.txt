@@ -5,7 +5,7 @@
 #   Layer 2: Single interpreter methods with state (RDP/RSP state, matrix ops)
 #   Layer 3: Multi-step pipelines (vertex+lighting, display list dispatch)
 #   Layer 4: End-to-end rendering pipeline (triangle draw → API calls)
-#   Layer 5: Reference RDP implementation comparison (placeholder)
+#   Layer 5: Reference RDP implementation comparison (N64 RDP spec + ParallelRDP)
 #   Prism:   Shader template processor tests
 
 target_sources(lus_tests PRIVATE
@@ -18,3 +18,12 @@ target_sources(lus_tests PRIVATE
 )
 
 target_include_directories(lus_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# ParallelRDP comparison tests (optional, requires Vulkan)
+if(LUS_BUILD_PRDP_TESTS)
+    target_sources(lus_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_prdp_comparison_tests.cpp
+    )
+    target_link_libraries(lus_tests PRIVATE parallel-rdp)
+    target_compile_definitions(lus_tests PRIVATE LUS_PRDP_TESTS_ENABLED=1)
+endif()
