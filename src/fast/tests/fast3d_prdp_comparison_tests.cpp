@@ -415,9 +415,11 @@ protected:
         // This comparison validates that the same RDP commands produce
         // consistent state in both implementations.
         //
-        // Full pixel comparison would require a real OpenGL context
-        // (Mesa/llvmpipe), which is set up separately. For now we
-        // compare against a zero buffer to establish the baseline.
+        // TODO: Full pixel comparison requires a real OpenGL context
+        // (Mesa/llvmpipe) to read back Fast3D's rendered output. For now
+        // we compare ParallelRDP output against a zero buffer to verify
+        // ParallelRDP renders correctly, while Fast3D state is verified
+        // separately via EXPECT checks in each test.
         std::vector<uint16_t> fast3dFb(FB_WIDTH * FB_HEIGHT, 0);
 
         auto result = CompareRGBA16Buffers(prdpFb.data(), fast3dFb.data(),
