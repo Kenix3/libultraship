@@ -106,54 +106,65 @@ template <typename C = Part> class PartList : public Part {
     /**
      * @brief Adds a Part to the list if not already present.
      * @param part The Part to add.
+     * @param force If true, bypass the CanAdd() permission check.
      * @return ListReturnCode indicating the result.
      */
-    ListReturnCode Add(std::shared_ptr<C> part);
+    ListReturnCode Add(std::shared_ptr<C> part, const bool force = false);
 
     /**
      * @brief Adds multiple Parts to the list.
      * @param parts The Parts to add.
+     * @param force If true, bypass the CanAdd() permission check for each Part.
      * @return The aggregate ListReturnCode for the batch operation.
      */
-    ListReturnCode Add(const std::vector<std::shared_ptr<C>>& parts);
+    ListReturnCode Add(const std::vector<std::shared_ptr<C>>& parts, const bool force = false);
 
     /**
      * @brief Removes a specific Part from the list.
      * @param part The Part to remove.
+     * @param force If true, bypass the CanRemove() permission check.
      * @return ListReturnCode indicating the result.
      */
-    ListReturnCode Remove(std::shared_ptr<C> part);
+    ListReturnCode Remove(std::shared_ptr<C> part, const bool force = false);
 
     /**
      * @brief Removes a Part by its unique ID.
      * @param id The Part ID to remove.
+     * @param force If true, bypass the CanRemove() permission check.
      * @return ListReturnCode indicating the result.
      */
-    ListReturnCode Remove(const uint64_t id);
+    ListReturnCode Remove(const uint64_t id, const bool force = false);
 
-    /** @brief Removes all Parts from the list. */
-    ListReturnCode Remove();
+    /**
+     * @brief Removes all Parts from the list.
+     * @param force If true, bypass the CanRemove() permission check for each Part.
+     * @return ListReturnCode indicating the result.
+     */
+    ListReturnCode Remove(const bool force = false);
 
     /**
      * @brief Removes multiple Parts from the list.
      * @param parts The Parts to remove.
+     * @param force If true, bypass the CanRemove() permission check.
      * @return The aggregate ListReturnCode for the batch operation.
      */
-    ListReturnCode Remove(const std::vector<std::shared_ptr<C>>& parts);
+    ListReturnCode Remove(const std::vector<std::shared_ptr<C>>& parts, const bool force = false);
 
     /**
      * @brief Removes all Parts that can be dynamic_cast to type T.
      * @tparam T The derived type to match for removal.
+     * @param force If true, bypass the CanRemove() permission check.
      * @return ListReturnCode indicating the result.
      */
-    template <typename T> ListReturnCode Remove();
+    template <typename T> ListReturnCode Remove(const bool force = false);
 
     /**
      * @brief Removes all Parts whose IDs appear in the given vector.
      * @param ids The IDs to remove.
+     * @param force If true, bypass the CanRemove() permission check.
      * @return The aggregate ListReturnCode for the batch operation.
      */
-    ListReturnCode Remove(const std::vector<uint64_t>& ids);
+    ListReturnCode Remove(const std::vector<uint64_t>& ids, const bool force = false);
 
     /**
      * @brief Direct access to the underlying vector for efficient iteration.
@@ -165,6 +176,34 @@ template <typename C = Part> class PartList : public Part {
 
     /** @brief Direct const access to the underlying vector. */
     const std::vector<std::shared_ptr<C>>& GetList() const;
+
+    /**
+     * @brief Permission hook called before adding a Part. Override to deny.
+     * @param part The Part about to be added.
+     * @return True if the addition is permitted.
+     */
+    virtual bool CanAdd(std::shared_ptr<C> part);
+
+    /**
+     * @brief Permission hook called before removing a Part. Override to deny.
+     * @param part The Part about to be removed.
+     * @return True if the removal is permitted.
+     */
+    virtual bool CanRemove(std::shared_ptr<C> part);
+
+    /**
+     * @brief Notification hook called after a Part has been added.
+     * @param part The Part that was added.
+     * @param forced Whether the addition bypassed permission checks.
+     */
+    virtual void Added(std::shared_ptr<C> part, const bool forced);
+
+    /**
+     * @brief Notification hook called after a Part has been removed.
+     * @param part The Part that was removed.
+     * @param forced Whether the removal bypassed permission checks.
+     */
+    virtual void Removed(std::shared_ptr<C> part, const bool forced);
 
   private:
     std::vector<std::shared_ptr<C>> mList;
@@ -251,24 +290,30 @@ std::shared_ptr<std::vector<std::shared_ptr<C>>> PartList<C>::Get(const std::vec
     return result;
 }
 
-template <typename C> ListReturnCode PartList<C>::Add(std::shared_ptr<C> part) {
+template <typename C> ListReturnCode PartList<C>::Add(std::shared_ptr<C> part, const bool force) {
     if (!part) {
         return ListReturnCode::Failed;
     }
     if (Has(part)) {
         return ListReturnCode::Duplicate;
     }
+    const bool canAdd = CanAdd(part);
+    if (!canAdd && !force) {
+        return ListReturnCode::NotPermitted;
+    }
+    const bool forced = !canAdd && force;
     mList.push_back(part);
-    return ListReturnCode::Success;
+    Added(part, forced);
+    return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
-template <typename C> ListReturnCode PartList<C>::Add(const std::vector<std::shared_ptr<C>>& parts) {
+template <typename C> ListReturnCode PartList<C>::Add(const std::vector<std::shared_ptr<C>>& parts, const bool force) {
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
     ListReturnCode result = ListReturnCode::Duplicate;
     for (const auto& part : parts) {
-        const ListReturnCode r = Add(part);
+        const ListReturnCode r = Add(part, force);
         if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
             result = r;
         } else if (static_cast<int32_t>(r) < static_cast<int32_t>(ListReturnCode::Duplicate) &&
@@ -279,7 +324,7 @@ template <typename C> ListReturnCode PartList<C>::Add(const std::vector<std::sha
     return result;
 }
 
-template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part) {
+template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part, const bool force) {
     if (!part) {
         return ListReturnCode::Failed;
     }
@@ -289,36 +334,43 @@ template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
+    const bool canRemove = CanRemove(part);
+    if (!canRemove && !force) {
+        return ListReturnCode::NotPermitted;
+    }
+    const bool forced = !canRemove && force;
     list.erase(it);
-    return ListReturnCode::Success;
+    Removed(part, forced);
+    return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
-template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id) {
+template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id, const bool force) {
     auto& list = GetList();
     auto it =
         std::find_if(list.begin(), list.end(), [id](const std::shared_ptr<C>& item) { return item->GetId() == id; });
     if (it == list.end()) {
         return ListReturnCode::NotFound;
     }
+    auto part = *it;
+    const bool canRemove = CanRemove(part);
+    if (!canRemove && !force) {
+        return ListReturnCode::NotPermitted;
+    }
+    const bool forced = !canRemove && force;
     list.erase(it);
-    return ListReturnCode::Success;
+    Removed(part, forced);
+    return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
-template <typename C> ListReturnCode PartList<C>::Remove() {
+template <typename C> ListReturnCode PartList<C>::Remove(const bool force) {
     if (mList.empty()) {
         return ListReturnCode::NotFound;
     }
-    mList.clear();
-    return ListReturnCode::Success;
-}
-
-template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts) {
-    if (parts.empty()) {
-        return ListReturnCode::NoItemsProvided;
-    }
+    // Make a snapshot so hooks can safely modify the list
+    auto snapshot = std::vector<std::shared_ptr<C>>(mList);
     ListReturnCode result = ListReturnCode::NotFound;
-    for (const auto& part : parts) {
-        const ListReturnCode r = Remove(part);
+    for (const auto& part : snapshot) {
+        const ListReturnCode r = Remove(part, force);
         if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
             result = r;
         } else if (static_cast<int32_t>(r) < static_cast<int32_t>(ListReturnCode::Duplicate) &&
@@ -329,31 +381,75 @@ template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<std::
     return result;
 }
 
-template <typename C> template <typename T> ListReturnCode PartList<C>::Remove() {
-    auto& list = GetList();
-    const auto it = std::remove_if(list.begin(), list.end(), [](const std::shared_ptr<C>& item) {
-        return std::dynamic_pointer_cast<T>(item) != nullptr;
-    });
-    if (it == list.end()) {
-        return ListReturnCode::NotFound;
+template <typename C>
+ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts, const bool force) {
+    if (parts.empty()) {
+        return ListReturnCode::NoItemsProvided;
     }
-    list.erase(it, list.end());
-    return ListReturnCode::Success;
+    ListReturnCode result = ListReturnCode::NotFound;
+    for (const auto& part : parts) {
+        const ListReturnCode r = Remove(part, force);
+        if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
+            result = r;
+        } else if (static_cast<int32_t>(r) < static_cast<int32_t>(ListReturnCode::Duplicate) &&
+                   static_cast<int32_t>(r) < static_cast<int32_t>(result)) {
+            result = r;
+        }
+    }
+    return result;
 }
 
-template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<uint64_t>& ids) {
+template <typename C> template <typename T> ListReturnCode PartList<C>::Remove(const bool force) {
+    // Collect matching items first
+    auto& list = GetList();
+    auto snapshot = std::vector<std::shared_ptr<C>>();
+    for (const auto& item : list) {
+        if (std::dynamic_pointer_cast<T>(item) != nullptr) {
+            snapshot.push_back(item);
+        }
+    }
+    if (snapshot.empty()) {
+        return ListReturnCode::NotFound;
+    }
+    ListReturnCode result = ListReturnCode::NotFound;
+    for (const auto& part : snapshot) {
+        const ListReturnCode r = Remove(part, force);
+        if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
+            result = r;
+        } else if (static_cast<int32_t>(r) < static_cast<int32_t>(ListReturnCode::Duplicate) &&
+                   static_cast<int32_t>(r) < static_cast<int32_t>(result)) {
+            result = r;
+        }
+    }
+    return result;
+}
+
+template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<uint64_t>& ids, const bool force) {
     if (ids.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
+    // Collect matching items first
     auto& list = GetList();
-    const auto it = std::remove_if(list.begin(), list.end(), [&ids](const std::shared_ptr<C>& item) {
-        return std::find(ids.begin(), ids.end(), item->GetId()) != ids.end();
-    });
-    if (it == list.end()) {
+    auto snapshot = std::vector<std::shared_ptr<C>>();
+    for (const auto& item : list) {
+        if (std::find(ids.begin(), ids.end(), item->GetId()) != ids.end()) {
+            snapshot.push_back(item);
+        }
+    }
+    if (snapshot.empty()) {
         return ListReturnCode::NotFound;
     }
-    list.erase(it, list.end());
-    return ListReturnCode::Success;
+    ListReturnCode result = ListReturnCode::NotFound;
+    for (const auto& part : snapshot) {
+        const ListReturnCode r = Remove(part, force);
+        if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
+            result = r;
+        } else if (static_cast<int32_t>(r) < static_cast<int32_t>(ListReturnCode::Duplicate) &&
+                   static_cast<int32_t>(r) < static_cast<int32_t>(result)) {
+            result = r;
+        }
+    }
+    return result;
 }
 
 template <typename C> std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
@@ -362,6 +458,20 @@ template <typename C> std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
 
 template <typename C> const std::vector<std::shared_ptr<C>>& PartList<C>::GetList() const {
     return mList;
+}
+
+template <typename C> bool PartList<C>::CanAdd(std::shared_ptr<C> part) {
+    return true;
+}
+
+template <typename C> bool PartList<C>::CanRemove(std::shared_ptr<C> part) {
+    return true;
+}
+
+template <typename C> void PartList<C>::Added(std::shared_ptr<C> part, const bool forced) {
+}
+
+template <typename C> void PartList<C>::Removed(std::shared_ptr<C> part, const bool forced) {
 }
 
 } // namespace Ship

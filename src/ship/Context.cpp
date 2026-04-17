@@ -58,7 +58,7 @@ Context::~Context() {
 #endif
 
     // Remove children in order to allow explicit teardown before logging shuts down.
-    RemoveChildren(true);
+    GetChildren().Remove(true);
 
     if (config) {
         config->Save();
@@ -141,7 +141,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         spdlog::register_logger(logger);
         spdlog::set_default_logger(logger);
 
-        shared->AddChild(std::make_shared<LoggerComponent>(logger));
+        shared->GetChildren().Add(std::make_shared<LoggerComponent>(logger));
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
         return nullptr;
@@ -149,24 +149,24 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     // ---- Configuration ----
     auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath));
-    shared->AddChild(config);
+    shared->GetChildren().Add(config);
 
     // ---- Console Variables ----
-    shared->AddChild(std::make_shared<ConsoleVariable>());
+    shared->GetChildren().Add(std::make_shared<ConsoleVariable>());
 
     // ---- Thread Pool ----
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
-    shared->AddChild(std::make_shared<ThreadPoolComponent>(threadCount));
+    shared->GetChildren().Add(std::make_shared<ThreadPoolComponent>(threadCount));
 
     // ---- Keystore ----
-    shared->AddChild(std::make_shared<Keystore>());
+    shared->GetChildren().Add(std::make_shared<Keystore>());
 
     // ---- Resource Manager ----
     auto mainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
     auto patchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
 
     auto resourceManager = std::make_shared<ResourceManager>();
-    shared->AddChild(resourceManager);
+    shared->GetChildren().Add(resourceManager);
 
     if (archivePaths.empty()) {
         std::vector<std::string> paths;
@@ -189,23 +189,23 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     // ---- Control Deck ----
     if (controlDeck != nullptr) {
-        shared->AddChild(controlDeck);
+        shared->GetChildren().Add(controlDeck);
     } else {
         SPDLOG_ERROR("Failed to initialize control deck");
         return nullptr;
     }
 
     // ---- Crash Handler ----
-    shared->AddChild(std::make_shared<CrashHandler>());
+    shared->GetChildren().Add(std::make_shared<CrashHandler>());
 
     // ---- Console ----
     auto console = std::make_shared<Console>();
-    shared->AddChild(console);
+    shared->GetChildren().Add(console);
     console->Init();
 
     // ---- Window ----
     if (window != nullptr) {
-        shared->AddChild(window);
+        shared->GetChildren().Add(window);
         auto windowCast = std::dynamic_pointer_cast<Window>(window);
         if (windowCast) {
             windowCast->Init();
@@ -217,21 +217,21 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     // ---- Audio ----
     auto audio = std::make_shared<Audio>(audioSettings);
-    shared->AddChild(audio);
+    shared->GetChildren().Add(audio);
     audio->Init();
 
     // ---- Gfx Debugger ----
-    shared->AddChild(std::make_shared<Fast::GfxDebugger>());
+    shared->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
 
     // ---- Event System ----
-    shared->AddChild(std::make_shared<EventSystem>());
+    shared->GetChildren().Add(std::make_shared<EventSystem>());
 
     // ---- File Drop Manager ----
-    shared->AddChild(std::make_shared<FileDropMgr>());
+    shared->GetChildren().Add(std::make_shared<FileDropMgr>());
 
 #ifndef DISABLE_SCRIPTING
     // ---- Script Loader ----
-    shared->AddChild(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
+    shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
                                                     std::vector<std::string>{}, std::vector<std::string>{},
                                                     std::vector<std::string>{}));
 #endif

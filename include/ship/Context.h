@@ -20,7 +20,7 @@ class TickableComponent;
  * @brief Central singleton context for the libultraship engine.
  *
  * Context is the root Component that owns all subsystems as children. Consumers
- * should create their own components and pass them in via AddChild(). Use
+ * should create their own components and pass them in via GetChildren().Add(). Use
  * CreateDefaultInstance() for a default set of components matching the original
  * initialization order.
  *
@@ -52,7 +52,7 @@ class Context : public Component, public Tickable {
     /**
      * @brief Creates and stores the global Context instance without adding any default components.
      *
-     * Consumers should add their own components via AddChild() after creation.
+     * Consumers should add their own components via GetChildren().Add() after creation.
      */
     static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
                                                    const std::string& configFilePath);

@@ -44,52 +44,50 @@ TEST(ComponentTest, StringConversion) {
     EXPECT_EQ(s, c->ToString());
 }
 
-// ---- Parent/child relationship tests ----
+// ---- Parent/child relationship tests using PartList API ----
 
 TEST(ComponentTest, AddChild) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
 
-    EXPECT_TRUE(parent->AddChild(child));
+    EXPECT_EQ(parent->GetChildren().Add(child), ListReturnCode::Success);
     EXPECT_TRUE(parent->GetChildren().Has(child));
     EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
 }
 
-TEST(ComponentTest, AddChildSetsParent) {
+TEST(ComponentTest, AddChildDuplicate) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
 
-    parent->AddChild(child);
-    EXPECT_TRUE(child->GetParents().Has(parent));
+    parent->GetChildren().Add(child);
+    EXPECT_EQ(parent->GetChildren().Add(child), ListReturnCode::Duplicate);
+    EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
 }
 
 TEST(ComponentTest, AddParent) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
 
-    EXPECT_TRUE(child->AddParent(parent));
+    EXPECT_EQ(child->GetParents().Add(parent), ListReturnCode::Success);
     EXPECT_TRUE(child->GetParents().Has(parent));
-    EXPECT_TRUE(parent->GetChildren().Has(child));
 }
 
 TEST(ComponentTest, RemoveChild) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
 
-    parent->AddChild(child);
-    EXPECT_TRUE(parent->RemoveChild(child));
+    parent->GetChildren().Add(child);
+    EXPECT_EQ(parent->GetChildren().Remove(child), ListReturnCode::Success);
     EXPECT_FALSE(parent->GetChildren().Has(child));
-    EXPECT_FALSE(child->GetParents().Has(parent));
 }
 
 TEST(ComponentTest, RemoveParent) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
 
-    child->AddParent(parent);
-    EXPECT_TRUE(child->RemoveParent(parent));
+    child->GetParents().Add(parent);
+    EXPECT_EQ(child->GetParents().Remove(parent), ListReturnCode::Success);
     EXPECT_FALSE(child->GetParents().Has(parent));
-    EXPECT_FALSE(parent->GetChildren().Has(child));
 }
 
 TEST(ComponentTest, AddMultipleChildren) {
@@ -98,38 +96,26 @@ TEST(ComponentTest, AddMultipleChildren) {
     auto c2 = std::make_shared<TestComponent>("C2");
     auto c3 = std::make_shared<TestComponent>("C3");
 
-    EXPECT_TRUE(parent->AddChildren({ c1, c2, c3 }));
+    parent->GetChildren().Add({ c1, c2, c3 });
     EXPECT_EQ(parent->GetChildren().GetCount(), 3u);
 }
 
 TEST(ComponentTest, RemoveAllChildren) {
     auto parent = std::make_shared<TestComponent>("Parent");
-    parent->AddChild(std::make_shared<TestComponent>("C1"));
-    parent->AddChild(std::make_shared<TestComponent>("C2"));
+    parent->GetChildren().Add(std::make_shared<TestComponent>("C1"));
+    parent->GetChildren().Add(std::make_shared<TestComponent>("C2"));
 
-    EXPECT_TRUE(parent->RemoveChildren());
+    parent->GetChildren().Remove();
     EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
 }
 
 TEST(ComponentTest, RemoveChildById) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");
-    parent->AddChild(child);
+    parent->GetChildren().Add(child);
 
-    EXPECT_TRUE(parent->RemoveChild(child->GetId()));
+    EXPECT_EQ(parent->GetChildren().Remove(child->GetId()), ListReturnCode::Success);
     EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
-}
-
-TEST(ComponentTest, RemoveChildrenByName) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto c1 = std::make_shared<TestComponent>("Alpha");
-    auto c2 = std::make_shared<TestComponent>("Beta");
-    auto c3 = std::make_shared<TestComponent>("Alpha");
-    parent->AddChildren({ c1, c2, c3 });
-
-    EXPECT_TRUE(parent->RemoveChildren(std::string("Alpha")));
-    EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
-    EXPECT_TRUE(parent->GetChildren().Has(c2));
 }
 
 // ---- GetChildren().GetFirst<T>() template tests ----
@@ -139,8 +125,8 @@ TEST(ComponentTest, GetChildByType) {
     auto derived = std::make_shared<DerivedComponent>("Derived");
     auto another = std::make_shared<AnotherComponent>("Another");
 
-    parent->AddChild(derived);
-    parent->AddChild(another);
+    parent->GetChildren().Add(derived);
+    parent->GetChildren().Add(another);
 
     auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     ASSERT_NE(found, nullptr);
@@ -153,8 +139,8 @@ TEST(ComponentTest, GetChildByTypeReturnsFirstMatch) {
     auto d1 = std::make_shared<DerivedComponent>("First");
     auto d2 = std::make_shared<DerivedComponent>("Second");
 
-    parent->AddChild(d1);
-    parent->AddChild(d2);
+    parent->GetChildren().Add(d1);
+    parent->GetChildren().Add(d2);
 
     auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     ASSERT_NE(found, nullptr);
@@ -163,7 +149,7 @@ TEST(ComponentTest, GetChildByTypeReturnsFirstMatch) {
 
 TEST(ComponentTest, GetChildByTypeNotFound) {
     auto parent = std::make_shared<TestComponent>("Parent");
-    parent->AddChild(std::make_shared<TestComponent>("Child"));
+    parent->GetChildren().Add(std::make_shared<TestComponent>("Child"));
 
     auto found = parent->GetChildren().GetFirst<DerivedComponent>();
     EXPECT_EQ(found, nullptr);
@@ -175,30 +161,18 @@ TEST(ComponentTest, GetChildByTypeFromEmpty) {
     EXPECT_EQ(found, nullptr);
 }
 
-// ---- RemoveChildren<T>() template tests ----
+// ---- Remove<T>() template tests ----
 
 TEST(ComponentTest, RemoveChildrenByType) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto tc = std::make_shared<TestComponent>("Keep");
     auto dc = std::make_shared<DerivedComponent>("Remove");
-    parent->AddChild(tc);
-    parent->AddChild(dc);
+    parent->GetChildren().Add(tc);
+    parent->GetChildren().Add(dc);
 
-    EXPECT_TRUE(parent->RemoveChildren<DerivedComponent>());
+    parent->GetChildren().Remove<DerivedComponent>();
     EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
     EXPECT_TRUE(parent->GetChildren().Has(tc));
-}
-
-TEST(ComponentTest, RemoveChildrenByTypeAndName) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto d1 = std::make_shared<DerivedComponent>("Alpha");
-    auto d2 = std::make_shared<DerivedComponent>("Beta");
-    parent->AddChild(d1);
-    parent->AddChild(d2);
-
-    EXPECT_TRUE(parent->RemoveChildren<DerivedComponent>(std::string("Alpha")));
-    EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
-    EXPECT_TRUE(parent->GetChildren().Has(d2));
 }
 
 // ---- Deep hierarchy tests ----
@@ -208,10 +182,9 @@ TEST(ComponentTest, DeepHierarchy) {
     auto mid = std::make_shared<TestComponent>("Mid");
     auto leaf = std::make_shared<DerivedComponent>("Leaf");
 
-    root->AddChild(mid);
-    mid->AddChild(leaf);
+    root->GetChildren().Add(mid);
+    mid->GetChildren().Add(leaf);
 
-    // Can traverse the hierarchy
     auto midFound = root->GetChildren().GetFirst<TestComponent>();
     ASSERT_NE(midFound, nullptr);
 
@@ -225,12 +198,29 @@ TEST(ComponentTest, MultipleParents) {
     auto p2 = std::make_shared<TestComponent>("Parent2");
     auto child = std::make_shared<TestComponent>("Child");
 
-    child->AddParent(p1);
-    child->AddParent(p2);
+    child->GetParents().Add(p1);
+    child->GetParents().Add(p2);
 
     EXPECT_EQ(child->GetParents().GetCount(), 2u);
-    EXPECT_TRUE(p1->GetChildren().Has(child));
-    EXPECT_TRUE(p2->GetChildren().Has(child));
+}
+
+// ---- PartList hook tests ----
+
+TEST(ComponentTest, AddWithForce) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    EXPECT_EQ(parent->GetChildren().Add(child, true), ListReturnCode::Success);
+    EXPECT_TRUE(parent->GetChildren().Has(child));
+}
+
+TEST(ComponentTest, RemoveWithForce) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    parent->GetChildren().Add(child);
+    EXPECT_EQ(parent->GetChildren().Remove(child, true), ListReturnCode::Success);
+    EXPECT_FALSE(parent->GetChildren().Has(child));
 }
 
 // ---- ComponentList tests ----
