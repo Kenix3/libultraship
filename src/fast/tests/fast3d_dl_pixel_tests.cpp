@@ -265,9 +265,8 @@ TEST_F(DLPixelTest, Triangle_PositionData_IdentityTransform) {
     auto& call = cap->drawCalls[0];
     EXPECT_EQ(call.numTris, 1u);
 
-    // With 0 numInputs, 0 textures, no fog, no grayscale: 4 floats per vertex (x,y,z,w)
-    // But ShaderGetInfo reports numInputs=1, so we get 4 + 3(rgb) = 7 per vertex, no alpha
-    // Actually, use_alpha starts false for combine_mode=0, so it's 4 + 3 = 7
+    // ShaderGetInfo reports numInputs=1 with no textures, fog, or grayscale.
+    // VBO layout: 4(pos) + 3(rgb per input) = 7 floats per vertex, no alpha.
     size_t expectedFloatsPerVertex = 4 + 3; // pos(4) + rgb(3), no alpha
     size_t expectedTotal = expectedFloatsPerVertex * 3; // 3 vertices
     EXPECT_EQ(call.vboData.size(), expectedTotal);
