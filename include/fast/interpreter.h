@@ -10,6 +10,7 @@
 #include <stack>
 #include <string>
 #include <string_view>
+#include <future>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -220,8 +221,16 @@ struct LoadedVertex {
 struct RawTexMetadata {
     uint16_t width, height;
     float h_byte_scale = 1, v_pixel_scale = 1;
-    std::shared_ptr<Fast::Texture> resource;
+    std::shared_future<std::shared_ptr<Ship::IResource>> resource;
     Fast::TextureType type;
+    std::string path;
+    uint32_t load_offset = 0;
+    struct {
+        uint32_t uls, ult, lrs, lrt;
+        uint32_t width;
+        uint8_t siz;
+        bool is_block;
+    } load_params;
 };
 
 #define MAX_LIGHTS 32
@@ -269,8 +278,9 @@ struct RDP {
         uint32_t width;
         uint32_t tex_flags;
         struct RawTexMetadata raw_tex_metadata;
+        std::string path;
     } texture_to_load;
-    struct {
+    struct LoadedTextureEntry {
         const uint8_t* addr;
         uint32_t orig_size_bytes;
         uint32_t size_bytes;
@@ -281,7 +291,7 @@ struct RDP {
         bool masked;
         bool blended;
     } loaded_texture[2];
-    struct {
+    struct TextureTileEntry {
         uint8_t fmt;
         uint8_t siz;
         uint8_t cms, cmt;
@@ -355,6 +365,7 @@ struct FBInfo {
 struct MaskedTextureEntry {
     uint8_t* mask;
     uint8_t* replacementData;
+    std::shared_future<std::shared_ptr<Ship::IResource>> replacementResource;
 };
 
 class Interpreter {
@@ -371,6 +382,12 @@ class Interpreter {
     void RunGuiOnly();
     void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
     void EndFrame();
+    void ApplyLoadScale(uint32_t tmemIndex);
+    void ProcessImportInternal(int i, int tile, bool importReplacement,
+                               const RDP::LoadedTextureEntry* textureSnapshot = nullptr,
+                               const RDP::TextureTileEntry* tileSnapshot = nullptr);
+    void ProcessLoadTlutInternal(uint8_t tile, uint32_t high_index, uint8_t texture_to_load_siz,
+                                 RawTexMetadata& metadata, uint16_t tmem);
     void HandleWindowEvents();
     bool IsFrameReady();
     bool ViewportMatchesRendererResolution();
@@ -510,6 +527,26 @@ class Interpreter {
     GfxRenderingAPI* mRapi = nullptr;
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
+
+    struct PendingImport {
+        int i;
+        int tile;
+        bool importReplacement;
+        RDP::LoadedTextureEntry loaded_texture_snapshot;
+        RDP::TextureTileEntry texture_tile_snapshot;
+    };
+    struct PendingLoadTlut {
+        uint8_t tile;
+        uint32_t high_index;
+        // Snapshotted state
+        uint8_t texture_to_load_siz;
+        RawTexMetadata texture_to_load_metadata;
+        uint16_t tmem;
+    };
+    std::vector<PendingImport> mPendingImports;
+    std::vector<PendingLoadTlut> mPendingLoadTluts;
+    void ProcessPendingImports();
+    void ProcessPendingLoadTluts();
 
     bool mFbActive{};
     bool mRendersToFb{}; // game_renders_to_framebuffer;
