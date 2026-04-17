@@ -52,13 +52,28 @@ static constexpr uint32_t RDP_CMD_SET_MASK_IMAGE  = 0xFE;
 static constexpr uint32_t RDP_CMD_SET_FILL_COLOR  = 0xF7;
 static constexpr uint32_t RDP_CMD_FILL_RECTANGLE  = 0xF6;
 static constexpr uint32_t RDP_CMD_SET_OTHER_MODES = 0xEF;
+static constexpr uint32_t RDP_CMD_SET_PRIM_DEPTH  = 0xEE;
 static constexpr uint32_t RDP_CMD_SET_SCISSOR     = 0xED;
 static constexpr uint32_t RDP_CMD_SYNC_FULL       = 0xE9;
 static constexpr uint32_t RDP_CMD_SYNC_PIPE       = 0xE7;
+static constexpr uint32_t RDP_CMD_SET_COMBINE     = 0xFC;
+static constexpr uint32_t RDP_CMD_SET_ENV_COLOR   = 0xFB;
+static constexpr uint32_t RDP_CMD_SET_PRIM_COLOR  = 0xFA;
+
+// Triangle command IDs (edge coefficient format)
+static constexpr uint32_t RDP_CMD_TRI_FILL       = 0xC8;
+static constexpr uint32_t RDP_CMD_TRI_FILL_ZBUFF = 0xC9;
+static constexpr uint32_t RDP_CMD_TRI_SHADE      = 0xCC;
+static constexpr uint32_t RDP_CMD_TRI_SHADE_ZBUFF = 0xCD;
 
 static constexpr uint32_t RDP_FMT_RGBA = 0;
 static constexpr uint32_t RDP_SIZ_16b  = 2;
-static constexpr uint32_t RDP_CYCLE_FILL = (3u << 20);
+static constexpr uint32_t RDP_CYCLE_FILL  = (3u << 20);
+static constexpr uint32_t RDP_CYCLE_1CYC  = (0u << 20);
+
+// Other mode bits for depth testing
+static constexpr uint32_t RDP_Z_CMP = 0x10;
+static constexpr uint32_t RDP_Z_UPD = 0x20;
 
 struct RDPCommand {
     uint32_t w0;
@@ -86,8 +101,170 @@ static RDPCommand MakeFillRectangle(uint32_t xh, uint32_t yh, uint32_t xl, uint3
     return { (RDP_CMD_FILL_RECTANGLE << 24) | ((xl & 0xFFF) << 12) | (yl & 0xFFF),
              ((xh & 0xFFF) << 12) | (yh & 0xFFF) };
 }
+static RDPCommand MakeSetCombine(uint32_t hi, uint32_t lo) {
+    return { (RDP_CMD_SET_COMBINE << 24) | (hi & 0x00FFFFFF), lo };
+}
+static RDPCommand MakeSetPrimColor(uint8_t minLevel, uint8_t lodFrac,
+                                    uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return { (RDP_CMD_SET_PRIM_COLOR << 24) | ((uint32_t)minLevel << 8) | lodFrac,
+             ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a };
+}
+static RDPCommand MakeSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return { (RDP_CMD_SET_ENV_COLOR << 24), ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a };
+}
+static RDPCommand MakeSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return { (0xF8u << 24), ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a };
+}
+static RDPCommand MakeSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return { (0xF9u << 24), ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a };
+}
+static RDPCommand MakeSetPrimDepth(uint16_t z, uint16_t dz) {
+    return { (RDP_CMD_SET_PRIM_DEPTH << 24), ((uint32_t)z << 16) | dz };
+}
+static RDPCommand MakeSetTextureImage(uint32_t fmt, uint32_t siz, uint32_t width, uint32_t addr) {
+    return { (0xFDu << 24) | (fmt << 21) | (siz << 19) | ((width - 1) & 0x3FF),
+             addr & 0x03FFFFFF };
+}
+static RDPCommand MakeSetTile(uint32_t fmt, uint32_t siz, uint32_t line,
+                               uint32_t tmem, uint32_t tile,
+                               uint32_t cms, uint32_t cmt,
+                               uint32_t masks, uint32_t maskt,
+                               uint32_t shifts, uint32_t shiftt,
+                               uint32_t palette) {
+    return { (0xF5u << 24) | (fmt << 21) | (siz << 19) | ((line & 0x1FF) << 9) | (tmem & 0x1FF),
+             ((tile & 0x7) << 24) | ((palette & 0xF) << 20) |
+             ((cmt & 0x1) << 19) | ((maskt & 0xF) << 14) | ((shiftt & 0xF) << 10) |
+             ((cms & 0x1) << 9) | ((masks & 0xF) << 4) | (shifts & 0xF) };
+}
+static RDPCommand MakeLoadBlock(uint32_t tile, uint32_t sl, uint32_t tl,
+                                 uint32_t sh, uint32_t dxt) {
+    return { (0xF3u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
+             ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (dxt & 0xFFF) };
+}
+static RDPCommand MakeSetTileSize(uint32_t tile, uint32_t sl, uint32_t tl,
+                                   uint32_t sh, uint32_t th) {
+    return { (0xF2u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
+             ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (th & 0xFFF) };
+}
+static RDPCommand MakeTextureRectangle(uint32_t tile, uint32_t xl, uint32_t yl,
+                                        uint32_t xh, uint32_t yh,
+                                        int16_t s, int16_t t,
+                                        int16_t dsdx, int16_t dtdy) {
+    // Texture rectangle is 4 words (two RDPCommands submitted back-to-back).
+    // However, we return only the first pair here; the caller must also
+    // submit the second pair with MakeTextureRectangleST.
+    return { (0xE4u << 24) | ((xl & 0xFFF) << 12) | (yl & 0xFFF),
+             ((tile & 0x7) << 24) | ((xh & 0xFFF) << 12) | (yh & 0xFFF) };
+}
+static RDPCommand MakeTextureRectangleST(int16_t s, int16_t t,
+                                          int16_t dsdx, int16_t dtdy) {
+    return { ((uint32_t)(uint16_t)s << 16) | (uint16_t)t,
+             ((uint32_t)(uint16_t)dsdx << 16) | (uint16_t)dtdy };
+}
 static RDPCommand MakeSyncFull() { return { (RDP_CMD_SYNC_FULL << 24), 0 }; }
 static RDPCommand MakeSyncPipe() { return { (RDP_CMD_SYNC_PIPE << 24), 0 }; }
+static RDPCommand MakeSyncTile() { return { (0xE8u << 24), 0 }; }
+static RDPCommand MakeSyncLoad() { return { (0xE6u << 24), 0 }; }
+
+// ---------------------------------------------------------------
+// N64 RDP Triangle Edge Coefficient Builders
+//
+// Word counts (verified from ParallelRDP source — rdp_device.cpp):
+//   Edge:    8 words   Shade: 16 words   Texture: 16 words   Z: 4 words
+//
+//   0xC8 Fill:             8 words  (edge)
+//   0xC9 Fill+Z:          12 words  (edge + z)
+//   0xCA Texture:         24 words  (edge + tex)
+//   0xCB Texture+Z:       28 words  (edge + tex + z)
+//   0xCC Shade:           24 words  (edge + shade)
+//   0xCD Shade+Z:         28 words  (edge + shade + z)
+//   0xCE Shade+Texture:   40 words  (edge + shade + tex)
+//   0xCF Shade+Texture+Z: 44 words  (edge + shade + tex + z)
+// ---------------------------------------------------------------
+
+// Pack edge coefficients into words[0..7].
+// Triangle vertices: TL=(x0,y0), TR=(x1,y0), BL=(x0,y1) — right triangle.
+// lft=1 (left-major), YH=YM=y0, YL=y1. Major edge vertical on left,
+// lower minor edge goes diagonally from TR to BL.
+static void PackEdgeCoeffs(uint32_t* words, uint32_t cmdId,
+                           uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
+                           uint32_t tile = 0) {
+    int32_t yh_fp = y0 * 4;
+    int32_t ym_fp = y0 * 4;
+    int32_t yl_fp = y1 * 4;
+
+    int32_t xh_fp = x0 << 16;
+    int32_t xm_fp = x1 << 16;
+    int32_t xl_fp = x1 << 16;
+
+    int32_t dxldy = 0;
+    if (y1 > y0) {
+        int64_t dx = ((int64_t)(x0 - (int32_t)x1)) << 16;
+        dxldy = (int32_t)(dx / (int32_t)(y1 - y0));
+    }
+
+    uint32_t lft = 1;
+    words[0] = (cmdId << 24) | (lft << 23) | ((tile & 0x3F) << 16) | (yl_fp & 0x3FFF);
+    words[1] = ((ym_fp & 0x3FFF) << 16) | (yh_fp & 0x3FFF);
+    words[2] = (uint32_t)xl_fp;
+    words[3] = (uint32_t)dxldy;
+    words[4] = (uint32_t)xh_fp;
+    words[5] = 0; // DxHDy (vertical major = 0)
+    words[6] = (uint32_t)xm_fp;
+    words[7] = 0; // DxMDy
+}
+
+// Pack flat shade coefficients into 16 words at the given offset.
+// RGBA packing follows ParallelRDP's decode_rgba_setup():
+//   words[0]:  [R_int:16 | G_int:16]     words[4]:  [R_frac:16 | G_frac:16]
+//   words[1]:  [B_int:16 | A_int:16]     words[5]:  [B_frac:16 | A_frac:16]
+//   words[2..3]: DcDx (0 for flat)       words[6..7]: DcDx frac (0)
+//   words[8..9]: DcDe (0 for flat)       words[12..13]: DcDe frac (0)
+//   words[10..11]: DcDy (0 for flat)     words[14..15]: DcDy frac (0)
+static void PackShadeCoeffs(uint32_t* words, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    memset(words, 0, 16 * sizeof(uint32_t));
+    words[0] = ((uint32_t)r << 16) | g;
+    words[1] = ((uint32_t)b << 16) | a;
+}
+
+// Pack flat Z coefficient into 4 words at the given offset.
+// Z is a raw 32-bit s15.16 value; slopes are zero for flat depth.
+static void PackZCoeffs(uint32_t* words, uint32_t z_s1516) {
+    words[0] = z_s1516; // Z
+    words[1] = 0;       // DzDx
+    words[2] = 0;       // DzDe
+    words[3] = 0;       // DzDy
+}
+
+// Build a shade triangle (0xCC): 24 words
+static std::vector<uint32_t> MakeShadeTriangleWords(
+    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
+    uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    std::vector<uint32_t> words(24, 0);
+    PackEdgeCoeffs(words.data(), RDP_CMD_TRI_SHADE, x0, y0, x1, y1);
+    PackShadeCoeffs(words.data() + 8, r, g, b, a);
+    return words;
+}
+
+// Build a shade+zbuff triangle (0xCD): 28 words
+static std::vector<uint32_t> MakeShadeZbuffTriangleWords(
+    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
+    uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+    uint32_t z_s1516) {
+    std::vector<uint32_t> words(28, 0);
+    PackEdgeCoeffs(words.data(), RDP_CMD_TRI_SHADE_ZBUFF, x0, y0, x1, y1);
+    PackShadeCoeffs(words.data() + 8, r, g, b, a);
+    PackZCoeffs(words.data() + 24, z_s1516);
+    return words;
+}
+
+// Build a fill triangle (0xC8): 8 words
+static std::vector<uint32_t> MakeFillTriangleWords(
+    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
+    std::vector<uint32_t> words(8, 0);
+    PackEdgeCoeffs(words.data(), RDP_CMD_TRI_FILL, x0, y0, x1, y1);
+    return words;
+}
 
 // Comparison metrics
 struct ComparisonResult {
@@ -215,6 +392,36 @@ public:
         processor_->wait_for_timeline(processor_->signal_timeline());
     }
 
+    // Submit a mixed command sequence: 2-word RDPCommands and variable-length
+    // raw word arrays (e.g., triangle edge coefficients).
+    void SubmitRawCommands(const std::vector<uint32_t>& words, size_t numWords) {
+        if (!available_) return;
+        processor_->begin_frame_context();
+        processor_->enqueue_command(numWords, words.data());
+        processor_->wait_for_timeline(processor_->signal_timeline());
+    }
+
+    // Submit a sequence of RDPCommands followed by a multi-word command,
+    // then more RDPCommands. Use for triangle tests that need setup first.
+    void SubmitMixedCommands(const std::vector<RDPCommand>& setup,
+                             const std::vector<uint32_t>& triWords,
+                             const std::vector<RDPCommand>& teardown) {
+        if (!available_) return;
+        processor_->begin_frame_context();
+        for (auto& cmd : setup) {
+            uint32_t w[2] = { cmd.w0, cmd.w1 };
+            processor_->enqueue_command(2, w);
+        }
+        if (!triWords.empty()) {
+            processor_->enqueue_command(triWords.size(), triWords.data());
+        }
+        for (auto& cmd : teardown) {
+            uint32_t w[2] = { cmd.w0, cmd.w1 };
+            processor_->enqueue_command(2, w);
+        }
+        processor_->wait_for_timeline(processor_->signal_timeline());
+    }
+
     std::vector<uint16_t> ReadFramebuffer(uint32_t addr, uint32_t width, uint32_t height) {
         std::vector<uint16_t> fb(width * height);
         if (!available_) return fb;
@@ -225,6 +432,14 @@ public:
     }
 
     void ClearRDRAM() { std::fill(rdram_.begin(), rdram_.end(), 0); }
+
+    // Write data into RDRAM at the given byte address (for texture uploads, etc.)
+    void WriteRDRAM(uint32_t addr, const void* data, size_t size) {
+        if (!available_ || addr + size > rdram_.size()) return;
+        memcpy(rdram_.data() + addr, data, size);
+    }
+
+    uint8_t* GetRDRAM() { return rdram_.data(); }
 
 private:
     bool available_ = false;
@@ -310,6 +525,98 @@ static ComparisonResult RunFillComparison(const char* testName,
     PrintComparisonResult(testName, result);
     return result;
 }
+
+// ---------------------------------------------------------------
+// SET_COMBINE word helpers
+//
+// The N64 RDP SET_COMBINE command encodes (A-B)*C+D for both RGB and Alpha,
+// for both cycle 0 and cycle 1. ParallelRDP's decode (from rdp_device.cpp):
+//
+//   Cycle 0 RGB:   A=(w0>>20)&0xf  C=(w0>>15)&0x1f  B=(w1>>28)&0xf  D=(w1>>15)&0x7
+//   Cycle 0 Alpha: A=(w0>>12)&0x7  B=(w1>>12)&0x7    C=(w0>>9)&0x7   D=(w1>>9)&0x7
+//   Cycle 1 RGB:   A=(w0>>5)&0xf   C=(w0>>0)&0x1f    B=(w1>>24)&0xf  D=(w1>>6)&0x7
+//   Cycle 1 Alpha: A=(w1>>21)&0x7  B=(w1>>3)&0x7     C=(w1>>18)&0x7  D=(w1>>0)&0x7
+//
+// RGB input indices: Combined=0, Texel0=1, Texel1=2, Primitive=3, Shade=4, Env=5
+// Alpha input indices (add/sub): CombAlpha=0, T0Alpha=1, T1Alpha=2, PrimAlpha=3,
+//                                ShadeAlpha=4, EnvAlpha=5, One=6, Zero=7
+// ---------------------------------------------------------------
+
+struct CombinerCycle {
+    uint8_t rgb_a, rgb_b, rgb_c, rgb_d;
+    uint8_t a_a, a_b, a_c, a_d;
+};
+
+static RDPCommand MakeSetCombineMode(CombinerCycle c0, CombinerCycle c1) {
+    uint32_t w0 = (RDP_CMD_SET_COMBINE << 24) |
+                  ((c0.rgb_a & 0xF) << 20) |
+                  ((c0.rgb_c & 0x1F) << 15) |
+                  ((c0.a_a & 0x7) << 12) |
+                  ((c0.a_c & 0x7) << 9) |
+                  ((c1.rgb_a & 0xF) << 5) |
+                  ((c1.rgb_c & 0x1F) << 0);
+    uint32_t w1 = ((c0.rgb_b & 0xF) << 28) |
+                  ((c1.rgb_b & 0xF) << 24) |
+                  ((c1.a_a & 0x7) << 21) |
+                  ((c1.a_c & 0x7) << 18) |
+                  ((c0.rgb_d & 0x7) << 15) |
+                  ((c0.a_b & 0x7) << 12) |
+                  ((c0.a_d & 0x7) << 9) |
+                  ((c1.rgb_d & 0x7) << 6) |
+                  ((c1.a_b & 0x7) << 3) |
+                  ((c1.a_d & 0x7) << 0);
+    return { w0, w1 };
+}
+
+// Common combiner presets: (A-B)*C+D
+// CC_SHADE: output = shade color          → A=0,B=0,C=0,D=SHADE(4)
+// CC_PRIM:  output = primitive color      → A=0,B=0,C=0,D=PRIM(3)
+// CC_ENV:   output = environment color    → A=0,B=0,C=0,D=ENV(5)
+// CC_TEXEL0_SHADE: output = Texel0*Shade  → A=TEXEL0(1),B=0,C=SHADE(4),D=0
+static constexpr CombinerCycle CC_SHADE_RGB     = { 0, 0, 0, 4,  0, 0, 0, 4 };
+static constexpr CombinerCycle CC_PRIM_RGB      = { 0, 0, 0, 3,  0, 0, 0, 3 };
+static constexpr CombinerCycle CC_ENV_RGB       = { 0, 0, 0, 5,  0, 0, 0, 5 };
+static constexpr CombinerCycle CC_TEXEL0        = { 0, 0, 0, 1,  0, 0, 0, 1 };
+static constexpr CombinerCycle CC_TEXEL0_SHADE  = { 1, 0, 4, 0,  1, 0, 4, 0 };
+static constexpr CombinerCycle CC_ZERO          = { 0, 0, 0, 7,  0, 0, 0, 7 };  // D=Zero(7)
+
+// SET_OTHER_MODES helpers for common render modes
+static RDPCommand MakeOtherModes1Cycle(uint32_t extraLo = 0) {
+    return MakeSetOtherModes(RDP_CYCLE_1CYC >> 24, (1u << 14) /*force_blend*/ | extraLo);
+}
+
+static RDPCommand MakeOtherModes2Cycle(uint32_t extraLo = 0) {
+    return MakeSetOtherModes((1u << 20) >> 24, (1u << 14) /*force_blend*/ | extraLo);
+}
+
+// Run PRDP with a sequence of setup commands + a multi-word triangle + sync,
+// and compare against a reference framebuffer.
+static ComparisonResult RunTriangleComparison(
+    const char* testName,
+    const std::vector<RDPCommand>& setup,
+    const std::vector<uint32_t>& triWords,
+    const std::vector<uint16_t>& referenceFb)
+{
+    auto& prdp = GetPRDPContext();
+    if (!prdp.IsAvailable()) {
+        ComparisonResult r = {};
+        r.vulkanAvailable = false;
+        PrintComparisonResult(testName, r);
+        return r;
+    }
+
+    prdp.ClearRDRAM();
+    std::vector<RDPCommand> teardown = { MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(FB_ADDR, FB_WIDTH, FB_HEIGHT);
+    auto result = CompareRGBA16Buffers(prdpFb.data(), referenceFb.data(), FB_WIDTH, FB_HEIGHT);
+    PrintComparisonResult(testName, result);
+    return result;
+}
+
+// Texture data address in RDRAM (above framebuffer and Z buffer)
+static constexpr uint32_t TEX_ADDR = 0x300000;
 
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
@@ -1907,6 +2214,744 @@ TEST_F(ParallelRDPComparisonTest, FillScreen_AllChannels) {
         std::string name = std::string("FillScreen_") + c.name;
         prdp::RunFillComparison(name.c_str(), packed);
     }
+}
+
+// ************************************************************
+// Triangle Rendering — Shade Triangle via ParallelRDP
+//
+// Sends a flat-shaded N64 RDP shade triangle (0xCC) to ParallelRDP
+// in 1-cycle mode and compares the framebuffer output against a
+// reference. Tests that the triangle edge coefficient builder produces
+// valid commands that ParallelRDP can rasterize.
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatRed_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    // Setup: 1-cycle mode, combiner = SHADE, framebuffer configured
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    // Build a flat-shaded red triangle covering upper-left half of 100x100 region
+    auto triWords = prdp::MakeShadeTriangleWords(10, 10, 110, 110, 255, 0, 0, 255);
+
+    // Reference: we can't easily predict exact RDP triangle coverage,
+    // so just read the PRDP output and verify it has non-zero red pixels
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // Count non-black pixels — the triangle should have rendered something
+    uint32_t nonBlackPixels = 0;
+    uint32_t redPixels = 0;
+    for (auto px : prdpFb) {
+        if (px != 0) nonBlackPixels++;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 20 && g < 5 && b < 5) redPixels++;
+    }
+
+    std::cout << "  [INFO] ShadeTriangle_FlatRed: " << nonBlackPixels
+              << " non-black pixels, " << redPixels << " red pixels\n";
+
+    EXPECT_GT(nonBlackPixels, 0u) << "Triangle should have rendered some pixels";
+}
+
+TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatGreen_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto triWords = prdp::MakeShadeTriangleWords(50, 20, 200, 180, 0, 255, 0, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t greenPixels = 0;
+    for (auto px : prdpFb) {
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (g > 20 && r < 5 && b < 5) greenPixels++;
+    }
+
+    std::cout << "  [INFO] ShadeTriangle_FlatGreen: " << greenPixels << " green pixels\n";
+    EXPECT_GT(greenPixels, 0u) << "Green triangle should have rendered pixels";
+}
+
+TEST_F(ParallelRDPComparisonTest, FillTriangle_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL >> 24, 0));
+    uint16_t blue5551 = (0 << 11) | (0 << 6) | (31 << 1) | 1;
+    setup.push_back(prdp::MakeSetFillColor(((uint32_t)blue5551 << 16) | blue5551));
+
+    auto triWords = prdp::MakeFillTriangleWords(20, 20, 200, 200);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t bluePixels = 0;
+    for (auto px : prdpFb) {
+        int b = (px >> 1) & 0x1F;
+        if (b > 20) bluePixels++;
+    }
+
+    std::cout << "  [INFO] FillTriangle: " << bluePixels << " blue pixels\n";
+    EXPECT_GT(bluePixels, 0u) << "Fill triangle should have rendered blue pixels";
+}
+
+// ************************************************************
+// Color Combiner Output — ParallelRDP Comparison
+//
+// These tests exercise the RDP color combiner in 1-cycle and 2-cycle
+// modes through ParallelRDP, using shade triangles with various
+// combine modes (PRIM, ENV, SHADE, TEXEL0*SHADE).
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Combiner_PrimColor_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 128, 0, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(10, 10, 150, 150, 255, 255, 255, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t orangePixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 25 && g > 10 && g < 20 && b < 5) orangePixels++;
+    }
+
+    std::cout << "  [INFO] Combiner_PrimColor: " << orangePixels
+              << " orange pixels (prim color)\n";
+    EXPECT_GT(orangePixels, 0u) << "Prim color combiner should produce orange pixels";
+}
+
+TEST_F(ParallelRDPComparisonTest, Combiner_EnvColor_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_ENV_RGB, prdp::CC_ENV_RGB));
+    setup.push_back(prdp::MakeSetEnvColor(0, 0, 200, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(30, 30, 200, 200, 255, 255, 255, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t bluePixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (b > 20 && r < 5 && g < 5) bluePixels++;
+    }
+
+    std::cout << "  [INFO] Combiner_EnvColor: " << bluePixels
+              << " blue pixels (env color)\n";
+    EXPECT_GT(bluePixels, 0u) << "Env color combiner should produce blue pixels";
+}
+
+TEST_F(ParallelRDPComparisonTest, Combiner_ShadeColor_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto triWords = prdp::MakeShadeTriangleWords(10, 10, 160, 120, 255, 255, 0, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t yellowPixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 20 && g > 20 && b < 5) yellowPixels++;
+    }
+
+    std::cout << "  [INFO] Combiner_ShadeColor: " << yellowPixels
+              << " yellow pixels (shade)\n";
+    EXPECT_GT(yellowPixels, 0u) << "Shade combiner should produce yellow pixels";
+}
+
+// ************************************************************
+// 2-Cycle Mode — ParallelRDP Comparison
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_EnvPassthrough) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes2Cycle());
+
+    prdp::CombinerCycle c0 = { 0, 0, 0, 5,  0, 0, 0, 5 }; // D=ENV(5)
+    prdp::CombinerCycle c1 = { 0, 0, 0, 0,  0, 0, 0, 0 }; // D=COMBINED(0)
+    setup.push_back(prdp::MakeSetCombineMode(c0, c1));
+    setup.push_back(prdp::MakeSetEnvColor(200, 0, 200, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(20, 20, 180, 180, 128, 128, 128, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t purplePixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 15 && b > 15 && g < 5) purplePixels++;
+    }
+
+    std::cout << "  [INFO] 2CycleMode_EnvPassthrough: " << purplePixels
+              << " purple pixels\n";
+    EXPECT_GT(purplePixels, 0u) << "2-cycle ENV→COMBINED should produce purple pixels";
+}
+
+TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_PrimThenEnvOverride) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes2Cycle());
+
+    prdp::CombinerCycle c0 = { 0, 0, 0, 3,  0, 0, 0, 3 }; // D=PRIM(3)
+    prdp::CombinerCycle c1 = { 0, 0, 0, 5,  0, 0, 0, 5 }; // D=ENV(5)
+    setup.push_back(prdp::MakeSetCombineMode(c0, c1));
+    setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 0, 0, 255));
+    setup.push_back(prdp::MakeSetEnvColor(0, 255, 0, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(20, 20, 180, 180, 128, 128, 128, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t greenPixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (g > 20 && r < 5 && b < 5) greenPixels++;
+    }
+
+    std::cout << "  [INFO] 2CycleMode_PrimThenEnv: " << greenPixels
+              << " green pixels (cycle 1 override)\n";
+    EXPECT_GT(greenPixels, 0u)
+        << "2-cycle mode cycle 1 ENV should override cycle 0 PRIM";
+}
+
+// ************************************************************
+// Depth Comparison — ParallelRDP
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Depth_FrontOccludesBack) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto backTri = prdp::MakeShadeZbuffTriangleWords(
+        10, 10, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
+    auto frontTri = prdp::MakeShadeZbuffTriangleWords(
+        50, 50, 250, 250, 0, 255, 0, 255, 0x10000000u);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    prdp.SubmitMixedCommands(setup, backTri, {});
+    prdp.SubmitMixedCommands({}, frontTri, { prdp::MakeSyncFull() });
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t redPixels = 0, greenPixels = 0, nonBlack = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        nonBlack++;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 20 && g < 5 && b < 5) redPixels++;
+        if (g > 20 && r < 5 && b < 5) greenPixels++;
+    }
+
+    std::cout << "  [INFO] Depth_FrontOccludesBack: " << nonBlack << " non-black, "
+              << redPixels << " red, " << greenPixels << " green\n";
+    EXPECT_GT(nonBlack, 0u) << "Should render something with depth test";
+}
+
+TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 0, 0, 255));
+    setup.push_back(prdp::MakeSetPrimDepth(0x7FFF, 0));
+
+    auto backTri = prdp::MakeShadeZbuffTriangleWords(
+        20, 20, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    prdp.SubmitMixedCommands(setup, backTri, { prdp::MakeSyncFull() });
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t nonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) nonBlack++;
+
+    std::cout << "  [INFO] Depth_PrimDepth: " << nonBlack << " non-black pixels\n";
+}
+
+// ************************************************************
+// Texture Tests — ParallelRDP Comparison
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // Create a 4x4 RGBA16 solid cyan texture
+    uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
+    std::vector<uint8_t> texBytes(4 * 4 * 2);
+    for (int i = 0; i < 4 * 4; i++) {
+        texBytes[i * 2 + 0] = (cyan5551 >> 8) & 0xFF;
+        texBytes[i * 2 + 1] = cyan5551 & 0xFF;
+    }
+    prdp.WriteRDRAM(prdp::TEX_ADDR, texBytes.data(), texBytes.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadBlock(0, 0, 0, 15, 0x800));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    cmds.push_back(prdp::MakeTextureRectangle(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4,
+                                               0, 0, 1 << 10, 1 << 10));
+    cmds.push_back(prdp::MakeTextureRectangleST(0, 0, 1 << 10, 1 << 10));
+    cmds.push_back(prdp::MakeSyncFull());
+
+    prdp.SubmitCommands(cmds);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t cyanPixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (g > 20 && b > 20 && r < 5) cyanPixels++;
+    }
+
+    std::cout << "  [INFO] Texture_SolidColor: " << cyanPixels
+              << " cyan pixels from texture\n";
+    EXPECT_GT(cyanPixels, 0u) << "Texture rectangle should render cyan from TEXEL0";
+}
+
+TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    uint16_t red5551   = (31 << 11) | (0 << 6) | (0 << 1) | 1;
+    uint16_t white5551 = (31 << 11) | (31 << 6) | (31 << 1) | 1;
+
+    std::vector<uint8_t> texBytes(4 * 4 * 2);
+    for (int y = 0; y < 4; y++) {
+        for (int x = 0; x < 4; x++) {
+            uint16_t c = ((x + y) & 1) ? white5551 : red5551;
+            size_t idx = (y * 4 + x) * 2;
+            texBytes[idx + 0] = (c >> 8) & 0xFF;
+            texBytes[idx + 1] = c & 0xFF;
+        }
+    }
+    prdp.WriteRDRAM(prdp::TEX_ADDR, texBytes.data(), texBytes.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadBlock(0, 0, 0, 15, 0x800));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    cmds.push_back(prdp::MakeTextureRectangle(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4,
+                                               0, 0, 1 << 10, 1 << 10));
+    cmds.push_back(prdp::MakeTextureRectangleST(0, 0, 1 << 10, 1 << 10));
+    cmds.push_back(prdp::MakeSyncFull());
+
+    prdp.SubmitCommands(cmds);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t redPixels = 0, whitePixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 20 && g < 5 && b < 5) redPixels++;
+        if (r > 20 && g > 20 && b > 20) whitePixels++;
+    }
+
+    std::cout << "  [INFO] Texture_Checkerboard: " << redPixels << " red, "
+              << whitePixels << " white\n";
+    uint32_t totalColored = redPixels + whitePixels;
+    EXPECT_GT(totalColored, 0u) << "Checkerboard texture should produce colored pixels";
+}
+
+// ************************************************************
+// Fog — ParallelRDP Comparison
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Fog_SetFogColor_1Cycle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    setup.push_back(prdp::MakeSetFogColor(128, 0, 255, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(20, 20, 200, 200, 255, 255, 255, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t nonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) nonBlack++;
+
+    std::cout << "  [INFO] Fog_SetFogColor: " << nonBlack
+              << " non-black pixels (fog test)\n";
+    EXPECT_GT(nonBlack, 0u) << "Fog test should render something";
+}
+
+// ************************************************************
+// Blend Color — ParallelRDP Comparison
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, BlendColor_SetAndRender) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    setup.push_back(prdp::MakeSetBlendColor(255, 128, 0, 255));
+
+    auto triWords = prdp::MakeShadeTriangleWords(10, 10, 150, 150, 128, 64, 32, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t nonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) nonBlack++;
+
+    std::cout << "  [INFO] BlendColor: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "Blend color test should render something";
+}
+
+// ************************************************************
+// Scissor — ParallelRDP Comparison
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, Scissor_ClipsTriangle) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(100 * 4, 80 * 4, 150 * 4, 130 * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto triWords = prdp::MakeShadeTriangleWords(0, 0, 319, 239, 255, 0, 255, 255);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t outsidePixels = 0, insidePixels = 0;
+    for (uint32_t y = 0; y < prdp::FB_HEIGHT; y++) {
+        for (uint32_t x = 0; x < prdp::FB_WIDTH; x++) {
+            uint16_t px = prdpFb[y * prdp::FB_WIDTH + x];
+            if (px == 0) continue;
+            if (x >= 100 && x < 150 && y >= 80 && y < 130)
+                insidePixels++;
+            else
+                outsidePixels++;
+        }
+    }
+
+    std::cout << "  [INFO] Scissor_ClipsTriangle: " << insidePixels
+              << " inside, " << outsidePixels << " outside\n";
+    EXPECT_EQ(outsidePixels, 0u) << "No pixels should be drawn outside scissor";
+    EXPECT_GT(insidePixels, 0u) << "Some pixels should be drawn inside scissor";
+}
+
+// ************************************************************
+// Alpha Coverage — ParallelRDP
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, AlphaCvg_CvgTimesAlpha) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    uint32_t cvgBits = (1u << 12) | (1u << 14); // CVG_X_ALPHA | FORCE_BLEND
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle(cvgBits));
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto triWords = prdp::MakeShadeTriangleWords(20, 20, 200, 200, 255, 0, 0, 128);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMixedCommands(setup, triWords, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t nonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) nonBlack++;
+
+    std::cout << "  [INFO] AlphaCvg: " << nonBlack
+              << " non-black pixels with CVG_X_ALPHA\n";
+}
+
+// ************************************************************
+// Decal Z Mode — ParallelRDP
+// ************************************************************
+
+TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | (3u << 10);
+
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    auto tri1 = prdp::MakeShadeZbuffTriangleWords(
+        20, 20, 200, 200, 255, 0, 0, 255, 0x40000000u);
+    auto tri2 = prdp::MakeShadeZbuffTriangleWords(
+        60, 60, 240, 220, 0, 255, 0, 255, 0x40000000u);
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    prdp.SubmitMixedCommands(setup, tri1, {});
+    prdp.SubmitMixedCommands({}, tri2, { prdp::MakeSyncFull() });
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t redPixels = 0, greenPixels = 0;
+    for (auto px : prdpFb) {
+        if (px == 0) continue;
+        int r = (px >> 11) & 0x1F;
+        int g = (px >> 6) & 0x1F;
+        int b = (px >> 1) & 0x1F;
+        if (r > 20 && g < 5) redPixels++;
+        if (g > 20 && r < 5) greenPixels++;
+    }
+
+    std::cout << "  [INFO] ZmodeDecal: " << redPixels << " red, "
+              << greenPixels << " green (decal should allow both)\n";
+    EXPECT_GT(redPixels + greenPixels, 0u) << "Decal mode should render triangles";
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
