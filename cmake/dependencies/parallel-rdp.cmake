@@ -8,7 +8,7 @@ include(FetchContent)
 FetchContent_Declare(
     parallel-rdp-standalone
     GIT_REPOSITORY https://github.com/Themaister/parallel-rdp-standalone.git
-    GIT_TAG        master
+    GIT_TAG        388d70f5835b352d841d9d9e5a08c5de01470f41
     GIT_SHALLOW    TRUE
 )
 

@@ -14,7 +14,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
-        # Install Vulkan SDK components for SwiftShader
+        # Mesa lavapipe provides a software Vulkan ICD for headless CI
         sudo apt-get install -y libvulkan-dev vulkan-tools mesa-vulkan-drivers
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.14
@@ -23,18 +23,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-prdp-ccache-${{ github.ref }}
           ${{ runner.os }}-prdp-ccache-
-    - name: Install SwiftShader
-      run: |
-        # Build SwiftShader from source for software Vulkan
-        git clone --depth 1 https://github.com/nichmack/swiftshader-prebuilt.git /tmp/swiftshader-prebuilt || true
-        if [ -d /tmp/swiftshader-prebuilt ]; then
-          sudo mkdir -p /usr/local/lib
-          sudo cp /tmp/swiftshader-prebuilt/linux-x64/libvk_swiftshader.so /usr/local/lib/ || true
-          sudo mkdir -p /usr/share/vulkan/icd.d
-          echo '{"file_format_version":"1.0.0","ICD":{"library_path":"/usr/local/lib/libvk_swiftshader.so","api_version":"1.1.0"}}' | sudo tee /usr/share/vulkan/icd.d/swiftshader_icd.json
-        fi
-        # Fallback: use Mesa's lavapipe if SwiftShader prebuilt is not available
-        sudo apt-get install -y mesa-vulkan-drivers || true
     - name: Install latest SDL
       run: |
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -80,8 +68,8 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
         SDL_AUDIODRIVER: dummy
-        # Use software Vulkan (lavapipe or SwiftShader)
-        VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/swiftshader_icd.json:/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        # Use Mesa lavapipe software Vulkan ICD
+        VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
     - name: Run standard tests
       run: |
         # Also run the standard test suite to make sure nothing is broken
