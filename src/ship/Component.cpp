@@ -12,7 +12,7 @@ namespace Ship {
 
 // ---- ChildList ----
 
-ChildList::ChildList(Component* owner) : PartList<Component>(), mOwner(owner) {
+ChildList::ChildList(Component* owner) : ComponentList(), mOwner(owner) {
 }
 
 void ChildList::Added(std::shared_ptr<Component> part, const bool forced) {
@@ -39,7 +39,7 @@ void ChildList::Removed(std::shared_ptr<Component> part, const bool forced) {
 
 // ---- ParentList ----
 
-ParentList::ParentList(Component* owner) : PartList<Component>(), mOwner(owner) {
+ParentList::ParentList(Component* owner) : ComponentList(), mOwner(owner) {
 }
 
 void ParentList::Added(std::shared_ptr<Component> part, const bool forced) {
@@ -100,19 +100,19 @@ std::shared_mutex& Component::GetMutex() const {
 
 // ---- Get ----
 
-PartList<Component>& Component::GetParents() {
+ComponentList& Component::GetParents() {
     return mParents;
 }
 
-const PartList<Component>& Component::GetParents() const {
+const ComponentList& Component::GetParents() const {
     return mParents;
 }
 
-PartList<Component>& Component::GetChildren() {
+ComponentList& Component::GetChildren() {
     return mChildren;
 }
 
-const PartList<Component>& Component::GetChildren() const {
+const ComponentList& Component::GetChildren() const {
     return mChildren;
 }
 

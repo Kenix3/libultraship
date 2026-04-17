@@ -13,19 +13,20 @@
 
 #include "ship/Part.h"
 #include "ship/PartList.h"
+#include "ship/ComponentList.h"
 
 namespace Ship {
 
 class Component;
 
 /**
- * @brief PartList subclass that maintains bidirectional parent/child relationships.
+ * @brief ComponentList subclass that maintains bidirectional parent/child relationships.
  *
  * When a Component is added to a ChildList, it is automatically added to the
  * child's parent list (and vice versa for ParentList). Removal also maintains
  * the opposite relationship.
  */
-class ChildList : public PartList<Component> {
+class ChildList : public ComponentList {
   public:
     explicit ChildList(Component* owner);
     void Added(std::shared_ptr<Component> part, const bool forced) override;
@@ -36,13 +37,13 @@ class ChildList : public PartList<Component> {
 };
 
 /**
- * @brief PartList subclass that maintains bidirectional child/parent relationships.
+ * @brief ComponentList subclass that maintains bidirectional child/parent relationships.
  *
  * When a Component is added to a ParentList, it is automatically added to the
  * parent's child list (and vice versa). Removal also maintains the opposite
  * relationship.
  */
-class ParentList : public PartList<Component> {
+class ParentList : public ComponentList {
   public:
     explicit ParentList(Component* owner);
     void Added(std::shared_ptr<Component> part, const bool forced) override;
@@ -92,14 +93,14 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     // ---- Parent/child relationship accessors ----
 
     /** @brief Returns a mutable reference to the parent list. */
-    PartList<Component>& GetParents();
+    ComponentList& GetParents();
     /** @brief Returns a const reference to the parent list. */
-    const PartList<Component>& GetParents() const;
+    const ComponentList& GetParents() const;
 
     /** @brief Returns a mutable reference to the child list. */
-    PartList<Component>& GetChildren();
+    ComponentList& GetChildren();
     /** @brief Returns a const reference to the child list. */
-    const PartList<Component>& GetChildren() const;
+    const ComponentList& GetChildren() const;
 
     // ---- Breadth-first hierarchy search ----
 
@@ -228,6 +229,32 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
                 }
                 queue.push(child.get());
             }
+        }
+    }
+    return result;
+}
+
+// ---- ComponentList template implementations ----
+// These live here because they need the full Component definition,
+// while ComponentList.h only forward-declares Component to break the
+// circular dependency.
+
+template <typename T> bool ComponentList::Has(const std::string& name) const {
+    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const auto& list = this->GetList();
+    return std::find_if(list.begin(), list.end(), [&name](const std::shared_ptr<Component>& c) {
+               return c->GetName() == name && std::dynamic_pointer_cast<T>(c) != nullptr;
+           }) != list.end();
+}
+
+template <typename T>
+std::shared_ptr<std::vector<std::shared_ptr<T>>> ComponentList::Get(const std::string& name) const {
+    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
+    for (const auto& c : this->GetList()) {
+        auto typed = std::dynamic_pointer_cast<T>(c);
+        if (typed && c->GetName() == name) {
+            result->push_back(typed);
         }
     }
     return result;
