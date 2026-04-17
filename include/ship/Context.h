@@ -10,11 +10,9 @@
 #include <spdlog/async.h>
 #include "ship/audio/Audio.h"
 #include "ship/Component.h"
-#include "ship/Tickable.h"
+#include "ship/TickableList.h"
 
 namespace Ship {
-
-class TickableComponent;
 
 /**
  * @brief Central singleton context for the libultraship engine.
@@ -26,7 +24,7 @@ class TickableComponent;
  *
  * Subsystems are retrieved via GetChildren().GetFirst<T>().
  */
-class Context : public Component, public Tickable {
+class Context : public Component {
   public:
     /**
      * @brief Returns the currently active global Context instance.
@@ -106,9 +104,8 @@ class Context : public Component, public Tickable {
     std::string GetConfigFilePath() const;
 
     // ---- TickableComponent list ----
-    PartList<TickableComponent>& GetTickableComponents();
-    const PartList<TickableComponent>& GetTickableComponents() const;
-    Context& SortTickableComponents();
+    TickableList& GetTickableComponents();
+    const TickableList& GetTickableComponents() const;
 
   protected:
     Context() = default;
@@ -120,8 +117,7 @@ class Context : public Component, public Tickable {
     std::string mName;
     std::string mShortName;
 
-    PartList<TickableComponent> mTickableComponents;
-    bool mIsTickableComponentsOrderStale = false;
+    TickableList mTickableComponents;
     mutable std::mutex mTickableMutex;
 };
 

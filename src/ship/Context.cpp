@@ -1,6 +1,5 @@
 #include "ship/Context.h"
 #include "ship/TickableComponent.h"
-#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <cstring>
 #include <iostream>
 #include <algorithm>
@@ -252,8 +251,8 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : Component(name), Tickable(), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
-      mShortName(std::move(shortName)), mIsTickableComponentsOrderStale(false) {
+    : Component(name), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
+      mShortName(std::move(shortName)) {
 }
 
 std::string Context::GetName() const {
@@ -406,23 +405,12 @@ std::string Context::LocateFileAcrossAppDirs(const std::string& path, const std:
 
 // ---- TickableComponent list ----
 
-PartList<TickableComponent>& Context::GetTickableComponents() {
+TickableList& Context::GetTickableComponents() {
     return mTickableComponents;
 }
 
-const PartList<TickableComponent>& Context::GetTickableComponents() const {
+const TickableList& Context::GetTickableComponents() const {
     return mTickableComponents;
-}
-
-Context& Context::SortTickableComponents() {
-    const std::lock_guard<std::mutex> lock(mTickableMutex);
-    auto& list = mTickableComponents.GetList();
-    std::stable_sort(list.begin(), list.end(),
-                     [](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {
-                         return a->GetOrder() < b->GetOrder();
-                     });
-    mIsTickableComponentsOrderStale = false;
-    return *this;
 }
 
 } // namespace Ship
