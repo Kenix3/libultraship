@@ -70,10 +70,14 @@ static constexpr uint32_t RDP_FMT_RGBA = 0;
 static constexpr uint32_t RDP_SIZ_16b  = 2;
 static constexpr uint32_t RDP_CYCLE_FILL  = (3u << 20);
 static constexpr uint32_t RDP_CYCLE_1CYC  = (0u << 20);
+static constexpr uint32_t RDP_CYCLE_2CYC  = (1u << 20);
 
-// Other mode bits for depth testing
-static constexpr uint32_t RDP_Z_CMP = 0x10;
-static constexpr uint32_t RDP_Z_UPD = 0x20;
+// Other mode bits for depth testing and blending
+static constexpr uint32_t RDP_Z_CMP       = 0x10;
+static constexpr uint32_t RDP_Z_UPD       = 0x20;
+static constexpr uint32_t RDP_FORCE_BLEND = (1u << 14);
+static constexpr uint32_t RDP_CVG_X_ALPHA = (1u << 12);
+static constexpr uint32_t RDP_ZMODE_DECAL = (3u << 10);
 
 struct RDPCommand {
     uint32_t w0;
@@ -186,6 +190,8 @@ static RDPCommand MakeSyncLoad() { return { (0xE6u << 24), 0 }; }
 // Triangle vertices: TL=(x0,y0), TR=(x1,y0), BL=(x0,y1) — right triangle.
 // lft=1 (left-major), YH=YM=y0, YL=y1. Major edge vertical on left,
 // lower minor edge goes diagonally from TR to BL.
+// The 'tile' parameter occupies bits 16-21 in word 0 (same as the RDP spec's
+// tile+level field); for simple tests it defaults to 0.
 static void PackEdgeCoeffs(uint32_t* words, uint32_t cmdId,
                            uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
                            uint32_t tile = 0) {
@@ -199,7 +205,7 @@ static void PackEdgeCoeffs(uint32_t* words, uint32_t cmdId,
 
     int32_t dxldy = 0;
     if (y1 > y0) {
-        int64_t dx = ((int64_t)(x0 - (int32_t)x1)) << 16;
+        int64_t dx = ((int64_t)x0 - (int64_t)x1) << 16;
         dxldy = (int32_t)(dx / (int32_t)(y1 - y0));
     }
 
@@ -578,15 +584,15 @@ static constexpr CombinerCycle CC_PRIM_RGB      = { 0, 0, 0, 3,  0, 0, 0, 3 };
 static constexpr CombinerCycle CC_ENV_RGB       = { 0, 0, 0, 5,  0, 0, 0, 5 };
 static constexpr CombinerCycle CC_TEXEL0        = { 0, 0, 0, 1,  0, 0, 0, 1 };
 static constexpr CombinerCycle CC_TEXEL0_SHADE  = { 1, 0, 4, 0,  1, 0, 4, 0 };
-static constexpr CombinerCycle CC_ZERO          = { 0, 0, 0, 7,  0, 0, 0, 7 };  // D=Zero(7)
+static constexpr CombinerCycle CC_OUTPUT_ZERO   = { 0, 0, 0, 7,  0, 0, 0, 7 };  // D=Zero(7) → outputs black
 
 // SET_OTHER_MODES helpers for common render modes
 static RDPCommand MakeOtherModes1Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_1CYC >> 24, (1u << 14) /*force_blend*/ | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_1CYC >> 24, RDP_FORCE_BLEND | extraLo);
 }
 
 static RDPCommand MakeOtherModes2Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes((1u << 20) >> 24, (1u << 14) /*force_blend*/ | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_2CYC >> 24, RDP_FORCE_BLEND | extraLo);
 }
 
 // Run PRDP with a sequence of setup commands + a multi-word triangle + sync,
@@ -2879,7 +2885,7 @@ TEST_F(ParallelRDPComparisonTest, AlphaCvg_CvgTimesAlpha) {
         GTEST_SKIP() << "Vulkan not available";
     }
 
-    uint32_t cvgBits = (1u << 12) | (1u << 14); // CVG_X_ALPHA | FORCE_BLEND
+    uint32_t cvgBits = prdp::RDP_CVG_X_ALPHA | prdp::RDP_FORCE_BLEND;
 
     std::vector<prdp::RDPCommand> setup;
     setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -2916,7 +2922,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
         GTEST_SKIP() << "Vulkan not available";
     }
 
-    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | (3u << 10);
+    uint32_t depthBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | prdp::RDP_ZMODE_DECAL;
 
     std::vector<prdp::RDPCommand> setup;
     setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
