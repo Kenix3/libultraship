@@ -516,15 +516,11 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
 }
 
 std::shared_ptr<BS::thread_pool> ResourceManager::GetThreadPool() {
-    if (mCachedThreadPool) {
-        return mCachedThreadPool;
-    }
     auto context = Context::GetInstance();
     if (context) {
         auto tpc = context->GetChildren().GetFirst<ThreadPoolComponent>();
         if (tpc) {
-            mCachedThreadPool = tpc->GetPool();
-            return mCachedThreadPool;
+            return tpc->GetPool();
         }
     }
     return nullptr;

@@ -136,11 +136,11 @@ TEST(TickableTest, ActionStoppedOnRemove) {
     EXPECT_FALSE(a->IsRunning());
 }
 
-// ---- Tick tests ----
+// ---- Run tests ----
 
 TEST(TickableTest, TickRunsAllActions) {
     auto t = MakeTickableWithActions(3);
-    t->Tick(0.016);
+    t->Run(0.016);
 
     auto actions = t->GetActions();
     for (const auto& a : *actions) {
@@ -154,7 +154,7 @@ TEST(TickableTest, TickDoesNothingWhenNotTicking) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
     t->AddAction(a);
-    t->Tick(0.016);
+    t->Run(0.016);
     EXPECT_EQ(a->mRunCount, 0);
 }
 
@@ -165,7 +165,7 @@ TEST(TickableTest, TickByActionType) {
     t->AddAction(tick);
     t->AddAction(draw);
 
-    t->Tick(0.016, static_cast<uint32_t>(ActionType::Tick));
+    t->Run(0.016, static_cast<uint32_t>(ActionType::Tick));
     EXPECT_EQ(tick->mRunCount, 1);
     EXPECT_EQ(draw->mRunCount, 0);
 }
@@ -179,7 +179,7 @@ TEST(TickableTest, TickByMultipleActionTypes) {
     t->AddAction(draw);
     t->AddAction(debug);
 
-    t->Tick(0.016,
+    t->Run(0.016,
             std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
                                    static_cast<uint32_t>(ActionType::DrawDebugMenu) });
     EXPECT_EQ(tick->mRunCount, 1);
@@ -191,7 +191,7 @@ TEST(TickableTest, TickByActionTypeDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
     t->AddAction(a);
-    t->Tick(0.016, 0u);
+    t->Run(0.016, 0u);
     EXPECT_EQ(a->mRunCount, 0);
 }
 
@@ -199,11 +199,11 @@ TEST(TickableTest, TickByMultipleTypesDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
     t->AddAction(a);
-    t->Tick(0.016, std::vector<uint32_t>{ 0u });
+    t->Run(0.016, std::vector<uint32_t>{ 0u });
     EXPECT_EQ(a->mRunCount, 0);
 }
 
-// ---- Template Tick tests ----
+// ---- Template Run tests ----
 
 TEST(TickableTest, TickByTemplateType) {
     auto t = std::make_shared<TestTickableObj>(true);
@@ -212,7 +212,7 @@ TEST(TickableTest, TickByTemplateType) {
     t->AddAction(regular);
     t->AddAction(special);
 
-    t->Tick<SpecialAction>(0.016);
+    t->Run<SpecialAction>(0.016);
     EXPECT_EQ(regular->mRunCount, 0);
     EXPECT_EQ(special->mRunCount, 1);
 }
@@ -221,7 +221,7 @@ TEST(TickableTest, TickByTemplateTypeDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto special = std::make_shared<SpecialAction>(0, t);
     t->AddAction(special);
-    t->Tick<SpecialAction>(0.016);
+    t->Run<SpecialAction>(0.016);
     EXPECT_EQ(special->mRunCount, 0);
 }
 
@@ -234,7 +234,7 @@ TEST(TickableTest, TickByTemplateTypeAndSingleActionType) {
     t->AddAction(special);
     t->AddAction(specialDraw);
 
-    t->Tick<SpecialAction>(0.016, static_cast<uint32_t>(ActionType::Tick));
+    t->Run<SpecialAction>(0.016, static_cast<uint32_t>(ActionType::Tick));
     EXPECT_EQ(regular->mRunCount, 0);
     EXPECT_EQ(special->mRunCount, 1);
     EXPECT_EQ(specialDraw->mRunCount, 0);
@@ -251,7 +251,7 @@ TEST(TickableTest, TickByTemplateTypeAndMultipleActionTypes) {
     t->AddAction(special2);
     t->AddAction(special3);
 
-    t->Tick<SpecialAction>(0.016,
+    t->Run<SpecialAction>(0.016,
                            std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
                                                   static_cast<uint32_t>(ActionType::DrawDebugMenu) });
     EXPECT_EQ(regular->mRunCount, 0);
@@ -296,7 +296,7 @@ TEST(TickableTest, MultipleTicks) {
     t->AddAction(a);
 
     for (int i = 0; i < 10; i++) {
-        t->Tick(0.016);
+        t->Run(0.016);
     }
     EXPECT_EQ(a->mRunCount, 10);
 }

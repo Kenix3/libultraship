@@ -79,7 +79,7 @@ bool Tickable::Stop(const bool force) {
     return true;
 }
 
-double Tickable::Tick(const double durationSinceLastTick) {
+double Tickable::Run(const double durationSinceLastTick) {
 #ifdef INCLUDE_PROFILING
     SetClock(ClockType::PreviousStart, GetClock(ClockType::Start));
     SetClock(ClockType::PreviousEnd, GetClock(ClockType::End));
@@ -107,7 +107,7 @@ double Tickable::Tick(const double durationSinceLastTick) {
 #endif
 }
 
-double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
+double Tickable::Run(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
     if (!mIsTicking) {
         return 0.0;
     }
@@ -129,7 +129,7 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
 #endif
 }
 
-double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+double Tickable::Run(const double durationSinceLastTick, const uint32_t actionType) {
     if (!mIsTicking) {
         return 0.0;
     }

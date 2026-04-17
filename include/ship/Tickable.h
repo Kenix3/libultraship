@@ -16,7 +16,7 @@ class Component;
 /**
  * @brief Manages a collection of Actions, executing them in type-sorted order.
  *
- * A Tickable owns zero or more Actions and provides Tick() methods that run all
+ * A Tickable owns zero or more Actions and provides Run() methods that run all
  * (or a filtered subset of) those Actions each frame. Actions are executed in
  * ascending action-type order. Thread safety for the action list is handled
  * internally via a mutex.
@@ -48,7 +48,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     bool Start(const bool force = false);
 
     /**
-     * @brief Stops ticking; subsequent Tick() calls become no-ops.
+     * @brief Stops ticking; subsequent Run() calls become no-ops.
      * @param force If true, bypass the CanStop() check.
      * @return True if successfully stopped.
      */
@@ -59,7 +59,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    double Tick(const double durationSinceLastTick);
+    double Run(const double durationSinceLastTick);
 
     /**
      * @brief Runs only Actions that can be dynamic_cast to type T.
@@ -67,7 +67,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    template <typename T> double Tick(const double durationSinceLastTick);
+    template <typename T> double Run(const double durationSinceLastTick);
 
     /**
      * @brief Runs only Actions whose type matches one of the given action types.
@@ -75,7 +75,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param actionTypes The action type IDs to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
+    double Run(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
 
     /**
      * @brief Runs Actions matching both type T and one of the given action types.
@@ -84,7 +84,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param actionTypes The action type IDs to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    template <typename T> double Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
+    template <typename T> double Run(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes);
 
     /**
      * @brief Runs only Actions whose type matches the given action type.
@@ -92,7 +92,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param actionType The action type ID to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    double Tick(const double durationSinceLastTick, const uint32_t actionType);
+    double Run(const double durationSinceLastTick, const uint32_t actionType);
 
     /**
      * @brief Runs Actions matching both type T and the given action type.
@@ -101,7 +101,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @param actionType The action type ID to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    template <typename T> double Tick(const double durationSinceLastTick, const uint32_t actionType);
+    template <typename T> double Run(const double durationSinceLastTick, const uint32_t actionType);
 
     /**
      * @brief Checks whether a specific Action is registered.
@@ -241,7 +241,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
 // ---- Template method implementations ----
 
-template <typename T> double Tickable::Tick(const double durationSinceLastTick) {
+template <typename T> double Tickable::Run(const double durationSinceLastTick) {
     if (!mIsTicking) {
         return 0.0;
     }
@@ -261,7 +261,7 @@ template <typename T> double Tickable::Tick(const double durationSinceLastTick) 
 }
 
 template <typename T>
-double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
+double Tickable::Run(const double durationSinceLastTick, const std::vector<uint32_t>& actionTypes) {
     if (!mIsTicking) {
         return 0.0;
     }
@@ -282,7 +282,7 @@ double Tickable::Tick(const double durationSinceLastTick, const std::vector<uint
 #endif
 }
 
-template <typename T> double Tickable::Tick(const double durationSinceLastTick, const uint32_t actionType) {
+template <typename T> double Tickable::Run(const double durationSinceLastTick, const uint32_t actionType) {
     if (!mIsTicking) {
         return 0.0;
     }
