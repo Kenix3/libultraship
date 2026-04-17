@@ -38,7 +38,7 @@ static std::shared_ptr<TestTickableObj> MakeTickableWithActions(int numActions, 
     auto t = std::make_shared<TestTickableObj>(true);
     for (int i = 0; i < numActions; i++) {
         auto a = std::make_shared<CountingAction>(baseType + static_cast<uint32_t>(i), t);
-        t->AddAction(a);
+        t->GetActionList().Add(a);
     }
     return t;
 }
@@ -76,73 +76,72 @@ TEST(TickableTest, StopIdempotent) {
     EXPECT_FALSE(t->IsTicking());
 }
 
-// ---- Action management tests ----
+// ---- Action management via ActionList tests ----
 
 TEST(TickableTest, AddAction) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
 
-    EXPECT_TRUE(t->AddAction(a));
-    EXPECT_TRUE(t->HasAction(a));
-    EXPECT_EQ(t->CountActions(), 1u);
+    EXPECT_EQ(t->GetActionList().Add(a), ListReturnCode::Success);
+    EXPECT_TRUE(t->GetActionList().Has(a));
+    EXPECT_EQ(t->GetActionList().GetCount(), 1u);
 }
 
 TEST(TickableTest, AddActionNull) {
     auto t = std::make_shared<TestTickableObj>();
-    EXPECT_FALSE(t->AddAction(nullptr));
+    EXPECT_EQ(t->GetActionList().Add(nullptr), ListReturnCode::Failed);
 }
 
 TEST(TickableTest, AddActionDuplicate) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
-    EXPECT_TRUE(t->AddAction(a)); // Duplicate returns true (already there)
-    EXPECT_EQ(t->CountActions(), 1u);
+    t->GetActionList().Add(a);
+    EXPECT_EQ(t->GetActionList().Add(a), ListReturnCode::Duplicate);
+    EXPECT_EQ(t->GetActionList().GetCount(), 1u);
 }
 
 TEST(TickableTest, RemoveAction) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
-    EXPECT_TRUE(t->RemoveAction(a));
-    EXPECT_FALSE(t->HasAction(a));
-    EXPECT_EQ(t->CountActions(), 0u);
+    t->GetActionList().Add(a);
+    EXPECT_EQ(t->GetActionList().Remove(a), ListReturnCode::Success);
+    EXPECT_FALSE(t->GetActionList().Has(a));
+    EXPECT_EQ(t->GetActionList().GetCount(), 0u);
 }
 
 TEST(TickableTest, RemoveActionNull) {
     auto t = std::make_shared<TestTickableObj>();
-    EXPECT_FALSE(t->RemoveAction(nullptr));
+    EXPECT_EQ(t->GetActionList().Remove(std::shared_ptr<Action>(nullptr)), ListReturnCode::Failed);
 }
 
 TEST(TickableTest, RemoveActionNotFound) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    // Not added, so removing it should succeed (it's already not there)
-    EXPECT_TRUE(t->RemoveAction(a));
+    EXPECT_EQ(t->GetActionList().Remove(a), ListReturnCode::NotFound);
 }
 
 TEST(TickableTest, ActionStartedOnAdd) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
+    t->GetActionList().Add(a);
     EXPECT_TRUE(a->IsRunning());
 }
 
 TEST(TickableTest, ActionStoppedOnRemove) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
-    t->RemoveAction(a);
+    t->GetActionList().Add(a);
+    t->GetActionList().Remove(a);
     EXPECT_FALSE(a->IsRunning());
 }
 
 // ---- Run tests ----
 
-TEST(TickableTest, TickRunsAllActions) {
+TEST(TickableTest, RunRunsAllActions) {
     auto t = MakeTickableWithActions(3);
     t->Run(0.016);
 
-    auto actions = t->GetActions();
+    auto actions = t->GetActionList().Get();
     for (const auto& a : *actions) {
         auto ca = std::dynamic_pointer_cast<CountingAction>(a);
         ASSERT_NE(ca, nullptr);
@@ -150,34 +149,34 @@ TEST(TickableTest, TickRunsAllActions) {
     }
 }
 
-TEST(TickableTest, TickDoesNothingWhenNotTicking) {
+TEST(TickableTest, RunDoesNothingWhenNotTicking) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
+    t->GetActionList().Add(a);
     t->Run(0.016);
     EXPECT_EQ(a->mRunCount, 0);
 }
 
-TEST(TickableTest, TickByActionType) {
+TEST(TickableTest, RunByActionType) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto tick = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto draw = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Draw), t);
-    t->AddAction(tick);
-    t->AddAction(draw);
+    t->GetActionList().Add(tick);
+    t->GetActionList().Add(draw);
 
     t->Run(0.016, static_cast<uint32_t>(ActionType::Tick));
     EXPECT_EQ(tick->mRunCount, 1);
     EXPECT_EQ(draw->mRunCount, 0);
 }
 
-TEST(TickableTest, TickByMultipleActionTypes) {
+TEST(TickableTest, RunByMultipleActionTypes) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto tick = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto draw = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Draw), t);
     auto debug = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::DrawDebugMenu), t);
-    t->AddAction(tick);
-    t->AddAction(draw);
-    t->AddAction(debug);
+    t->GetActionList().Add(tick);
+    t->GetActionList().Add(draw);
+    t->GetActionList().Add(debug);
 
     t->Run(0.016,
             std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
@@ -187,52 +186,52 @@ TEST(TickableTest, TickByMultipleActionTypes) {
     EXPECT_EQ(debug->mRunCount, 1);
 }
 
-TEST(TickableTest, TickByActionTypeDoesNothingWhenStopped) {
+TEST(TickableTest, RunByActionTypeDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
+    t->GetActionList().Add(a);
     t->Run(0.016, 0u);
     EXPECT_EQ(a->mRunCount, 0);
 }
 
-TEST(TickableTest, TickByMultipleTypesDoesNothingWhenStopped) {
+TEST(TickableTest, RunByMultipleTypesDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
+    t->GetActionList().Add(a);
     t->Run(0.016, std::vector<uint32_t>{ 0u });
     EXPECT_EQ(a->mRunCount, 0);
 }
 
 // ---- Template Run tests ----
 
-TEST(TickableTest, TickByTemplateType) {
+TEST(TickableTest, RunByTemplateType) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto regular = std::make_shared<CountingAction>(0, t);
     auto special = std::make_shared<SpecialAction>(0, t);
-    t->AddAction(regular);
-    t->AddAction(special);
+    t->GetActionList().Add(regular);
+    t->GetActionList().Add(special);
 
     t->Run<SpecialAction>(0.016);
     EXPECT_EQ(regular->mRunCount, 0);
     EXPECT_EQ(special->mRunCount, 1);
 }
 
-TEST(TickableTest, TickByTemplateTypeDoesNothingWhenStopped) {
+TEST(TickableTest, RunByTemplateTypeDoesNothingWhenStopped) {
     auto t = std::make_shared<TestTickableObj>(false);
     auto special = std::make_shared<SpecialAction>(0, t);
-    t->AddAction(special);
+    t->GetActionList().Add(special);
     t->Run<SpecialAction>(0.016);
     EXPECT_EQ(special->mRunCount, 0);
 }
 
-TEST(TickableTest, TickByTemplateTypeAndSingleActionType) {
+TEST(TickableTest, RunByTemplateTypeAndSingleActionType) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto regular = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto special = std::make_shared<SpecialAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto specialDraw = std::make_shared<SpecialAction>(static_cast<uint32_t>(ActionType::Draw), t);
-    t->AddAction(regular);
-    t->AddAction(special);
-    t->AddAction(specialDraw);
+    t->GetActionList().Add(regular);
+    t->GetActionList().Add(special);
+    t->GetActionList().Add(specialDraw);
 
     t->Run<SpecialAction>(0.016, static_cast<uint32_t>(ActionType::Tick));
     EXPECT_EQ(regular->mRunCount, 0);
@@ -240,16 +239,16 @@ TEST(TickableTest, TickByTemplateTypeAndSingleActionType) {
     EXPECT_EQ(specialDraw->mRunCount, 0);
 }
 
-TEST(TickableTest, TickByTemplateTypeAndMultipleActionTypes) {
+TEST(TickableTest, RunByTemplateTypeAndMultipleActionTypes) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto regular = std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto special1 = std::make_shared<SpecialAction>(static_cast<uint32_t>(ActionType::Tick), t);
     auto special2 = std::make_shared<SpecialAction>(static_cast<uint32_t>(ActionType::Draw), t);
     auto special3 = std::make_shared<SpecialAction>(static_cast<uint32_t>(ActionType::DrawDebugMenu), t);
-    t->AddAction(regular);
-    t->AddAction(special1);
-    t->AddAction(special2);
-    t->AddAction(special3);
+    t->GetActionList().Add(regular);
+    t->GetActionList().Add(special1);
+    t->GetActionList().Add(special2);
+    t->GetActionList().Add(special3);
 
     t->Run<SpecialAction>(0.016,
                            std::vector<uint32_t>{ static_cast<uint32_t>(ActionType::Tick),
@@ -260,40 +259,30 @@ TEST(TickableTest, TickByTemplateTypeAndMultipleActionTypes) {
     EXPECT_EQ(special3->mRunCount, 1);
 }
 
-// ---- GetActions tests ----
+// ---- GetActionList tests ----
 
 TEST(TickableTest, GetAllActions) {
     auto t = MakeTickableWithActions(3);
-    auto actions = t->GetActions();
+    auto actions = t->GetActionList().Get();
     EXPECT_EQ(actions->size(), 3u);
 }
 
 TEST(TickableTest, GetActionsByType) {
     auto t = std::make_shared<TestTickableObj>(true);
-    t->AddAction(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t));
-    t->AddAction(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Draw), t));
-    t->AddAction(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t));
+    t->GetActionList().Add(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t));
+    t->GetActionList().Add(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Draw), t));
+    t->GetActionList().Add(std::make_shared<CountingAction>(static_cast<uint32_t>(ActionType::Tick), t));
 
-    auto tickActions = t->GetActions(static_cast<uint32_t>(ActionType::Tick));
+    auto tickActions = t->GetActionList().Get(static_cast<uint32_t>(ActionType::Tick));
     EXPECT_EQ(tickActions->size(), 2u);
 }
 
-TEST(TickableTest, GetActionsByTemplateType) {
-    auto t = std::make_shared<TestTickableObj>(true);
-    t->AddAction(std::make_shared<CountingAction>(0, t));
-    t->AddAction(std::make_shared<SpecialAction>(0, t));
-    t->AddAction(std::make_shared<CountingAction>(0, t));
+// ---- Multiple runs test ----
 
-    auto specialActions = t->GetActions<SpecialAction>();
-    EXPECT_EQ(specialActions->size(), 1u);
-}
-
-// ---- Multiple ticks test ----
-
-TEST(TickableTest, MultipleTicks) {
+TEST(TickableTest, MultipleRuns) {
     auto t = std::make_shared<TestTickableObj>(true);
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
+    t->GetActionList().Add(a);
 
     for (int i = 0; i < 10; i++) {
         t->Run(0.016);
@@ -318,16 +307,18 @@ TEST(TickableTest, ForceStop) {
 TEST(TickableTest, ForceAddAction) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    EXPECT_TRUE(t->AddAction(a, true));
-    EXPECT_TRUE(t->HasAction(a));
+    auto result = t->GetActionList().Add(a, true);
+    EXPECT_TRUE(static_cast<int32_t>(result) >= 0);
+    EXPECT_TRUE(t->GetActionList().Has(a));
 }
 
 TEST(TickableTest, ForceRemoveAction) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingAction>(0, t);
-    t->AddAction(a);
-    EXPECT_TRUE(t->RemoveAction(a, true));
-    EXPECT_FALSE(t->HasAction(a));
+    t->GetActionList().Add(a);
+    auto result = t->GetActionList().Remove(a, true);
+    EXPECT_TRUE(static_cast<int32_t>(result) >= 0);
+    EXPECT_FALSE(t->GetActionList().Has(a));
 }
 
 // ---- Construction with actions test ----
@@ -338,8 +329,7 @@ TEST(TickableTest, ConstructWithActions) {
     auto a2 = std::make_shared<CountingAction>(1, t);
 
     auto t2 = std::make_shared<TestTickableObj>(true);
-    // Manually add since we can't use constructor with actions easily due to shared_from_this
-    t2->AddAction(a1);
-    t2->AddAction(a2);
-    EXPECT_EQ(t2->CountActions(), 2u);
+    t2->GetActionList().Add(a1);
+    t2->GetActionList().Add(a2);
+    EXPECT_EQ(t2->GetActionList().GetCount(), 2u);
 }

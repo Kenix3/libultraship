@@ -34,13 +34,13 @@ TickableComponent::~TickableComponent() {
 
 void TickableComponent::RegisterWithContext() {
     if (mPendingTicking) {
-        AddAction(std::make_shared<TickAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<TickAction>(Tickable::shared_from_this()));
     }
     if (mPendingDrawing) {
-        AddAction(std::make_shared<DrawAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<DrawAction>(Tickable::shared_from_this()));
     }
     if (mPendingDrawingDebugMenu) {
-        AddAction(std::make_shared<DrawDebugMenuAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<DrawDebugMenuAction>(Tickable::shared_from_this()));
     }
     if (mPendingTicking || mPendingDrawing || mPendingDrawingDebugMenu) {
         Start();
