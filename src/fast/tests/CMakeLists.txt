@@ -14,6 +14,7 @@ target_sources(lus_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer3_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer4_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer5_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_dl_pixel_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_prism_tests.cpp
 )
 
