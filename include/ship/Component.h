@@ -32,7 +32,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     virtual ~Component();
 
     /** @brief Returns the name of this Component. */
-    std::string GetName() const;
+    const std::string& GetName() const;
 
     /** @brief Returns a human-readable string representation (e.g. "Name (id)"). */
     std::string ToString() const;
@@ -47,7 +47,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * Only available when COMPONENT_THREAD_SAFE is defined. Callers can use
      * this to synchronize external access to the Component.
      */
-    std::shared_mutex& GetMutex();
+    std::shared_mutex& GetMutex() const;
 #endif
 
     // ---- Parent/child relationship management ----

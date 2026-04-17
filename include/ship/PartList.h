@@ -66,21 +66,6 @@ template <typename C = Part> class PartList : public Part {
      */
     bool Has(const uint64_t id) const;
 
-    /**
-     * @brief Checks whether a Part with the given name is in the list.
-     * @param name The name to search for.
-     * @return True if found.
-     */
-    bool Has(const std::string& name) const;
-
-    /**
-     * @brief Checks whether a Part of type T with the given name is in the list.
-     * @tparam T The derived type to match via dynamic_cast.
-     * @param name The name to search for.
-     * @return True if a matching Part is found.
-     */
-    template <typename T> bool Has(const std::string& name) const;
-
     /** @brief Checks whether the list contains any Parts at all. */
     bool Has() const;
 
@@ -212,19 +197,6 @@ template <typename C> bool PartList<C>::Has(const uint64_t id) const {
     const auto& list = GetList();
     return std::find_if(list.begin(), list.end(),
                         [id](const std::shared_ptr<C>& item) { return item->GetId() == id; }) != list.end();
-}
-
-template <typename C> bool PartList<C>::Has(const std::string& name) const {
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(),
-                        [&name](const std::shared_ptr<C>& item) { return item->GetName() == name; }) != list.end();
-}
-
-template <typename C> template <typename T> bool PartList<C>::Has(const std::string& name) const {
-    const auto& list = GetList();
-    return std::find_if(list.begin(), list.end(), [&name](const std::shared_ptr<C>& item) {
-               return item->GetName() == name && std::dynamic_pointer_cast<T>(item) != nullptr;
-           }) != list.end();
 }
 
 template <typename C> bool PartList<C>::Has() const {

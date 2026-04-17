@@ -24,7 +24,7 @@ Component::~Component() {
     SPDLOG_INFO("Destructing component {}", ToString());
 }
 
-std::string Component::GetName() const {
+const std::string& Component::GetName() const {
     return mName;
 }
 
@@ -37,7 +37,7 @@ Component::operator std::string() const {
 }
 
 #ifdef COMPONENT_THREAD_SAFE
-std::shared_mutex& Component::GetMutex() {
+std::shared_mutex& Component::GetMutex() const {
     return mMutex;
 }
 #endif
