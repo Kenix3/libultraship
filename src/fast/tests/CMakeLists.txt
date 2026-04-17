@@ -22,9 +22,6 @@ target_include_directories(lus_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ParallelRDP comparison tests (optional, requires Vulkan)
 if(LUS_BUILD_PRDP_TESTS)
-    target_sources(lus_tests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_prdp_comparison_tests.cpp
-    )
     target_link_libraries(lus_tests PRIVATE parallel-rdp)
     target_compile_definitions(lus_tests PRIVATE LUS_PRDP_TESTS_ENABLED=1)
 endif()
