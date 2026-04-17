@@ -17,48 +17,12 @@
 
 namespace Ship {
 
-class Component;
-
-/**
- * @brief ComponentList subclass that maintains bidirectional parent/child relationships.
- *
- * When a Component is added to a ChildList, it is automatically added to the
- * child's parent list (and vice versa for ParentList). Removal also maintains
- * the opposite relationship.
- */
-class ChildList : public ComponentList {
-  public:
-    explicit ChildList(Component* owner);
-    void Added(std::shared_ptr<Component> part, const bool forced) override;
-    void Removed(std::shared_ptr<Component> part, const bool forced) override;
-
-  private:
-    Component* mOwner;
-};
-
-/**
- * @brief ComponentList subclass that maintains bidirectional child/parent relationships.
- *
- * When a Component is added to a ParentList, it is automatically added to the
- * parent's child list (and vice versa). Removal also maintains the opposite
- * relationship.
- */
-class ParentList : public ComponentList {
-  public:
-    explicit ParentList(Component* owner);
-    void Added(std::shared_ptr<Component> part, const bool forced) override;
-    void Removed(std::shared_ptr<Component> part, const bool forced) override;
-
-  private:
-    Component* mOwner;
-};
-
 /**
  * @brief A named Part with a parent/child hierarchy and optional thread safety.
  *
  * Component extends Part with a human-readable name, a string representation,
- * and bidirectional parent/child relationships managed via PartList. Adding a
- * child automatically adds the corresponding parent, and vice versa. When the
+ * and bidirectional parent/child relationships managed via ComponentList. Adding
+ * a child automatically adds the corresponding parent, and vice versa. When the
  * COMPONENT_THREAD_SAFE preprocessor flag is defined, all relationship
  * mutations are guarded by a shared_mutex.
  */
@@ -127,8 +91,8 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 
   private:
     std::string mName;
-    ParentList mParents;
-    ChildList mChildren;
+    ComponentList mParents;
+    ComponentList mChildren;
 #ifdef COMPONENT_THREAD_SAFE
     mutable std::shared_mutex mMutex;
 #endif

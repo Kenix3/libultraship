@@ -1,6 +1,4 @@
 #include "ship/Component.h"
-#include "ship/Context.h"
-#include "ship/TickableComponent.h"
 
 #ifdef COMPONENT_THREAD_SAFE
 #include <shared_mutex>
@@ -12,82 +10,10 @@
 
 namespace Ship {
 
-// ---- ChildList ----
-
-ChildList::ChildList(Component* owner) : ComponentList(), mOwner(owner) {
-}
-
-void ChildList::Added(std::shared_ptr<Component> part, const bool forced) {
-    if (!part || !mOwner) {
-        return;
-    }
-    // Add the owner as a parent of the child (if not already present)
-    auto ownerShared = mOwner->shared_from_this();
-    if (!part->GetParents().Has(ownerShared)) {
-        part->GetParents().Add(ownerShared, forced);
-    }
-
-    // Auto-register TickableComponents with the Context's global TickableList
-    auto tickable = std::dynamic_pointer_cast<TickableComponent>(part);
-    if (tickable) {
-        auto context = Context::GetInstance();
-        if (context && !context->GetTickableComponents().Has(tickable)) {
-            context->GetTickableComponents().Add(tickable);
-        }
-    }
-}
-
-void ChildList::Removed(std::shared_ptr<Component> part, const bool forced) {
-    if (!part || !mOwner) {
-        return;
-    }
-    // Remove the owner from the child's parent list
-    auto ownerShared = mOwner->shared_from_this();
-    if (part->GetParents().Has(ownerShared)) {
-        part->GetParents().Remove(ownerShared, forced);
-    }
-
-    // Auto-unregister TickableComponents from the Context's global TickableList
-    auto tickable = std::dynamic_pointer_cast<TickableComponent>(part);
-    if (tickable) {
-        auto context = Context::GetInstance();
-        if (context && context->GetTickableComponents().Has(tickable)) {
-            context->GetTickableComponents().Remove(tickable);
-        }
-    }
-}
-
-// ---- ParentList ----
-
-ParentList::ParentList(Component* owner) : ComponentList(), mOwner(owner) {
-}
-
-void ParentList::Added(std::shared_ptr<Component> part, const bool forced) {
-    if (!part || !mOwner) {
-        return;
-    }
-    // Add the owner as a child of the parent (if not already present)
-    auto ownerShared = mOwner->shared_from_this();
-    if (!part->GetChildren().Has(ownerShared)) {
-        part->GetChildren().Add(ownerShared, forced);
-    }
-}
-
-void ParentList::Removed(std::shared_ptr<Component> part, const bool forced) {
-    if (!part || !mOwner) {
-        return;
-    }
-    // Remove the owner from the parent's child list
-    auto ownerShared = mOwner->shared_from_this();
-    if (part->GetChildren().Has(ownerShared)) {
-        part->GetChildren().Remove(ownerShared, forced);
-    }
-}
-
 // ---- Component ----
 
 Component::Component(const std::string& name)
-    : Part(), mName(name), mParents(this), mChildren(this)
+    : Part(), mName(name), mParents(this, ComponentListRole::Parents), mChildren(this, ComponentListRole::Children)
 #ifdef COMPONENT_THREAD_SAFE
       ,
       mMutex()
