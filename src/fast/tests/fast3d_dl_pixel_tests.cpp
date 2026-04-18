@@ -34,6 +34,8 @@
 #include <numeric>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <set>
 
 // ============================================================
 // ParallelRDP comparison infrastructure (optional, Vulkan required)
@@ -3423,6 +3425,260 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
     }
 
     std::cout << "╚═══════════════════════════════════════════════════════════════════════╝\n";
+}
+
+// ************************************************************
+// Screenshot Test: Render a public-domain procedural mesh
+// through ParallelRDP and save as PPM image files.
+//
+// The mesh is a procedurally generated diamond (octahedron)
+// composed of 4 flat-shaded triangles, each a different color.
+// This is a CC0 (public domain) mesh — no external assets.
+//
+// Output: /tmp/prdp_mesh_render.ppm  (ParallelRDP output)
+//         /tmp/fast3d_mesh_render.ppm (Fast3D software rasterized)
+// ************************************************************
+
+// Save a 320x240 RGBA16 (N64 format) framebuffer as PPM
+static void SaveFramebufferPPM(const std::string& path,
+                                const std::vector<uint16_t>& fb,
+                                uint32_t width, uint32_t height) {
+    std::ofstream f(path, std::ios::binary);
+    f << "P6\n" << width << " " << height << "\n255\n";
+    for (uint32_t i = 0; i < width * height; i++) {
+        uint16_t px = fb[i];
+        uint8_t r = ((px >> 11) & 0x1F) * 255 / 31;
+        uint8_t g = ((px >> 6) & 0x1F) * 255 / 31;
+        uint8_t b = ((px >> 1) & 0x1F) * 255 / 31;
+        f.put(r); f.put(g); f.put(b);
+    }
+}
+
+// Simple software rasterizer for Fast3D VBO data → RGBA16 framebuffer.
+// Handles flat-bottomed/flat-topped triangle halves via scanline fill.
+static void SoftwareRasterizeVBO(std::vector<uint16_t>& fb,
+                                  uint32_t fbWidth, uint32_t fbHeight,
+                                  const std::vector<float>& vbo,
+                                  size_t floatsPerVertex, size_t numTris) {
+    for (size_t t = 0; t < numTris; t++) {
+        size_t base = t * 3 * floatsPerVertex;
+        // Extract 3 vertices: position (x,y) and color (r,g,b)
+        float vx[3], vy[3], cr[3], cg[3], cb[3];
+        for (int v = 0; v < 3; v++) {
+            size_t off = base + v * floatsPerVertex;
+            vx[v] = vbo[off + 0];
+            vy[v] = vbo[off + 1];
+            // Color starts at offset 4 (after x,y,z,w)
+            cr[v] = (floatsPerVertex > 4) ? vbo[off + 4] : 0.0f;
+            cg[v] = (floatsPerVertex > 5) ? vbo[off + 5] : 0.0f;
+            cb[v] = (floatsPerVertex > 6) ? vbo[off + 6] : 0.0f;
+        }
+
+        // Map from clip space [-160..160, -120..120] to screen [0..319, 0..239]
+        // Fast3D uses identity matrix so positions are raw vertex coords
+        float sx[3], sy[3];
+        for (int v = 0; v < 3; v++) {
+            sx[v] = vx[v] + fbWidth / 2.0f;
+            sy[v] = fbHeight / 2.0f - vy[v]; // Y-flip
+        }
+
+        // Bounding box
+        float minX = std::min({sx[0], sx[1], sx[2]});
+        float maxX = std::max({sx[0], sx[1], sx[2]});
+        float minY = std::min({sy[0], sy[1], sy[2]});
+        float maxY = std::max({sy[0], sy[1], sy[2]});
+
+        int x0 = std::max(0, (int)minX);
+        int x1 = std::min((int)fbWidth - 1, (int)maxX);
+        int y0 = std::max(0, (int)minY);
+        int y1 = std::min((int)fbHeight - 1, (int)maxY);
+
+        // For each pixel, check if inside triangle using barycentric coords
+        float denom = (sy[1] - sy[2]) * (sx[0] - sx[2]) + (sx[2] - sx[1]) * (sy[0] - sy[2]);
+        if (std::abs(denom) < 0.001f) continue; // Degenerate
+
+        for (int py = y0; py <= y1; py++) {
+            for (int px = x0; px <= x1; px++) {
+                float fpx = px + 0.5f, fpy = py + 0.5f;
+                float w0 = ((sy[1]-sy[2])*(fpx-sx[2]) + (sx[2]-sx[1])*(fpy-sy[2])) / denom;
+                float w1 = ((sy[2]-sy[0])*(fpx-sx[2]) + (sx[0]-sx[2])*(fpy-sy[2])) / denom;
+                float w2 = 1.0f - w0 - w1;
+
+                if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+                    float r = w0*cr[0] + w1*cr[1] + w2*cr[2];
+                    float g = w0*cg[0] + w1*cg[1] + w2*cg[2];
+                    float b = w0*cb[0] + w1*cb[1] + w2*cb[2];
+
+                    uint16_t r5 = (uint16_t)(std::min(1.0f, std::max(0.0f, r)) * 31);
+                    uint16_t g5 = (uint16_t)(std::min(1.0f, std::max(0.0f, g)) * 31);
+                    uint16_t b5 = (uint16_t)(std::min(1.0f, std::max(0.0f, b)) * 31);
+                    fb[py * fbWidth + px] = (r5 << 11) | (g5 << 6) | (b5 << 1) | 1;
+                }
+            }
+        }
+    }
+}
+
+TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    // ---- ParallelRDP: Render diamond mesh ----
+    // A diamond/octahedron: 4 visible front-facing triangles meeting at center
+    // Each triangle is a different color (red, green, blue, yellow)
+    struct TriDef {
+        uint32_t x0, y0, x1, y1;
+        uint8_t r, g, b, a;
+        const char* label;
+    };
+
+    // Diamond shape centered at (160, 120), 100px radius
+    // Top-left face: red
+    // Top-right face: green
+    // Bottom-left face: blue
+    // Bottom-right face: yellow
+    TriDef tris[] = {
+        { 60,  20, 160, 120, 255,  50,  50, 255, "top-left red" },
+        {160,  20, 260, 120,  50, 255,  50, 255, "top-right green" },
+        { 60, 120, 160, 220,  80,  80, 255, 255, "bottom-left blue" },
+        {160, 120, 260, 220, 255, 255,  50, 255, "bottom-right yellow" },
+    };
+
+    // Build PRDP commands: framebuffer setup + shade triangles
+    std::vector<prdp::RDPCommand> setup;
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    setup.push_back(prdp::MakeSyncPipe());
+    setup.push_back(prdp::MakeOtherModes1Cycle());
+    setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+
+    // Build triangle edge/shade coefficients
+    std::vector<std::vector<uint32_t>> triWordsList;
+    for (auto& t : tris) {
+        triWordsList.push_back(prdp::MakeShadeTriangleWords(
+            t.x0, t.y0, t.x1, t.y1, t.r, t.g, t.b, t.a));
+    }
+
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+    std::vector<prdp::RDPCommand> teardown = { prdp::MakeSyncFull() };
+    prdp.SubmitMultiTriCommands(setup, triWordsList, teardown);
+
+    auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_mesh_render.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // Count pixels
+    uint32_t prdpNonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) prdpNonBlack++;
+
+    // ---- Fast3D: Render same mesh through display list interpreter ----
+    // Create a separate interpreter with PixelCapturingRenderingAPI to capture VBO data
+    auto fast3dInterp = std::make_unique<Fast::Interpreter>();
+    PixelCapturingRenderingAPI fast3dCap;
+    fast3dInterp->mRapi = &fast3dCap;
+    fast3dInterp->mNativeDimensions.width = prdp::FB_WIDTH;
+    fast3dInterp->mNativeDimensions.height = prdp::FB_HEIGHT;
+    fast3dInterp->mCurDimensions.width = prdp::FB_WIDTH;
+    fast3dInterp->mCurDimensions.height = prdp::FB_HEIGHT;
+    fast3dInterp->mFbActive = false;
+
+    memset(fast3dInterp->mRsp, 0, sizeof(Fast::RSP));
+    fast3dInterp->mRsp->modelview_matrix_stack_size = 1;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) {
+            fast3dInterp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+            fast3dInterp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+        }
+    fast3dInterp->mRsp->geometry_mode = 0;
+    fast3dInterp->mRdp->combine_mode = 0;
+    fast3dInterp->mRenderingState = {};
+
+    // Set up combiner to shade-only mode
+    uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_SHADE & 7) << 13);
+    fast3dInterp->GfxDpSetCombineMode(rgb, 0, 0, 0);
+    fast3dInterp->GfxDpSetScissor(0, 0, 0, 320 * 4, 240 * 4);
+
+    // Load all 4 triangles' vertices and draw them
+    // Fast3D vertices need to be within a reasonable range for identity matrix
+    Fast::F3DVtx verts[12] = {};
+    int vi = 0;
+    for (auto& t : tris) {
+        // Convert screen coords to centered coords for Fast3D identity matrix
+        // Screen (160,120) = center = (0,0) in clip space
+        float cx0 = (float)t.x0 - 160.0f;
+        float cy0 = 120.0f - (float)t.y0; // Y-flip
+        float cx1 = (float)t.x1 - 160.0f;
+        float cy1 = 120.0f - (float)t.y1;
+
+        // Triangle vertices: top-left corner, top-right corner, bottom-right corner
+        // (right triangle matching the PackEdgeCoeffs layout)
+        verts[vi].v.ob[0] = (int16_t)cx0; verts[vi].v.ob[1] = (int16_t)cy0; verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        vi++;
+
+        verts[vi].v.ob[0] = (int16_t)cx1; verts[vi].v.ob[1] = (int16_t)cy0; verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        vi++;
+
+        verts[vi].v.ob[0] = (int16_t)cx0; verts[vi].v.ob[1] = (int16_t)cy1; verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        vi++;
+    }
+
+    fast3dInterp->GfxSpVertex(12, 0, verts);
+    for (int t = 0; t < 4; t++) {
+        fast3dInterp->GfxSpTri1(t*3+0, t*3+1, t*3+2, false);
+    }
+    fast3dInterp->Flush();
+
+    // Software-rasterize Fast3D VBO output
+    std::vector<uint16_t> fast3dFb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+
+    // Fill with dark gray background to distinguish from PRDP's black
+    for (auto& px : fast3dFb)
+        px = (2 << 11) | (2 << 6) | (2 << 1) | 1;  // very dark gray
+
+    for (auto& call : fast3dCap.drawCalls) {
+        if (call.vboData.empty() || call.numTris == 0) continue;
+        size_t fpv = call.vboData.size() / (call.numTris * 3);
+        SoftwareRasterizeVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                             call.vboData, fpv, call.numTris);
+    }
+
+    SaveFramebufferPPM("/tmp/fast3d_mesh_render.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t fast3dNonBg = 0;
+    uint16_t bgColor = (2 << 11) | (2 << 6) | (2 << 1) | 1;
+    for (auto px : fast3dFb)
+        if (px != bgColor) fast3dNonBg++;
+
+    std::cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    std::cout << "║  Mesh Screenshot: Diamond Octahedron (CC0, procedural)       ║\n";
+    std::cout << "║  4 flat-shaded triangles: red, green, blue, yellow           ║\n";
+    std::cout << "╠════════════════════════════════════════════════════════════════╣\n";
+    std::cout << "║  Renderer    │ Non-black pixels │ Output file                ║\n";
+    std::cout << "╠══════════════╪══════════════════╪════════════════════════════╣\n";
+    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack
+              << " │ /tmp/prdp_mesh_render.ppm  ║\n";
+    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBg
+              << " │ /tmp/fast3d_mesh_render.ppm║\n";
+    std::cout << "╚════════════════════════════════════════════════════════════════╝\n";
+
+    EXPECT_GT(prdpNonBlack, 0u) << "ParallelRDP should render mesh pixels";
+    EXPECT_GT(fast3dNonBg, 0u) << "Fast3D should render mesh pixels";
+
+    // Verify files exist
+    EXPECT_TRUE(std::ifstream("/tmp/prdp_mesh_render.ppm").good())
+        << "PRDP screenshot should be saved";
+    EXPECT_TRUE(std::ifstream("/tmp/fast3d_mesh_render.ppm").good())
+        << "Fast3D screenshot should be saved";
+
+    // Clean up Fast3D interpreter
+    fast3dInterp->mRapi = nullptr;
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
