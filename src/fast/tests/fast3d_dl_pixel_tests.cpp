@@ -69,7 +69,15 @@ static constexpr uint32_t RDP_CMD_TRI_SHADE      = 0xCC;
 static constexpr uint32_t RDP_CMD_TRI_SHADE_ZBUFF = 0xCD;
 
 static constexpr uint32_t RDP_FMT_RGBA = 0;
+static constexpr uint32_t RDP_FMT_YUV  = 1;
+static constexpr uint32_t RDP_FMT_CI   = 2;
+static constexpr uint32_t RDP_FMT_IA   = 3;
+static constexpr uint32_t RDP_FMT_I    = 4;
+
+static constexpr uint32_t RDP_SIZ_4b   = 0;
+static constexpr uint32_t RDP_SIZ_8b   = 1;
 static constexpr uint32_t RDP_SIZ_16b  = 2;
+static constexpr uint32_t RDP_SIZ_32b  = 3;
 static constexpr uint32_t RDP_CYCLE_FILL  = (3u << 20);
 static constexpr uint32_t RDP_CYCLE_1CYC  = (0u << 20);
 static constexpr uint32_t RDP_CYCLE_2CYC  = (1u << 20);
@@ -166,6 +174,12 @@ static RDPCommand MakeSetTileSize(uint32_t tile, uint32_t sl, uint32_t tl,
                                    uint32_t sh, uint32_t th) {
     return { (0xF2u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
              ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (th & 0xFFF) };
+}
+// LoadTLUT (cmd 0x30): load a range of palette entries into upper TMEM.
+// sh is the last palette index to load (e.g. 15 for CI4, 255 for CI8).
+static RDPCommand MakeLoadTLUT(uint32_t tile, uint32_t sl, uint32_t sh) {
+    return { (0xF0u << 24) | ((sl & 0xFFF) << 14),
+             ((tile & 0x7) << 24) | ((sh & 0xFFF) << 14) };
 }
 static RDPCommand MakeTextureRectangle(uint32_t tile, uint32_t xl, uint32_t yl,
                                         uint32_t xh, uint32_t yh,
@@ -3010,6 +3024,360 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
               << whitePixels << " white\n";
     uint32_t totalColored = redPixels + whitePixels;
     EXPECT_GT(totalColored, 0u) << "Checkerboard texture should produce colored pixels";
+}
+
+// ************************************************************
+// Texture Format Tests — ParallelRDP Comparison
+// Verify that each importable N64 texture format (matching
+// Fast3D's TextureType enum) is uploaded and sampled correctly.
+// Each test creates a solid-color 4x4 texture in the target
+// format and renders a 50x50 TextureRectangle, then verifies
+// non-black (colored) output in the framebuffer.
+// ************************************************************
+
+// --- RGBA32 ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 RGBA32: solid cyan = R=0, G=255, B=255, A=255
+    std::vector<uint32_t> tex(4 * 4, 0x00FFFFFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint32_t));
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 4, prdp::TEX_ADDR));
+    // RGBA32: stride = 4 texels * 4B = 16B = 2 TMEM 64-bit words
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b,
+                                      2, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_RGBA32: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "RGBA32 texture should render visible pixels";
+}
+
+// --- I4 (4-bit intensity, displayed as grayscale) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 I4: each texel is 4 bits. Set all to max intensity (0xF).
+    // 4 texels per byte: 0xFF = two texels of value 0xF.
+    // 4x4 = 16 texels = 8 bytes.
+    std::vector<uint8_t> tex(8, 0xFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    // I4 texture image: 4-bit size
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, 4, prdp::TEX_ADDR));
+    // I4 tile: line = 1 (4 texels * 0.5B = 2B, rounds up to 1 TMEM line of 8B)
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_I4: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "I4 texture should render visible pixels";
+}
+
+// --- I8 (8-bit intensity) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 I8: each texel is 1 byte. Max intensity = 0xFF.
+    std::vector<uint8_t> tex(4 * 4, 0xFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    // I8: line = 1 (4 texels * 1B = 4B, rounds up to 1 TMEM 64-bit word)
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_I8: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "I8 texture should render visible pixels";
+}
+
+// --- IA4 (4-bit intensity + alpha: 3 bits I, 1 bit A) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 IA4: 4 bits per texel (3 bits intensity + 1 bit alpha).
+    // Max intensity with alpha=1: 0xF (I=7, A=1).
+    // 2 texels per byte, 16 texels = 8 bytes.
+    std::vector<uint8_t> tex(8, 0xFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_IA4: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "IA4 texture should render visible pixels";
+}
+
+// --- IA8 (8-bit: 4 bits intensity + 4 bits alpha) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 IA8: 1 byte per texel (upper 4 bits = I, lower 4 bits = A).
+    // Max intensity + max alpha: 0xFF.
+    std::vector<uint8_t> tex(4 * 4, 0xFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_IA8: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "IA8 texture should render visible pixels";
+}
+
+// --- IA16 (16-bit: 8 bits intensity + 8 bits alpha) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // 4x4 IA16: 2 bytes per texel (upper byte = I, lower byte = A).
+    // Max I + max A: 0xFFFF.
+    std::vector<uint16_t> tex(4 * 4, 0xFFFF);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint16_t));
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
+    // IA16: same stride as RGBA16 (2 bytes per texel, 4 texels = 8B = 1 TMEM line)
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_IA16: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "IA16 texture should render visible pixels";
+}
+
+// --- CI4 (4-bit palette index with TLUT) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // CI4 uses a 16-entry TLUT (palette) stored in upper TMEM (0x800+).
+    // Texture data: all indices point to palette entry 0.
+    // 4x4 CI4 = 16 texels at 4 bits each = 8 bytes; all zeros = index 0.
+    std::vector<uint8_t> tex(8, 0x00);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    // Palette (TLUT): 16 RGBA16 entries starting at a separate RDRAM address.
+    // Entry 0 = white (0xFFFF).
+    static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
+    std::vector<uint16_t> palette(16, 0x0001);
+    palette[0] = 0xFFFF;  // white
+    prdp.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    // Enable TLUT (bit 15 = tlut_en, bit 14 = tlut_type: 0 = RGBA16)
+    cmds.push_back(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+
+    // Load TLUT into upper TMEM (tile 7 is conventional for TLUT)
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
+                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
+
+    // Load CI4 texture
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
+                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_CI4: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "CI4 texture with TLUT should render visible pixels";
+}
+
+// --- CI8 (8-bit palette index with TLUT) ---
+TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    auto& prdp = prdp::GetPRDPContext();
+    prdp.ClearRDRAM();
+
+    // CI8 uses a 256-entry TLUT in upper TMEM.
+    // Texture data: all indices = 0.
+    std::vector<uint8_t> tex(4 * 4, 0x00);
+    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+
+    // TLUT: 256 RGBA16 entries. Entry 0 = cyan.
+    static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
+    uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
+    std::vector<uint16_t> palette(256, 0x0001);
+    palette[0] = cyan5551;
+    prdp.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+
+    std::vector<prdp::RDPCommand> cmds;
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+    cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    cmds.push_back(prdp::MakeSyncPipe());
+    cmds.push_back(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+
+    // Load TLUT
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_8b,
+                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
+
+    // Load CI8 texture
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
+                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSyncLoad());
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeSyncTile());
+
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+
+    auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t nonBlack = 0;
+    for (auto px : fb) if (px != 0) nonBlack++;
+    std::cout << "  [INFO] TextureFormat_CI8: " << nonBlack << " non-black pixels\n";
+    EXPECT_GT(nonBlack, 0u) << "CI8 texture with TLUT should render visible pixels";
 }
 
 // ************************************************************
