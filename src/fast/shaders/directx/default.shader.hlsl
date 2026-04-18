@@ -77,7 +77,7 @@ float random(in float3 value) {
 // Original author: ArthurCarvalho
 // Based on GLSL implementation by twinaphex, mupen64plus-libretro project.
 
-@if(o_three_point_filtering && o_textures[0] || o_textures[1])
+@if(o_three_point_filtering && (o_textures[0] || o_textures[1]))
 cbuffer PerDrawCB : register(b1) {
     struct {
         uint width;
