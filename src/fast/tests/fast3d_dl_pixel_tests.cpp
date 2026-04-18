@@ -3333,7 +3333,8 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     // Load TLUT into upper TMEM (tile 7 is conventional for TLUT)
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
+    // Palette entries are always 16-bit RGBA5551 regardless of CI4/CI8 index size
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
@@ -4507,7 +4508,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
     auto cmds = BuildTextureMeshSetup(checkerboard, prdp::CC_TEXEL0, prdp::CC_TEXEL0);
 
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (8 * 1024) / 50, (8 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4561,7 +4562,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4621,7 +4622,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4676,7 +4677,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4736,7 +4737,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4792,7 +4793,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4848,7 +4849,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4913,7 +4914,8 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
+    // Palette entries are always 16-bit RGBA5551 regardless of CI4/CI8 index size
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
@@ -4927,7 +4929,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5001,7 +5003,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
