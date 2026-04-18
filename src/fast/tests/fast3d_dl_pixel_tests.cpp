@@ -3654,9 +3654,9 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               8, prdp::TEX_ADDR));
     // Tile descriptor: RGBA16, line=2 (8 texels * 2B = 16B = 2 TMEM 64-bit words),
-    // tmem=0, tile=0, clamp S&T, mask S&T = 3 (2^3=8 for 8x8 texture)
+    // tmem=0, tile=0, wrap S&T, mask S&T = 3 (2^3=8 for 8x8 texture wrapping)
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      2, 0, 0, 1, 1, 3, 3, 0, 0, 0));
+                                      2, 0, 0, 0, 0, 3, 3, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     // Use LoadTile for reliable TMEM upload (10.2 fixed-point coordinates)
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 7 * 4, 7 * 4));
