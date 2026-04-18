@@ -2911,6 +2911,18 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 static void SaveFramebufferPPM(const std::string& path,
                                 const std::vector<uint16_t>& fb,
                                 uint32_t width, uint32_t height);
+
+// Resolve a filename to docs/images/ relative to the source tree.
+// __FILE__ lives in src/fast/tests/ so we walk up 4 path components.
+static std::string RepoImagePath(const std::string& filename) {
+    std::string dir(__FILE__);
+    for (int i = 0; i < 4; ++i) {
+        auto pos = dir.find_last_of("/\\");
+        if (pos != std::string::npos) dir = dir.substr(0, pos);
+    }
+    return dir + "/docs/images/" + filename;
+}
+
 TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     if (!prdp_->IsAvailable()) {
         GTEST_SKIP() << "Vulkan not available";
@@ -2952,6 +2964,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texture_solidcolor.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texture_solidcolor.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t cyanPixels = 0, nonBlack = 0;
     for (size_t i = 0; i < prdpFb.size(); i++) {
@@ -3016,6 +3029,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texture_checkerboard.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texture_checkerboard.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t redPixels = 0, whitePixels = 0;
     for (auto px : prdpFb) {
@@ -3074,6 +3088,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_rgba32.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_rgba32.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_RGBA32: " << nonBlack << " non-black pixels\n";
@@ -3115,6 +3130,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_i4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_i4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_I4: " << nonBlack << " non-black pixels\n";
@@ -3153,6 +3169,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_i8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_i8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_I8: " << nonBlack << " non-black pixels\n";
@@ -3192,6 +3209,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA4: " << nonBlack << " non-black pixels\n";
@@ -3230,6 +3248,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA8: " << nonBlack << " non-black pixels\n";
@@ -3269,6 +3288,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia16.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia16.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA16: " << nonBlack << " non-black pixels\n";
@@ -3330,6 +3350,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ci4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ci4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI4: " << nonBlack << " non-black pixels\n";
@@ -3389,6 +3410,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ci8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ci8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI8: " << nonBlack << " non-black pixels\n";
@@ -3957,6 +3979,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_mesh_render.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_mesh_render.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // Count pixels
     uint32_t prdpNonBlack = 0;
@@ -4038,6 +4061,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     }
 
     SaveFramebufferPPM("/tmp/fast3d_mesh_render.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("fast3d_mesh_render.ppm"), fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t fast3dNonBg = 0;
     uint16_t bgColor = (2 << 11) | (2 << 6) | (2 << 1) | 1;
@@ -4175,6 +4199,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 
     auto prdpFb = prdpCtx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_textured_mesh.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("prdp_textured_mesh.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t prdpNonBlack = 0;
     for (auto px : prdpFb)
@@ -4272,6 +4297,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 
     SaveFramebufferPPM("/tmp/fast3d_textured_mesh.ppm", fast3dFb,
                         prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("fast3d_textured_mesh.ppm"), fast3dFb,
+                        prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t fast3dNonBlack = 0;
     for (auto px : fast3dFb)
@@ -4309,18 +4336,6 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 // format that the N64 RDP supports.  All texture data is procedurally
 // generated (CC0 / public-domain) — no external assets.
 // ************************************************************
-
-// Helper: resolve the docs/images path relative to the source tree.
-// __FILE__ lives in src/fast/tests/ so we walk up to the repo root.
-static std::string RepoImagePath(const std::string& filename) {
-    std::string dir(__FILE__);
-    // Strip src/fast/tests/<this file>  →  repo root
-    for (int i = 0; i < 4; ++i) {
-        auto pos = dir.find_last_of("/\\");
-        if (pos != std::string::npos) dir = dir.substr(0, pos);
-    }
-    return dir + "/docs/images/" + filename;
-}
 
 // --- RGBA16 checkerboard mesh ---
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
