@@ -3012,10 +3012,14 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               4, prdp::TEX_ADDR));
+    // Use wrap mode (cms=0, cmt=0) so the 4×4 checkerboard tiles correctly.
+    // LoadTile gives reliable TMEM upload; LoadBlock with clamp caused all
+    // texels beyond the tile boundary to clamp to the edge colour, making
+    // the pattern degenerate to a solid stripe.
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadBlock(0, 0, 0, 15, 0x800));
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
@@ -4331,11 +4335,221 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 // Each test renders a 4x4 procedural checkerboard texture of a specific
 // N64 texture type onto a 50x50 pixel TextureRectangle through ParallelRDP,
 // then writes the framebuffer output as a PPM image to docs/images/.
+// The same geometry is also rendered through Fast3D + software rasterizer
+// so that both renderers produce matching reference images side by side.
 //
 // These provide visual reference images for every importable texture
 // format that the N64 RDP supports.  All texture data is procedurally
 // generated (CC0 / public-domain) — no external assets.
 // ************************************************************
+
+// ---- Format conversion helpers (raw N64 texels → RGBA16 for SW rasterizer) ----
+
+// Convert RGBA32 texels (RRGGBBAA in memory order, stored as uint32_t) to RGBA5551.
+static std::vector<uint16_t> ConvertRGBA32ToRGBA16(const std::vector<uint32_t>& src) {
+    std::vector<uint16_t> dst(src.size());
+    for (size_t i = 0; i < src.size(); i++) {
+        uint8_t r = (src[i] >> 24) & 0xFF;
+        uint8_t g = (src[i] >> 16) & 0xFF;
+        uint8_t b = (src[i] >>  8) & 0xFF;
+        dst[i] = (uint16_t)(((r >> 3) << 11) | ((g >> 3) << 6) | ((b >> 3) << 1) | 1);
+    }
+    return dst;
+}
+
+// Convert packed I4 nibbles (2 texels/byte, high nibble first) to RGBA5551.
+static std::vector<uint16_t> ConvertI4ToRGBA16(const std::vector<uint8_t>& src,
+                                                int width, int height) {
+    std::vector<uint16_t> dst(width * height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
+                                      : (src[y * (width / 2) + x / 2] >> 4);
+            uint16_t i5 = (nibble << 1) | (nibble >> 3); // expand 4-bit → 5-bit
+            dst[y * width + x] = (i5 << 11) | (i5 << 6) | (i5 << 1) | 1;
+        }
+    }
+    return dst;
+}
+
+// Convert I8 bytes to RGBA5551 (intensity replicated to R,G,B).
+static std::vector<uint16_t> ConvertI8ToRGBA16(const std::vector<uint8_t>& src,
+                                                int width, int height) {
+    std::vector<uint16_t> dst(width * height);
+    for (int i = 0; i < width * height; i++) {
+        uint16_t i5 = src[i] >> 3;
+        dst[i] = (i5 << 11) | (i5 << 6) | (i5 << 1) | 1;
+    }
+    return dst;
+}
+
+// Convert packed IA4 nibbles (2 texels/byte, each nibble = I:3 A:1) to RGBA5551.
+static std::vector<uint16_t> ConvertIA4ToRGBA16(const std::vector<uint8_t>& src,
+                                                  int width, int height) {
+    std::vector<uint16_t> dst(width * height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
+                                      : (src[y * (width / 2) + x / 2] >> 4);
+            uint8_t I = (nibble >> 1) & 7;          // 3-bit intensity
+            uint8_t A = nibble & 1;                  // 1-bit alpha
+            uint16_t i5 = (I << 2) | (I >> 1);      // expand 3-bit → 5-bit
+            dst[y * width + x] = (i5 << 11) | (i5 << 6) | (i5 << 1) | A;
+        }
+    }
+    return dst;
+}
+
+// Convert IA8 bytes (upper nibble=I, lower nibble=A) to RGBA5551.
+static std::vector<uint16_t> ConvertIA8ToRGBA16(const std::vector<uint8_t>& src,
+                                                  int width, int height) {
+    std::vector<uint16_t> dst(width * height);
+    for (int i = 0; i < width * height; i++) {
+        uint8_t I = (src[i] >> 4) & 0xF;
+        uint16_t i5 = (uint16_t)((I << 1) | (I >> 3)); // expand 4-bit → 5-bit
+        dst[i] = (i5 << 11) | (i5 << 6) | (i5 << 1) | 1;
+    }
+    return dst;
+}
+
+// Convert IA16 shorts (upper byte=I, lower byte=A) to RGBA5551.
+static std::vector<uint16_t> ConvertIA16ToRGBA16(const std::vector<uint16_t>& src,
+                                                   int width, int height) {
+    (void)width; (void)height;
+    std::vector<uint16_t> dst(src.size());
+    for (size_t i = 0; i < src.size(); i++) {
+        uint8_t I = (src[i] >> 8) & 0xFF;
+        uint16_t i5 = I >> 3;
+        dst[i] = (i5 << 11) | (i5 << 6) | (i5 << 1) | 1;
+    }
+    return dst;
+}
+
+// Decode CI4 texture (packed nibble indices) using a RGBA5551 palette.
+static std::vector<uint16_t> ConvertCI4ToRGBA16(const std::vector<uint8_t>& src,
+                                                  int width, int height,
+                                                  const std::vector<uint16_t>& palette) {
+    std::vector<uint16_t> dst(width * height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t idx = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
+                                   : (src[y * (width / 2) + x / 2] >> 4);
+            dst[y * width + x] = palette[idx];
+        }
+    }
+    return dst;
+}
+
+// Decode CI8 texture (one byte index per texel) using a RGBA5551 palette.
+static std::vector<uint16_t> ConvertCI8ToRGBA16(const std::vector<uint8_t>& src,
+                                                  int width, int height,
+                                                  const std::vector<uint16_t>& palette) {
+    std::vector<uint16_t> dst(width * height);
+    for (int i = 0; i < width * height; i++)
+        dst[i] = palette[src[i]];
+    return dst;
+}
+
+// ---- Fast3D software-rasterized image generator ----
+//
+// Renders `texRGBA16` (a width×height RGBA5551 texture) as a 50×50 pixel
+// quad at screen (50,50)–(100,100) using the Fast3D interpreter to produce
+// VBO data, then software-rasterizes it.  Returns the 320×240 framebuffer.
+static std::vector<uint16_t> RenderFast3DTexturedQuad(
+    const std::vector<uint16_t>& texRGBA16, uint32_t texWidth, uint32_t texHeight) {
+
+    auto fast3dInterp = std::make_unique<Fast::Interpreter>();
+    PixelCapturingRenderingAPI fast3dCap;
+    fast3dCap.usedTextures0 = true;
+    fast3dInterp->mRapi = &fast3dCap;
+    fast3dInterp->mNativeDimensions.width  = prdp::FB_WIDTH;
+    fast3dInterp->mNativeDimensions.height = prdp::FB_HEIGHT;
+    fast3dInterp->mCurDimensions.width     = prdp::FB_WIDTH;
+    fast3dInterp->mCurDimensions.height    = prdp::FB_HEIGHT;
+    fast3dInterp->mFbActive = false;
+
+    memset(fast3dInterp->mRsp, 0, sizeof(Fast::RSP));
+    fast3dInterp->mRsp->modelview_matrix_stack_size = 1;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) {
+            fast3dInterp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+            fast3dInterp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+        }
+    fast3dInterp->mRsp->geometry_mode = 0;
+    fast3dInterp->mRdp->combine_mode = 0;
+    fast3dInterp->mRenderingState = {};
+
+    // TEXEL0 combiner: (0-0)*0 + TEXEL0
+    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8)
+                       | ((G_CCMUX_TEXEL0 & 7) << 13);
+    fast3dInterp->GfxDpSetCombineMode(texel0Rgb, 0, 0, 0);
+    fast3dInterp->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
+
+    fast3dInterp->mRsp->texture_scaling_factor.s = 0xFFFF;
+    fast3dInterp->mRsp->texture_scaling_factor.t = 0xFFFF;
+
+    // Tile: RGBA16, line = texWidth/4 TMEM 64-bit words per row,
+    // mask = log2(texWidth), wrap mode (cms=cmt=0).
+    uint32_t maskBits = 0;
+    for (uint32_t w = texWidth; w > 1; w >>= 1) maskBits++;
+    uint32_t lineWords = (texWidth + 3) / 4; // RGBA16: 4 texels per 8-byte TMEM word
+    fast3dInterp->GfxDpSetTile(0 /*fmt=RGBA*/, G_IM_SIZ_16b, lineWords,
+                                0 /*tmem*/, 0 /*tile*/, 0 /*palette*/,
+                                0 /*cmt=wrap*/, maskBits /*maskt*/, 0 /*shiftt*/,
+                                0 /*cms=wrap*/, maskBits /*masks*/, 0 /*shifts*/);
+    // tile size: 0,0 to (w-1,h-1) in 10.2 fixed-point
+    fast3dInterp->GfxDpSetTileSize(0, 0, 0,
+                                    (texWidth  - 1) * 4,
+                                    (texHeight - 1) * 4);
+
+    fast3dInterp->mRdp->loaded_texture[0].line_size_bytes            = texWidth * 2;
+    fast3dInterp->mRdp->loaded_texture[0].size_bytes                 = texWidth * texHeight * 2;
+    fast3dInterp->mRdp->loaded_texture[0].full_image_line_size_bytes = texWidth * 2;
+    fast3dInterp->mRdp->loaded_texture[0].addr                       = nullptr;
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata           = {};
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.h_byte_scale  = 1.0f;
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.v_pixel_scale = 1.0f;
+
+    // Quad covering screen (50,50)-(100,100).
+    // clip: ob[0] = px - center_x (160), ob[1] = center_y (120) - py
+    // UVs in S10.5: texWidth * 32 units = one full texture width
+    const auto cx = static_cast<int16_t>(texWidth  * 32);
+    const auto cy = static_cast<int16_t>(texHeight * 32);
+    Fast::F3DVtx verts[4] = {};
+    // Top-left (screen 50,50)
+    verts[0].v.ob[0] = -110; verts[0].v.ob[1] = 70; verts[0].v.ob[2] = 0;
+    verts[0].v.tc[0] = 0;    verts[0].v.tc[1] = 0;
+    verts[0].v.cn[0] = verts[0].v.cn[1] = verts[0].v.cn[2] = verts[0].v.cn[3] = 255;
+    // Top-right (screen 100,50)
+    verts[1].v.ob[0] = -60;  verts[1].v.ob[1] = 70; verts[1].v.ob[2] = 0;
+    verts[1].v.tc[0] = cx;   verts[1].v.tc[1] = 0;
+    verts[1].v.cn[0] = verts[1].v.cn[1] = verts[1].v.cn[2] = verts[1].v.cn[3] = 255;
+    // Bottom-right (screen 100,100)
+    verts[2].v.ob[0] = -60;  verts[2].v.ob[1] = 20; verts[2].v.ob[2] = 0;
+    verts[2].v.tc[0] = cx;   verts[2].v.tc[1] = cy;
+    verts[2].v.cn[0] = verts[2].v.cn[1] = verts[2].v.cn[2] = verts[2].v.cn[3] = 255;
+    // Bottom-left (screen 50,100)
+    verts[3].v.ob[0] = -110; verts[3].v.ob[1] = 20; verts[3].v.ob[2] = 0;
+    verts[3].v.tc[0] = 0;    verts[3].v.tc[1] = cy;
+    verts[3].v.cn[0] = verts[3].v.cn[1] = verts[3].v.cn[2] = verts[3].v.cn[3] = 255;
+
+    fast3dInterp->GfxSpVertex(4, 0, verts);
+    fast3dInterp->GfxSpTri1(0, 1, 2, false);
+    fast3dInterp->GfxSpTri1(0, 2, 3, false);
+    fast3dInterp->Flush();
+
+    std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+    for (auto& call : fast3dCap.drawCalls) {
+        if (call.vboData.empty() || call.numTris == 0) continue;
+        size_t fpv = call.vboData.size() / (call.numTris * 3);
+        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                      call.vboData, fpv, call.numTris,
+                                      texRGBA16, texWidth, texHeight);
+    }
+
+    fast3dInterp->mRapi = nullptr;
+    return fb;
+}
 
 // --- RGBA16 checkerboard mesh ---
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
@@ -4358,13 +4572,22 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA16: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- RGBA32 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto fast3dFb = RenderFast3DTexturedQuad(checkerboard, 8, 8);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_rgba16.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4403,13 +4626,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA32: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- I4 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_rgba32 = ConvertRGBA32ToRGBA16(tex);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_rgba32, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_rgba32.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4453,13 +4686,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I4: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_I4 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- I8 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_i4 = ConvertI4ToRGBA16(tex, 4, 4);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_i4, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_i4.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I4 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4498,13 +4741,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I8: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_I8 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- IA4 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_i8 = ConvertI8ToRGBA16(tex, 4, 4);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_i8, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_i8.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I8 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4548,13 +4801,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA4: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_IA4 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- IA8 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_ia4 = ConvertIA4ToRGBA16(tex, 4, 4);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_ia4, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_ia4.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA4 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4594,13 +4857,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA8: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_IA8 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- IA16 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_ia8 = ConvertIA8ToRGBA16(tex, 4, 4);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_ia8, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_ia8.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA8 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4640,13 +4913,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA16: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_IA16 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- CI4 mesh ---
+    // Fast3D software-rasterized comparison image
+    auto texRGBA16_ia16 = ConvertIA16ToRGBA16(tex, 4, 4);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_ia16, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_ia16.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA16 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4709,13 +4992,23 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI4: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_CI4 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
-}
 
-// --- CI8 mesh ---
+    // Fast3D software-rasterized comparison image (decode CI4 via palette)
+    auto texRGBA16_ci4 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_ci4, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_ci4.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI4 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
@@ -4773,10 +5066,22 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI8: " << nonBlack
+    std::cout << "  [INFO] TexturedMeshImage_CI8 (PRDP): " << nonBlack
               << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
+
+    // Fast3D software-rasterized comparison image (decode CI8 via palette)
+    auto texRGBA16_ci8 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
+    auto fast3dFb = RenderFast3DTexturedQuad(texRGBA16_ci8, 4, 4);
+    auto fast3dPath = RepoImagePath("fast3d_mesh_ci8.ppm");
+    SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    uint32_t f3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI8 (Fast3D): " << f3dNonBlack
+              << " non-black pixels → " << fast3dPath << "\n";
+    EXPECT_GT(f3dNonBlack, 0u);
+    EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
