@@ -73,6 +73,7 @@ static constexpr uint32_t RDP_SIZ_16b  = 2;
 static constexpr uint32_t RDP_CYCLE_FILL  = (3u << 20);
 static constexpr uint32_t RDP_CYCLE_1CYC  = (0u << 20);
 static constexpr uint32_t RDP_CYCLE_2CYC  = (1u << 20);
+static constexpr uint32_t RDP_CYCLE_COPY  = (2u << 20);
 
 // Other mode bits for depth testing and blending
 static constexpr uint32_t RDP_Z_CMP       = 0x10;
@@ -2898,8 +2899,8 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
-    // Create a 4x4 RGBA16 solid cyan texture in native byte order.
-    uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
+    // Create a 4x4 RGBA16 solid cyan texture.
+    uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1; // 0x07FF
     std::vector<uint16_t> texData(4 * 4, cyan5551);
     prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
 
@@ -2909,25 +2910,23 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    // Use 1-cycle mode without FORCE_BLEND for clean texture sampling
-    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_1CYC, 0));
+    // Use COPY mode — bypasses combiner and blender entirely
+    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_COPY, 0));
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               4, prdp::TEX_ADDR));
-    // Tile descriptor: RGBA16, 1 line (4 texels/row * 2B = 8B = 1 TMEM line),
-    // tmem=0, tile=0, clamp S&T, mask=2 for 4x4 texture, no shift
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 1, 0, 2, 0, 1, 0, 2));
+                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    // Use LoadTile instead of LoadBlock for simpler TMEM upload (10.2 coordinates)
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
-    // Texture rectangle is a 4-word RDP command; ParallelRDP's op_texture_rectangle
-    // reads all 4 words in one call, so it must be submitted as raw words.
+    // In COPY mode, dsdx must be 4.0 (1 << 12 in S5.10 → but actually COPY uses
+    // a different increment: 4 subpixels per pixel, so dsdx = 4 << 10 = 0x1000).
+    // N64 COPY mode: each pixel copies 4 subpixels, so dsdx = 4.0 in S5.10 = 4<<10
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 << 10, 1 << 10);
 
     prdp.SubmitSequence({
         { cmds, texRect },
