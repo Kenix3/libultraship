@@ -3257,7 +3257,7 @@ static std::vector<uint16_t> GenerateCheckerboard8x8(uint16_t colorA, uint16_t c
 static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     const std::vector<uint16_t>& texData,
     prdp::CombinerCycle cc0, prdp::CombinerCycle cc1,
-    bool twoColor = false, uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
+    uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
     auto& prdp = prdp::GetPRDPContext();
 
     // Store texture data in native uint16_t order. ParallelRDP's TMEM upload
@@ -3307,7 +3307,7 @@ static TexturedMeshResult RenderTexturedMeshPRDP(
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
-    auto cmds = BuildTextureMeshSetup(texData, cc0, cc1, false, otherModeCycleBits);
+    auto cmds = BuildTextureMeshSetup(texData, cc0, cc1, otherModeCycleBits);
 
     // Texture rectangle covering 64x64 pixel region at (50,50)-(114,114)
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -3399,7 +3399,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
     std::cout << "\n╔═══════════════════════════════════════════════════════════════════════╗\n";
     std::cout << "║  Textured Mesh Comparison: 8x8 Checkerboard (CC0, procedural)       ║\n";
     std::cout << "║  Texture: red/cyan RGBA16, rendered as 64x64 TextureRectangle       ║\n";
-    std::cout << "║  NOTE: TMEM byte order on LE hosts may alter sampled colors.         ║\n";
+    std::cout << "║  NOTE: TMEM byte order on little-endian hosts may alter colors.    ║\n";
     std::cout << "║  Differences between permutations confirm combiner variation works.  ║\n";
     std::cout << "╠═══════════════════════════════════════════════════════════════════════╣\n";
     std::cout << "║  Permutation               │ NonBlack │ Unique │ MaxR MaxG MaxB     ║\n";
