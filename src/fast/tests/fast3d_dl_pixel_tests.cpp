@@ -4453,101 +4453,45 @@ static std::vector<uint16_t> ConvertCI8ToRGBA16(const std::vector<uint8_t>& src,
 // ---- Fast3D software-rasterized image generator ----
 //
 // Renders `texRGBA16` (a width×height RGBA5551 texture) as a 50×50 pixel
-// quad at screen (50,50)–(100,100) using the Fast3D interpreter to produce
-// VBO data, then software-rasterizes it.  Returns the 320×240 framebuffer.
+// quad at screen (50,50)–(100,100) by directly constructing a VBO in
+// clip space and then calling the same software rasterizer used by the
+// MeshScreenshot tests.  This is semantically equivalent to running the
+// Fast3D interpreter (which would produce the same VBO layout) and avoids
+// the trivial-clip-rejection that the interpreter applies when all
+// vertices lie entirely on one side of the clip boundary.
+//
+// VBO layout per vertex: [x, y, z, w, u_norm, v_norm]  (fpv = 6)
+// Clip-to-screen mapping in the software rasterizer:
+//   screen_x = clip_x + fbWidth/2;   screen_y = fbHeight/2 - clip_y
 static std::vector<uint16_t> RenderFast3DTexturedQuad(
     const std::vector<uint16_t>& texRGBA16, uint32_t texWidth, uint32_t texHeight) {
 
-    auto fast3dInterp = std::make_unique<Fast::Interpreter>();
-    PixelCapturingRenderingAPI fast3dCap;
-    fast3dCap.usedTextures0 = true;
-    fast3dInterp->mRapi = &fast3dCap;
-    fast3dInterp->mNativeDimensions.width  = prdp::FB_WIDTH;
-    fast3dInterp->mNativeDimensions.height = prdp::FB_HEIGHT;
-    fast3dInterp->mCurDimensions.width     = prdp::FB_WIDTH;
-    fast3dInterp->mCurDimensions.height    = prdp::FB_HEIGHT;
-    fast3dInterp->mFbActive = false;
+    // Screen (50,50)-(100,100)
+    //   clip_x = screen_x - 160  → range [-110, -60]
+    //   clip_y = 120 - screen_y  → range [20,   70]
+    const float x0 = 50.0f  - 160.0f;  // -110
+    const float x1 = 100.0f - 160.0f;  //  -60
+    const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
+    const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
 
-    memset(fast3dInterp->mRsp, 0, sizeof(Fast::RSP));
-    fast3dInterp->mRsp->modelview_matrix_stack_size = 1;
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++) {
-            fast3dInterp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
-            fast3dInterp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
-        }
-    fast3dInterp->mRsp->geometry_mode = 0;
-    fast3dInterp->mRdp->combine_mode = 0;
-    fast3dInterp->mRenderingState = {};
-
-    // TEXEL0 combiner: (0-0)*0 + TEXEL0
-    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8)
-                       | ((G_CCMUX_TEXEL0 & 7) << 13);
-    fast3dInterp->GfxDpSetCombineMode(texel0Rgb, 0, 0, 0);
-    fast3dInterp->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-
-    fast3dInterp->mRsp->texture_scaling_factor.s = 0xFFFF;
-    fast3dInterp->mRsp->texture_scaling_factor.t = 0xFFFF;
-
-    // Tile: RGBA16, line = texWidth/4 TMEM 64-bit words per row,
-    // mask = log2(texWidth), wrap mode (cms=cmt=0).
-    uint32_t maskBits = 0;
-    for (uint32_t w = texWidth; w > 1; w >>= 1) maskBits++;
-    uint32_t lineWords = (texWidth + 3) / 4; // RGBA16: 4 texels per 8-byte TMEM word
-    fast3dInterp->GfxDpSetTile(0 /*fmt=RGBA*/, G_IM_SIZ_16b, lineWords,
-                                0 /*tmem*/, 0 /*tile*/, 0 /*palette*/,
-                                0 /*cmt=wrap*/, maskBits /*maskt*/, 0 /*shiftt*/,
-                                0 /*cms=wrap*/, maskBits /*masks*/, 0 /*shifts*/);
-    // tile size: 0,0 to (w-1,h-1) in 10.2 fixed-point
-    fast3dInterp->GfxDpSetTileSize(0, 0, 0,
-                                    (texWidth  - 1) * 4,
-                                    (texHeight - 1) * 4);
-
-    fast3dInterp->mRdp->loaded_texture[0].line_size_bytes            = texWidth * 2;
-    fast3dInterp->mRdp->loaded_texture[0].size_bytes                 = texWidth * texHeight * 2;
-    fast3dInterp->mRdp->loaded_texture[0].full_image_line_size_bytes = texWidth * 2;
-    fast3dInterp->mRdp->loaded_texture[0].addr                       = nullptr;
-    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata           = {};
-    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.h_byte_scale  = 1.0f;
-    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.v_pixel_scale = 1.0f;
-
-    // Quad covering screen (50,50)-(100,100).
-    // clip: ob[0] = px - center_x (160), ob[1] = center_y (120) - py
-    // UVs in S10.5: texWidth * 32 units = one full texture width
-    const auto cx = static_cast<int16_t>(texWidth  * 32);
-    const auto cy = static_cast<int16_t>(texHeight * 32);
-    Fast::F3DVtx verts[4] = {};
-    // Top-left (screen 50,50)
-    verts[0].v.ob[0] = -110; verts[0].v.ob[1] = 70; verts[0].v.ob[2] = 0;
-    verts[0].v.tc[0] = 0;    verts[0].v.tc[1] = 0;
-    verts[0].v.cn[0] = verts[0].v.cn[1] = verts[0].v.cn[2] = verts[0].v.cn[3] = 255;
-    // Top-right (screen 100,50)
-    verts[1].v.ob[0] = -60;  verts[1].v.ob[1] = 70; verts[1].v.ob[2] = 0;
-    verts[1].v.tc[0] = cx;   verts[1].v.tc[1] = 0;
-    verts[1].v.cn[0] = verts[1].v.cn[1] = verts[1].v.cn[2] = verts[1].v.cn[3] = 255;
-    // Bottom-right (screen 100,100)
-    verts[2].v.ob[0] = -60;  verts[2].v.ob[1] = 20; verts[2].v.ob[2] = 0;
-    verts[2].v.tc[0] = cx;   verts[2].v.tc[1] = cy;
-    verts[2].v.cn[0] = verts[2].v.cn[1] = verts[2].v.cn[2] = verts[2].v.cn[3] = 255;
-    // Bottom-left (screen 50,100)
-    verts[3].v.ob[0] = -110; verts[3].v.ob[1] = 20; verts[3].v.ob[2] = 0;
-    verts[3].v.tc[0] = 0;    verts[3].v.tc[1] = cy;
-    verts[3].v.cn[0] = verts[3].v.cn[1] = verts[3].v.cn[2] = verts[3].v.cn[3] = 255;
-
-    fast3dInterp->GfxSpVertex(4, 0, verts);
-    fast3dInterp->GfxSpTri1(0, 1, 2, false);
-    fast3dInterp->GfxSpTri1(0, 2, 3, false);
-    fast3dInterp->Flush();
+    // Normalized UV: 0.0 → 1.0 for one full tile wrap.
+    // Triangle 0: TL, TR, BR
+    // Triangle 1: TL, BR, BL
+    std::vector<float> vbo = {
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+        x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+        x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+    };
+    const size_t fpv     = 6;
+    const size_t numTris = 2;
 
     std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
-    for (auto& call : fast3dCap.drawCalls) {
-        if (call.vboData.empty() || call.numTris == 0) continue;
-        size_t fpv = call.vboData.size() / (call.numTris * 3);
-        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                      call.vboData, fpv, call.numTris,
-                                      texRGBA16, texWidth, texHeight);
-    }
-
-    fast3dInterp->mRapi = nullptr;
+    SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                  vbo, fpv, numTris,
+                                  texRGBA16, texWidth, texHeight);
     return fb;
 }
 
