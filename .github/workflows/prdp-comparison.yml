@@ -10,12 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref || github.ref_name }}
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
         # Mesa lavapipe provides a software Vulkan ICD for headless CI
         sudo apt-get install -y libvulkan-dev vulkan-tools mesa-vulkan-drivers
+        # ImageMagick for PPM to PNG conversion
+        sudo apt-get install -y imagemagick
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2.14
       with:
@@ -79,3 +83,27 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
         SDL_AUDIODRIVER: dummy
+    - name: Convert PPM images to PNG
+      run: |
+        cd docs/images
+        for ppm in *.ppm; do
+          [ -f "$ppm" ] || continue
+          png="${ppm%.ppm}.png"
+          convert "$ppm" "$png"
+          rm "$ppm"
+        done
+    - name: Upload reference images
+      uses: actions/upload-artifact@v4
+      with:
+        name: reference-images
+        path: docs/images/*.png
+    - name: Commit updated images
+      if: github.event_name == 'push'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add docs/images/
+        git diff --cached --quiet || {
+          git commit -m "Update test reference images [skip ci]"
+          git push
+        }
