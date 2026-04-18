@@ -2906,6 +2906,11 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 // Texture Tests — ParallelRDP Comparison
 // ************************************************************
 
+// Save a RGBA16 (N64 format) framebuffer as PPM (forward declaration
+// for use in texture tests; definition below in screenshot section).
+static void SaveFramebufferPPM(const std::string& path,
+                                const std::vector<uint16_t>& fb,
+                                uint32_t width, uint32_t height);
 TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     if (!prdp_->IsAvailable()) {
         GTEST_SKIP() << "Vulkan not available";
@@ -2946,6 +2951,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     });
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texture_solidcolor.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t cyanPixels = 0, nonBlack = 0;
     for (size_t i = 0; i < prdpFb.size(); i++) {
@@ -3009,6 +3015,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     });
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texture_checkerboard.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t redPixels = 0, whitePixels = 0;
     for (auto px : prdpFb) {
@@ -3066,6 +3073,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_rgba32.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_RGBA32: " << nonBlack << " non-black pixels\n";
@@ -3106,6 +3114,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_i4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_I4: " << nonBlack << " non-black pixels\n";
@@ -3143,6 +3152,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_i8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_I8: " << nonBlack << " non-black pixels\n";
@@ -3181,6 +3191,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_ia4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA4: " << nonBlack << " non-black pixels\n";
@@ -3218,6 +3229,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_ia8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA8: " << nonBlack << " non-black pixels\n";
@@ -3256,6 +3268,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_ia16.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA16: " << nonBlack << " non-black pixels\n";
@@ -3316,6 +3329,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_ci4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI4: " << nonBlack << " non-black pixels\n";
@@ -3374,6 +3388,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_texfmt_ci8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
     for (auto px : fb) if (px != 0) nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI8: " << nonBlack << " non-black pixels\n";
@@ -3654,7 +3669,8 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               8, prdp::TEX_ADDR));
     // Tile descriptor: RGBA16, line=2 (8 texels * 2B = 16B = 2 TMEM 64-bit words),
-    // tmem=0, tile=0, wrap S&T, mask S&T = 3 (2^3=8 for 8x8 texture wrapping)
+    // tmem=0, tile=0, wrap S&T (no clamp), mask S&T = 3 (2^3=8 for 8x8 texture)
+    // cms=0, cmt=0: no clamping — mask alone handles wrapping every 8 texels
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       2, 0, 0, 0, 0, 3, 3, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
