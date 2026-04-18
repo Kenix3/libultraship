@@ -80,6 +80,13 @@ static constexpr uint32_t RDP_Z_CMP       = 0x10;
 static constexpr uint32_t RDP_Z_UPD       = 0x20;
 static constexpr uint32_t RDP_FORCE_BLEND = (1u << 14);
 static constexpr uint32_t RDP_CVG_X_ALPHA = (1u << 12);
+
+// Other mode hi-word bits (w0 bits 23-0 of SET_OTHER_MODES)
+// Bit 11 = bi_lerp_0: enable bilinear filtering in cycle 0 (and skip YUV conversion).
+// Without this, the RDP applies texture-convert using K0-K5 registers, which default
+// to zero and produce (B,B,B,B) output — effectively destroying the texture color.
+static constexpr uint32_t RDP_BILERP_0    = (1u << 11);
+static constexpr uint32_t RDP_BILERP_1    = (1u << 10);
 static constexpr uint32_t RDP_ZMODE_DECAL = (3u << 10);
 
 struct RDPCommand {
@@ -518,17 +525,6 @@ public:
 
     uint8_t* GetRDRAM() { return rdram_.data(); }
 
-    // Read the GPU-side RDRAM buffer to check what the GPU actually sees
-    std::vector<uint16_t> ReadGPUBuffer(uint32_t addr, uint32_t count16) {
-        std::vector<uint16_t> result(count16, 0);
-        if (!available_) return result;
-        auto* mapped = static_cast<uint8_t*>(processor_->begin_read_rdram());
-        if (mapped) {
-            memcpy(result.data(), mapped + addr, count16 * sizeof(uint16_t));
-        }
-        return result;
-    }
-
 private:
     bool available_ = false;
     std::unique_ptr<Vulkan::Context> context_;
@@ -672,12 +668,17 @@ static constexpr CombinerCycle CC_OUTPUT_ZERO   = { 0, 0, 0, 7,  0, 0, 0, 7 };  
 // The cycle type bits occupy bits 20-21 of the hi parameter, which maps to
 // bits 52-53 of the full SET_OTHER_MODES command. The RDP_CYCLE_* constants
 // already have the cycle type at bit position 20, so pass them directly.
-static RDPCommand MakeOtherModes1Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_1CYC, RDP_FORCE_BLEND | extraLo);
+// RDP_BILERP_0 is set by default so that texture sampling returns the actual
+// texel color. Without it, the RDP applies texture-convert (YUV→RGB) using
+// the K0-K5 registers, which zeroes out non-blue channels on RGBA textures.
+static RDPCommand MakeOtherModes1Cycle(uint32_t extraHi = 0, uint32_t extraLo = 0) {
+    return MakeSetOtherModes(RDP_CYCLE_1CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi,
+                             RDP_FORCE_BLEND | extraLo);
 }
 
-static RDPCommand MakeOtherModes2Cycle(uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_2CYC, RDP_FORCE_BLEND | extraLo);
+static RDPCommand MakeOtherModes2Cycle(uint32_t extraHi = 0, uint32_t extraLo = 0) {
+    return MakeSetOtherModes(RDP_CYCLE_2CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi,
+                             RDP_FORCE_BLEND | extraLo);
 }
 
 // Build an RDP command sequence that fills the Z buffer with maximum depth.
@@ -2820,7 +2821,7 @@ TEST_F(ParallelRDPComparisonTest, Depth_FrontOccludesBack) {
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
-    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
+    setup.push_back(prdp::MakeOtherModes1Cycle(0, depthBits));
     setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
     auto backTri = prdp::MakeShadeZbuffTriangleWords(
@@ -2866,7 +2867,7 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
-    setup.push_back(prdp::MakeOtherModes1Cycle(depthBits));
+    setup.push_back(prdp::MakeOtherModes1Cycle(0, depthBits));
     setup.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
     setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 0, 0, 255));
     setup.push_back(prdp::MakeSetPrimDepth(0x7FFF, 0));
@@ -2910,8 +2911,8 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    // Use COPY mode — bypasses combiner and blender entirely
-    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_COPY, 0));
+    // 1-cycle mode with bilerp0 enabled (via MakeOtherModes1Cycle)
+    cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               4, prdp::TEX_ADDR));
@@ -2922,11 +2923,8 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
-    // In COPY mode, dsdx must be 4.0 (1 << 12 in S5.10 → but actually COPY uses
-    // a different increment: 4 subpixels per pixel, so dsdx = 4 << 10 = 0x1000).
-    // N64 COPY mode: each pixel copies 4 subpixels, so dsdx = 4.0 in S5.10 = 4<<10
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 << 10, 1 << 10);
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
 
     prdp.SubmitSequence({
         { cmds, texRect },
@@ -2935,72 +2933,20 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
-    // Detailed raw RDRAM dump for diagnosis
-    {
-        uint8_t* raw = prdp.GetRDRAM();
-        // Check texture region
-        uint16_t* texRegion = reinterpret_cast<uint16_t*>(raw + prdp::TEX_ADDR);
-        std::cout << "  [DIAG] Host Tex RDRAM first 8 words: ";
-        for (int i = 0; i < 8; i++) std::cout << "0x" << std::hex << texRegion[i] << " ";
-        std::cout << std::dec << "\n";
-        
-        // Check GPU buffer at texture and FB addresses
-        auto gpuTex = prdp.ReadGPUBuffer(prdp::TEX_ADDR, 8);
-        std::cout << "  [DIAG] GPU Tex first 8 words: ";
-        for (int i = 0; i < 8; i++) std::cout << "0x" << std::hex << gpuTex[i] << " ";
-        std::cout << std::dec << "\n";
-        
-        int center_idx = 75 * prdp::FB_WIDTH + 75;
-        auto gpuFb = prdp.ReadGPUBuffer(prdp::FB_ADDR + center_idx * 2, 4);
-        std::cout << "  [DIAG] GPU FB[" << center_idx << "..+4]: ";
-        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << gpuFb[i] << " ";
-        std::cout << std::dec << "\n";
-        auto gpuFbSwap = prdp.ReadGPUBuffer(prdp::FB_ADDR + (center_idx^1) * 2, 4);
-        std::cout << "  [DIAG] GPU FB[" << (center_idx^1) << "..^1+4]: ";
-        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << gpuFbSwap[i] << " ";
-        std::cout << std::dec << "\n";
-        
-        // Check FB region from host RDRAM
-        uint16_t* fbRegion = reinterpret_cast<uint16_t*>(raw + prdp::FB_ADDR);
-        std::cout << "  [DIAG] Host FB[" << center_idx << "..+4]: ";
-        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << fbRegion[center_idx+i] << " ";
-        std::cout << std::dec << "\n";
-    }
-
     uint32_t cyanPixels = 0, nonBlack = 0;
-    bool dumpedSample = false;
     for (size_t i = 0; i < prdpFb.size(); i++) {
         uint16_t px = prdpFb[i];
         if (px == 0) continue;
         nonBlack++;
-        if (!dumpedSample) {
-            // Dump first non-black pixel for debugging
-            std::cout << "  [DIAG] First non-black pixel at " << i
-                      << " raw=0x" << std::hex << px << std::dec
-                      << " R=" << ((px >> 11) & 0x1F)
-                      << " G=" << ((px >> 6) & 0x1F)
-                      << " B=" << ((px >> 1) & 0x1F)
-                      << " A=" << (px & 1) << "\n";
-            // Also check with byte-swapped interpretation
-            uint16_t swapped = ((px >> 8) & 0xFF) | ((px & 0xFF) << 8);
-            std::cout << "  [DIAG] Byte-swapped=0x" << std::hex << swapped << std::dec
-                      << " R=" << ((swapped >> 11) & 0x1F)
-                      << " G=" << ((swapped >> 6) & 0x1F)
-                      << " B=" << ((swapped >> 1) & 0x1F)
-                      << " A=" << (swapped & 1) << "\n";
-            // What we wrote as cyan
-            std::cout << "  [DIAG] Expected cyan5551=0x" << std::hex << cyan5551 << std::dec << "\n";
-            dumpedSample = true;
-        }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if ((g > 20 && b > 20 && r < 5)) cyanPixels++;
+        if (g > 20 && b > 20 && r < 5) cyanPixels++;
     }
 
     std::cout << "  [INFO] Texture_SolidColor: " << nonBlack << " non-black, "
               << cyanPixels << " cyan pixels from texture\n";
-    EXPECT_GT(nonBlack, 0u) << "Texture rectangle should render pixels";
+    EXPECT_GT(cyanPixels, 0u) << "Texture rectangle should render cyan pixels";
 }
 
 TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
@@ -3201,7 +3147,7 @@ TEST_F(ParallelRDPComparisonTest, AlphaCvg_CvgTimesAlpha) {
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
-    setup.push_back(prdp::MakeOtherModes1Cycle(cvgBits));
+    setup.push_back(prdp::MakeOtherModes1Cycle(0, cvgBits));
     setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
     auto triWords = prdp::MakeShadeTriangleWords(20, 20, 200, 200, 255, 0, 0, 128);
@@ -3245,7 +3191,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
     step1Cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     step1Cmds.push_back(prdp::MakeSyncPipe());
     uint32_t opaqueBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD;
-    step1Cmds.push_back(prdp::MakeOtherModes1Cycle(opaqueBits));
+    step1Cmds.push_back(prdp::MakeOtherModes1Cycle(0, opaqueBits));
     step1Cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
     auto tri1 = prdp::MakeShadeZbuffTriangleWords(
@@ -3255,7 +3201,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
     std::vector<prdp::RDPCommand> step2Cmds;
     step2Cmds.push_back(prdp::MakeSyncPipe());
     uint32_t decalBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | prdp::RDP_ZMODE_DECAL;
-    step2Cmds.push_back(prdp::MakeOtherModes1Cycle(decalBits));
+    step2Cmds.push_back(prdp::MakeOtherModes1Cycle(0, decalBits));
 
     auto tri2 = prdp::MakeShadeZbuffTriangleWords(
         60, 60, 240, 220, 0, 255, 0, 255, 0x40000000u);
@@ -3322,14 +3268,7 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
     auto& prdp = prdp::GetPRDPContext();
 
-    // Write texture data to RDRAM. ParallelRDP's TMEM upload shader on
-    // little-endian hosts applies a ^1 word swap during RDRAM reads, which
-    // reorders texels within 32-bit word pairs. The texture sampler also
-    // interprets the loaded RGBA16 values with host byte order, resulting
-    // in grayscale output (R=G=B) instead of the intended colored texels.
-    // This is a known limitation of the test infrastructure on LE hosts —
-    // it does not affect the structural validity of the rendering tests
-    // (correct pixel count, coverage, and checkerboard pattern are verified).
+    // Write texture data to RDRAM in native host byte order.
     prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
 
     std::vector<prdp::RDPCommand> cmds;
@@ -3338,7 +3277,8 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    cmds.push_back(prdp::MakeSetOtherModes(otherModeCycleBits, prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetOtherModes(otherModeCycleBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                                           prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(cc0, cc1));
     // Set prim/env colors for combiner tests that use them
     cmds.push_back(prdp::MakeSetPrimColor(0, 0, 255, 128, 0, 255));   // orange
