@@ -517,6 +517,17 @@ public:
 
     uint8_t* GetRDRAM() { return rdram_.data(); }
 
+    // Read the GPU-side RDRAM buffer to check what the GPU actually sees
+    std::vector<uint16_t> ReadGPUBuffer(uint32_t addr, uint32_t count16) {
+        std::vector<uint16_t> result(count16, 0);
+        if (!available_) return result;
+        auto* mapped = static_cast<uint8_t*>(processor_->begin_read_rdram());
+        if (mapped) {
+            memcpy(result.data(), mapped + addr, count16 * sizeof(uint16_t));
+        }
+        return result;
+    }
+
 private:
     bool available_ = false;
     std::unique_ptr<Vulkan::Context> context_;
@@ -2925,10 +2936,63 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
+    // Detailed raw RDRAM dump for diagnosis
+    {
+        uint8_t* raw = prdp.GetRDRAM();
+        // Check texture region
+        uint16_t* texRegion = reinterpret_cast<uint16_t*>(raw + prdp::TEX_ADDR);
+        std::cout << "  [DIAG] Host Tex RDRAM first 8 words: ";
+        for (int i = 0; i < 8; i++) std::cout << "0x" << std::hex << texRegion[i] << " ";
+        std::cout << std::dec << "\n";
+        
+        // Check GPU buffer at texture and FB addresses
+        auto gpuTex = prdp.ReadGPUBuffer(prdp::TEX_ADDR, 8);
+        std::cout << "  [DIAG] GPU Tex first 8 words: ";
+        for (int i = 0; i < 8; i++) std::cout << "0x" << std::hex << gpuTex[i] << " ";
+        std::cout << std::dec << "\n";
+        
+        int center_idx = 75 * prdp::FB_WIDTH + 75;
+        auto gpuFb = prdp.ReadGPUBuffer(prdp::FB_ADDR + center_idx * 2, 4);
+        std::cout << "  [DIAG] GPU FB[" << center_idx << "..+4]: ";
+        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << gpuFb[i] << " ";
+        std::cout << std::dec << "\n";
+        auto gpuFbSwap = prdp.ReadGPUBuffer(prdp::FB_ADDR + (center_idx^1) * 2, 4);
+        std::cout << "  [DIAG] GPU FB[" << (center_idx^1) << "..^1+4]: ";
+        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << gpuFbSwap[i] << " ";
+        std::cout << std::dec << "\n";
+        
+        // Check FB region from host RDRAM
+        uint16_t* fbRegion = reinterpret_cast<uint16_t*>(raw + prdp::FB_ADDR);
+        std::cout << "  [DIAG] Host FB[" << center_idx << "..+4]: ";
+        for (int i = 0; i < 4; i++) std::cout << "0x" << std::hex << fbRegion[center_idx+i] << " ";
+        std::cout << std::dec << "\n";
+    }
+
     uint32_t cyanPixels = 0, nonBlack = 0;
-    for (auto px : prdpFb) {
+    bool dumpedSample = false;
+    for (size_t i = 0; i < prdpFb.size(); i++) {
+        uint16_t px = prdpFb[i];
         if (px == 0) continue;
         nonBlack++;
+        if (!dumpedSample) {
+            // Dump first non-black pixel for debugging
+            std::cout << "  [DIAG] First non-black pixel at " << i
+                      << " raw=0x" << std::hex << px << std::dec
+                      << " R=" << ((px >> 11) & 0x1F)
+                      << " G=" << ((px >> 6) & 0x1F)
+                      << " B=" << ((px >> 1) & 0x1F)
+                      << " A=" << (px & 1) << "\n";
+            // Also check with byte-swapped interpretation
+            uint16_t swapped = ((px >> 8) & 0xFF) | ((px & 0xFF) << 8);
+            std::cout << "  [DIAG] Byte-swapped=0x" << std::hex << swapped << std::dec
+                      << " R=" << ((swapped >> 11) & 0x1F)
+                      << " G=" << ((swapped >> 6) & 0x1F)
+                      << " B=" << ((swapped >> 1) & 0x1F)
+                      << " A=" << (swapped & 1) << "\n";
+            // What we wrote as cyan
+            std::cout << "  [DIAG] Expected cyan5551=0x" << std::hex << cyan5551 << std::dec << "\n";
+            dumpedSample = true;
+        }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
@@ -2937,9 +3001,6 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
 
     std::cout << "  [INFO] Texture_SolidColor: " << nonBlack << " non-black, "
               << cyanPixels << " cyan pixels from texture\n";
-    // The texture rectangle renders pixels but TMEM byte-order interaction with
-    // the XOR addressing in ParallelRDP's shaders needs further investigation.
-    // For now, verify the rectangle draws something (non-black > 0).
     EXPECT_GT(nonBlack, 0u) << "Texture rectangle should render pixels";
 }
 
