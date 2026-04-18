@@ -3658,8 +3658,8 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       2, 0, 0, 1, 1, 3, 3, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    // LoadBlock: total 8*8=64 texels, dxt=0x400 (1 TMEM line per 8-byte word)
-    cmds.push_back(prdp::MakeLoadBlock(0, 0, 0, 63, 0x400));
+    // Use LoadTile for reliable TMEM upload (10.2 fixed-point coordinates)
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 7 * 4, 7 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 7 * 4, 7 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     return cmds;
