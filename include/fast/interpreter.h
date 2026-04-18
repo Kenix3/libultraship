@@ -77,6 +77,7 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
+    PRIM_DEPTH,
     PRISM_SHADER, // 16-bit width
     MAX
 };
@@ -109,6 +110,7 @@ struct CCFeatures {
     bool opt_alpha_threshold;
     bool opt_invisible;
     bool opt_grayscale;
+    bool opt_prim_depth;
     bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
@@ -131,7 +133,7 @@ class GfxRenderingAPI;
 class GfxWindowBackend;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 16;
+constexpr size_t SHADER_ID_SHIFT = 17;
 constexpr int16_t ShaderIdUnmask(int id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -301,6 +303,7 @@ struct RDP {
     bool grayscale;
 
     uint8_t prim_lod_fraction;
+    uint16_t prim_depth;
     struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;

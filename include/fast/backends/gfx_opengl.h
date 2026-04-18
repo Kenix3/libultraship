@@ -35,6 +35,7 @@ struct ShaderProgram {
     uint8_t numAttribs;
     GLint frameCountLocation;
     GLint noiseScaleLocation;
+    GLint prim_depth_location;
     GLint texture_width_location;
     GLint texture_height_location;
     GLint texture_filtering_location;
@@ -72,6 +73,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
+    void SetCurrentPrimDepth(float depth) override;
     void SetZmodeDecal(bool decal) override;
     void SetViewport(int x, int y, int width, int height) override;
     void SetScissor(int x, int y, int width, int height) override;

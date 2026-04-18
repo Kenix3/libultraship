@@ -78,6 +78,7 @@ class GfxRenderingAPI {
     virtual FilteringMode GetTextureFilter() = 0;
     virtual void SetSrgbMode() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
+    virtual void SetCurrentPrimDepth(float depth) = 0;
 
   protected:
     int8_t mCurrentDepthTest = 0;
@@ -87,5 +88,7 @@ class GfxRenderingAPI {
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
     bool mSrgbMode = false;
+    float mCurrentPrimDepth = 0.0f;
+    bool mPrimDepthDirty = true;
 };
 } // namespace Fast
