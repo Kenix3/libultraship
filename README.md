@@ -81,6 +81,21 @@ CI uses [ParallelRDP](https://github.com/Themaister/parallel-rdp-standalone) (MI
 [lavapipe](https://docs.mesa3d.org/drivers/llvmpipe.html) (Mesa software Vulkan) to run
 Fast3D rendering tests on the CPU without a physical GPU.
 
+### Test Meshes and Textures
+
+All test assets are **CC0/public-domain**, procedurally generated in code with no external files:
+
+| Asset | Description | License |
+|-------|-------------|---------|
+| Diamond Octahedron | 4 flat-shaded right-triangles (red, green, blue, yellow) | CC0 (procedural) |
+| 8×8 Checkerboard | RGBA16 red/cyan alternating texels | CC0 (procedural) |
+
+Both are rendered through [ParallelRDP](https://github.com/Themaister/parallel-rdp-standalone) (MIT, by Themaister) and Fast3D, producing comparison screenshots saved to `docs/images/`. See [docs/mesh-render-comparison.md](docs/mesh-render-comparison.md) for side-by-side comparisons.
+
+| Flat-Shaded Mesh | Textured Mesh |
+|---|---|
+| ![Flat-shaded comparison](docs/images/mesh_comparison.png) | ![Textured comparison](docs/images/textured_mesh_comparison.png) |
+
 ## Sponsors
 Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
 
