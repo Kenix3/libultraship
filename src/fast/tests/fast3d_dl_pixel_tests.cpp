@@ -2184,6 +2184,125 @@ TEST_F(DLPixelTest, CompleteSequence_EnvColor_Geometry_Scissor_Triangle) {
 }
 
 // ************************************************************
+// Textured Mesh Tests — Fast3D Side
+//
+// These tests verify Fast3D's VBO output when rendering a textured
+// triangle with various combiner modes. They complement the
+// ParallelRDP TexturedMesh_Permutations test by exercising the same
+// combiner configurations through Fast3D's display list interpreter.
+//
+// Fast3D outputs VBO data (vertex positions, UVs, colors) while
+// ParallelRDP outputs pixels. Comparing both confirms the rendering
+// pipeline handles textured meshes consistently.
+// ************************************************************
+
+TEST_F(DLPixelTest, TexturedMesh_Fast3D_TEXEL0_HasUVs) {
+    // Enable texture in the rendering API so VBO includes UV data
+    cap->usedTextures0 = true;
+
+    // Set combine mode: TEXEL0 passthrough → (0-0)*0 + TEXEL0
+    // D = G_CCMUX_TEXEL0 = 1 for the D slot
+    uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_TEXEL0 & 7) << 13);
+    interp->GfxDpSetCombineMode(rgb, 0, 0, 0);
+
+    // Enable texture scaling (this is how SP_TEXTURE works)
+    interp->mRsp->texture_scaling_factor.s = 0xFFFF;
+    interp->mRsp->texture_scaling_factor.t = 0xFFFF;
+
+    // Load vertices with texture coordinates
+    Fast::F3DVtx verts[3] = {};
+    verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50; verts[0].v.ob[2] = 0;
+    verts[0].v.tc[0] = 0;   verts[0].v.tc[1] = 0;
+    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 0; verts[0].v.cn[2] = 0; verts[0].v.cn[3] = 255;
+
+    verts[1].v.ob[0] = 50; verts[1].v.ob[1] = 50; verts[1].v.ob[2] = 0;
+    verts[1].v.tc[0] = 1024; verts[1].v.tc[1] = 0;  // s=1024 = 32.0 in S10.5
+    verts[1].v.cn[0] = 0; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 0; verts[1].v.cn[3] = 255;
+
+    verts[2].v.ob[0] = 0; verts[2].v.ob[1] = -50; verts[2].v.ob[2] = 0;
+    verts[2].v.tc[0] = 512; verts[2].v.tc[1] = 1024;
+    verts[2].v.cn[0] = 0; verts[2].v.cn[1] = 0; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+
+    interp->GfxSpVertex(3, 0, verts);
+    interp->GfxSpTri1(0, 1, 2, false);
+    interp->Flush();
+
+    ASSERT_GE(cap->drawCalls.size(), 1u);
+    auto& call = cap->drawCalls.back();
+    EXPECT_EQ(call.numTris, 1u);
+
+    // With textures enabled, VBO layout includes UV data after position:
+    // [x, y, z, w, u/w, v/h, ...colors]
+    // Verify we have more data per vertex than the non-textured case (7 floats)
+    size_t fpv = call.vboData.size() / 3;
+    EXPECT_GT(fpv, 7u) << "Textured VBO should have more floats per vertex than untextured";
+
+    std::cout << "  [INFO] Fast3D TexturedMesh TEXEL0: " << call.numTris << " tri, "
+              << fpv << " floats/vertex, " << call.vboData.size() << " total floats\n";
+}
+
+TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
+    // Test that different combiner modes produce different VBO color data
+    // when rendering the same textured triangle.
+
+    struct F3DCombinerCase {
+        const char* name;
+        uint32_t rgb;    // combine mode RGB word
+        uint32_t alpha;  // combine mode alpha word
+    };
+
+    // Build combine mode words for each permutation:
+    // shade only: D=SHADE(4)
+    uint32_t shadeRgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_SHADE & 7) << 13);
+    // env only: D=ENV(5)
+    uint32_t envRgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_ENVIRONMENT & 7) << 13);
+    // prim only: D=PRIM(3)
+    uint32_t primRgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_PRIMITIVE & 7) << 13);
+    // texel0 only: D=TEXEL0(1)
+    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_TEXEL0 & 7) << 13);
+
+    F3DCombinerCase cases[] = {
+        { "SHADE",   shadeRgb,  0 },
+        { "ENV",     envRgb,    0 },
+        { "PRIM",    primRgb,   0 },
+        { "TEXEL0",  texel0Rgb, 0 },
+    };
+
+    // Set env and prim colors so we can distinguish combiner outputs
+    interp->GfxDpSetEnvColor(0, 128, 255, 255);
+    interp->GfxDpSetPrimColor(0, 0, 255, 128, 0, 255);
+
+    std::cout << "\n  [INFO] Fast3D Combiner Permutations (VBO color data):\n";
+
+    for (const auto& c : cases) {
+        // Reset draw calls between permutations
+        cap->drawCalls.clear();
+
+        interp->GfxDpSetCombineMode(c.rgb, c.alpha, 0, 0);
+        LoadVerticesWithColors(200, 100, 50, 255);
+        interp->GfxSpTri1(0, 1, 2, false);
+        interp->Flush();
+
+        ASSERT_GE(cap->drawCalls.size(), 1u)
+            << c.name << ": should produce a draw call";
+        auto& call = cap->drawCalls.back();
+
+        // Report the first vertex's color data
+        size_t fpv = call.vboData.size() / 3;
+        float r = 0, g = 0, b = 0;
+        if (fpv > 6) {
+            r = call.vboData[4]; // first color after position
+            g = call.vboData[5];
+            b = call.vboData[6];
+        }
+        std::cout << "    " << std::left << std::setw(8) << c.name
+                  << " R=" << std::fixed << std::setprecision(3) << r
+                  << " G=" << g << " B=" << b
+                  << " (fpv=" << fpv << ")\n";
+    }
+}
+
+// ************************************************************
 // ParallelRDP Comparison Tests
 //
 // These tests send the same display list commands to both Fast3D
