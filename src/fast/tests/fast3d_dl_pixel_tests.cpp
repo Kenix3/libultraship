@@ -3681,4 +3681,251 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     fast3dInterp->mRapi = nullptr;
 }
 
+// ************************************************************
+// Screenshot Test: Public-domain textured mesh
+//
+// Renders an 8×8 procedural checkerboard texture (red/cyan, CC0)
+// on a 64×64 pixel rectangle through both ParallelRDP and Fast3D,
+// then saves the framebuffer output as PPM images.
+//
+// For PRDP: Uses TextureRectangle with TEXEL0 combiner (1-cycle)
+// For Fast3D: Captures VBO (with UVs) and software-rasterizes
+//             with texture lookup from the same checkerboard data.
+//
+// Output: /tmp/prdp_textured_mesh.ppm   (ParallelRDP)
+//         /tmp/fast3d_textured_mesh.ppm  (Fast3D)
+// ************************************************************
+
+// Software rasterizer that samples a texture using UV coordinates from the VBO.
+// VBO layout with textures: [x, y, z, w, u/w, v/h, ...colors]
+// u/w and v/h are normalized [0,1] texture coordinates.
+static void SoftwareRasterizeTexturedVBO(
+    std::vector<uint16_t>& fb, uint32_t fbWidth, uint32_t fbHeight,
+    const std::vector<float>& vbo, size_t floatsPerVertex, size_t numTris,
+    const std::vector<uint16_t>& texData, uint32_t texWidth, uint32_t texHeight) {
+
+    for (size_t t = 0; t < numTris; t++) {
+        size_t base = t * 3 * floatsPerVertex;
+        float vx[3], vy[3], vu[3], vv[3];
+        for (int v = 0; v < 3; v++) {
+            size_t off = base + v * floatsPerVertex;
+            vx[v] = vbo[off + 0];
+            vy[v] = vbo[off + 1];
+            // UV at offsets 4,5 (after x,y,z,w)
+            vu[v] = (floatsPerVertex > 4) ? vbo[off + 4] : 0.0f;
+            vv[v] = (floatsPerVertex > 5) ? vbo[off + 5] : 0.0f;
+        }
+
+        // Map from clip space to screen
+        float sx[3], sy[3];
+        for (int v = 0; v < 3; v++) {
+            sx[v] = vx[v] + fbWidth / 2.0f;
+            sy[v] = fbHeight / 2.0f - vy[v];
+        }
+
+        // Bounding box
+        int x0 = std::max(0, (int)std::min({sx[0], sx[1], sx[2]}));
+        int x1 = std::min((int)fbWidth - 1, (int)std::max({sx[0], sx[1], sx[2]}));
+        int y0 = std::max(0, (int)std::min({sy[0], sy[1], sy[2]}));
+        int y1 = std::min((int)fbHeight - 1, (int)std::max({sy[0], sy[1], sy[2]}));
+
+        float denom = (sy[1]-sy[2])*(sx[0]-sx[2]) + (sx[2]-sx[1])*(sy[0]-sy[2]);
+        if (std::abs(denom) < 0.001f) continue;
+
+        for (int py = y0; py <= y1; py++) {
+            for (int px = x0; px <= x1; px++) {
+                float fpx = px + 0.5f, fpy = py + 0.5f;
+                float w0 = ((sy[1]-sy[2])*(fpx-sx[2]) + (sx[2]-sx[1])*(fpy-sy[2])) / denom;
+                float w1 = ((sy[2]-sy[0])*(fpx-sx[2]) + (sx[0]-sx[2])*(fpy-sy[2])) / denom;
+                float w2 = 1.0f - w0 - w1;
+
+                if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+                    // Interpolate UVs
+                    float u = w0*vu[0] + w1*vu[1] + w2*vu[2];
+                    float v = w0*vv[0] + w1*vv[1] + w2*vv[2];
+
+                    // Wrap and sample texture (nearest neighbor)
+                    int tx = ((int)(u * texWidth)) % (int)texWidth;
+                    int ty = ((int)(v * texHeight)) % (int)texHeight;
+                    if (tx < 0) tx += texWidth;
+                    if (ty < 0) ty += texHeight;
+
+                    fb[py * fbWidth + px] = texData[ty * texWidth + tx];
+                }
+            }
+        }
+    }
+}
+
+TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
+    if (!prdp_->IsAvailable()) {
+        GTEST_SKIP() << "Vulkan not available";
+    }
+
+    // ---- Generate 8x8 red/cyan checkerboard texture (CC0, procedural) ----
+    uint16_t red5551  = (31 << 11) | (0 << 6) | (0 << 1) | 1;
+    uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
+    auto checkerboard = GenerateCheckerboard8x8(red5551, cyan5551);
+
+    // ---- ParallelRDP: Render textured rectangle ----
+    auto& prdpCtx = prdp::GetPRDPContext();
+    prdpCtx.ClearRDRAM();
+
+    auto cmds = BuildTextureMeshSetup(checkerboard, prdp::CC_TEXEL0, prdp::CC_TEXEL0);
+
+    // Texture rectangle covering 128x128 pixel region centered on screen
+    // at (96,56)-(224,184).
+    // dsdx/dtdy in S10.5: 1.0 = 1<<10 = 1024 means 1 texel/pixel.
+    // With 8-texel wrap (mask=3), the checkerboard repeats every 8 pixels.
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 224 * 4, 184 * 4, 96 * 4, 56 * 4, 0, 0, 1 << 10, 1 << 10);
+
+    prdpCtx.SubmitSequence({
+        { cmds, texRect },
+        { { prdp::MakeSyncFull() }, {} },
+    });
+
+    auto prdpFb = prdpCtx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/prdp_textured_mesh.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t prdpNonBlack = 0;
+    for (auto px : prdpFb)
+        if (px != 0) prdpNonBlack++;
+
+    // ---- Fast3D: Render textured triangle pair covering same region ----
+    auto fast3dInterp = std::make_unique<Fast::Interpreter>();
+    PixelCapturingRenderingAPI fast3dCap;
+    fast3dCap.usedTextures0 = true; // Enable texture so VBO includes UVs
+    fast3dInterp->mRapi = &fast3dCap;
+    fast3dInterp->mNativeDimensions.width = prdp::FB_WIDTH;
+    fast3dInterp->mNativeDimensions.height = prdp::FB_HEIGHT;
+    fast3dInterp->mCurDimensions.width = prdp::FB_WIDTH;
+    fast3dInterp->mCurDimensions.height = prdp::FB_HEIGHT;
+    fast3dInterp->mFbActive = false;
+
+    memset(fast3dInterp->mRsp, 0, sizeof(Fast::RSP));
+    fast3dInterp->mRsp->modelview_matrix_stack_size = 1;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) {
+            fast3dInterp->mRsp->MP_matrix[i][j] = (i == j) ? 1.0f : 0.0f;
+            fast3dInterp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
+        }
+    fast3dInterp->mRsp->geometry_mode = 0;
+    fast3dInterp->mRdp->combine_mode = 0;
+    fast3dInterp->mRenderingState = {};
+
+    // Set TEXEL0 combiner: (0-0)*0 + TEXEL0
+    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8)
+                       | ((G_CCMUX_TEXEL0 & 7) << 13);
+    fast3dInterp->GfxDpSetCombineMode(texel0Rgb, 0, 0, 0);
+    fast3dInterp->GfxDpSetScissor(0, 0, 0, 320 * 4, 240 * 4);
+
+    // Enable texture scaling
+    fast3dInterp->mRsp->texture_scaling_factor.s = 0xFFFF;
+    fast3dInterp->mRsp->texture_scaling_factor.t = 0xFFFF;
+
+    // Set up texture tile state for tile 0: RGBA16, 8x8.
+    // line = 2 (8 texels * 2B = 16B = 2 TMEM 64-bit words)
+    // mask S&T = 3 (2^3 = 8 for 8x8 wrapping)
+    // cms/cmt = G_TX_WRAP (0) for wrapping
+    fast3dInterp->GfxDpSetTile(0 /*fmt=RGBA*/, G_IM_SIZ_16b, 2 /*line*/,
+                                0 /*tmem*/, 0 /*tile*/, 0 /*palette*/,
+                                0 /*cmt=wrap*/, 3 /*maskt*/, 0 /*shiftt*/,
+                                0 /*cms=wrap*/, 3 /*masks*/, 0 /*shifts*/);
+    // tile size: 0,0 to 7,7 (in 10.2 fixed point: 7*4 = 28)
+    fast3dInterp->GfxDpSetTileSize(0, 0, 0, 7 * 4, 7 * 4);
+
+    // Set up loaded_texture so tex_width/tex_height are computed correctly.
+    // line_size_bytes = line * 8 = 2 * 8 = 16 (8 RGBA16 texels = 16 bytes)
+    fast3dInterp->mRdp->loaded_texture[0].line_size_bytes = 16;
+    fast3dInterp->mRdp->loaded_texture[0].size_bytes = 8 * 8 * 2; // 128 bytes
+    fast3dInterp->mRdp->loaded_texture[0].full_image_line_size_bytes = 16;
+    fast3dInterp->mRdp->loaded_texture[0].addr = nullptr; // no actual data needed for VBO capture
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata = {};
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.h_byte_scale = 1.0f;
+    fast3dInterp->mRdp->loaded_texture[0].raw_tex_metadata.v_pixel_scale = 1.0f;
+
+    // Build a quad (2 triangles) covering the same 128x128 region
+    // Centered coords: screen (96,56)=(-64,64) to (224,184)=(64,-64)
+    // UVs: 0 to 8 texels = 0 to 256 in S10.5 format
+    Fast::F3DVtx verts[4] = {};
+    // Top-left
+    verts[0].v.ob[0] = -64; verts[0].v.ob[1] =  64; verts[0].v.ob[2] = 0;
+    verts[0].v.tc[0] = 0;     verts[0].v.tc[1] = 0;
+    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 255; verts[0].v.cn[2] = 255; verts[0].v.cn[3] = 255;
+    // Top-right
+    verts[1].v.ob[0] =  64; verts[1].v.ob[1] =  64; verts[1].v.ob[2] = 0;
+    verts[1].v.tc[0] = 256;   verts[1].v.tc[1] = 0;
+    verts[1].v.cn[0] = 255; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 255; verts[1].v.cn[3] = 255;
+    // Bottom-right
+    verts[2].v.ob[0] =  64; verts[2].v.ob[1] = -64; verts[2].v.ob[2] = 0;
+    verts[2].v.tc[0] = 256;   verts[2].v.tc[1] = 256;
+    verts[2].v.cn[0] = 255; verts[2].v.cn[1] = 255; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    // Bottom-left
+    verts[3].v.ob[0] = -64; verts[3].v.ob[1] = -64; verts[3].v.ob[2] = 0;
+    verts[3].v.tc[0] = 0;     verts[3].v.tc[1] = 256;
+    verts[3].v.cn[0] = 255; verts[3].v.cn[1] = 255; verts[3].v.cn[2] = 255; verts[3].v.cn[3] = 255;
+
+    fast3dInterp->GfxSpVertex(4, 0, verts);
+    fast3dInterp->GfxSpTri1(0, 1, 2, false);
+    fast3dInterp->GfxSpTri1(0, 2, 3, false);
+    fast3dInterp->Flush();
+
+    // Debug: print VBO UV values for first triangle's vertices
+    if (!fast3dCap.drawCalls.empty()) {
+        auto& call = fast3dCap.drawCalls.back();
+        size_t fpv = call.vboData.size() / (call.numTris * 3);
+        std::cout << "  [DEBUG] Fast3D VBO: " << call.numTris << " tris, "
+                  << fpv << " floats/vert\n";
+        for (size_t v = 0; v < std::min((size_t)3, call.numTris * 3); v++) {
+            size_t off = v * fpv;
+            std::cout << "    v" << v << ": pos=(" << call.vboData[off]
+                      << "," << call.vboData[off+1] << ")";
+            if (fpv > 5) {
+                std::cout << " uv=(" << call.vboData[off+4]
+                          << "," << call.vboData[off+5] << ")";
+            }
+            std::cout << "\n";
+        }
+    }
+
+    // Software-rasterize with texture sampling
+    std::vector<uint16_t> fast3dFb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+
+    for (auto& call : fast3dCap.drawCalls) {
+        if (call.vboData.empty() || call.numTris == 0) continue;
+        size_t fpv = call.vboData.size() / (call.numTris * 3);
+        SoftwareRasterizeTexturedVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                      call.vboData, fpv, call.numTris,
+                                      checkerboard, 8, 8);
+    }
+
+    SaveFramebufferPPM("/tmp/fast3d_textured_mesh.ppm", fast3dFb,
+                        prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    uint32_t fast3dNonBlack = 0;
+    for (auto px : fast3dFb)
+        if (px != 0) fast3dNonBlack++;
+
+    std::cout << "\n╔═══════════════════════════════════════════════════════════════════╗\n";
+    std::cout << "║  Textured Mesh Screenshot: 8×8 Checkerboard (CC0, procedural)   ║\n";
+    std::cout << "║  Red/cyan RGBA16, rendered as 128×128 textured quad             ║\n";
+    std::cout << "╠═══════════════════════════════════════════════════════════════════╣\n";
+    std::cout << "║  Renderer    │ Non-black pixels │ Output file                   ║\n";
+    std::cout << "╠══════════════╪══════════════════╪═══════════════════════════════╣\n";
+    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack
+              << " │ /tmp/prdp_textured_mesh.ppm   ║\n";
+    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBlack
+              << " │ /tmp/fast3d_textured_mesh.ppm  ║\n";
+    std::cout << "╚═══════════════════════════════════════════════════════════════════╝\n";
+
+    EXPECT_GT(prdpNonBlack, 0u) << "ParallelRDP should render textured mesh pixels";
+    EXPECT_GT(fast3dNonBlack, 0u) << "Fast3D should render textured mesh pixels";
+
+    EXPECT_TRUE(std::ifstream("/tmp/prdp_textured_mesh.ppm").good());
+    EXPECT_TRUE(std::ifstream("/tmp/fast3d_textured_mesh.ppm").good());
+
+    fast3dInterp->mRapi = nullptr;
+}
+
 #endif // LUS_PRDP_TESTS_ENABLED
