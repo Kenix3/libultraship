@@ -70,6 +70,10 @@ std::stack<std::string> currentDir;
 
 namespace Fast {
 
+static inline uint32_t RdpOpcode(uint8_t opcode) {
+    return static_cast<uint32_t>(opcode) << 24;
+}
+
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
 const static uint32_t f3dex2AttrHandler[] = {
@@ -120,6 +124,20 @@ Interpreter::~Interpreter() {
     delete mRsp;
     delete mRdp;
     delete[] mBufVbo;
+}
+
+void Interpreter::SetRdpCommandBackend(RdpCommandBackend* backend) {
+    mRdpCommandBackend = backend;
+}
+
+void Interpreter::EmitRdpCommand(std::initializer_list<uint32_t> words) {
+    EmitRdpCommand(words.size(), words.begin());
+}
+
+void Interpreter::EmitRdpCommand(size_t numWords, const uint32_t* words) {
+    if (mRdpCommandBackend != nullptr && words != nullptr && numWords > 0) {
+        mRdpCommandBackend->SubmitCommand(numWords, words);
+    }
 }
 
 static std::weak_ptr<Interpreter> mInstance;
@@ -2264,6 +2282,10 @@ void Interpreter::GfxDpSetScissor(uint32_t mode, uint32_t ulx, uint32_t uly, uin
     AdjustVIewportOrScissor(&mRdp->scissor);
 
     mRdp->viewport_or_scissor_changed = true;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETSCISSOR)) | ((ulx & 0xFFFu) << 12) | (uly & 0xFFFu),
+        ((mode & 0x3u) << 24) | ((lrx & 0xFFFu) << 12) | (lry & 0xFFFu),
+    });
 }
 
 void Interpreter::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t width, const char* texPath,
@@ -2275,6 +2297,11 @@ void Interpreter::GfxDpSetTextureImage(uint32_t format, uint32_t size, uint32_t 
     mRdp->texture_to_load.width = width;
     mRdp->texture_to_load.tex_flags = texFlags;
     mRdp->texture_to_load.raw_tex_metadata = rawTexMetdata;
+    uint32_t widthField = width > 0 ? ((width - 1u) & 0x3FFu) : 0;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETTIMG)) | ((format & 0x7u) << 21) | ((size & 0x3u) << 19) | widthField,
+        static_cast<uint32_t>(reinterpret_cast<uintptr_t>(addr)) & 0x03FFFFFFu,
+    });
 }
 
 void Interpreter::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint8_t tile, uint32_t palette,
@@ -2307,6 +2334,12 @@ void Interpreter::GfxDpSetTile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_
 
     mRdp->textures_changed[0] = true;
     mRdp->textures_changed[1] = true;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETTILE)) | ((fmt & 0x7u) << 21) | ((siz & 0x3u) << 19) |
+            ((line & 0x1FFu) << 9) | (tmem & 0x1FFu),
+        ((tile & 0x7u) << 24) | ((palette & 0xFu) << 20) | ((cmt & 0x3u) << 18) | ((maskt & 0xFu) << 14) |
+            ((shiftt & 0xFu) << 10) | ((cms & 0x3u) << 8) | ((masks & 0xFu) << 4) | (shifts & 0xFu),
+    });
 }
 
 void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt) {
@@ -2316,6 +2349,10 @@ void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uin
     mRdp->texture_tile[tile].lrt = lrt;
     mRdp->textures_changed[0] = true;
     mRdp->textures_changed[1] = true;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETTILESIZE)) | ((uls & 0xFFFu) << 12) | (ult & 0xFFFu),
+        ((tile & 0x7u) << 24) | ((lrs & 0xFFFu) << 12) | (lrt & 0xFFFu),
+    });
 }
 
 void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
@@ -2357,6 +2394,10 @@ void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
         mRdp->palettes[1] = src;
         mRdp->palette_dram_addr[1] = src;
     }
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_LOADTLUT)),
+        ((tile & 0x7u) << 24) | ((high_index & 0x3FFu) << 14),
+    });
 }
 
 void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
@@ -2441,6 +2482,10 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     }
 
     mRdp->textures_changed[mRdp->texture_tile[tile].tmem_index] = true;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_LOADBLOCK)) | ((uls & 0xFFFu) << 12) | (ult & 0xFFFu),
+        ((tile & 0x7u) << 24) | ((lrs & 0xFFFu) << 12) | (dxt & 0xFFFu),
+    });
 }
 
 void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
@@ -2516,6 +2561,10 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     mRdp->texture_tile[tile].lrt = lrt;
 
     mRdp->textures_changed[mRdp->texture_tile[tile].tmem_index] = true;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_LOADTILE)) | ((uls & 0xFFFu) << 12) | (ult & 0xFFFu),
+        ((tile & 0x7u) << 24) | ((lrs & 0xFFFu) << 12) | (lrt & 0xFFFu),
+    });
 }
 
 /*static uint8_t color_comb_component(uint32_t v) {
@@ -2552,6 +2601,15 @@ static void GfxDpSetCombineMode(uint32_t rgb, uint32_t alpha) {
 
 void Interpreter::GfxDpSetCombineMode(uint32_t rgb, uint32_t alpha, uint32_t rgb_cyc2, uint32_t alpha_cyc2) {
     mRdp->combine_mode = rgb | (alpha << 16) | ((uint64_t)rgb_cyc2 << 28) | ((uint64_t)alpha_cyc2 << 44);
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETCOMBINE)) | ((rgb & 0xFu) << 20) | (((rgb >> 8) & 0x1Fu) << 15) |
+            ((alpha & 0x7u) << 12) | (((alpha >> 6) & 0x7u) << 9) | ((rgb_cyc2 & 0xFu) << 5) |
+            ((rgb_cyc2 >> 8) & 0x1Fu),
+        (((rgb >> 4) & 0xFu) << 28) | (((rgb_cyc2 >> 4) & 0xFu) << 24) | ((alpha_cyc2 & 0x7u) << 21) |
+            (((alpha_cyc2 >> 6) & 0x7u) << 18) | (((rgb >> 13) & 0x7u) << 15) | (((alpha >> 3) & 0x7u) << 12) |
+            (((alpha >> 9) & 0x7u) << 9) | (((rgb_cyc2 >> 13) & 0x7u) << 6) | (((alpha_cyc2 >> 3) & 0x7u) << 3) |
+            ((alpha_cyc2 >> 9) & 0x7u),
+    });
 }
 
 static inline uint32_t color_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
@@ -2574,6 +2632,9 @@ void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     mRdp->env_color.g = g;
     mRdp->env_color.b = b;
     mRdp->env_color.a = a;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETENVCOLOR)),
+                     (static_cast<uint32_t>(r) << 24) | (static_cast<uint32_t>(g) << 16) |
+                         (static_cast<uint32_t>(b) << 8) | static_cast<uint32_t>(a) });
 }
 
 void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -2582,6 +2643,10 @@ void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, 
     mRdp->prim_color.g = g;
     mRdp->prim_color.b = b;
     mRdp->prim_color.a = a;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETPRIMCOLOR)) | (static_cast<uint32_t>(m) << 8) |
+                         static_cast<uint32_t>(l),
+                     (static_cast<uint32_t>(r) << 24) | (static_cast<uint32_t>(g) << 16) |
+                         (static_cast<uint32_t>(b) << 8) | static_cast<uint32_t>(a) });
 }
 
 void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -2589,10 +2654,16 @@ void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     mRdp->fog_color.g = g;
     mRdp->fog_color.b = b;
     mRdp->fog_color.a = a;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETFOGCOLOR)),
+                     (static_cast<uint32_t>(r) << 24) | (static_cast<uint32_t>(g) << 16) |
+                         (static_cast<uint32_t>(b) << 8) | static_cast<uint32_t>(a) });
 }
 
 void Interpreter::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     // TODO: Implement this command.
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETBLENDCOLOR)),
+                     (static_cast<uint32_t>(r) << 24) | (static_cast<uint32_t>(g) << 16) |
+                         (static_cast<uint32_t>(b) << 8) | static_cast<uint32_t>(a) });
 }
 
 void Interpreter::GfxDpSetFillColor(uint32_t packed_color) {
@@ -2605,6 +2676,7 @@ void Interpreter::GfxDpSetFillColor(uint32_t packed_color) {
     mRdp->fill_color.g = SCALE_5_8(g);
     mRdp->fill_color.b = SCALE_5_8(b);
     mRdp->fill_color.a = a * 255;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETFILLCOLOR)), packed_color });
 }
 
 void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
@@ -2686,6 +2758,15 @@ void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_
 
 void Interpreter::GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls,
                                         int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
+    uint32_t texRectWords[] = {
+        RdpOpcode(static_cast<uint8_t>(flip ? RDP_G_TEXRECTFLIP : RDP_G_TEXRECT)) |
+            ((static_cast<uint32_t>(lrx) & 0xFFFu) << 12) | (static_cast<uint32_t>(lry) & 0xFFFu),
+        ((tile & 0x7u) << 24) | ((static_cast<uint32_t>(ulx) & 0xFFFu) << 12) |
+            (static_cast<uint32_t>(uly) & 0xFFFu),
+        (static_cast<uint32_t>(static_cast<uint16_t>(uls)) << 16) | static_cast<uint16_t>(ult),
+        (static_cast<uint32_t>(static_cast<uint16_t>(dsdx)) << 16) | static_cast<uint16_t>(dtdy),
+    };
+    EmitRdpCommand(4, texRectWords);
     // printf("render %d at %d\n", tile, lrx);
     uint64_t saved_combine_mode = mRdp->combine_mode;
     if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_COPY) {
@@ -2799,6 +2880,11 @@ void Interpreter::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_
 }
 
 void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_FILLRECT)) | ((static_cast<uint32_t>(lrx) & 0xFFFu) << 12) |
+            (static_cast<uint32_t>(lry) & 0xFFFu),
+        ((static_cast<uint32_t>(ulx) & 0xFFFu) << 12) | (static_cast<uint32_t>(uly) & 0xFFFu),
+    });
     if (mRdp->color_image_address == mRdp->z_buf_address) {
         // Fullscreen Z clears are redundant — already done by glClear at frame start.
         bool isFullScreen = (ulx <= 0 && uly <= 0 && lrx >= (int32_t)(mNativeDimensions.width - 1) * 4 &&
@@ -2867,10 +2953,17 @@ void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int3
 
 void Interpreter::GfxDpSetZImage(void* zBufAddr) {
     mRdp->z_buf_address = zBufAddr;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_SETZIMG)),
+                     static_cast<uint32_t>(reinterpret_cast<uintptr_t>(zBufAddr)) & 0x03FFFFFFu });
 }
 
 void Interpreter::GfxDpSetColorImage(uint32_t format, uint32_t size, uint32_t width, void* address) {
     mRdp->color_image_address = address;
+    EmitRdpCommand({
+        RdpOpcode(static_cast<uint8_t>(RDP_G_SETCIMG)) | ((format & 0x7u) << 21) | ((size & 0x3u) << 19) |
+            (width & 0x7FFu),
+        static_cast<uint32_t>(reinterpret_cast<uintptr_t>(address)) & 0x03FFFFFFu,
+    });
 }
 
 void Interpreter::GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t mode) {
@@ -2884,6 +2977,7 @@ void Interpreter::GfxSpSetOtherMode(uint32_t shift, uint32_t num_bits, uint64_t 
 void Interpreter::GfxDpSetOtherMode(uint32_t h, uint32_t l) {
     mRdp->other_mode_h = h;
     mRdp->other_mode_l = l;
+    EmitRdpCommand({ RdpOpcode(static_cast<uint8_t>(RDP_G_RDPSETOTHERMODE)) | (h & 0x00FFFFFFu), l });
 }
 
 void Interpreter::Gfxs2dexBgCopy(F3DuObjBg* bg) {

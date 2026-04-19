@@ -10,6 +10,7 @@
 #include <stack>
 #include <string>
 #include <string_view>
+#include <initializer_list>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -129,6 +130,12 @@ namespace Fast {
 
 class GfxRenderingAPI;
 class GfxWindowBackend;
+
+class RdpCommandBackend {
+  public:
+    virtual ~RdpCommandBackend() = default;
+    virtual void SubmitCommand(size_t numWords, const uint32_t* words) = 0;
+};
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
 constexpr size_t SHADER_ID_SHIFT = 16;
@@ -398,6 +405,7 @@ class Interpreter {
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
+    void SetRdpCommandBackend(RdpCommandBackend* backend);
 
     // private: TODO make these private
     void Flush();
@@ -481,6 +489,8 @@ class Interpreter {
     static void NormalizeVector(float v[3]);
     static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
     static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
+    void EmitRdpCommand(std::initializer_list<uint32_t> words);
+    void EmitRdpCommand(size_t numWords, const uint32_t* words);
 
     RSP* mRsp;
     RDP* mRdp;
@@ -533,6 +543,7 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
+    RdpCommandBackend* mRdpCommandBackend = nullptr;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
