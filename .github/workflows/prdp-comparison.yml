@@ -72,8 +72,8 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
         SDL_AUDIODRIVER: dummy
-        # Use Mesa lavapipe software Vulkan ICD
-        VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        # Use Mesa lavapipe software Vulkan ICD (lvp_icd.json on Ubuntu 24.04+)
+        VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
     - name: Run standard tests
       run: |
         # Also run the standard test suite to make sure nothing is broken
