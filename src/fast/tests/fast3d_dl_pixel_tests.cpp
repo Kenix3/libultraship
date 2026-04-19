@@ -2911,6 +2911,8 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 static void SaveFramebufferPPM(const std::string& path,
                                 const std::vector<uint16_t>& fb,
                                 uint32_t width, uint32_t height);
+static std::vector<uint16_t> RenderFast3DTexturedQuad(
+    const std::vector<uint16_t>& texRGBA16, uint32_t texWidth, uint32_t texHeight);
 
 // Resolve a filename to docs/images/ relative to the source tree.
 // __FILE__ lives in src/fast/tests/ so we walk up 4 path components.
@@ -2965,6 +2967,9 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texture_solidcolor.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texture_solidcolor.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    auto fast3dFb = RenderFast3DTexturedQuad(texData, 4, 4);
+    SaveFramebufferPPM("/tmp/fast3d_texture_solidcolor.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("fast3d_texture_solidcolor.ppm"), fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t cyanPixels = 0, nonBlack = 0;
     for (size_t i = 0; i < prdpFb.size(); i++) {
@@ -2980,6 +2985,9 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     std::cout << "  [INFO] Texture_SolidColor: " << nonBlack << " non-black, "
               << cyanPixels << " cyan pixels from texture\n";
     EXPECT_GT(cyanPixels, 0u) << "Texture rectangle should render cyan pixels";
+    uint32_t fast3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) fast3dNonBlack++;
+    EXPECT_GT(fast3dNonBlack, 0u) << "Fast3D comparison image should render colored pixels";
 }
 
 TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
@@ -3034,6 +3042,9 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texture_checkerboard.ppm", prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texture_checkerboard.ppm"), prdpFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    auto fast3dFb = RenderFast3DTexturedQuad(texData, 4, 4);
+    SaveFramebufferPPM("/tmp/fast3d_texture_checkerboard.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("fast3d_texture_checkerboard.ppm"), fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t redPixels = 0, whitePixels = 0;
     for (auto px : prdpFb) {
@@ -3049,6 +3060,9 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
               << whitePixels << " white\n";
     uint32_t totalColored = redPixels + whitePixels;
     EXPECT_GT(totalColored, 0u) << "Checkerboard texture should produce colored pixels";
+    uint32_t fast3dNonBlack = 0;
+    for (auto px : fast3dFb) if (px != 0) fast3dNonBlack++;
+    EXPECT_GT(fast3dNonBlack, 0u) << "Fast3D comparison image should render colored pixels";
 }
 
 // ************************************************************
