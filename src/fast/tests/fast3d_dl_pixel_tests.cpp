@@ -537,23 +537,70 @@ public:
         memcpy(rdram_.data() + addr, data, size);
     }
 
-    // Write a TLUT (palette) into RDRAM with adjacent uint16_t pairs swapped.
+    // Write 16-bit texture data (RGBA16, IA16, or TLUT palette) into RDRAM with
+    // adjacent uint16_t pairs swapped within every 32-bit RDRAM word.
     //
     // ParallelRDP's TMEM upload shader reads VRAM as vram16[(addr>>1)^1], which
     // swaps adjacent 16-bit words within every 32-bit group — matching the N64's
-    // 32-bit word byte-swap storage.  Writing palette entries with pairs swapped
-    // (pal[1], pal[0], pal[3], pal[2], …) compensates for this, so palette[n]
-    // ends up in the TMEM slot that the CI4/CI8 sampler expects.
-    void WriteRDRAMPalette(uint32_t addr, const std::vector<uint16_t>& palette) {
+    // 32-bit word byte-swap storage.  Pre-swapping compensates for this so that
+    // texel[n] ends up in the TMEM slot the sampler expects.
+    void WriteRDRAMTexture16(uint32_t addr, const std::vector<uint16_t>& data) {
         if (!available_) return;
-        std::vector<uint16_t> swapped(palette.size());
-        for (size_t i = 0; i + 1 < palette.size(); i += 2) {
-            swapped[i]     = palette[i + 1];
-            swapped[i + 1] = palette[i];
+        std::vector<uint16_t> swapped(data.size());
+        for (size_t i = 0; i + 1 < data.size(); i += 2) {
+            swapped[i]     = data[i + 1];
+            swapped[i + 1] = data[i];
         }
-        if (palette.size() & 1)
-            swapped[palette.size() - 1] = palette[palette.size() - 1];
+        if (data.size() & 1)
+            swapped[data.size() - 1] = data[data.size() - 1];
         WriteRDRAM(addr, swapped.data(), swapped.size() * sizeof(uint16_t));
+    }
+
+    // Convenience alias: palettes are uint16_t data and need the same swap.
+    void WriteRDRAMPalette(uint32_t addr, const std::vector<uint16_t>& palette) {
+        WriteRDRAMTexture16(addr, palette);
+    }
+
+    // Write 4-bit-per-texel texture data (I4, IA4, CI4) into RDRAM with
+    // adjacent 2-byte groups swapped within every 4-byte RDRAM word.
+    //
+    // ParallelRDP's TMEM upload shader reads 4-bit texture data as 16-bit
+    // units via vram16[(addr>>1)^1], swapping the two uint16_t values within
+    // each 32-bit RDRAM word.  Pre-swapping bytes [0,1]↔[2,3] compensates so
+    // the correct texels appear after the hardware's internal swap.
+    void WriteRDRAMTexture4(uint32_t addr, const void* data, size_t size) {
+        if (!available_) return;
+        std::vector<uint8_t> buf(size);
+        const uint8_t* src = static_cast<const uint8_t*>(data);
+        for (size_t i = 0; i + 3 < size; i += 4) {
+            buf[i]     = src[i + 2];
+            buf[i + 1] = src[i + 3];
+            buf[i + 2] = src[i];
+            buf[i + 3] = src[i + 1];
+        }
+        for (size_t i = size & ~size_t(3); i < size; i++)
+            buf[i] = src[i];
+        WriteRDRAM(addr, buf.data(), size);
+    }
+
+    // Write 8-bit-per-texel texture data (I8, IA8, CI8) into RDRAM with
+    // adjacent individual bytes swapped within every 2-byte group.
+    //
+    // ParallelRDP's TMEM upload shader reads 8-bit texture data as individual
+    // bytes via vram8[addr^1], swapping adjacent bytes (byte 0↔1, byte 2↔3,
+    // etc.).  Pre-swapping compensates so the correct texels appear after the
+    // hardware's internal swap.
+    void WriteRDRAMTexture8(uint32_t addr, const void* data, size_t size) {
+        if (!available_) return;
+        std::vector<uint8_t> buf(size);
+        const uint8_t* src = static_cast<const uint8_t*>(data);
+        for (size_t i = 0; i + 1 < size; i += 2) {
+            buf[i]     = src[i + 1];
+            buf[i + 1] = src[i];
+        }
+        if (size & 1)
+            buf[size - 1] = src[size - 1];
+        WriteRDRAM(addr, buf.data(), size);
     }
 
     uint8_t* GetRDRAM() { return rdram_.data(); }
@@ -2955,7 +3002,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     // Create a 4x4 RGBA16 solid cyan texture.
     uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1; // 0x07FF
     std::vector<uint16_t> texData(4 * 4, cyan5551);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3020,14 +3067,15 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     uint16_t red5551   = (31 << 11) | (0 << 6) | (0 << 1) | 1;
     uint16_t white5551 = (31 << 11) | (31 << 6) | (31 << 1) | 1;
 
-    // Write texture data in native byte order (ParallelRDP uses host byte order)
+    // Write texture data with adjacent uint16_t pairs swapped to compensate for
+    // ParallelRDP's TMEM upload ^1 swap (so the checkerboard appears correctly).
     std::vector<uint16_t> texData(4 * 4);
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
             texData[y * 4 + x] = ((x + y) & 1) ? white5551 : red5551;
         }
     }
-    prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3142,7 +3190,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
     // 4 texels per byte: 0xFF = two texels of value 0xF.
     // 4x4 = 16 texels = 8 bytes.
     std::vector<uint8_t> tex(8, 0xFF);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3184,7 +3232,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
 
     // 4x4 I8: each texel is 1 byte. Max intensity = 0xFF.
     std::vector<uint8_t> tex(4 * 4, 0xFF);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3225,7 +3273,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
     // Max intensity with alpha=1: 0xF (I=7, A=1).
     // 2 texels per byte, 16 texels = 8 bytes.
     std::vector<uint8_t> tex(8, 0xFF);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3265,7 +3313,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
     // 4x4 IA8: 1 byte per texel (upper 4 bits = I, lower 4 bits = A).
     // Max intensity + max alpha: 0xFF.
     std::vector<uint8_t> tex(4 * 4, 0xFF);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3304,7 +3352,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
     // 4x4 IA16: 2 bytes per texel (upper byte = I, lower byte = A).
     // Max I + max A: 0xFFFF.
     std::vector<uint16_t> tex(4 * 4, 0xFFFF);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3345,7 +3393,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     // Texture data: all indices point to palette entry 0.
     // 4x4 CI4 = 16 texels at 4 bits each = 8 bytes; all zeros = index 0.
     std::vector<uint8_t> tex(8, 0x00);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     // Palette (TLUT): 16 RGBA16 entries starting at a separate RDRAM address.
     // Entry 0 = white (0xFFFF).
@@ -3410,7 +3458,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     // CI8 uses a 256-entry TLUT in upper TMEM.
     // Texture data: all indices = 0.
     std::vector<uint8_t> tex(4 * 4, 0x00);
-    prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     // TLUT: 256 RGBA16 entries. Entry 0 = cyan.
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
@@ -3720,7 +3768,7 @@ static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
     auto& prdp = prdp::GetPRDPContext();
 
     // Write texture data to RDRAM in native host byte order.
-    prdp.WriteRDRAM(prdp::TEX_ADDR, texData.data(), texData.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4644,7 +4692,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
     }
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4699,7 +4747,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex[y * 4 + x] = ((x + y) & 1) ? 0x80 : 0xFF;
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4759,7 +4807,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
     }
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4815,7 +4863,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex[y * 4 + x] = ((x + y) & 1) ? 0x8F : 0xFF;
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4871,7 +4919,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex[y * 4 + x] = ((x + y) & 1) ? 0x80FF : 0xFFFF;
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint16_t));
+    ctx.WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4931,7 +4979,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
     }
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     // TLUT: entry 0 = red, entry 1 = green
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
@@ -5007,7 +5055,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex[y * 4 + x] = ((x + y) & 1) ? 1 : 0;
-    ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size());
+    ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     // TLUT: entry 0 = yellow, entry 1 = blue
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
