@@ -3133,13 +3133,15 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    // I4 texture image: 4-bit size
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, 4, prdp::TEX_ADDR));
+    // I4 texture image: load as 8b (2 I4 texels packed per byte), width = 4/2 = 2.
+    // Real N64 RSP converts 4b → 8b before sending to RDP; ParallelRDP rejects 4b VRAM pointers.
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
     // I4 tile: line = 1 (4 texels * 0.5B = 2B, rounds up to 1 TMEM line of 8B)
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    // sh = (2 - 1) * 4 = 4: 2 8b "texels" per row in 10.2 fixed-point
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -3214,11 +3216,12 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, 4, prdp::TEX_ADDR));
+    // IA4 texture image: load as 8b (2 IA4 texels packed per byte), width = 4/2 = 2.
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -3353,13 +3356,14 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
 
-    // Load CI4 texture
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
-                                              4, prdp::TEX_ADDR));
+    // Load CI4 texture: load as 8b (2 CI4 indices packed per byte), width = 4/2 = 2.
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
+                                              2, prdp::TEX_ADDR));
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    // sh = (2 - 1) * 4 = 4: 2 8b "texels" per row in 10.2 fixed-point
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
@@ -3408,7 +3412,9 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_8b,
+    // CI8 TLUT entries are always 16-bit RGBA5551 — tile must use 16b, not 8b,
+    // so all 256 entries are written to TMEM correctly.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
@@ -4627,12 +4633,12 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
-                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
+                                              2, prdp::TEX_ADDR));
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -4742,12 +4748,12 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
-                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
+                                              2, prdp::TEX_ADDR));
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -4934,12 +4940,12 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
     // Load CI4 texture
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
-                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
+                                              2, prdp::TEX_ADDR));
     cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
                                       1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
-    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
     auto texRect = prdp::MakeTextureRectangleWords(
@@ -5003,7 +5009,9 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_8b,
+    // CI8 TLUT entries are always 16-bit RGBA5551 — tile must use 16b, not 8b,
+    // so all 256 entries are written to TMEM correctly.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
