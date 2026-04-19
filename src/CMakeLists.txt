@@ -12,6 +12,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
 option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
+option(ENABLE_VULKAN "Enable the Vulkan / ParallelRDP rendering backend" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -131,6 +132,12 @@ if (USE_OPENGLES)
 endif()
 
 target_link_libraries(libultraship PUBLIC prism monocypher)
+
+if (ENABLE_VULKAN)
+    find_package(Vulkan REQUIRED)
+    target_link_libraries(libultraship PUBLIC Vulkan::Vulkan)
+    target_compile_definitions(libultraship PUBLIC ENABLE_VULKAN)
+endif()
 
 if(NOT DISABLE_SCRIPTING)
     target_link_libraries(libultraship PUBLIC libtcc libtcc1)

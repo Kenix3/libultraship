@@ -39,5 +39,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_opengl*")
 endif()
 
+if (NOT ENABLE_VULKAN)
+    list(FILTER Source_Files__Graphic EXCLUDE REGEX "backends/gfx_vulkan*")
+    list(FILTER Source_Files__Graphic EXCLUDE REGEX "backends/gfx_sdl_vulkan*")
+endif()
+
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})

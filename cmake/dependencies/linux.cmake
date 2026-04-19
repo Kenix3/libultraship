@@ -8,3 +8,9 @@ if (USE_OPENGLES)
 else()
     target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY})
 endif()
+
+if (ENABLE_VULKAN)
+    find_package(Vulkan REQUIRED)
+    # SDL2 built with Vulkan support is needed; no extra target_link_libraries
+    # required here as Vulkan::Vulkan is handled in src/CMakeLists.txt.
+endif()

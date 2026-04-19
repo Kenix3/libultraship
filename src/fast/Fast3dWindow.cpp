@@ -12,6 +12,10 @@
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
+#ifdef ENABLE_VULKAN
+#include "fast/backends/gfx_sdl_vulkan.h"
+#include "fast/backends/gfx_vulkan.h"
+#endif
 
 #include <fstream>
 
@@ -35,6 +39,9 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
     }
 #endif
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+#ifdef ENABLE_VULKAN
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_VULKAN);
+#endif
 }
 
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
@@ -147,6 +154,12 @@ void Fast3dWindow::InitWindowManager() {
         case Ship::WindowBackend::FAST3D_SDL_METAL:
             mRenderingApi = new GfxRenderingAPIMetal();
             mWindowManagerApi = new GfxWindowBackendSDL2();
+            break;
+#endif
+#ifdef ENABLE_VULKAN
+        case Ship::WindowBackend::FAST3D_SDL_VULKAN:
+            mWindowManagerApi = new GfxWindowBackendSDLVulkan();
+            mRenderingApi = new GfxRenderingAPIVulkan();
             break;
 #endif
         default:

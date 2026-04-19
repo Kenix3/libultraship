@@ -33,6 +33,14 @@ target_sources(ImGui
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
 )
 
+if(ENABLE_VULKAN)
+    find_package(Vulkan QUIET)
+    if(Vulkan_FOUND)
+        target_sources(ImGui PRIVATE ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
+        target_link_libraries(ImGui PUBLIC Vulkan::Vulkan)
+    endif()
+endif()
+
 target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
 
 # ========= StormLib =============

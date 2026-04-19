@@ -13,7 +13,13 @@
 namespace Ship {
 
 /** @brief Identifies the graphics/windowing backend in use. */
-enum class WindowBackend { FAST3D_DXGI_DX11, FAST3D_SDL_OPENGL, FAST3D_SDL_METAL, WINDOW_BACKEND_COUNT };
+enum class WindowBackend {
+    FAST3D_DXGI_DX11,
+    FAST3D_SDL_OPENGL,
+    FAST3D_SDL_METAL,
+    FAST3D_SDL_VULKAN,
+    WINDOW_BACKEND_COUNT
+};
 
 /** @brief Integer pixel coordinates. */
 struct Coords {

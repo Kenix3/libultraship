@@ -49,6 +49,12 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 #endif
 
+#ifdef ENABLE_VULKAN
+#include "fast/backends/gfx_vulkan.h"
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_vulkan.h>
+#endif
+
 namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
@@ -176,6 +182,15 @@ void Gui::ImGuiWMInit() {
             ImGui_ImplWin32_Init(mImpl.Dx11.Window);
             break;
 #endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+            }
+            ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
+            break;
+#endif
         default:
             break;
     }
@@ -199,6 +214,12 @@ void Gui::ShutDownImGui(Ship::Window* window) {
         case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplWin32_Shutdown();
             ImGui_ImplDX11_Shutdown();
+            break;
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            ImGui_ImplSDL2_Shutdown();
+            ImGui_ImplVulkan_Shutdown();
             break;
 #endif
     }
@@ -234,6 +255,14 @@ void Gui::ImGuiBackendInit() {
             ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(mImpl.Dx11.Device),
                                 static_cast<ID3D11DeviceContext*>(mImpl.Dx11.DeviceContext));
             break;
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN: {
+            Fast::GfxRenderingAPIVulkan* api =
+                static_cast<Fast::GfxRenderingAPIVulkan*>(mInterpreter.lock()->GetCurrentRenderingAPI());
+            api->VulkanInit(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
+            break;
+        }
 #endif
         default:
             break;
@@ -302,6 +331,11 @@ void Gui::HandleWindowEvents(WindowEvent event) {
                                            event.Win32.Param2);
             break;
 #endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+            break;
+#endif
         default:
             break;
     }
@@ -358,6 +392,14 @@ void Gui::ImGuiBackendNewFrame() {
             break;
         }
 #endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN: {
+            Fast::GfxRenderingAPIVulkan* api =
+                static_cast<Fast::GfxRenderingAPIVulkan*>(mInterpreter.lock()->GetCurrentRenderingAPI());
+            api->NewFrame();
+            break;
+        }
+#endif
         default:
             break;
     }
@@ -367,6 +409,9 @@ void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+#endif
             ImGui_ImplSDL2_NewFrame();
             break;
 #ifdef ENABLE_DX11
@@ -826,6 +871,14 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
         case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplDX11_RenderDrawData(data);
             break;
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN: {
+            Fast::GfxRenderingAPIVulkan* api =
+                static_cast<Fast::GfxRenderingAPIVulkan*>(mInterpreter.lock()->GetCurrentRenderingAPI());
+            api->RenderDrawData(data);
+            break;
+        }
 #endif
         default:
             break;
