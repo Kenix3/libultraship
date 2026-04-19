@@ -31,6 +31,9 @@ if(NOT DISABLE_SCRIPTING)
     target_sources(lus_tests PRIVATE script_test.cpp)
 endif()
 
+# Fast3D tests (split by layer, in the Fast3D directory)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../src/fast/tests ${CMAKE_CURRENT_BINARY_DIR}/fast3d_tests)
+
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
 
 target_link_libraries(lus_tests PRIVATE

@@ -4928,6 +4928,25 @@ void Interpreter::RunGuiOnly() {
     }
 }
 
+void Interpreter::RunDisplayListForTest(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+    // Save mCurMtxReplacements so it doesn't become a dangling pointer after return.
+    auto savedMtxReplacements = mCurMtxReplacements;
+
+    SpReset();
+    mGetPixelDepthPending.clear();
+    mGetPixelDepthCached.clear();
+    mCurMtxReplacements = &mtx_replacements;
+    mRdp->viewport_or_scissor_changed = true;
+
+    g_exec_stack.start((F3DGfx*)commands);
+    while (!g_exec_stack.cmd_stack.empty()) {
+        gfx_step();
+    }
+
+    // Restore mCurMtxReplacements to avoid dangling pointer.
+    mCurMtxReplacements = savedMtxReplacements;
+}
+
 void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
     SpReset();
 
