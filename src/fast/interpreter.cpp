@@ -4620,6 +4620,11 @@ static void gfx_step() {
             return;
         }
     } else if (rdpHandlers.contains(opcode)) {
+        if (gfx->mRapi->SupportsRawRdpCommands()) {
+            gfx->mRapi->SubmitRawRdpCommand((uint32_t)cmd->words.w0, (uint32_t)cmd->words.w1);
+            ++cmd;
+            return;
+        }
         if (rdpHandlers.at(opcode).second(&cmd)) {
             return;
         }

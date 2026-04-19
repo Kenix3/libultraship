@@ -156,6 +156,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -185,6 +186,7 @@ void Gui::ShutDownImGui(Ship::Window* window) {
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
             ImGui_ImplSDL2_Shutdown();
             ImGui_ImplOpenGL3_Shutdown();
             break;
@@ -209,6 +211,7 @@ void Gui::ImGuiBackendInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #elif USE_OPENGLES
@@ -280,6 +283,7 @@ bool Gui::SupportsViewports() {
         case WindowBackend::FAST3D_DXGI_DX11:
             return true;
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
         case WindowBackend::FAST3D_SDL_METAL:
             return true;
         default:
@@ -290,6 +294,7 @@ bool Gui::SupportsViewports() {
 void Gui::HandleWindowEvents(WindowEvent event) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
         case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
@@ -339,6 +344,7 @@ void Gui::ImGuiBackendNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
@@ -366,6 +372,7 @@ void Gui::ImGuiBackendNewFrame() {
 void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
         case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_NewFrame();
             break;
@@ -728,7 +735,9 @@ void Gui::DrawFloatingWindows() {
     if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         WindowBackend backend = Context::GetInstance()->GetWindow()->GetWindowBackend();
         // OpenGL requires extra platform handling on the GL mContext
-        if (backend == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
+        if ((backend == WindowBackend::FAST3D_SDL_OPENGL ||
+             backend == WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP) &&
+            mImpl.Opengl.Context != nullptr) {
             // Backup window and mContext before calling RenderPlatformWindowsDefault
             SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
             SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
@@ -809,6 +818,7 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
 
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
             ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif

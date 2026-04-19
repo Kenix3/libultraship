@@ -333,6 +333,9 @@ void Config::SetWindowBackend(WindowBackend backend) {
         case WindowBackend::FAST3D_SDL_OPENGL:
             SetString("Window.Backend.Name", "OpenGL");
             break;
+        case WindowBackend::FAST3D_SDL_VULKAN_PARALLEL_RDP:
+            SetString("Window.Backend.Name", "Vulkan (parallelrdp)");
+            break;
         case WindowBackend::FAST3D_SDL_METAL:
             SetString("Window.Backend.Name", "Metal");
             break;

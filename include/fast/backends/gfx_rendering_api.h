@@ -78,6 +78,11 @@ class GfxRenderingAPI {
     virtual FilteringMode GetTextureFilter() = 0;
     virtual void SetSrgbMode() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
+    virtual bool SupportsRawRdpCommands() const {
+        return false;
+    }
+    virtual void SubmitRawRdpCommand(uint32_t w0, uint32_t w1) {
+    }
 
   protected:
     int8_t mCurrentDepthTest = 0;
