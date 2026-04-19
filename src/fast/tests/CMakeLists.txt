@@ -24,4 +24,13 @@ target_include_directories(lus_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 if(LUS_BUILD_PRDP_TESTS)
     target_link_libraries(lus_tests PRIVATE parallel-rdp)
     target_compile_definitions(lus_tests PRIVATE LUS_PRDP_TESTS_ENABLED=1)
+
+    # PNG output for three-way texture comparison tests
+    find_package(PNG REQUIRED)
+    target_link_libraries(lus_tests PRIVATE PNG::PNG)
+
+    # Ensure the docs/images directory exists at build time so tests can write
+    # reference images without having to create it at runtime.
+    set(DOCS_IMAGES_DIR "${CMAKE_SOURCE_DIR}/docs/images")
+    file(MAKE_DIRECTORY "${DOCS_IMAGES_DIR}")
 endif()

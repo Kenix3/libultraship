@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <fstream>
 #include <set>
+#include <filesystem>
 
 // ============================================================
 // ParallelRDP comparison infrastructure (optional, Vulkan required)
@@ -45,6 +46,7 @@
 
 #include "rdp_device.hpp"
 #include "context.hpp"
+#include <png.h>
 
 namespace prdp {
 
@@ -520,6 +522,18 @@ public:
         processor_->wait_for_timeline(processor_->signal_timeline());
     }
 
+    // Submit a flat list of variable-length raw RDP commands (each is a vector<uint32_t>)
+    // within a single frame context. Used by BatchingPRDPBackend to forward accumulated
+    // Fast3D interpreter RDP emissions to ParallelRDP in one shot.
+    void SubmitFlatBatch(const std::vector<std::vector<uint32_t>>& cmds) {
+        if (!available_ || cmds.empty()) return;
+        processor_->begin_frame_context();
+        for (auto& c : cmds)
+            if (!c.empty())
+                processor_->enqueue_command(c.size(), c.data());
+        processor_->wait_for_timeline(processor_->signal_timeline());
+    }
+
     std::vector<uint16_t> ReadFramebuffer(uint32_t addr, uint32_t width, uint32_t height) {
         std::vector<uint16_t> fb(width * height);
         if (!available_) return fb;
@@ -810,6 +824,51 @@ static ComparisonResult RunTriangleComparison(
 
 // Texture data address in RDRAM (above framebuffer and Z buffer)
 static constexpr uint32_t TEX_ADDR = 0x300000;
+// Palette address in RDRAM (for CI textures; placed just above texture data)
+static constexpr uint32_t PAL_ADDR = TEX_ADDR + 0x1000;
+
+// ---------------------------------------------------------------
+// BatchingPRDPBackend
+//
+// Implements Fast::RdpCommandBackend to forward RDP commands that the
+// Fast3D interpreter emits (via EmitRdpCommand) to ParallelRDP.
+//
+// Usage:
+//   1. Attach to an Interpreter:  interp.SetRdpCommandBackend(&backend);
+//   2. Run display list or call interpreter methods → commands accumulate.
+//   3. Call backend.EmitRDPCmd() to inject hand-built commands (e.g. for
+//      texture loading that requires real RDRAM addresses).
+//   4. Call backend.FlushTo(ctx) → submits all commands to PRDP in one
+//      frame context, then clears the buffer.
+// ---------------------------------------------------------------
+class BatchingPRDPBackend : public Fast::RdpCommandBackend {
+public:
+    std::vector<std::vector<uint32_t>> commands_;
+
+    void SubmitCommand(size_t numWords, const uint32_t* words) override {
+        if (numWords > 0 && words)
+            commands_.emplace_back(words, words + numWords);
+    }
+
+    // Directly inject a pre-built 2-word RDP command (bypasses interpreter).
+    void EmitRDPCmd(RDPCommand cmd) {
+        commands_.push_back({ cmd.w0, cmd.w1 });
+    }
+
+    // Inject a variable-length pre-built command.
+    void EmitRawWords(const std::vector<uint32_t>& words) {
+        if (!words.empty())
+            commands_.push_back(words);
+    }
+
+    // Submit all accumulated commands to ParallelRDP in one frame context.
+    void FlushTo(ParallelRDPContext& ctx) {
+        ctx.SubmitFlatBatch(commands_);
+        commands_.clear();
+    }
+
+    void Clear() { commands_.clear(); }
+};
 
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
@@ -3954,6 +4013,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
 static void SaveFramebufferPPM(const std::string& path,
                                 const std::vector<uint16_t>& fb,
                                 uint32_t width, uint32_t height) {
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path());
     std::ofstream f(path, std::ios::binary);
     f << "P6\n" << width << " " << height << "\n255\n";
     for (uint32_t i = 0; i < width * height; i++) {
@@ -3963,6 +4023,59 @@ static void SaveFramebufferPPM(const std::string& path,
         uint8_t b = ((px >> 1) & 0x1F) * 255 / 31;
         f.put(r); f.put(g); f.put(b);
     }
+}
+
+// Save a RGBA16 (N64 format) framebuffer as a PNG file using libpng.
+static bool SaveFramebufferPNG(const std::string& path,
+                                const std::vector<uint16_t>& fb,
+                                uint32_t width, uint32_t height) {
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+    FILE* fp = fopen(path.c_str(), "wb");
+    if (!fp) return false;
+
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png) { fclose(fp); return false; }
+    png_infop info = png_create_info_struct(png);
+    if (!info) { png_destroy_write_struct(&png, nullptr); fclose(fp); return false; }
+
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_write_struct(&png, &info);
+        fclose(fp);
+        return false;
+    }
+
+    png_init_io(png, fp);
+    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(png, info);
+
+    std::vector<uint8_t> row(width * 3);
+    for (uint32_t y = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++) {
+            uint16_t px = fb[y * width + x];
+            row[x * 3 + 0] = ((px >> 11) & 0x1F) * 255 / 31;
+            row[x * 3 + 1] = ((px >> 6) & 0x1F) * 255 / 31;
+            row[x * 3 + 2] = ((px >> 1) & 0x1F) * 255 / 31;
+        }
+        png_write_row(png, row.data());
+    }
+
+    png_write_end(png, nullptr);
+    png_destroy_write_struct(&png, &info);
+    fclose(fp);
+    return true;
+}
+
+// Save framebuffer as both PPM and PNG to repo docs/images/,
+// replacing the .ppm extension with .png for the PNG path.
+static void SaveFramebufferBoth(const std::string& ppmPath,
+                                 const std::vector<uint16_t>& fb,
+                                 uint32_t width, uint32_t height) {
+    SaveFramebufferPPM(ppmPath, fb, width, height);
+    std::string pngPath = ppmPath;
+    auto dot = pngPath.rfind('.');
+    if (dot != std::string::npos) pngPath.replace(dot, std::string::npos, ".png");
+    SaveFramebufferPNG(pngPath, fb, width, height);
 }
 
 // Simple software rasterizer for Fast3D VBO data → RGBA16 framebuffer.
@@ -5127,6 +5240,892 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
               << " non-black pixels → " << fast3dPath << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
+}
+
+// ************************************************************
+// Three-Way Texture Comparison Tests
+//
+// For each N64 texture type we render the same textured quad via:
+//   1. Direct PRDP  — raw RDP commands sent directly to ParallelRDP
+//   2. Fast3D → Vulkan — Fast3D interpreter with BatchingPRDPBackend
+//      forwarding every RDP emission to ParallelRDP
+//   3. Fast3D → OpenGL — Fast3D VBO capture + software rasterizer
+//
+// All three framebuffers are written to docs/images/ as both PPM and
+// PNG files. A comparison table is printed showing non-black pixel counts
+// and distinct-color counts for each renderer.
+//
+// Texture types covered: RGBA16, RGBA32, I4, I8, IA4, IA8, IA16, CI4, CI8
+// ************************************************************
+
+class ThreeWayTextureTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        prdp_ = &prdp::GetPRDPContext();
+
+        // Interpreter for Fast3D → Vulkan path (uses BatchingPRDPBackend)
+        interpVk_ = MakeInterp();
+        interpVk_->SetRdpCommandBackend(&backend_);
+
+        // Interpreter for Fast3D → OpenGL path (uses PixelCapturingRenderingAPI)
+        interpGL_ = MakeInterp();
+        interpGL_->mRapi = &capGL_;
+    }
+
+    void TearDown() override {
+        // Reset RDP backends to avoid dangling pointer on interpreter destruction
+        interpVk_->SetRdpCommandBackend(nullptr);
+        interpVk_->mRapi = nullptr;
+        interpGL_->mRapi = nullptr;
+    }
+
+    // ---- Statistics ----
+    struct FbStats {
+        uint32_t nonBlack { 0 };
+        uint32_t distinctColors { 0 };
+    };
+
+    static FbStats ComputeStats(const std::vector<uint16_t>& fb) {
+        FbStats s;
+        std::set<uint16_t> uniq;
+        for (auto px : fb) {
+            if (px) { s.nonBlack++; uniq.insert(px); }
+        }
+        s.distinctColors = uniq.size();
+        return s;
+    }
+
+    // ---- Helpers ----
+    // Build and return a configured Fast3D interpreter with identity matrices.
+    static std::unique_ptr<Fast::Interpreter> MakeInterp() {
+        auto interp = std::make_unique<Fast::Interpreter>();
+        interp->mRapi = &stub_;
+        interp->mNativeDimensions.width = prdp::FB_WIDTH;
+        interp->mNativeDimensions.height = prdp::FB_HEIGHT;
+        interp->mCurDimensions.width = prdp::FB_WIDTH;
+        interp->mCurDimensions.height = prdp::FB_HEIGHT;
+        interp->mFbActive = false;
+        memset(interp->mRsp, 0, sizeof(Fast::RSP));
+        interp->mRsp->modelview_matrix_stack_size = 1;
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                interp->mRsp->MP_matrix[i][j] = interp->mRsp->modelview_matrix_stack[0][i][j] =
+                    (i == j) ? 1.0f : 0.0f;
+        interp->mRsp->geometry_mode = 0;
+        interp->mRdp->combine_mode = 0;
+        interp->mRenderingState = {};
+        return interp;
+    }
+
+    // Reset the Vulkan-path interpreter between tests.
+    void ResetVkInterp() {
+        interpVk_ = MakeInterp();
+        interpVk_->SetRdpCommandBackend(&backend_);
+        backend_.Clear();
+    }
+
+    // ---- Common RDP state setup (emitted via Fast3D interpreter) ----
+    // Returns interpreter with state set; also pushes those commands to backend.
+    void SetupCommonState(Fast::Interpreter& interp, bool en1Cycle = true) {
+        // Use fake pointers whose low 26 bits match FB_ADDR / ZBUF_ADDR so
+        // ParallelRDP reads/writes from the correct RDRAM locations.
+        interp.GfxDpSetColorImage(0 /*RGBA*/, 1 /*16b*/, prdp::FB_WIDTH,
+                                   reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
+        interp.GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
+        interp.GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
+
+        uint32_t cycBits = en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC;
+        interp.GfxDpSetOtherMode(cycBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                                  prdp::RDP_FORCE_BLEND);
+
+        // TEXEL0 combiner: output = texel colour directly
+        // SET_COMBINE encoding: A=0, B=0, C=0, D=TEXEL0(1)
+        constexpr uint32_t texel0D = 1;
+        uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
+        interp.GfxDpSetCombineMode(rgb, 0, 0, 0);
+    }
+
+    // ---- Texture loading helpers for the Vulkan path ----
+    // Emit RGBA16 texture setup commands directly to backend (bypasses interpreter
+    // so the RDRAM address in SET_TEXTURE_IMAGE is the real N64 address).
+    void EmitRGBA16TextureSetup(uint32_t w, uint32_t h) {
+        // line = (w texels * 2 B) / 8 B per TMEM word = w/4  (for w=8: 2)
+        uint32_t line = (w * 2 + 7) / 8;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
+                                               /* masks */ (w > 1 ? __builtin_ctz(w) : 0),
+                                               /* maskt */ (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitRGBA32TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = (w * 4 + 7) / 8;
+        // RGBA32 uses RDP_SIZ_32b for image but RDP_SIZ_16b for load (interleaved TMEM)
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitI4TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = ((w / 2) + 7) / 8;
+        if (line < 1) line = 1;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitI8TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = (w + 7) / 8;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitIA4TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = ((w / 2) + 7) / 8;
+        if (line < 1) line = 1;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitIA8TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = (w + 7) / 8;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    void EmitIA16TextureSetup(uint32_t w, uint32_t h) {
+        uint32_t line = (w * 2 + 7) / 8;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    // CI4: palette at PAL_ADDR, texture at TEX_ADDR
+    void EmitCI4TextureSetup(uint32_t w, uint32_t h, uint32_t numPalEntries = 16) {
+        // 1. Load palette into TMEM upper half (tile 7, tmem=0x100)
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, prdp::PAL_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTLUT(7, 0, numPalEntries - 1));
+        // 2. Load CI4 texture
+        uint32_t line = ((w / 2) + 7) / 8;
+        if (line < 1) line = 1;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
+        // CI4 tile: enable TLUT (bit 15 in other_mode_h = G_TT_RGBA16)
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    // CI8: full 256-entry palette at PAL_ADDR, texture at TEX_ADDR
+    void EmitCI8TextureSetup(uint32_t w, uint32_t h) {
+        // 1. Load palette
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, prdp::PAL_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTLUT(7, 0, 255));
+        // 2. Load CI8 texture
+        uint32_t line = (w + 7) / 8;
+        backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
+                                               (w > 1 ? __builtin_ctz(w) : 0),
+                                               (h > 1 ? __builtin_ctz(h) : 0),
+                                               0, 0, 0));
+        backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+        backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    }
+
+    // ---- Texture rectangle emission via Fast3D interpreter ----
+    // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport.
+    void EmitTextureRectVk(Fast::Interpreter& interp) {
+        // Screen (50,50)–(100,100); UVs 0→4 texels (mask=2 → wraps at 4).
+        // Coordinates are U10.2 (pixel*4).  dsdx/dtdy are S5.10 (texel/pixel * 1024).
+        interp.GfxDpTextureRectangle(50 * 4, 50 * 4, 100 * 4, 100 * 4,
+                                      0 /*tile*/, 0, 0, 1 << 10, 1 << 10, false);
+    }
+
+    // ---- Fast3D OpenGL path rendering ----
+    // Produces a 50×50 software-rasterized textured quad using the already-decoded
+    // RGBA16 representation of the texture.
+    std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16,
+                                        uint32_t texW, uint32_t texH) {
+        return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
+    }
+
+    // ---- Print comparison table row ----
+    static void PrintRow(const char* renderer, const FbStats& s) {
+        std::cout << "║  " << std::left << std::setw(16) << renderer
+                  << " │ " << std::right << std::setw(10) << s.nonBlack
+                  << " │ " << std::setw(10) << s.distinctColors
+                  << "   ║\n";
+    }
+
+    // ---- Print & save a full three-way comparison for one texture type ----
+    void RunThreeWay(const char* texTypeName,
+                     const std::vector<uint16_t>& directPRDPFb,
+                     const std::vector<uint16_t>& vkFb,
+                     const std::vector<uint16_t>& glFb) {
+        auto statsD = ComputeStats(directPRDPFb);
+        auto statsV = ComputeStats(vkFb);
+        auto statsG = ComputeStats(glFb);
+
+        std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
+        std::cout << "║  Three-Way Texture Comparison: " << std::left << std::setw(22) << texTypeName << "║\n";
+        std::cout << "╠══════════════════╤════════════╤════════════════════════╣\n";
+        std::cout << "║  Renderer        │ Non-black  │ Distinct colors        ║\n";
+        std::cout << "╠══════════════════╪════════════╪════════════════════════╣\n";
+        PrintRow("Direct PRDP",      statsD);
+        PrintRow("Fast3D→Vulkan",    statsV);
+        PrintRow("Fast3D→OpenGL",    statsG);
+        std::cout << "╚════════════════════════════════════════════════════════╝\n";
+
+        // Save PPM + PNG for each renderer
+        std::string nameStr(texTypeName);
+        std::transform(nameStr.begin(), nameStr.end(), nameStr.begin(), ::tolower);
+
+        SaveFramebufferBoth(RepoImagePath("three_way_prdp_"   + nameStr + ".ppm"), directPRDPFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dvk_"  + nameStr + ".ppm"), vkFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dgl_"  + nameStr + ".ppm"), glFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    }
+
+    prdp::ParallelRDPContext*   prdp_     { nullptr };
+    prdp::BatchingPRDPBackend   backend_;
+    std::unique_ptr<Fast::Interpreter> interpVk_;
+    std::unique_ptr<Fast::Interpreter> interpGL_;
+    PixelCapturingRenderingAPI  capGL_;
+    static fast3d_test::StubRenderingAPI stub_;
+};
+
+// Static member needs to be defined outside the class body.
+fast3d_test::StubRenderingAPI ThreeWayTextureTest::stub_;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Helper: run the direct-PRDP render for an RGBA16 texture mesh
+// (same setup as BuildTextureMeshSetup + SubmitSequence).
+// ──────────────────────────────────────────────────────────────────────────
+static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>& tex,
+                                                      uint32_t w, uint32_t h) {
+    auto& ctx = prdp::GetPRDPContext();
+    ctx.ClearRDRAM();
+    auto cmds = BuildTextureMeshSetup(tex, prdp::CC_TEXEL0, prdp::CC_TEXEL0);
+    // Render a 50×50 rect (same region as RenderFast3DTexturedQuad)
+    auto texRect = prdp::MakeTextureRectangleWords(
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4,
+        0, 0, (w * 1024) / 50, (h * 1024) / 50);
+    ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    return ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RGBA16
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, RGBA16) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    uint16_t red5551  = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t cyan5551 = (0u << 11) | (31u << 6) | (31u << 1) | 1;
+    auto tex = GenerateCheckerboard8x8(red5551, cyan5551);
+
+    // 1. Direct PRDP
+    auto directFb = RenderDirectPRDP_RGBA16(tex, 8, 8);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitRGBA16TextureSetup(8, 8);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto glFb = RenderOpenGL(tex, 8, 8);
+
+    RunThreeWay("RGBA16", directFb, vkFb, glFb);
+
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u) << "Direct PRDP should render pixels";
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u) << "Fast3D→Vulkan should render pixels";
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u) << "Fast3D→OpenGL should render pixels";
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RGBA32
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, RGBA32) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 checkerboard: cyan (0x00FFFFFF) / magenta (0xFF00FFFF)
+    std::vector<uint32_t> tex32(4 * 4);
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++)
+            tex32[y * 4 + x] = ((x + y) & 1) ? 0xFF00FFFFu : 0x00FFFFFFu;
+
+    // 1. Direct PRDP — write raw 32-bit data, use existing CI test infrastructure
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAM(prdp::TEX_ADDR, tex32.data(), tex32.size() * 4);
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        // RGBA32: use 16b tile for load (interleaved)
+        uint32_t line = (4 * 4 + 7) / 8;
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 4, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, line, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAM(prdp::TEX_ADDR, tex32.data(), tex32.size() * 4);
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitRGBA32TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL (decode RGBA32→RGBA16 for the software rasterizer)
+    auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("RGBA32", directFb, vkFb, glFb);
+
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// I4
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, I4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 I4 checkerboard: max intensity (0xF) / mid intensity (0x8)
+    std::vector<uint8_t> tex(8); // 4x4 at 4bpp = 8 bytes
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x += 2) {
+            uint8_t hi = ((x + y) & 1) ? 0x8 : 0xF;
+            uint8_t lo = ((x + 1 + y) & 1) ? 0x8 : 0xF;
+            tex[y * 2 + x / 2] = (hi << 4) | lo;
+        }
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitI4TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("I4", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// I8
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, I8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    std::vector<uint8_t> tex(4 * 4);
+    for (int i = 0; i < 16; i++) tex[i] = ((i & 1) ? 0x80 : 0xFF);
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitI8TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("I8", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// IA4
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, IA4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 IA4: (I=7,A=1)=0xF / (I=4,A=1)=0x9 checkerboard
+    std::vector<uint8_t> tex(8);
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x += 2) {
+            uint8_t hi = ((x + y) & 1) ? 0x9 : 0xF;
+            uint8_t lo = ((x + 1 + y) & 1) ? 0x9 : 0xF;
+            tex[y * 2 + x / 2] = (hi << 4) | lo;
+        }
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitIA4TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("IA4", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// IA8
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, IA8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 IA8: high nibble=I, low nibble=A. Checkerboard 0xFF/0x80.
+    std::vector<uint8_t> tex(4 * 4);
+    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x80 : 0xFF;
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitIA8TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("IA8", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// IA16
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, IA16) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 IA16: upper byte=I, lower byte=A. Checkerboard 0xFFFF/0x8080.
+    std::vector<uint16_t> tex(4 * 4);
+    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x8080 : 0xFFFF;
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeOtherModes1Cycle());
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
+    backend_.Clear();
+    SetupCommonState(*interpVk_);
+    EmitIA16TextureSetup(4, 4);
+    EmitTextureRectVk(*interpVk_);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("IA16", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// CI4
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, CI4) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // 4×4 CI4 checkerboard: indices alternate 0 and 1
+    std::vector<uint8_t> tex(8);
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x += 2) {
+            uint8_t hi = ((x + y) & 1) ? 1 : 0;
+            uint8_t lo = ((x + 1 + y) & 1) ? 1 : 0;
+            tex[y * 2 + x / 2] = (hi << 4) | lo;
+        }
+
+    // Palette: index 0 = red5551, index 1 = green5551
+    uint16_t red5551   = (31u << 11) | (0u  << 6) | (0u << 1)  | 1;
+    uint16_t green5551 = (0u  << 11) | (31u << 6) | (0u << 1)  | 1;
+    std::vector<uint16_t> palette(16, 0x0001);
+    palette[0] = red5551;
+    palette[1] = green5551;
+
+    static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
+
+    // 1. Direct PRDP (reuse existing helper sequence)
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+        ctx.WriteRDRAMPalette(TLUT_ADDR, palette);
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeSetOtherModes(
+            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+            prdp::RDP_FORCE_BLEND));
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan  (state via interpreter, textures directly to backend)
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp_->WriteRDRAMPalette(TLUT_ADDR, palette);
+    backend_.Clear();
+    // State commands through interpreter (accumulate in backend via RdpCommandBackend)
+    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
+    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
+    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
+    // Enable TLUT (bit 15 = G_TT_RGBA16) in other_mode_h for CI texture lookup
+    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                   prdp::RDP_FORCE_BLEND);
+    constexpr uint32_t texel0D = 1;
+    uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
+    interpVk_->GfxDpSetCombineMode(rgb, 0, 0, 0);
+    // CI4 texture setup directly to backend with the correct TLUT_ADDR
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTLUT(7, 0, 15));
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    // Texture rectangle via interpreter (emits the 4-word command to backend)
+    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("CI4", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// CI8
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, CI8) {
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    std::vector<uint8_t> tex(4 * 4);
+    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 1 : 0;
+
+    uint16_t red5551   = (31u << 11) | (0u  << 6) | (0u << 1) | 1;
+    uint16_t blue5551  = (0u  << 11) | (0u  << 6) | (31u << 1) | 1;
+    std::vector<uint16_t> palette(256, 0x0001);
+    palette[0] = red5551;
+    palette[1] = blue5551;
+
+    static constexpr uint32_t TLUT_ADDR8 = prdp::TEX_ADDR + 0x1000;
+
+    // 1. Direct PRDP
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+        ctx.WriteRDRAMPalette(TLUT_ADDR8, palette);
+
+        std::vector<prdp::RDPCommand> cmds;
+        cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        cmds.push_back(prdp::MakeSyncPipe());
+        cmds.push_back(prdp::MakeSetOtherModes(
+            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+            prdp::RDP_FORCE_BLEND));
+        cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
+        cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+        cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+        cmds.push_back(prdp::MakeSyncLoad());
+        cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+        cmds.push_back(prdp::MakeSyncTile());
+        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 2. Fast3D → Vulkan (state via interpreter, textures directly to backend)
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
+    prdp_->WriteRDRAMPalette(TLUT_ADDR8, palette);
+    backend_.Clear();
+    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
+    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
+    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
+    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                   prdp::RDP_FORCE_BLEND);
+    {
+        constexpr uint32_t texel0D = 1;
+        uint32_t rgb2 = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
+        interpVk_->GfxDpSetCombineMode(rgb2, 0, 0, 0);
+    }
+    // CI8 texture setup directly to backend (state commands already in backend from above)
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
+    backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTLUT(7, 0, 255));
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // 3. Fast3D → OpenGL
+    auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
+    auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+
+    RunThreeWay("CI8", directFb, vkFb, glFb);
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
