@@ -171,6 +171,24 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     uint32_t mNextTextureId = 1;
     FilteringMode mFilterMode = FILTER_THREE_POINT;
 
+    // Viewport/scissor tracked so DrawTriangles can convert NDC → screen space
+    // when building PRDP command words.
+    int mVpX = 0, mVpY = 0, mVpW = 320, mVpH = 240;
+    int mScX = 0, mScY = 0, mScW = 320, mScH = 240;
+    bool mUseAlpha = false;
+    bool mDepthTest = false;
+    bool mDepthMask = false;
+    bool mDecal = false;
+
+    // RDP command staging buffer for the current frame (word pairs, 64-bit each).
+    std::vector<uint64_t> mRdpWords;
+
+    // Helpers ----------------------------------------------------------------
+    // Encode a post-RSP VBO triangle into N64 RDP SHADE_TRIANGLE command words
+    // and append them to mRdpWords.  Returns the number of words appended.
+    int EncodeShadeTriangle(const float* v0, const float* v1, const float* v2, int floatsPerVertex,
+                             bool useColour, int colourOffset);
+
     SDL_Window* mSdlWindow = nullptr;
 };
 

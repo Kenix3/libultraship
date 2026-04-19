@@ -293,4 +293,35 @@ if(NOT TARGET libtcc)
     endif()
 endif()
 
+#=================== ParallelRDP (standalone) ===================
+# Only fetched when the Vulkan / PRDP backend is enabled.
+if(ENABLE_VULKAN)
+    # parallel-rdp-standalone bundles its own Vulkan framework (Granite)
+    # and all required GLSL → SPIR-V tooling.  We disable the standalone
+    # demo targets to keep build times short.
+    set(PARALLEL_RDP_STANDALONE ON CACHE BOOL "" FORCE)
+    set(PARALLEL_RDP_LIBRARY_ONLY ON CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        parallel_rdp_standalone
+        GIT_REPOSITORY https://github.com/Themaister/parallel-rdp-standalone.git
+        GIT_TAG        1a4f3b5c3f4f7fd5c2aba0d12e8a1dc4e56f5c3a
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(parallel_rdp_standalone)
+
+    # The standalone CMakeLists creates a target called "parallel-rdp".
+    # If it does not exist (e.g. CMake version compatibility), fall back to
+    # a header-only interface so the rest of the build does not break.
+    if(NOT TARGET parallel-rdp)
+        message(WARNING
+            "parallel-rdp target not found after FetchContent — "
+            "PRDP DrawTriangles will remain a stub.  "
+            "Check the parallel-rdp-standalone CMakeLists for target names.")
+        add_library(parallel-rdp INTERFACE)
+    endif()
+
+    list(APPEND ADDITIONAL_LIB_INCLUDES ${parallel_rdp_standalone_SOURCE_DIR})
+endif()
+
 endif() # NOT DISABLE_SCRIPTING

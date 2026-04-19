@@ -10,6 +10,7 @@
 #include <imgui_impl_vulkan.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <set>
@@ -508,6 +509,7 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
 void GfxRenderingAPIVulkan::Init() {
     // Framebuffer 0 = the screen / swapchain target.  Reserve it.
     mFramebuffers.push_back({});
+    mRdpWords.reserve(4096); // pre-allocate for typical frame RDP command count
 }
 
 void GfxRenderingAPIVulkan::OnResize() {
@@ -518,6 +520,9 @@ void GfxRenderingAPIVulkan::OnResize() {
 // Frame lifecycle
 // ---------------------------------------------------------------------------
 void GfxRenderingAPIVulkan::StartFrame() {
+    // Clear the RDP command staging buffer at the start of each frame.
+    mRdpWords.clear();
+
     if (mNeedsSwapchainRecreation) {
         RecreateSwapchain();
     }
@@ -718,17 +723,238 @@ void GfxRenderingAPIVulkan::SetSamplerParameters(int /*sampler*/, bool /*linearF
 void GfxRenderingAPIVulkan::DeleteTexture(uint32_t /*texId*/) {}
 
 // ---------------------------------------------------------------------------
-// Render state (stubs)
+// Render state — track values so DrawTriangles can build PRDP commands
 // ---------------------------------------------------------------------------
-void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool /*depthTest*/, bool /*zUpd*/) {}
-void GfxRenderingAPIVulkan::SetZmodeDecal(bool /*decal*/) {}
-void GfxRenderingAPIVulkan::SetViewport(int /*x*/, int /*y*/, int /*width*/, int /*height*/) {}
-void GfxRenderingAPIVulkan::SetScissor(int /*x*/, int /*y*/, int /*width*/, int /*height*/) {}
-void GfxRenderingAPIVulkan::SetUseAlpha(bool /*useAlpha*/) {}
+void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool depthTest, bool zUpd) {
+    mDepthTest = depthTest;
+    mDepthMask = zUpd;
+}
+void GfxRenderingAPIVulkan::SetZmodeDecal(bool decal) {
+    mDecal = decal;
+}
+void GfxRenderingAPIVulkan::SetViewport(int x, int y, int width, int height) {
+    mVpX = x;
+    mVpY = y;
+    mVpW = width;
+    mVpH = height;
+}
+void GfxRenderingAPIVulkan::SetScissor(int x, int y, int width, int height) {
+    mScX = x;
+    mScY = y;
+    mScW = width;
+    mScH = height;
+}
+void GfxRenderingAPIVulkan::SetUseAlpha(bool useAlpha) {
+    mUseAlpha = useAlpha;
+}
 
-void GfxRenderingAPIVulkan::DrawTriangles(float* /*bufVbo*/, size_t /*bufVboLen*/,
-                                           size_t /*bufVboNumTris*/) {
-    // TODO (PRDP phase 2): translate triangle + state into ParallelRDP commands.
+// ---------------------------------------------------------------------------
+// EncodeShadeTriangle — convert one post-RSP triangle into N64 RDP
+// SHADE_TRIANGLE (opcode 0xC8) command words and append to mRdpWords.
+//
+// The VBO layout (per vertex, floatsPerVertex floats total):
+//   [0..3]  x, y, z, w   (clip space; w≠0 so NDC = x/w, y/w)
+//   [colourOffset..+3]    r, g, b, a   (if useColour, in [0,1])
+//
+// Screen-space conversion (N64 convention, y-up in NDC, y-down on screen):
+//   sx = ndcX * (vpW/2) + (vpX + vpW/2)
+//   sy = -ndcY * (vpH/2) + (vpY + vpH/2)      ← flip Y
+//
+// Returns number of uint64_t words appended (8 for a SHADE_TRIANGLE).
+// ---------------------------------------------------------------------------
+int GfxRenderingAPIVulkan::EncodeShadeTriangle(const float* v0, const float* v1, const float* v2,
+                                                int /*floatsPerVertex*/, bool useColour, int colourOffset) {
+    // Convert clip → NDC → screen (pixel, y-down).
+    auto toScreen = [&](const float* v, float& sx, float& sy) {
+        float winv = (fabsf(v[3]) > 1e-6f) ? (1.0f / v[3]) : 0.0f;
+        float ndcX = v[0] * winv;
+        float ndcY = v[1] * winv;
+        sx = ndcX * (mVpW * 0.5f) + (mVpX + mVpW * 0.5f);
+        sy = -ndcY * (mVpH * 0.5f) + (mVpY + mVpH * 0.5f);
+    };
+
+    float sx0, sy0, sx1, sy1, sx2, sy2;
+    toScreen(v0, sx0, sy0);
+    toScreen(v1, sx1, sy1);
+    toScreen(v2, sx2, sy2);
+
+    // Default shade = white (fully opaque) when no colour inputs present.
+    float r0 = 1, g0 = 1, b0 = 1, a0 = 1;
+    float r1 = 1, g1 = 1, b1 = 1, a1 = 1;
+    float r2 = 1, g2 = 1, b2 = 1, a2 = 1;
+    if (useColour) {
+        r0 = v0[colourOffset + 0]; g0 = v0[colourOffset + 1];
+        b0 = v0[colourOffset + 2]; a0 = v0[colourOffset + 3];
+        r1 = v1[colourOffset + 0]; g1 = v1[colourOffset + 1];
+        b1 = v1[colourOffset + 2]; a1 = v1[colourOffset + 3];
+        r2 = v2[colourOffset + 0]; g2 = v2[colourOffset + 1];
+        b2 = v2[colourOffset + 2]; a2 = v2[colourOffset + 3];
+    }
+
+    // Sort vertices by Y (ascending = top-to-bottom on screen).
+    struct V { float x, y, r, g, b, a; };
+    V verts[3] = {
+        { sx0, sy0, r0, g0, b0, a0 },
+        { sx1, sy1, r1, g1, b1, a1 },
+        { sx2, sy2, r2, g2, b2, a2 },
+    };
+    if (verts[0].y > verts[1].y) std::swap(verts[0], verts[1]);
+    if (verts[1].y > verts[2].y) std::swap(verts[1], verts[2]);
+    if (verts[0].y > verts[1].y) std::swap(verts[0], verts[1]);
+
+    // 10.2 fixed-point Y values.
+    auto toY10_2  = [](float y) { return static_cast<int16_t>(y * 4.0f); };
+    auto toX16_16 = [](float x) { return static_cast<int32_t>(x * 65536.0f); };
+
+    int16_t YH = toY10_2(verts[0].y);  // top
+    int16_t YM = toY10_2(verts[1].y);  // middle
+    int16_t YL = toY10_2(verts[2].y);  // bottom
+
+    float dy_hm = verts[1].y - verts[0].y;
+    float dy_lh = verts[2].y - verts[0].y;
+    float dy_ml = verts[2].y - verts[1].y;
+
+    float DXHDy = (dy_lh > 0.0f) ? (verts[2].x - verts[0].x) / dy_lh : 0.0f;
+    float DXMDy = (dy_hm > 0.0f) ? (verts[1].x - verts[0].x) / dy_hm : 0.0f;
+    float DXLDy = (dy_ml > 0.0f) ? (verts[2].x - verts[1].x) / dy_ml : 0.0f;
+
+    float xH_at_YM = verts[0].x + DXHDy * dy_hm;
+    bool right_major = (xH_at_YM > verts[1].x);
+
+    // Shade derivatives via 2-D linear solve over the triangle.
+    float ex = verts[1].x - verts[0].x, ey = dy_hm;
+    float fx = verts[2].x - verts[0].x, fy = dy_lh;
+    float det = ex * fy - ey * fx;
+
+    auto deriv = [&](float c0, float c1, float c2, float& dcdx, float& dcdy) {
+        float dc_e = c1 - c0, dc_f = c2 - c0;
+        if (fabsf(det) > 1e-6f) {
+            dcdx = (dc_e * fy - dc_f * ey) / det;
+            dcdy = (dc_f * ex - dc_e * fx) / det;
+        } else {
+            dcdx = dcdy = 0.0f;
+        }
+    };
+
+    float dRdx, dRdy, dGdx, dGdy, dBdx, dBdy, dAdx, dAdy;
+    deriv(verts[0].r, verts[1].r, verts[2].r, dRdx, dRdy);
+    deriv(verts[0].g, verts[1].g, verts[2].g, dGdx, dGdy);
+    deriv(verts[0].b, verts[1].b, verts[2].b, dBdx, dBdy);
+    deriv(verts[0].a, verts[1].a, verts[2].a, dAdx, dAdy);
+
+    // 8.16 fixed-point shade (N64 range 0-255 → multiply by 256 × 65536).
+    constexpr float kSF = 256.0f * 65536.0f;
+    auto toShade = [kSF](float c) { return static_cast<int32_t>(c * kSF); };
+
+    // Word 0: opcode 0xC8 | right_major | level(0) | tile(0) | YL | YM | YH
+    uint64_t w0 = (uint64_t(0xC8) << 56)
+                | (uint64_t(right_major ? 1 : 0) << 55)
+                | (uint64_t(uint16_t(YL)) << 32)
+                | (uint64_t(uint16_t(YM)) << 16)
+                | uint64_t(uint16_t(YH));
+
+    // Words 1-3: edge coefficients XL/DXLDy, XH/DXHDy, XM/DXMDy.
+    uint64_t w1 = (uint64_t(uint32_t(toX16_16(verts[1].x))) << 32)
+                | uint64_t(uint32_t(toX16_16(DXLDy)));
+    uint64_t w2 = (uint64_t(uint32_t(toX16_16(verts[0].x))) << 32)
+                | uint64_t(uint32_t(toX16_16(DXHDy)));
+    uint64_t w3 = (uint64_t(uint32_t(toX16_16(verts[0].x))) << 32)
+                | uint64_t(uint32_t(toX16_16(DXMDy)));
+
+    // Words 4-7: RGBA at top vertex + x-derivatives.
+    uint64_t w4 = (uint64_t(uint32_t(toShade(verts[0].r))) << 32) | uint64_t(uint32_t(toShade(verts[0].g)));
+    uint64_t w5 = (uint64_t(uint32_t(toShade(verts[0].b))) << 32) | uint64_t(uint32_t(toShade(verts[0].a)));
+    uint64_t w6 = (uint64_t(uint32_t(toShade(dRdx))) << 32) | uint64_t(uint32_t(toShade(dGdx)));
+    uint64_t w7 = (uint64_t(uint32_t(toShade(dBdx))) << 32) | uint64_t(uint32_t(toShade(dAdx)));
+
+    mRdpWords.push_back(w0);
+    mRdpWords.push_back(w1);
+    mRdpWords.push_back(w2);
+    mRdpWords.push_back(w3);
+    mRdpWords.push_back(w4);
+    mRdpWords.push_back(w5);
+    mRdpWords.push_back(w6);
+    mRdpWords.push_back(w7);
+    return 8;
+}
+
+// ---------------------------------------------------------------------------
+// DrawTriangles — translate the interpreter's VBO batch into RDP commands
+// ---------------------------------------------------------------------------
+// VBO layout (from GfxSpTri1 / Flush):
+//   Each vertex occupies a variable number of floats:
+//     [0..3]    x, y, z, w    (clip-space position; always present)
+//     [4..5]    u0, v0        (texture 0 UVs; only when usedTextures[0])
+//     optional: clamp max_u0, max_v0
+//     [...]     u1, v1        (texture 1 UVs; only when usedTextures[1])
+//     [...]     fog_r,g,b,factor  (if FOG shader opt)
+//     [...]     grayscale r,g,b,a  (if GRAYSCALE shader opt)
+//     [...]     r,g,b,a per shader input (numInputs × colour channels)
+//
+// For phase 2 the full texture/fog/grayscale decoding will be added; this
+// implementation handles the common "position + flat/gouraud shade" path.
+void GfxRenderingAPIVulkan::DrawTriangles(float* bufVbo, size_t bufVboLen, size_t bufVboNumTris) {
+    if (bufVboNumTris == 0 || bufVboLen == 0) {
+        return;
+    }
+
+    // Determine per-vertex stride from the current shader.
+    int floatsPerVertex = 4; // x,y,z,w always
+    bool useColour = false;
+    int colourOffset = 4;
+    uint8_t numInputs = 0;
+    bool usedTex[2] = {};
+
+    if (mCurrentShader) {
+        numInputs = mCurrentShader->numInputs;
+        usedTex[0] = mCurrentShader->usedTextures[0];
+        usedTex[1] = mCurrentShader->usedTextures[1];
+
+        int stride = 4; // position
+        for (int t = 0; t < 2; t++) {
+            if (usedTex[t]) {
+                stride += 2; // u, v
+                // NOTE: clamp values (max_u, max_v) are added by the interpreter
+                // based on the texture tile flags — we approximate as not present
+                // for the basic path.
+            }
+        }
+        // Colour inputs follow textures.
+        colourOffset = stride;
+        if (numInputs > 0) {
+            // Each input is 1 RGBA (4 floats).  The number of active channels
+            // is 1 (no alpha) or 2 (alpha), but for shade we use the first input.
+            useColour = true;
+            stride += numInputs * 4;
+        }
+        floatsPerVertex = stride;
+    }
+
+    if (floatsPerVertex == 0) {
+        return;
+    }
+
+    // Emit one SHADE_TRIANGLE per triangle.
+    size_t vboIdx = 0;
+    for (size_t tri = 0; tri < bufVboNumTris; tri++) {
+        const float* v0 = bufVbo + vboIdx;
+        const float* v1 = bufVbo + vboIdx + floatsPerVertex;
+        const float* v2 = bufVbo + vboIdx + floatsPerVertex * 2;
+
+        if (vboIdx + static_cast<size_t>(floatsPerVertex) * 3 > bufVboLen) {
+            break; // guard against malformed buffer
+        }
+
+        EncodeShadeTriangle(v0, v1, v2, floatsPerVertex, useColour, colourOffset);
+
+#ifdef ENABLE_PARALLEL_RDP
+        // TODO (PRDP phase 2): submit mRdpWords to the CommandProcessor here.
+        // Example (once CommandProcessor is instantiated):
+        //   mPrdpCommandProcessor->enqueue_command(mRdpWords.size(), mRdpWords.data());
+        //   mRdpWords.clear();
+#endif
+        vboIdx += static_cast<size_t>(floatsPerVertex) * 3;
+    }
 }
 
 // ---------------------------------------------------------------------------
