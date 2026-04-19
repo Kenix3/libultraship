@@ -34,9 +34,7 @@ add_executable(libultraship_tests
     path_diskfile_tests.cpp
     resource_type_tests.cpp
     archive_self_tests.cpp
-    connected_physical_device_manager_tests.cpp
-    gfx_sdl_window_tests.cpp
-    rumble_mapping_factory_tests.cpp
+    fast3d_parallelrdp_backend_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)

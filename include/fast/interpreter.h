@@ -10,7 +10,7 @@
 #include <stack>
 #include <string>
 #include <string_view>
-#include <memory>
+#include <initializer_list>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -139,6 +139,12 @@ namespace Fast {
 class GfxRenderingAPI;
 class GfxWindowBackend;
 class Fast3dWindow;
+
+class RdpCommandBackend {
+  public:
+    virtual ~RdpCommandBackend() = default;
+    virtual void SubmitCommand(size_t numWords, const uint32_t* words) = 0;
+};
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
 constexpr size_t SHADER_ID_SHIFT = 17;
@@ -423,6 +429,7 @@ class Interpreter {
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
+    void SetRdpCommandBackend(RdpCommandBackend* backend);
 
     // private: TODO make these private
     void Flush();
@@ -514,6 +521,8 @@ class Interpreter {
     static void NormalizeVector(float v[3]);
     static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
     static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
+    void EmitRdpCommand(std::initializer_list<uint32_t> words);
+    void EmitRdpCommand(size_t numWords, const uint32_t* words);
 
     RSP* mRsp;
     RDP* mRdp;
@@ -572,10 +581,7 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
-    // Interpolation factor for the current rendered frame within a game tick:
-    // 0 = previous tick, 1 = current tick. Set by the port before each
-    // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
-    float mInterpolationT = 1.0f;
+    RdpCommandBackend* mRdpCommandBackend = nullptr;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
@@ -589,4 +595,4 @@ const char* GfxGetOpcodeName(int8_t opcode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                                      uint8_t resize, bool forceFixedAspect = false);
+                                      uint8_t resize);
