@@ -537,6 +537,25 @@ public:
         memcpy(rdram_.data() + addr, data, size);
     }
 
+    // Write a TLUT (palette) into RDRAM with adjacent uint16_t pairs swapped.
+    //
+    // ParallelRDP's TMEM upload shader reads VRAM as vram16[(addr>>1)^1], which
+    // swaps adjacent 16-bit words within every 32-bit group — matching the N64's
+    // 32-bit word byte-swap storage.  Writing palette entries with pairs swapped
+    // (pal[1], pal[0], pal[3], pal[2], …) compensates for this, so palette[n]
+    // ends up in the TMEM slot that the CI4/CI8 sampler expects.
+    void WriteRDRAMPalette(uint32_t addr, const std::vector<uint16_t>& palette) {
+        if (!available_) return;
+        std::vector<uint16_t> swapped(palette.size());
+        for (size_t i = 0; i + 1 < palette.size(); i += 2) {
+            swapped[i]     = palette[i + 1];
+            swapped[i + 1] = palette[i];
+        }
+        if (palette.size() & 1)
+            swapped[palette.size() - 1] = palette[palette.size() - 1];
+        WriteRDRAM(addr, swapped.data(), swapped.size() * sizeof(uint16_t));
+    }
+
     uint8_t* GetRDRAM() { return rdram_.data(); }
 
 private:
@@ -3333,7 +3352,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = 0xFFFF;  // white
-    prdp.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3350,8 +3369,10 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     // Load TLUT into upper TMEM (tile 7 is conventional for TLUT)
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    // Palette entries are always 16-bit RGBA5551 regardless of CI4/CI8 index size
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+    // N64 SDK (gsDPLoadTLUT_pal16) always uses fmt=0, siz=4b for the TLUT tile.
+    // RDP_SIZ_4b triggers the vram_size-tmem_size==2 branch in ParallelRDP's
+    // update_tmem_lut shader, which writes all 16 palette slots contiguously.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
@@ -3396,7 +3417,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = cyan5551;
-    prdp.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+    prdp.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -3412,9 +3433,9 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    // CI8 TLUT entries are always 16-bit RGBA5551 — tile must use 16b, not 8b,
-    // so all 256 entries are written to TMEM correctly.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+    // N64 SDK (gsDPLoadTLUT_pal256) uses fmt=0, siz=4b for the TLUT tile.
+    // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
@@ -4919,7 +4940,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = red5551;
     palette[1] = green5551;
-    ctx.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+    ctx.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -4934,8 +4955,9 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    // Palette entries are always 16-bit RGBA5551 regardless of CI4/CI8 index size
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+    // N64 SDK (gsDPLoadTLUT_pal16) uses fmt=0, siz=4b for the TLUT tile.
+    // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
@@ -4994,7 +5016,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = yellow5551;
     palette[1] = blue5551;
-    ctx.WriteRDRAM(TLUT_ADDR, palette.data(), palette.size() * sizeof(uint16_t));
+    ctx.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
     cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
@@ -5009,9 +5031,9 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     // Load TLUT
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                               1, TLUT_ADDR));
-    // CI8 TLUT entries are always 16-bit RGBA5551 — tile must use 16b, not 8b,
-    // so all 256 entries are written to TMEM correctly.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+    // N64 SDK (gsDPLoadTLUT_pal256) uses fmt=0, siz=4b for the TLUT tile.
+    // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
                                       0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
