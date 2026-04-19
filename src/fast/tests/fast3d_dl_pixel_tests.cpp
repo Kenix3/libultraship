@@ -523,9 +523,14 @@ public:
     std::vector<uint16_t> ReadFramebuffer(uint32_t addr, uint32_t width, uint32_t height) {
         std::vector<uint16_t> fb(width * height);
         if (!available_) return fb;
-        // ParallelRDP writes RDRAM in host byte order (little-endian on x86).
-        // Use memcpy to preserve native byte order rather than manual big-endian decode.
-        memcpy(fb.data(), rdram_.data() + addr, width * height * sizeof(uint16_t));
+        // ParallelRDP's store_vram_color writes each RGBA5551 pixel to vram16[index ^ 1],
+        // swapping adjacent uint16_t pairs within every 32-bit RDRAM word.  A plain memcpy
+        // would return those pairs in swapped order, making checkerboard and other
+        // fine-grained patterns appear inverted.  Applying the same ^1 when reading
+        // compensates and restores the correct pixel order.
+        const uint16_t* vram16 = reinterpret_cast<const uint16_t*>(rdram_.data() + addr);
+        for (uint32_t i = 0; i < width * height; i++)
+            fb[i] = vram16[i ^ 1];
         return fb;
     }
 
@@ -3099,7 +3104,9 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     cmds.push_back(prdp::MakeSyncTile());
 
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+        // fast3D reference maps UV 0→1 (4 texels) across the 50-pixel span,
+        // so dsdx/dtdy = 4*1024/50 = 81 (≈0.08 texels/pixel).
+        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
 
     prdp.SubmitSequence({
         { cmds, texRect },
@@ -4281,10 +4288,10 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 
     // Texture rectangle covering 128x128 pixel region centered on screen
     // at (96,56)-(224,184).
-    // dsdx/dtdy in S10.5: 1.0 = 1<<10 = 1024 means 1 texel/pixel.
-    // With 8-texel wrap (mask=3), the checkerboard repeats every 8 pixels.
+    // The fast3D reference maps UV 0→8 texels (TC=0→256 in S10.5) across
+    // 128 pixels, so dsdx/dtdy = 8*1024/128 = 64 (0.0625 texels/pixel).
     auto texRect = prdp::MakeTextureRectangleWords(
-        0, 224 * 4, 184 * 4, 96 * 4, 56 * 4, 0, 0, 1 << 10, 1 << 10);
+        0, 224 * 4, 184 * 4, 96 * 4, 56 * 4, 0, 0, 64, 64);
 
     prdpCtx.SubmitSequence({
         { cmds, texRect },
