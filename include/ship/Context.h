@@ -27,7 +27,7 @@ class Config;
 class ResourceManager;
 class FileDropMgr;
 class EventSystem;
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 class ScriptLoader;
 #endif
 class Keystore;
@@ -177,7 +177,7 @@ class Context {
     std::shared_ptr<FileDropMgr> GetFileDropMgr() const;
     /** @brief Returns the EventSystem subsystem. */
     std::shared_ptr<EventSystem> GetEventSystem() const;
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     /** @brief Returns the ScriptLoader subsystem. */
     std::shared_ptr<ScriptLoader> GetScriptLoader() const;
 #endif
@@ -252,7 +252,7 @@ class Context {
     /** @brief Initializes the EventSystem subsystem. @return true on success. */
     bool InitEventSystem();
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     /**
      * @brief Initializes the ScriptLoader subsystem for runtime script compilation.
      * @param compileDefines  Preprocessor defines passed to the compiler.
@@ -289,7 +289,7 @@ class Context {
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     std::shared_ptr<ScriptLoader> mScriptLoader;
 #endif
     std::shared_ptr<Keystore> mKeystore;
