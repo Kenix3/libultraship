@@ -67,6 +67,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/macUtils.mm)
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/iosFullscreenStubs.cpp)
+endif()
+
 source_group("utils" FILES ${Source_Files__Utils})
 target_sources(libultraship PRIVATE ${Source_Files__Utils})
 
