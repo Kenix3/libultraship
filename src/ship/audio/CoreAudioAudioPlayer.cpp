@@ -44,7 +44,11 @@ bool CoreAudioAudioPlayer::DoInit() {
 
     AudioComponentDescription desc;
     desc.componentType = kAudioUnitType_Output;
+#if defined(__IOS__)
+    desc.componentSubType = kAudioUnitSubType_RemoteIO;
+#else
     desc.componentSubType = kAudioUnitSubType_HALOutput;
+#endif
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
     desc.componentFlags = 0;
     desc.componentFlagsMask = 0;
