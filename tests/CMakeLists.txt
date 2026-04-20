@@ -26,7 +26,7 @@ add_executable(lus_tests
     archive_self_tests.cpp
 )
 
-if(NOT DISABLE_SCRIPTING)
+if(ENABLE_SCRIPTING)
     target_sources(lus_tests PRIVATE script_test.cpp)
 endif()
 

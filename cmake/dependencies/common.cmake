@@ -134,7 +134,7 @@ target_include_directories(monocypher PUBLIC
 )
 
 #=========== libtcc ===========
-if(NOT DISABLE_SCRIPTING)
+if(ENABLE_SCRIPTING)
 
 FetchContent_Declare(
     tinycc
@@ -144,9 +144,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(tinycc)
 if(NOT TARGET libtcc)
-    # Enable symbol exporting for Windows DLLs
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
     if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
@@ -224,7 +221,7 @@ if(NOT TARGET libtcc)
         )
     endif()
 
-    add_library(libtcc SHARED
+    add_library(libtcc STATIC
         "${tinycc_SOURCE_DIR}/libtcc.c"
         "${tinycc_BINARY_DIR}/tccdefs_.h"
     )
@@ -247,6 +244,9 @@ if(NOT TARGET libtcc)
             target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 _WIN64)
         endif()
         target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
+        # Prevent MSVC <assert.h> from defining `__assert`, which collides with
+        # TCC's internal `__assert` symbol.
+        target_compile_definitions(libtcc PRIVATE NDEBUG)
     endif()
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
@@ -285,4 +285,4 @@ if(NOT TARGET libtcc)
     endif()
 endif()
 
-endif() # NOT DISABLE_SCRIPTING
+endif() # ENABLE_SCRIPTING

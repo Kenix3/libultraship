@@ -1,6 +1,6 @@
 #include "ship/scripting/ScriptLoader.h"
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/Archive.h"
@@ -365,4 +365,4 @@ void* ScriptLoader::GetFunction(const std::string& name, const std::string& func
 
 } // namespace Ship
 
-#endif // DISABLE_SCRIPTING
+#endif // ENABLE_SCRIPTING
