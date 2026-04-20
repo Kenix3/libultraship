@@ -28,6 +28,13 @@ add_executable(lus_tests
 
 if(ENABLE_SCRIPTING)
     target_sources(lus_tests PRIVATE script_test.cpp)
+    if(WIN32)
+        add_custom_command(TARGET lus_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:libtcc>
+                $<TARGET_FILE_DIR:lus_tests>
+        )
+    endif()
 endif()
 
 set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)

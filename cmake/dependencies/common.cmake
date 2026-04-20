@@ -221,7 +221,10 @@ if(NOT TARGET libtcc)
         )
     endif()
 
-    add_library(libtcc STATIC
+    # libtcc is LGPL; keep it as a shared library so consumers link against it
+    # dynamically rather than incorporating it into their binary.
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    add_library(libtcc SHARED
         "${tinycc_SOURCE_DIR}/libtcc.c"
         "${tinycc_BINARY_DIR}/tccdefs_.h"
     )
@@ -244,9 +247,9 @@ if(NOT TARGET libtcc)
             target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 _WIN64)
         endif()
         target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
-        # Prevent MSVC <assert.h> from defining `__assert`, which collides with
-        # TCC's internal `__assert` symbol.
-        target_compile_definitions(libtcc PRIVATE NDEBUG)
+        # MSVC's <assert.h> defines `__assert`, which collides with TCC's internal
+        # `__assert` symbol. Rename TCC's use the same way `__faststorefence` is above.
+        target_compile_definitions(libtcc PRIVATE "__assert=__assert_tcc_unused")
     endif()
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
