@@ -370,3 +370,6 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcsettings
 build*
 tcc_c2str
+
+CMakeFiles/
+Makefile
