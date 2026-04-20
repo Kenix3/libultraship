@@ -59,6 +59,15 @@ if (NOT ${libzip_FOUND})
     set(BUILD_DOC OFF)
     set(BUILD_OSSFUZZ OFF)
     set(BUILD_SHARED_LIBS OFF)
+    set(ENABLE_ZSTD OFF)
+
+    # for some weird reason he think he are in C++11
+    set(HAVE_LOCALTIME_S 0 CACHE INTERNAL "" FORCE)
+    set(HAVE_MEMCPY_S 0 CACHE INTERNAL "" FORCE)
+    set(HAVE_STRERROR_S 0 CACHE INTERNAL "" FORCE)
+    set(HAVE_STRERRORLEN_S 0 CACHE INTERNAL "" FORCE)
+    set(HAVE_STRNCPY_S 0 CACHE INTERNAL "" FORCE)
+
     FetchContent_Declare(
         libzip
         GIT_REPOSITORY https://github.com/nih-at/libzip.git
