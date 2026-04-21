@@ -427,6 +427,7 @@ class Interpreter {
     void GfxSpVertex(size_t numVertices, size_t destIndex, const F3DVtx* vertices);
     void GfxSpModifyVertex(uint16_t vtxIdx, uint8_t where, uint32_t val);
     void GfxSpTri1(uint8_t vtx1Idx, uint8_t vtx2Idx, uint8_t vtx3Idx, bool isRect);
+    void GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width);
     void GfxSpGeometryMode(uint32_t clear, uint32_t set);
     void GfxSpExtraGeometryMode(uint32_t clear, uint32_t set);
     void GfxSpMovememF3dex2(uint8_t index, uint8_t offset, const void* data);
@@ -505,7 +506,7 @@ class Interpreter {
     bool mDroppedFrame{};
     float* mBufVbo; // 3 vertices in a triangle and 32 floats per vtx
     size_t mBufVboLen{};
-    size_t mBufVboNumTris{};
+    size_t mBufVboNumPrims{};
     GfxWindowBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
 
@@ -535,7 +536,6 @@ class Interpreter {
     int mInterpolationIndexTarget;
 };
 
-void gfx_set_target_ucode(UcodeHandlers ucode);
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);
@@ -543,6 +543,7 @@ const char* GfxGetOpcodeName(int8_t opcode);
 
 } // namespace Fast
 
+extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,

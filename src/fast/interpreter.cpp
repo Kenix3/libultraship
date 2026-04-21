@@ -85,9 +85,14 @@ static constexpr std::array ucode_attr_handlers = {
     &f3dexAttrHandler,  // ucode_f3db
     &f3dexAttrHandler,  // ucode_f3d
     &f3dexAttrHandler,  // ucode_f3dex
-    &f3dexAttrHandler,  // ucode_f3exb
-    &f3dex2AttrHandler, // ucode_f3ex2
+    &f3dexAttrHandler,  // ucode_f3dexb
+    &f3dex2AttrHandler, // ucode_f3dex2
     &f3dex2AttrHandler, // ucode_s2dex
+    &f3dexAttrHandler,  // ucode_l3db
+    &f3dexAttrHandler,  // ucode_l3d
+    &f3dexAttrHandler,  // ucode_l3dex
+    &f3dexAttrHandler,  // ucode_l3dexb
+    &f3dex2AttrHandler, // ucode_l3dex2
 };
 
 static uint32_t get_attr(Attribute attr) {
@@ -130,9 +135,9 @@ void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
 
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
-        mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
+        mRapi->DrawPrimitives(mBufVbo, mBufVboLen, mBufVboNumPrims);
         mBufVboLen = 0;
-        mBufVboNumTris = 0;
+        mBufVboNumPrims = 0;
     }
 }
 
@@ -1669,7 +1674,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
 
         // If inverted culling is requested, negate the cross
-        if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 &&
+        if ((ucode_handler_index == UcodeHandlers::ucode_f3dex2 ||
+             ucode_handler_index == UcodeHandlers::ucode_l3dex2) &&
             (mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
             cross = -cross;
         }
@@ -2083,8 +2089,268 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         // mBufVbo[mBufVboLen++] = color->a / 255.0f;
     }
 
-    if (++mBufVboNumTris == MAX_TRI_BUFFER) {
+    if (++mBufVboNumPrims == MAX_TRI_BUFFER) {
         // if (++mBufVbo_num_tris == 1) {
+        Flush();
+    }
+}
+
+void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width) {
+    struct LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
+    struct LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
+    struct LoadedVertex* v_arr[2] = { v1, v2 };
+
+    if (v1->clip_rej & v2->clip_rej) {
+        // The whole line lies outside the visible area
+        return;
+    }
+
+    bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER;
+    bool depth_mask = (mRdp->other_mode_l & Z_UPD) == Z_UPD;
+    uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
+    if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
+        Flush();
+        mRapi->SetDepthTestAndMask(depth_test, depth_mask);
+        mRenderingState.depth_test_and_mask = depth_test_and_mask;
+    }
+
+    if (mRdp->viewport_or_scissor_changed) {
+        if (memcmp(&mRdp->viewport, &mRenderingState.viewport, sizeof(mRdp->viewport)) != 0) {
+            Flush();
+            mRapi->SetViewport(mRdp->viewport.x, mRdp->viewport.y, mRdp->viewport.width, mRdp->viewport.height);
+            mRenderingState.viewport = mRdp->viewport;
+        }
+        if (memcmp(&mRdp->scissor, &mRenderingState.scissor, sizeof(mRdp->scissor)) != 0) {
+            Flush();
+            mRapi->SetScissor(mRdp->scissor.x, mRdp->scissor.y, mRdp->scissor.width, mRdp->scissor.height);
+            mRenderingState.scissor = mRdp->scissor;
+        }
+        mRdp->viewport_or_scissor_changed = false;
+    }
+
+    uint64_t cc_id = mRdp->combine_mode;
+    uint64_t cc_options = 0;
+    bool use_alpha = ((mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20) &&
+                      (mRdp->other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
+                     ((mRdp->other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
+                      (mRdp->other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
+    bool use_fog = (mRdp->other_mode_l >> 30) == G_BL_CLR_FOG;
+    bool texture_edge = (mRdp->other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
+    bool use_noise = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
+    bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
+    bool alpha_threshold = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_THRESHOLD;
+    bool invisible =
+        (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
+    bool use_grayscale = mRdp->grayscale;
+    auto shader = mRdp->current_shader;
+
+    if (texture_edge) {
+        if (use_alpha) {
+            alpha_threshold = true;
+            texture_edge = false;
+        }
+        use_alpha = true;
+    }
+
+    if (use_alpha) {
+        cc_options |= SHADER_OPT(ALPHA);
+    }
+    if (use_fog) {
+        cc_options |= SHADER_OPT(FOG);
+    }
+    if (texture_edge) {
+        cc_options |= SHADER_OPT(TEXTURE_EDGE);
+    }
+    if (use_noise) {
+        cc_options |= SHADER_OPT(NOISE);
+    }
+    if (use_2cyc) {
+        cc_options |= SHADER_OPT(_2CYC);
+    }
+    if (alpha_threshold) {
+        cc_options |= SHADER_OPT(ALPHA_THRESHOLD);
+    }
+    if (invisible) {
+        cc_options |= SHADER_OPT(INVISIBLE);
+    }
+    if (use_grayscale) {
+        cc_options |= SHADER_OPT(GRAYSCALE);
+    }
+    if (mRdp->loaded_texture[0].masked) {
+        cc_options |= SHADER_OPT(TEXEL0_MASK);
+    }
+    if (mRdp->loaded_texture[1].masked) {
+        cc_options |= SHADER_OPT(TEXEL1_MASK);
+    }
+    if (mRdp->loaded_texture[0].blended) {
+        cc_options |= SHADER_OPT(TEXEL0_BLEND);
+    }
+    if (mRdp->loaded_texture[1].blended) {
+        cc_options |= SHADER_OPT(TEXEL1_BLEND);
+    }
+    if (shader.enabled) {
+        cc_options |= SHADER_OPT(USE_SHADER);
+        cc_options |= (shader.id << 17);
+    }
+
+    ColorCombinerKey key;
+    key.combine_mode = mRdp->combine_mode;
+    key.options = cc_options;
+
+    // If we are not using alpha, clear the alpha components of the combiner as they have no effect
+    if (!use_alpha && !shader.enabled) {
+        key.combine_mode &= ~((0xfff << 16) | ((uint64_t)0xfff << 44));
+    }
+
+    ColorCombiner* comb = LookupOrCreateColorCombiner(key);
+    uint32_t tm = 0;
+    struct ShaderProgram* prg = comb->prg[tm];
+    if (prg == NULL) {
+        comb->prg[tm] = prg =
+            LookupOrCreateShaderProgram(comb->shader_id0, comb->shader_id1 | tm * SHADER_OPT(TEXEL0_CLAMP_S));
+    }
+    if (prg != mRenderingState.mShaderProgram) {
+        Flush();
+        mRapi->UnloadShader(mRenderingState.mShaderProgram);
+        mRapi->LoadShader(prg);
+        mRenderingState.mShaderProgram = prg;
+    }
+    if (use_alpha != mRenderingState.alpha_blend) {
+        Flush();
+        mRapi->SetUseAlpha(use_alpha);
+        mRenderingState.alpha_blend = use_alpha;
+    }
+
+    uint8_t numInputs;
+    bool usedTextures[2];
+
+    mRapi->ShaderGetInfo(prg, &numInputs, usedTextures);
+
+    struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
+
+    // Convert from line to quad
+    float x1 = v1->x / v1->w;
+    float y1 = v1->y / v1->w;
+    float x2 = v2->x / v2->w;
+    float y2 = v2->y / v2->w;
+
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float len = sqrtf(dx * dx + dy * dy);
+
+    float w_scale = (((float)width / 2.0f) + 1.5f) * (1.0f / mRdp->viewport.width);
+    float nx = (-dy / len) * w_scale;
+    float ny = (dx / len) * w_scale;
+
+    float offsets_x[4] = { nx, -nx, nx, -nx };
+    float offsets_y[4] = { ny, -ny, ny, -ny };
+    struct LoadedVertex* parents[4] = { v1, v1, v2, v2 };
+    // Quad vtx index order
+    int indices[6] = { 0, 1, 2, 1, 3, 2 };
+
+    for (int i = 0; i < 6; i++) {
+        int idx = indices[i];
+        struct LoadedVertex* parent = parents[idx];
+        float z = parent->z, w = parent->w;
+        if (clip_parameters.z_is_from_0_to_1) {
+            z = (z + w) / 2.0f;
+        }
+
+        mBufVbo[mBufVboLen++] = parent->x + (offsets_x[idx] * w);
+        mBufVbo[mBufVboLen++] = (clip_parameters.invertY ? -1 : 1) * (parent->y + (offsets_y[idx] * w));
+        mBufVbo[mBufVboLen++] = z;
+        mBufVbo[mBufVboLen++] = w;
+
+        if (use_fog) {
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
+            mBufVbo[mBufVboLen++] = parent->color.a / 255.0f; // fog factor (not alpha)
+        }
+
+        if (use_grayscale) {
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b / 255.0f;
+            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
+        }
+
+        for (int j = 0; j < numInputs; j++) {
+            RGBA* color;
+            RGBA tmp;
+            for (int k = 0; k < 1 + (use_alpha ? 1 : 0); k++) {
+                switch (comb->shader_input_mapping[k][j]) {
+                        // Note: CCMUX constants and ACMUX constants used here have same value, which is why this works
+                        // (except LOD fraction).
+                    case G_CCMUX_PRIMITIVE:
+                        color = &mRdp->prim_color;
+                        break;
+                    case G_CCMUX_SHADE:
+                        color = &parent->color;
+                        break;
+                    case G_CCMUX_ENVIRONMENT:
+                        color = &mRdp->env_color;
+                        break;
+                    case G_CCMUX_PRIMITIVE_ALPHA: {
+                        tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
+                        color = &tmp;
+                        break;
+                    }
+                    case G_CCMUX_ENV_ALPHA: {
+                        tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
+                        color = &tmp;
+                        break;
+                    }
+                    case G_CCMUX_PRIM_LOD_FRAC: {
+                        tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
+                        color = &tmp;
+                        break;
+                    }
+                    case G_CCMUX_LOD_FRACTION: {
+                        if (mRdp->other_mode_l & G_TL_LOD) {
+                            // "Hack" that works for Bowser - Peach painting
+                            float distance_frac = (v1->w - 3000.0f) / 3000.0f;
+                            if (distance_frac < 0.0f) {
+                                distance_frac = 0.0f;
+                            }
+                            if (distance_frac > 1.0f) {
+                                distance_frac = 1.0f;
+                            }
+                            tmp.r = tmp.g = tmp.b = tmp.a = distance_frac * 255.0f;
+                        } else {
+                            tmp.r = tmp.g = tmp.b = tmp.a = 255.0f;
+                        }
+                        color = &tmp;
+                        break;
+                    }
+                    case G_ACMUX_PRIM_LOD_FRAC:
+                        tmp.a = mRdp->prim_lod_fraction;
+                        color = &tmp;
+                        break;
+                    default:
+                        memset(&tmp, 0, sizeof(tmp));
+                        color = &tmp;
+                        break;
+                }
+                if (k == 0) {
+                    mBufVbo[mBufVboLen++] = color->r / 255.0f;
+                    mBufVbo[mBufVboLen++] = color->g / 255.0f;
+                    mBufVbo[mBufVboLen++] = color->b / 255.0f;
+                } else {
+                    if (use_fog && color == &parent->color) {
+                        // Shade alpha is 100% for fog
+                        mBufVbo[mBufVboLen++] = 1.0f;
+                    } else {
+                        mBufVbo[mBufVboLen++] = color->a / 255.0f;
+                    }
+                }
+            }
+        }
+    }
+
+    mBufVboNumPrims += 2;
+
+    if (mBufVboNumPrims >= MAX_TRI_BUFFER - 1) {
         Flush();
     }
 }
@@ -3189,7 +3455,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
 }
 
 bool gfx_mtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
-    if (ucode_handler_index == ucode_f3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         return gfx_mtx_otr_filepath_handler_custom_f3dex2(cmd0);
     } else {
         return gfx_mtx_otr_filepath_handler_custom_f3d(cmd0);
@@ -3231,7 +3497,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
 }
 
 bool gfx_mtx_otr_handler_custom(F3DGfx** cmd0) {
-    if (ucode_handler_index == ucode_f3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         return gfx_mtx_otr_handler_custom_f3dex2(cmd0);
     } else {
         return gfx_mtx_otr_handler_custom_f3d(cmd0);
@@ -3286,7 +3552,7 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-    if (ucode_handler_index == ucode_f3dex2) {
+    if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 || ucode_handler_index == UcodeHandlers::ucode_l3dex2) {
         gfx->GfxSpMovememF3dex2(index, offset,
                                 Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash));
     } else {
@@ -3694,6 +3960,163 @@ bool gfx_quad_handler_f3dex(F3DGfx** cmd0) {
 
     gfx->GfxSpTri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
     gfx->GfxSpTri1(C1(16, 8) / 2, C1(0, 8) / 2, C1(24, 8) / 2, false);
+    return false;
+}
+
+bool gfx_line3d_handler_l3dex(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint8_t v1 = C0(16, 8) / 2;
+    uint8_t v2 = C0(8, 8) / 2;
+    uint8_t width = C0(0, 8);
+
+    gfx->GfxSpLine3D(v1, v2, width);
+
+    return false;
+}
+
+bool gfx_line3d_handler_l3d(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint8_t flag = C0(24, 8);
+    uint8_t v1 = C0(16, 8) / 10;
+    uint8_t v2 = C0(8, 8) / 10;
+    uint8_t width = C0(0, 8);
+
+    gfx->GfxSpLine3D((flag == 0) ? v1 : v2, (flag == 0) ? v2 : v1, width);
+
+    return false;
+}
+
+bool gfx_tri1_handler_l3d(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint32_t vtx1_idx = C1(16, 8) / 10;
+    uint32_t vtx2_idx = C1(8, 8) / 10;
+    uint32_t vtx3_idx = C1(0, 8) / 10;
+    // TODO: Implement. This has to do with the line colour.
+    // uint32_t first_vtx = C1(24, 8);
+
+    if (vtx1_idx != vtx2_idx)
+        gfx->GfxSpLine3D(vtx1_idx, vtx2_idx, 0);
+    if (vtx2_idx != vtx3_idx)
+        gfx->GfxSpLine3D(vtx2_idx, vtx3_idx, 0);
+    if (vtx3_idx != vtx1_idx)
+        gfx->GfxSpLine3D(vtx3_idx, vtx1_idx, 0);
+
+    return false;
+}
+
+bool gfx_tri1_handler_l3dex(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint32_t vtx1_idx = C1(17, 7);
+    uint32_t vtx2_idx = C1(9, 7);
+    uint32_t vtx3_idx = C1(1, 7);
+
+    if (vtx1_idx != vtx2_idx)
+        gfx->GfxSpLine3D(vtx1_idx, vtx2_idx, 0);
+    if (vtx2_idx != vtx3_idx)
+        gfx->GfxSpLine3D(vtx2_idx, vtx3_idx, 0);
+    if (vtx3_idx != vtx1_idx)
+        gfx->GfxSpLine3D(vtx3_idx, vtx1_idx, 0);
+
+    return false;
+}
+
+bool gfx_tri2_handler_l3dex(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint32_t vtx11_idx = C0(17, 7);
+    uint32_t vtx12_idx = C0(9, 7);
+    uint32_t vtx13_idx = C0(1, 7);
+    uint32_t vtx21_idx = C1(17, 7);
+    uint32_t vtx22_idx = C1(9, 7);
+    uint32_t vtx23_idx = C1(1, 7);
+
+    if (vtx11_idx != vtx12_idx)
+        gfx->GfxSpLine3D(vtx11_idx, vtx12_idx, 0);
+    if (vtx12_idx != vtx13_idx)
+        gfx->GfxSpLine3D(vtx12_idx, vtx13_idx, 0);
+    if (vtx13_idx != vtx11_idx)
+        gfx->GfxSpLine3D(vtx13_idx, vtx11_idx, 0);
+    if (vtx21_idx != vtx22_idx)
+        gfx->GfxSpLine3D(vtx21_idx, vtx22_idx, 0);
+    if (vtx22_idx != vtx23_idx)
+        gfx->GfxSpLine3D(vtx22_idx, vtx23_idx, 0);
+    if (vtx23_idx != vtx21_idx)
+        gfx->GfxSpLine3D(vtx23_idx, vtx21_idx, 0);
+
+    return false;
+}
+
+bool gfx_tri1_handler_l3dex2(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    int32_t width = C1(24, 8); // BLTODO: Might be C0(24, 8)?
+    uint32_t vtx1_idx = C0(17, 7);
+    uint32_t vtx2_idx = C0(9, 7);
+    uint32_t vtx3_idx = C0(1, 7);
+
+    if (vtx1_idx != vtx2_idx)
+        gfx->GfxSpLine3D(vtx1_idx, vtx2_idx, width);
+    if (vtx2_idx != vtx3_idx)
+        gfx->GfxSpLine3D(vtx2_idx, vtx3_idx, width);
+    if (vtx3_idx != vtx1_idx)
+        gfx->GfxSpLine3D(vtx3_idx, vtx1_idx, width);
+
+    return false;
+}
+
+bool gfx_tri2_handler_l3dex2(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    int32_t width = C1(24, 8);
+    uint32_t vtx11_idx = C0(17, 7);
+    uint32_t vtx12_idx = C0(9, 7);
+    uint32_t vtx13_idx = C0(1, 7);
+    uint32_t vtx21_idx = C1(17, 7);
+    uint32_t vtx22_idx = C1(9, 7);
+    uint32_t vtx23_idx = C1(1, 7);
+
+    if (vtx11_idx != vtx12_idx)
+        gfx->GfxSpLine3D(vtx11_idx, vtx12_idx, width);
+    if (vtx12_idx != vtx13_idx)
+        gfx->GfxSpLine3D(vtx12_idx, vtx13_idx, width);
+    if (vtx13_idx != vtx11_idx)
+        gfx->GfxSpLine3D(vtx13_idx, vtx11_idx, width);
+    if (vtx21_idx != vtx22_idx)
+        gfx->GfxSpLine3D(vtx21_idx, vtx22_idx, width);
+    if (vtx22_idx != vtx23_idx)
+        gfx->GfxSpLine3D(vtx22_idx, vtx23_idx, width);
+    if (vtx23_idx != vtx21_idx)
+        gfx->GfxSpLine3D(vtx23_idx, vtx21_idx, width);
+
+    return false;
+}
+
+bool gfx_quad_handler_l3dex(F3DGfx** cmd0, Interpreter* gfx) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    SPDLOG_INFO("Encountered unimplemented opcode: gfx_quad_handler_l3dex");
+
+    return false;
+}
+
+bool gfx_quad_handler_l3dex2(F3DGfx** cmd0, Interpreter* gfx) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    SPDLOG_INFO("Encountered unimplemented opcode: gfx_quad_handler_l3dex2");
+
     return false;
 }
 
@@ -4507,6 +4930,75 @@ static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_RDPHALF_1, { "mRdpHALF_1", gfx_stubbed_command_handler } },
 };
 
+static constexpr UcodeHandler l3dHandlers = {
+    { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
+    { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
+    { F3DEX_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3d } },
+    { F3DEX_G_MOVEMEM, { "G_POPMEM", gfx_movemem_handler_f3d } },
+    { F3DEX_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3d } },
+    { F3DEX_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3d } },
+    { F3DEX_G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3dex } },
+    { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
+    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_f3d } },
+    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3d } },
+    { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
+    { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
+    { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_l3d } },
+    { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
+    { F3DEX_G_RDPHALF_1, { "mRdpHALF_1", gfx_stubbed_command_handler } },
+    { F3DEX_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_l3d } },
+};
+
+UcodeHandler l3dexHandlers = {
+    { F3DEX_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
+    { F3DEX_G_MTX, { "G_MTX", gfx_mtx_handler_f3d } },
+    { F3DEX_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3d } },
+    { F3DEX_G_MOVEMEM, { "G_POPMEM", gfx_movemem_handler_f3d } },
+    { F3DEX_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3d } },
+    { F3DEX_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3d } },
+    { F3DEX_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3d } },
+    { F3DEX_G_SETGEOMETRYMODE, { "G_SETGEOMETRYMODE", gfx_set_geometry_mode_handler_f3dex } },
+    { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
+    { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_f3dex } },
+    { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_l3dex } },
+    { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
+    { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
+    { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_l3dex } },
+    { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
+    { F3DEX_G_RDPHALF_1, { "mRdpHALF_1", gfx_stubbed_command_handler } },
+    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_l3dex } },
+    { F3DEX_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_l3dex } },
+};
+
+UcodeHandler l3dex2Handlers = {
+    { F3DEX2_G_NOOP, { "G_NOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX2_G_SPNOOP, { "G_SPNOOP", gfx_noop_handler_f3dex2 } },
+    { F3DEX2_G_CULLDL, { "G_CULLDL", gfx_cull_dl_handler_f3dex2 } },
+    { F3DEX2_G_MTX, { "G_MTX", gfx_mtx_handler_f3dex2 } },
+    { F3DEX2_G_POPMTX, { "G_POPMTX", gfx_pop_mtx_handler_f3dex2 } },
+    { F3DEX2_G_MOVEMEM, { "G_MOVEMEM", gfx_movemem_handler_f3dex2 } },
+    { F3DEX2_G_MOVEWORD, { "G_MOVEWORD", gfx_moveword_handler_f3dex2 } },
+    { F3DEX2_G_TEXTURE, { "G_TEXTURE", gfx_texture_handler_f3dex2 } },
+    { F3DEX2_G_VTX, { "G_VTX", gfx_vtx_handler_f3dex2 } },
+    { F3DEX2_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
+    { F3DEX2_G_DL, { "G_DL", gfx_dl_handler_common } },
+    { F3DEX2_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
+    { F3DEX2_G_GEOMETRYMODE, { "G_GEOMETRYMODE", gfx_geometry_mode_handler_f3dex2 } },
+    { F3DEX2_G_TRI1, { "G_TRI1", gfx_tri1_handler_l3dex2 } },
+    { F3DEX2_G_TRI2, { "G_TRI2", gfx_tri2_handler_l3dex2 } },
+    { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_l3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
+    { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
+    { F3DEX2_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_l3dex } },
+};
+
 // LUSTODO: These S2DEX commands have different opcode numbers on F3DEX2 vs other ucodes. More research needs to be done
 // to see if the implementations are different.
 static constexpr UcodeHandler s2dexHandlers = {
@@ -4526,6 +5018,11 @@ static constexpr std::array ucode_handlers = {
     &f3dexHandlers,  // ucode_f3dexb
     &f3dex2Handlers, // ucode_f3dex2
     &s2dexHandlers,  // ucode_s2dex
+    &l3dHandlers,    // ucode_l3db
+    &l3dHandlers,    // ucode_l3d
+    &l3dexHandlers,  // ucode_l3dex
+    &l3dexHandlers,  // ucode_l3dexb
+    &l3dex2Handlers, // ucode_l3dex2
 };
 
 const char* GfxGetOpcodeName(int8_t opcode) {
@@ -4553,7 +5050,7 @@ const char* GfxGetOpcodeName(int8_t opcode) {
 
 // TODO, implement a system where we can get the current opcode handler by writing to the GWords. If the powers that be
 // are OK with that...
-static void gfx_set_ucode_handler(UcodeHandlers ucode) {
+extern "C" void gfx_set_ucode_handler(UcodeHandlers ucode) {
     // Loaded ucode must be in range of the supported ucode_handlers
     assert(ucode < ucode_max);
     Interpreter* gfx = mInstance.lock().get();
@@ -4566,6 +5063,11 @@ static void gfx_set_ucode_handler(UcodeHandlers ucode) {
         case ucode_f3dex:
         case ucode_f3dexb:
         case ucode_f3dex2:
+        case ucode_l3db:
+        case ucode_l3d:
+        case ucode_l3dex:
+        case ucode_l3dexb:
+        case ucode_l3dex2:
             gfx->mRsp->fog_mul = 0;
             gfx->mRsp->fog_offset = 0;
             break;

@@ -649,7 +649,7 @@ void GfxRenderingAPIDX11::SetUseAlpha(bool use_alpha) {
     // Already part of the pipeline state from shader info
 }
 
-void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+void GfxRenderingAPIDX11::DrawPrimitives(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
 
     if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask) {
         mLastDepthTest = mCurrentDepthTest;
@@ -779,12 +779,13 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         }
     }
 
+    // TODO: Be able to render to more than just triangles.
     if (mLastPrimitaveTopology != D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST) {
         mLastPrimitaveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         mContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     }
 
-    mContext->Draw(buf_vbo_num_tris * 3, 0);
+    mContext->Draw(buf_vbo_num_prims * 3, 0);
 }
 
 void GfxRenderingAPIDX11::OnResize() {

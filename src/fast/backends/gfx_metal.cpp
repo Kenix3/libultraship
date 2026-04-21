@@ -438,7 +438,7 @@ void GfxRenderingAPIMetal::SetUseAlpha(bool use_alpha) {
     // Already part of the pipeline state from shader info
 }
 
-void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+void GfxRenderingAPIMetal::DrawPrimitives(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_prims) {
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
     bool textures_changed = false;
 
@@ -535,7 +535,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         current_framebuffer.mCommandEncoder->setRenderPipelineState(pipeline_state);
     }
 
-    current_framebuffer.mCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangle, 0.f, buf_vbo_num_tris * 3);
+    // TODO: This should be able to change from triangles.
+    current_framebuffer.mCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangle, 0.f, buf_vbo_num_prims * 3);
     mCurrentVertexBufferOffset += sizeof(float) * buf_vbo_len;
 
     autorelease_pool->release();
