@@ -61,7 +61,7 @@ FetchContent_Declare(
     LLGL
     GIT_REPOSITORY https://github.com/LukasBanana/LLGL.git
     GIT_TAG        383fa7af5487b508f9842709e07fd1072ff8a06f
-    GIT_SHALLOW    TRUE
+    GIT_SHALLOW    FALSE
 )
 
 FetchContent_MakeAvailable(LLGL)
