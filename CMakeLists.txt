@@ -70,24 +70,32 @@ add_subdirectory("src")
 
 # =========== LLGL =============
 option(LUS_BUILD_LLGL "Build with LLGL (Low Level Graphics Library) rendering backend" OFF)
-if(LUS_BUILD_LLGL)
-    include(cmake/dependencies/llgl.cmake)
-endif()
 
 # =========== Tests =============
 option(LUS_BUILD_TESTS "Build unit tests" OFF)
 option(LUS_BUILD_PRDP_TESTS "Build ParallelRDP comparison tests (requires Vulkan)" OFF)
+
+# LLGL (static) and ParallelRDP are mutually exclusive: both pull in a Vulkan
+# loader, and linking them into the same executable causes volk's global BSS
+# function-pointer variables to shadow the real libvulkan.so symbols, making
+# LLGL's Vulkan calls jump into non-executable BSS memory (SIGSEGV).
+if(LUS_BUILD_LLGL AND LUS_BUILD_PRDP_TESTS)
+    message(FATAL_ERROR
+        "LUS_BUILD_LLGL and LUS_BUILD_PRDP_TESTS cannot both be enabled at the "
+        "same time: LLGL's Vulkan backend and ParallelRDP's volk loader define "
+        "conflicting Vulkan symbols when linked into the same executable. "
+        "Enable one or the other.")
+endif()
+
+if(LUS_BUILD_LLGL)
+    include(cmake/dependencies/llgl.cmake)
+endif()
+
 if(LUS_BUILD_TESTS)
     enable_testing()
     if(LUS_BUILD_PRDP_TESTS)
         find_package(Threads REQUIRED)
         include(cmake/dependencies/parallel-rdp.cmake)
-        # LLGL is pulled in alongside PRDP for the four-way texture comparison tests.
-        if(NOT LUS_BUILD_LLGL)
-            set(LLGL_BUILD_RENDERER_OPENGL  OFF CACHE BOOL "" FORCE)
-            set(LLGL_BUILD_RENDERER_VULKAN  ON  CACHE BOOL "" FORCE)
-            include(cmake/dependencies/llgl.cmake)
-        endif()
     endif()
     add_subdirectory("tests")
 endif()
