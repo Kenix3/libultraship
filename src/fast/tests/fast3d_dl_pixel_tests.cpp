@@ -6774,31 +6774,75 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
     prdp_->WriteRDRAMTexture8(TEX_B_ADDR, texB.data(), texB.size());
     backend_.Clear();
 
+    // SetColorImage + SetMaskImage + full scissor (matches Direct PRDP header).
     SetupCommonState();
-    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+
+    // ── FILL-mode FB clear (dark navy, matching Direct PRDP step 1a) ──────
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+    {
+        uint16_t bgClr = static_cast<uint16_t>((0u << 11) | (0u << 6) | (8u << 1) | 1u);
+        backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)bgClr << 16) | bgClr));
+    }
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+
+    // ── FILL-mode Z-buffer clear (0xFFFE, matching Direct PRDP step 1b) ──
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::ZBUF_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(0xFFFEFFFEu));
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::FB_ADDR));
+
+    // ── Color registers + texture load (matching Direct PRDP step 1c) ────
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 80, 130, 230, 200));
+    backend_.EmitRDPCmd(prdp::MakeSetEnvColor(230, 180, 40, 255));
+    backend_.EmitRDPCmd(prdp::MakeSetFogColor(30, 30, 90, 0));
+    backend_.EmitRDPCmd(prdp::MakeSetBlendColor(128, 192, 255, 128));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimDepth(0x8000, 0x0200));
+    // texA (RGBA16) → tile 0
     EmitRGBA16TextureSetup(8, 8);
+    // texB (I8 Bayer) → tile 1
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 8, TEX_B_ADDR));
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 16, 1, 0, 0, 3, 3, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+
+    // ── Left third (x=0..106): 1-cycle, CC_TEXEL0 ────────────────────────
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     backend_.EmitRawWords(
         prdp::MakeTextureRectangleWords(0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77,
                                         77));
 
+    // ── Centre third (x=107..213): 1-cycle, Texel0×Prim ─────────────────
     {
         prdp::CombinerCycle texTimesPrim = { 1, 8, 10, 7, 1, 7, 3, 7 };
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
-        backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 80, 130, 230, 200));
         backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
         backend_.EmitRDPCmd(prdp::MakeSetCombineMode(texTimesPrim, texTimesPrim));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
             0, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77));
     }
 
+    // ── Right third (x=214..319): 2-cycle, Combined×Env ──────────────────
     {
         prdp::CombinerCycle c0 = prdp::CC_TEXEL0;
         prdp::CombinerCycle c1 = { 0, 8, 12, 7, 0, 7, 5, 7 };
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
                                                    prdp::FB_HEIGHT * 4));
-        backend_.EmitRDPCmd(prdp::MakeSetEnvColor(230, 180, 40, 255));
         backend_.EmitRDPCmd(prdp::MakeOtherModes2Cycle());
         backend_.EmitRDPCmd(prdp::MakeSetCombineMode(c0, c1));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
