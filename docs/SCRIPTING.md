@@ -58,6 +58,9 @@ my-mod.o2r
 
 `manifest.json` and `build.gen` are the only files the loader looks for by name. Everything else is up to the mod author.
 
+>[!NOTE]
+>How does this interact with the idea that archives are layered on top of one another? If every script mod has a `manifest.json`, and an outsider attempts to read that manifest (say, to display a list of mods in a mod manager menu), wouldn't it only see the manifest from the mod that is last in the load order?
+
 ---
 
 ## manifest.json Reference
@@ -110,6 +113,22 @@ The `manifest.json` file lives at the root of the archive. All fields are option
 
 > **Note on `code_version`:** The engine enforces that `code_version` in the manifest matches the version it was compiled against. If they differ, the mod will not be loaded. Increment this value when your mod's compiled interface changes.
 
+>[!NOTE]
+>Markdown on GitHub has actual Notes!
+
+>[!NOTE]
+>We've already discussed specifying versions in dependencies, so I will give the rest of my feedback assuming that is in place.
+
+>[!WARNING]
+>What is the difference between `version` and `code_version`? If I make an update to my mod, what kinds of changes necessitate bumping each one? Looking at [what `code_version` is compared to LUS side](https://github.com/Kenix3/libultraship/blob/ecb0867f481c66aad059dbdc19302b9942d4afd4/include/ship/Context.h#L266), I'm confused why I'd change it in my manifest when my mod's interface changes.
+
+>[!WARNING]
+>Can a mod support multiple `game_version`s? Ocarina of Time has multiple English language versions. If I'm making a mod that works on English, but any English version, I'd want to indicate that.
+
+>[!WARNING]
+>Having 3 different versions that all have different semantics is confusing. I think that can all be expressed in the same way. They can all use the mod dependancy system. There can be a base LUS mod that script mods can use as a dependency, and that can implement (what I presume is the intent of) `code_version`. Ports can have base O2Rs that have their own manifests in order to implement `game_version`. A port can have multiple distinct O2Rs if there are subsets of versions that can implement the same thing, like all English and PAL versions.
+
+
 ---
 
 ## Signing and Integrity Verification
@@ -121,6 +140,8 @@ Archive validation is performed in `Archive::Validate()` and proceeds in two sta
 **1. Checksum verification**
 
 A BLAKE2b-512 digest is computed over all non-manifest files in the archive, processed in sorted path order. Both the file path and the file contents are fed into the hash. The result is compared against the `checksum` field in `manifest.json`. If they do not match, the archive is rejected.
+>[!NOTE]
+>How does this interact with the idea that archives are layered on top of one another? Just to check, does the checksum use the specific archive's file, but when the resource is loaded, the last mod in the list wins?
 
 **2. Signature verification**
 
@@ -214,6 +235,9 @@ Package the contents of `output/` into a zip and rename it to `.o2r`.
 ### Entry and Exit Points
 
 Every mod must export two functions. Use the macros from `mod.h`:
+
+>[!WARNING]
+>[Looking at the code,](https://github.com/Kenix3/libultraship/blob/ecb0867f481c66aad059dbdc19302b9942d4afd4/src/ship/scripting/ScriptLoader.cpp#L337), it seems that it's perfectly fine if a mod does not have a `ModInit` or `ModExit` function. Does every mod really need to export them?
 
 ```c
 #include "mod.h"
@@ -356,6 +380,8 @@ MOD_EXIT() {
 ```
 
 Always store the returned `ListenerID` globally so you can unregister in `MOD_EXIT`. Failing to unregister will cause a use-after-free when the mod is unloaded.
+>[!WARNING]
+>This seems like a dangerous thing to require. It certainly would be nice if mods properly unregister everything, but I think we need a way to handle it gracefully if they fail to do so. We could track which mod is registering listeners. Then, if there are still registered handles after returning from `MOD_EXIT`, we could unregister them for it (and log a warning in final/assert in debug).
 
 **Macros:**
 
@@ -391,6 +417,8 @@ Once cancelled:
 - Remaining lower-priority listeners still receive the event but can check `event->Cancelled`.
 - The engine code block gated by `CALL_CANCELLABLE_EVENT` is skipped.
 - `CALL_CANCELLABLE_RETURN_EVENT` causes an immediate `return` in the calling function.
+>[!WARNING]
+>I like the idea of wrapping some common event functionality in macros to standarize it, but this seems oddly implemented. To me, if an event is cancelled, the remaining listeners _should not_ still receive the event. To me, the point of the priority system is so that, if it is important to my mod that it is the only one that handles an event, I use the priority or the load order to put me up front and see the event first. As it is now, it is a pinky-promise with all the other mods that they'll check the cancelled flag and properly behave, but that is just asking for bugs. I feel like the 3 current priorities should be forced to respect the cancelled flag, and 2 new priorities are added: `EVENT_PRIORITY_HIGH_ALWAYS` - same as `HIGH` but always triggered even when cancelled; and `EVENT_PRIORITY_LOW_ALWAYS` - same thing but for `LOW`, for hooks that want to run last.
 
 ---
 
@@ -406,6 +434,9 @@ List the `name` values of mods your mod requires in the `dependencies` array:
 ```
 
 The scripting system performs a topological sort (Kahn's algorithm) across all loaded mods before calling `ModInit`, ensuring dependencies are always initialized first and uninitialized last.
+>[!WARNING]
+>I don't think we should do a topological sort before loading. I think we should accept a list of mods and load them in that order, and error if dependencies are in the wrong order. We want a user to be able to specify the load order so that things can properly override each other even when there is not a strict dependency. For instance, I could have a texture pack that replaces everything, and a mod that replaces my weapon with a cool skin. The weapon mod needs to load after the texture mod, but there is not a dependency between them and no way for me to guarantee that LUS will reorder them
+>I think the sort can be turned into an optional feature. Have a function that takes a list of mods and returns a sorted list, then make the load function take a list. A port can use the sort if it wants, or make their own mod manager menu.
 
 Circular dependencies are detected and will prevent loading.
 
@@ -430,6 +461,8 @@ If you want to ship a pre-compiled shared library instead of (or in addition to)
 ```
 
 The loader checks `binaries` before attempting JIT compilation. If a matching entry is found for the current platform, the pre-built library is extracted to a temporary file and loaded directly. If no match is found and `main` is set, the C sources are JIT-compiled instead.
+>[!NOTE]
+>How does this interact with the idea that archives are layered on top of one another? Do the original C files for each get compiled, or can a mod replace a `.c` or `.h` before it is ultimately compiled?
 
 ### Platform Keys
 
