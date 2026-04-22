@@ -46,6 +46,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 if(LUS_BUILD_LLGL OR TARGET LLGL)
     target_sources(libultraship PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/backends/gfx_llgl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/backends/gfx_llgl_translation.cpp
     )
     target_link_libraries(libultraship PRIVATE LLGL)
     if(TARGET LLGL_OpenGL)
@@ -60,8 +61,23 @@ if(LUS_BUILD_LLGL OR TARGET LLGL)
     if(TARGET LLGL_Direct3D11)
         target_link_libraries(libultraship PRIVATE LLGL_Direct3D11)
     endif()
+    if(TARGET LLGL_Direct3D12)
+        target_link_libraries(libultraship PRIVATE LLGL_Direct3D12)
+    endif()
+    # glslang (GLSL → SPIR-V) and SPIRV-Cross (SPIR-V → GLSL/HLSL/MSL)
+    target_link_libraries(libultraship PRIVATE
+        glslang
+        glslang-default-resource-limits
+        SPIRV          # glslang's SPIR-V writer
+        spirv-cross-core
+        spirv-cross-glsl
+        spirv-cross-hlsl
+        spirv-cross-msl
+    )
     target_compile_definitions(libultraship PUBLIC ENABLE_LLGL=1)
     target_include_directories(libultraship PRIVATE
         $<TARGET_PROPERTY:LLGL,INTERFACE_INCLUDE_DIRECTORIES>
+        ${glslang_SOURCE_DIR}
+        ${spirv_cross_SOURCE_DIR}
     )
 endif()

@@ -34,6 +34,26 @@ namespace LLGL {
 namespace Fast {
 
 // ---------------------------------------------------------------------------
+// Describes one resource slot in a shader program's pipeline layout.
+// The type tells DrawTriangles what to bind from the renderer's state.
+// ---------------------------------------------------------------------------
+enum class LLGLBindingType : uint8_t {
+    FrameCount,  // shared frame-count constant buffer
+    NoiseScale,  // shared noise-scale constant buffer
+    Texture,     // mCurrentTexIds[slot]  (slot = 0 or 1)
+    Sampler,     // mCurrentTexIds[slot].sampler
+    MaskTex,     // used_masks texture
+    MaskSampler, // used_masks sampler
+    BlendTex,    // used_blend texture
+    BlendSampler,// used_blend sampler
+};
+
+struct LLGLBindingSlot {
+    LLGLBindingType type;
+    uint8_t         index;  // texture/sampler slot index (0 or 1)
+};
+
+// ---------------------------------------------------------------------------
 // Internal shader-program record for the LLGL backend.
 // Named LLGLShaderProgram to avoid conflicting with the OpenGL ShaderProgram
 // definition in gfx_opengl.h.  Returned as an opaque Fast::ShaderProgram*
@@ -47,14 +67,17 @@ struct LLGLShaderProgram {
     uint8_t numFloats    = 4;
     uint8_t numInputs    = 1;
     bool    usedTextures[SHADER_MAX_TEXTURES] = {};
+    bool    usedMasks[SHADER_MAX_TEXTURES]    = {};
+    bool    usedBlend[SHADER_MAX_TEXTURES]    = {};
     bool    hasAlpha     = false;
 
-    struct AttribInfo {
-        uint8_t  offset;   // float offset within a vertex
-        uint8_t  size;     // number of floats
-        uint32_t location; // shader binding location
-    };
-    std::vector<AttribInfo> attribs;
+    // Resource heap binding order (matches the pipeline layout binding list).
+    std::vector<LLGLBindingSlot> heapSlots;
+
+    // Persistent storage for HLSL semantic names (set by SpirvToLLGL).
+    // Kept here so they outlive the VertexFormat/ShaderDescriptor used in
+    // CreateShader().
+    std::vector<std::string> attrSemanticNames;
 };
 
 // Per-texture slot metadata
@@ -79,7 +102,12 @@ struct LLGLFramebuffer {
 // ---------------------------------------------------------------------------
 // GfxRenderingAPILLGL – implements the full GfxRenderingAPI interface using
 // LLGL (Low Level Graphics Library by Lukas Hermanns).  The backend
-// auto-selects the best available renderer (D3D11 → Metal → OpenGL) at init.
+// auto-selects the best available renderer:
+//   Windows : Direct3D12 → Direct3D11 → OpenGL
+//   macOS   : Metal → OpenGL
+//   Other   : OpenGL
+// Shaders are written once as Vulkan GLSL (#version 450) and translated at
+// runtime via glslang (GLSL→SPIR-V) + SPIRV-Cross (SPIR-V→target language).
 // ---------------------------------------------------------------------------
 class GfxRenderingAPILLGL final : public GfxRenderingAPI {
   public:
@@ -147,28 +175,44 @@ class GfxRenderingAPILLGL final : public GfxRenderingAPI {
     bool IsAvailable() const { return mRenderer != nullptr; }
 
   private:
-    // Shader generation helpers (GLSL via prism, same templates as OpenGL backend)
-    std::string BuildFragShader(const CCFeatures& cc) const;
-    std::string BuildVertShader(const CCFeatures& cc,
-                                size_t& outNumFloats,
-                                std::vector<LLGLShaderProgram::AttribInfo>& outAttribs) const;
+    // --- Shader generation --------------------------------------------------
+    // Build Vulkan GLSL (#version 450) source strings from the prism template.
+    // The callbacks simultaneously populate vtxFmt and layoutDesc so that the
+    // pipeline state can be created immediately afterwards.
+    std::string BuildVertGlsl(const CCFeatures& cc,
+                               void* vtxFmtPtr) const;
+    std::string BuildFragGlsl(const CCFeatures& cc,
+                               void* layoutDescPtr,
+                               std::vector<LLGLBindingSlot>& outSlots) const;
 
-    // Build the LLGL graphics PSO for the given shader program.
+    // Compile the vertex + fragment GLSL sources to SPIR-V, cross-compile to
+    // the renderer's shading language, and create the PSO.
     bool BuildPipelineState(LLGLShaderProgram* prog,
-                            const std::string& vsGlsl,
-                            const std::string& fsGlsl);
+                             const std::string& vsGlsl,
+                             const std::string& fsGlsl,
+                             void* vtxFmtPtr,
+                             void* layoutDescPtr);
 
-    // Look up (or create) a sampler for the given filter/wrap params.
+    // --- Sampler cache -------------------------------------------------------
     LLGL::Sampler* GetOrCreateSampler(bool linearFilter,
                                       uint32_t cms, uint32_t cmt);
 
-    // Ensure the streaming vertex buffer is at least bytesNeeded bytes.
+    // --- Vertex buffer -------------------------------------------------------
     void EnsureVertexBufferSize(size_t bytesNeeded);
+
+    // --- Resource heap -------------------------------------------------------
+    // Rebuild (or reuse) the resource heap for the current draw.
+    void UpdateResourceHeap(LLGLShaderProgram* prog);
+
+    // --- Constant buffers (shared, created in Init()) -----------------------
+    void EnsureConstantBuffers();
+
+    // =========================================================================
+    // Member state
+    // =========================================================================
 
     // LLGL core objects — stored as raw pointers so that this header can
     // be compiled without any LLGL #includes (PIMPL-lite pattern).
-    // The destructor is defined in gfx_llgl.cpp where LLGL headers are fully included.
-    // mRendererLifetime is a unique_ptr<void, void(*)(void*)> that owns the RenderSystem.
     std::unique_ptr<void, void(*)(void*)> mRendererLifetime{ nullptr, nullptr };
     LLGL::RenderSystem*  mRenderer   = nullptr;
     LLGL::CommandQueue*  mCmdQueue   = nullptr;
@@ -176,6 +220,10 @@ class GfxRenderingAPILLGL final : public GfxRenderingAPI {
     LLGL::Fence*         mFence      = nullptr;
     LLGL::Buffer*        mVertexBuffer      = nullptr;
     size_t               mVertexBufferBytes = 0;
+
+    // Shared constant buffers for frame_count and noise_scale.
+    LLGL::Buffer* mFrameCountBuf  = nullptr;
+    LLGL::Buffer* mNoiseScaleBuf  = nullptr;
 
     std::vector<LLGLFramebuffer>   mFBs;
     int                            mCurrentFB = 0;
@@ -205,11 +253,14 @@ class GfxRenderingAPILLGL final : public GfxRenderingAPI {
     float    mCurrentNoiseScale = 1.0f;
     uint32_t mFrameCount        = 0;
     bool     mInRenderPass      = false;
+    bool     mSrgbMode          = false;
     FilteringMode mFilterMode   = FILTER_THREE_POINT;
     std::string   mModuleName;
 
+    // Backend preference order – tried in sequence until one loads.
     static const char* const kPreferredModules[];
 };
 
 } // namespace Fast
 #endif // ENABLE_LLGL
+
