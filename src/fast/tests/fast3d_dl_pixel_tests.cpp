@@ -5998,9 +5998,7 @@ TEST_F(ThreeWayTextureTest, I4) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("I4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);

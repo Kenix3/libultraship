@@ -39,9 +39,14 @@ if(LUS_BUILD_PRDP_TESTS)
     if(TARGET LLGL)
         target_compile_definitions(lus_tests PRIVATE LUS_LLGL_TESTS_ENABLED=1)
         target_link_libraries(lus_tests PRIVATE LLGL)
-        if(TARGET LLGL_Vulkan)
-            target_link_libraries(lus_tests PRIVATE LLGL_Vulkan)
-        endif()
+        # When LLGL is built as a static library every platform renderer that was
+        # compiled needs to be linked so that its StaticModule global object is
+        # pulled in (LLGL's StaticModuleInterface.cpp references them directly).
+        foreach(_llgl_renderer LLGL_OpenGL LLGL_Vulkan LLGL_Metal LLGL_Direct3D11 LLGL_Direct3D12 LLGL_Null)
+            if(TARGET ${_llgl_renderer})
+                target_link_libraries(lus_tests PRIVATE ${_llgl_renderer})
+            endif()
+        endforeach()
         target_include_directories(lus_tests PRIVATE
             $<TARGET_PROPERTY:LLGL,INTERFACE_INCLUDE_DIRECTORIES>
             ${CMAKE_SOURCE_DIR}/src/fast/shaders

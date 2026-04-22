@@ -7,6 +7,7 @@
 
 // ---- LLGL (must come before any X11 / WinAPI headers) ---------------------
 #include <LLGL/LLGL.h>
+#include <LLGL/Utils/VertexFormat.h>
 #ifdef True
 #  undef True
 #endif
@@ -355,7 +356,7 @@ bool SpirvToLLGL(const std::vector<uint32_t>& spirv,
             int texIdx = 0;
             for (size_t i = 0; i < vtxFmt.attributes.size(); i++) {
                 spirv_cross::HLSLVertexAttributeRemap remap;
-                remap.index    = static_cast<uint32_t>(i);
+                remap.location = static_cast<uint32_t>(i);
                 remap.semantic = (i == 0) ? "POSITION"
                                           : ("TEXCOORD" + std::to_string(texIdx++));
                 comp.add_vertex_attribute_remap(remap);
@@ -417,10 +418,12 @@ bool SpirvToLLGL(const std::vector<uint32_t>& spirv,
         desc.source     = sourceBuf.c_str();
         desc.sourceSize = sourceBuf.size();
         desc.entryPoint = "main0";
-        desc.profile    = (version / 10 > 0)
-                          ? (std::to_string(version / 10) + "." +
-                             std::to_string(version % 10))
-                          : "2.1";
+        // desc.profile must outlive this function call; use a static local.
+        static std::string sMslProfile;
+        sMslProfile = (version / 10 > 0)
+                      ? (std::to_string(version / 10) + "." + std::to_string(version % 10))
+                      : "2.1";
+        desc.profile = sMslProfile.c_str();
         return true;
     }
 
