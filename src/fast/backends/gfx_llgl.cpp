@@ -1,6 +1,12 @@
 #include "ship/window/Window.h"
 #ifdef ENABLE_LLGL
 
+// ============================================================
+// IMPORTANT: Include prism *before* LLGL so that X11 headers
+// (pulled in by LLGL's Linux OpenGL/GLX back-end) do not yet
+// define "True 1" / "False 0" macros that collide with the
+// prism::lexer::TokenType enum values.
+// ============================================================
 #include "fast/backends/gfx_llgl.h"
 #include "fast/interpreter.h"
 #include "ship/Context.h"
@@ -8,6 +14,16 @@
 #include "ship/config/ConsoleVariable.h"
 
 #include <prism/processor.h>
+
+// Now safe to pull in LLGL (may transitively include X11/OpenGL headers).
+#include <LLGL/LLGL.h>
+// Undo X11's True/False macros so the rest of this file uses C++ booleans.
+#ifdef True
+#  undef True
+#endif
+#ifdef False
+#  undef False
+#endif
 
 #include <spdlog/spdlog.h>
 
@@ -19,55 +35,15 @@
 #include <vector>
 
 // ---------------------------------------------------------------------------
-// Helper: convert N64 RGBA16 (5-5-5-1) to RGBA8 for LLGL texture upload
+// Shared GLSL shader generation helpers (prism-based, same as OpenGL backend)
 // ---------------------------------------------------------------------------
-static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        uint16_t px = src[i];
-        dst[i * 4 + 0] = ((px >> 11) & 0x1F) * 255 / 31;
-        dst[i * 4 + 1] = ((px >>  6) & 0x1F) * 255 / 31;
-        dst[i * 4 + 2] = ((px >>  1) & 0x1F) * 255 / 31;
-        dst[i * 4 + 3] = (px & 1) ? 255 : 0;
-    }
-}
+#include "gfx_glsl_helpers.h"
 
-// ---------------------------------------------------------------------------
-// Prism helper shared with the OpenGL backend
-// ---------------------------------------------------------------------------
 namespace {
 
-using InvokeFunc = prism::ContextTypes* (*)(prism::ContextTypes*, ...);
-
-static prism::ContextTypes* append_formula_llgl(prism::ContextTypes* _,
-                                                 prism::ContextTypes* a_arg,
-                                                 prism::ContextTypes* a_single,
-                                                 prism::ContextTypes* a_mult,
-                                                 prism::ContextTypes* a_mix,
-                                                 prism::ContextTypes* a_with_alpha,
-                                                 prism::ContextTypes* a_only_alpha,
-                                                 prism::ContextTypes* a_alpha,
-                                                 prism::ContextTypes* a_first_cycle) {
-    // Same logic as the OpenGL backend append_formula
-    auto c = std::get<prism::MTDArray<int>>(*a_arg);
-    auto single  = std::get<bool>(*a_single);
-    auto mult    = std::get<bool>(*a_mult);
-    auto mix     = std::get<bool>(*a_mix);
-    auto w_alpha = std::get<bool>(*a_with_alpha);
-    auto o_alpha = std::get<bool>(*a_only_alpha);
-    auto alpha   = std::get<bool>(*a_alpha);
-    auto first_c = std::get<bool>(*a_first_cycle);
-
-    std::string out;
-    if (single) {
-        out = (alpha ? "aInput" : "aInput") + std::string(c[0][0] != 0 ? std::to_string(c[0][0]) : "1") + (alpha ? ".a" : ".rgb");
-    } else if (mult) {
-        out = "(aInput" + std::to_string(c[0][0]) + (alpha ? ".a" : ".rgb") + " * aInput" +
-              std::to_string(c[0][1]) + (alpha ? ".a" : ".rgb") + ")";
-    } else {
-        out = "aInput1" + std::string(alpha ? ".a" : ".rgb");
-    }
-    return new prism::ContextTypes{ out };
-}
+// Use prism's own InvokeFunc typedef (typedef uintptr_t (*InvokeFunc)(); from
+// prism/utils/invoke.h).  Do NOT redeclare a local alias — it would conflict
+// with the global one and cause an "ambiguous" error in clang/GCC.
 
 static size_t sNumFloats = 0;
 static prism::ContextTypes* UpdateFloatsLLGL(prism::ContextTypes* _, prism::ContextTypes* num) {
@@ -107,7 +83,7 @@ std::string GfxRenderingAPILLGL::BuildFragShader(const CCFeatures& cc) const {
     prism::Processor proc;
     prism::ContextItems ctx = {
         { "VERTEX_SHADER", false },
-        { "o_c",           prism::MTDArray<int>(cc.c[0][0], 2, 2, 4) },
+        { "o_c",           M_ARRAY(cc.c, int, 2, 2, 4) },
         { "o_alpha",       cc.opt_alpha },
         { "o_fog",         cc.opt_fog },
         { "o_texture_edge",cc.opt_texture_edge },
@@ -116,15 +92,15 @@ std::string GfxRenderingAPILLGL::BuildFragShader(const CCFeatures& cc) const {
         { "o_alpha_threshold", cc.opt_alpha_threshold },
         { "o_invisible",   cc.opt_invisible },
         { "o_grayscale",   cc.opt_grayscale },
-        { "o_textures",    prism::MTDArray<bool>(cc.usedTextures, 2) },
-        { "o_masks",       prism::MTDArray<bool>(cc.used_masks, 2) },
-        { "o_blend",       prism::MTDArray<bool>(cc.used_blend, 2) },
-        { "o_clamp",       prism::MTDArray<bool>(cc.clamp[0], 2, 2) },
+        { "o_textures",    M_ARRAY(cc.usedTextures, bool, 2) },
+        { "o_masks",       M_ARRAY(cc.used_masks, bool, 2) },
+        { "o_blend",       M_ARRAY(cc.used_blend, bool, 2) },
+        { "o_clamp",       M_ARRAY(cc.clamp, bool, 2, 2) },
         { "o_inputs",      cc.numInputs },
-        { "o_do_mix",      prism::MTDArray<bool>(cc.do_mix[0], 2, 2) },
-        { "o_do_single",   prism::MTDArray<bool>(cc.do_single[0], 2, 2) },
-        { "o_do_multiply", prism::MTDArray<bool>(cc.do_multiply[0], 2, 2) },
-        { "o_color_alpha_same", prism::MTDArray<bool>(cc.color_alpha_same, 2) },
+        { "o_do_mix",      M_ARRAY(cc.do_mix, bool, 2, 2) },
+        { "o_do_single",   M_ARRAY(cc.do_single, bool, 2, 2) },
+        { "o_do_multiply", M_ARRAY(cc.do_multiply, bool, 2, 2) },
+        { "o_color_alpha_same", M_ARRAY(cc.color_alpha_same, bool, 2) },
         { "FILTER_THREE_POINT", FILTER_THREE_POINT },
         { "FILTER_LINEAR",  FILTER_LINEAR },
         { "FILTER_NONE",    FILTER_NONE },
@@ -145,7 +121,7 @@ std::string GfxRenderingAPILLGL::BuildFragShader(const CCFeatures& cc) const {
         { "SHADER_COMBINED",SHADER_COMBINED },
         { "SHADER_NOISE",   SHADER_NOISE },
         { "o_three_point_filtering", mFilterMode == FILTER_THREE_POINT },
-        { "append_formula", (InvokeFunc)append_formula_llgl },
+        { "append_formula", (InvokeFunc)gfx_append_formula },
         // Use modern GLSL core profile for LLGL
         { "GLSL_VERSION",   "#version 330 core" },
         { "attr",           "in" },
@@ -181,8 +157,8 @@ std::string GfxRenderingAPILLGL::BuildVertShader(const CCFeatures& cc, size_t& o
     prism::Processor proc;
     prism::ContextItems ctx = {
         { "VERTEX_SHADER", true },
-        { "o_textures",   prism::MTDArray<bool>(cc.usedTextures, 2) },
-        { "o_clamp",      prism::MTDArray<bool>(cc.clamp[0], 2, 2) },
+        { "o_textures",   M_ARRAY(cc.usedTextures, bool, 2) },
+        { "o_clamp",      M_ARRAY(cc.clamp, bool, 2, 2) },
         { "o_fog",        cc.opt_fog },
         { "o_grayscale",  cc.opt_grayscale },
         { "o_alpha",      cc.opt_alpha },
@@ -349,9 +325,19 @@ bool GfxRenderingAPILLGL::BuildPipelineState(LLGLShaderProgram* prog,
     psoDesc.depth.writeEnabled = mPendingDepthMask;
 
     LLGL::Report report;
-    auto* pso = mRenderer->CreatePipelineState(psoDesc, &report);
-    if (report.HasErrors()) {
-        SPDLOG_ERROR("[LLGL] PSO creation error: {}", report.GetText());
+    auto* pso = mRenderer->CreatePipelineState(psoDesc);
+    if (pso && pso->GetReport() && pso->GetReport()->HasErrors()) {
+        SPDLOG_ERROR("[LLGL] PSO creation error: {}", pso->GetReport()->GetText());
+        mRenderer->Release(*pso);
+        mRenderer->Release(*vs);
+        mRenderer->Release(*fs);
+        mRenderer->Release(*layout);
+        return false;
+    }
+    if (!pso) {
+        const auto* rsReport = mRenderer->GetReport();
+        SPDLOG_ERROR("[LLGL] PSO creation failed: {}",
+                     rsReport ? rsReport->GetText() : "(no report)");
         mRenderer->Release(*vs);
         mRenderer->Release(*fs);
         mRenderer->Release(*layout);
@@ -591,13 +577,6 @@ void GfxRenderingAPILLGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
     EnsureVertexBufferSize(bytes);
     mRenderer->WriteBuffer(*mVertexBuffer, 0, buf_vbo, bytes);
 
-    // Vertex format for the current shader
-    const size_t stride = mCurrentProg->numFloats * sizeof(float);
-    LLGL::VertexBufferDescriptor vbDesc;
-    vbDesc.buffer = mVertexBuffer;
-    vbDesc.offset = 0;
-    vbDesc.stride = static_cast<uint32_t>(stride);
-
     mCmdBuf->SetVertexBuffer(*mVertexBuffer);
     mCmdBuf->SetPipelineState(*mCurrentProg->pso);
 
@@ -609,7 +588,8 @@ void GfxRenderingAPILLGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
             mCurrentProg->resourceHeap = nullptr;
         }
         LLGL::ResourceHeapDescriptor rhd;
-        rhd.pipelineLayout = mCurrentProg->pipelineLayout;
+        rhd.pipelineLayout  = mCurrentProg->pipelineLayout;
+        rhd.numResourceViews = 4; // 2 textures + 2 samplers
         std::vector<LLGL::ResourceViewDescriptor> rvDescs;
         // Textures
         for (int t = 0; t < 2; t++) {
@@ -626,8 +606,7 @@ void GfxRenderingAPILLGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
                                        : GetOrCreateSampler(false, 0, 0);
             rvDescs.push_back(rvd);
         }
-        rhd.resourceViews = rvDescs;
-        mCurrentProg->resourceHeap = mRenderer->CreateResourceHeap(rhd);
+        mCurrentProg->resourceHeap = mRenderer->CreateResourceHeap(rhd, rvDescs);
         mCmdBuf->SetResourceHeap(*mCurrentProg->resourceHeap);
     }
 
@@ -648,9 +627,23 @@ void GfxRenderingAPILLGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
 void GfxRenderingAPILLGL::Init() {
     LLGL::Report report;
     for (const char* const* m = kPreferredModules; *m; m++) {
-        mRenderer = LLGL::RenderSystem::Load(*m, &report);
-        if (mRenderer) {
+        auto ptr = LLGL::RenderSystem::Load(*m, &report);
+        if (ptr) {
             mModuleName = *m;
+            mRenderer   = ptr.get();
+            // Store lifetime ownership as void* unique_ptr.
+            // With LLGL_BUILD_STATIC_LIB the deleter just calls delete; for
+            // dynamic builds we use the proper Unload path.
+            auto* raw = ptr.release();
+            mRendererLifetime = std::unique_ptr<void, void(*)(void*)>{
+                raw, [](void* p) {
+                    LLGL::RenderSystemPtr owner{
+                        static_cast<LLGL::RenderSystem*>(p),
+                        LLGL::RenderSystemDeleter{}
+                    };
+                    LLGL::RenderSystem::Unload(std::move(owner));
+                }
+            };
             break;
         }
         SPDLOG_WARN("[LLGL] Cannot load '{}' renderer: {}", *m,
@@ -798,9 +791,7 @@ void GfxRenderingAPILLGL::ClearFramebuffer(bool color, bool depth) {
     uint32_t flags = 0;
     if (color) flags |= LLGL::ClearFlags::Color;
     if (depth) flags |= LLGL::ClearFlags::Depth;
-    LLGL::ClearValue cv;
-    cv.color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    cv.depth = 1.0f;
+    LLGL::ClearValue cv{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f };
     mCmdBuf->Clear(flags, cv);
 }
 
