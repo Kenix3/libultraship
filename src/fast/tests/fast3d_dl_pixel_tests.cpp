@@ -52,42 +52,42 @@ namespace prdp {
 
 // N64 RDP command word builders (raw 64-bit commands as ParallelRDP expects)
 static constexpr uint32_t RDP_CMD_SET_COLOR_IMAGE = 0xFF;
-static constexpr uint32_t RDP_CMD_SET_MASK_IMAGE  = 0xFE;
-static constexpr uint32_t RDP_CMD_SET_FILL_COLOR  = 0xF7;
-static constexpr uint32_t RDP_CMD_FILL_RECTANGLE  = 0xF6;
+static constexpr uint32_t RDP_CMD_SET_MASK_IMAGE = 0xFE;
+static constexpr uint32_t RDP_CMD_SET_FILL_COLOR = 0xF7;
+static constexpr uint32_t RDP_CMD_FILL_RECTANGLE = 0xF6;
 static constexpr uint32_t RDP_CMD_SET_OTHER_MODES = 0xEF;
-static constexpr uint32_t RDP_CMD_SET_PRIM_DEPTH  = 0xEE;
-static constexpr uint32_t RDP_CMD_SET_SCISSOR     = 0xED;
-static constexpr uint32_t RDP_CMD_SYNC_FULL       = 0xE9;
-static constexpr uint32_t RDP_CMD_SYNC_PIPE       = 0xE7;
-static constexpr uint32_t RDP_CMD_SET_COMBINE     = 0xFC;
-static constexpr uint32_t RDP_CMD_SET_ENV_COLOR   = 0xFB;
-static constexpr uint32_t RDP_CMD_SET_PRIM_COLOR  = 0xFA;
+static constexpr uint32_t RDP_CMD_SET_PRIM_DEPTH = 0xEE;
+static constexpr uint32_t RDP_CMD_SET_SCISSOR = 0xED;
+static constexpr uint32_t RDP_CMD_SYNC_FULL = 0xE9;
+static constexpr uint32_t RDP_CMD_SYNC_PIPE = 0xE7;
+static constexpr uint32_t RDP_CMD_SET_COMBINE = 0xFC;
+static constexpr uint32_t RDP_CMD_SET_ENV_COLOR = 0xFB;
+static constexpr uint32_t RDP_CMD_SET_PRIM_COLOR = 0xFA;
 
 // Triangle command IDs (edge coefficient format)
-static constexpr uint32_t RDP_CMD_TRI_FILL       = 0xC8;
+static constexpr uint32_t RDP_CMD_TRI_FILL = 0xC8;
 static constexpr uint32_t RDP_CMD_TRI_FILL_ZBUFF = 0xC9;
-static constexpr uint32_t RDP_CMD_TRI_SHADE      = 0xCC;
+static constexpr uint32_t RDP_CMD_TRI_SHADE = 0xCC;
 static constexpr uint32_t RDP_CMD_TRI_SHADE_ZBUFF = 0xCD;
 
 static constexpr uint32_t RDP_FMT_RGBA = 0;
-static constexpr uint32_t RDP_FMT_YUV  = 1;
-static constexpr uint32_t RDP_FMT_CI   = 2;
-static constexpr uint32_t RDP_FMT_IA   = 3;
-static constexpr uint32_t RDP_FMT_I    = 4;
+static constexpr uint32_t RDP_FMT_YUV = 1;
+static constexpr uint32_t RDP_FMT_CI = 2;
+static constexpr uint32_t RDP_FMT_IA = 3;
+static constexpr uint32_t RDP_FMT_I = 4;
 
-static constexpr uint32_t RDP_SIZ_4b   = 0;
-static constexpr uint32_t RDP_SIZ_8b   = 1;
-static constexpr uint32_t RDP_SIZ_16b  = 2;
-static constexpr uint32_t RDP_SIZ_32b  = 3;
-static constexpr uint32_t RDP_CYCLE_FILL  = (3u << 20);
-static constexpr uint32_t RDP_CYCLE_1CYC  = (0u << 20);
-static constexpr uint32_t RDP_CYCLE_2CYC  = (1u << 20);
-static constexpr uint32_t RDP_CYCLE_COPY  = (2u << 20);
+static constexpr uint32_t RDP_SIZ_4b = 0;
+static constexpr uint32_t RDP_SIZ_8b = 1;
+static constexpr uint32_t RDP_SIZ_16b = 2;
+static constexpr uint32_t RDP_SIZ_32b = 3;
+static constexpr uint32_t RDP_CYCLE_FILL = (3u << 20);
+static constexpr uint32_t RDP_CYCLE_1CYC = (0u << 20);
+static constexpr uint32_t RDP_CYCLE_2CYC = (1u << 20);
+static constexpr uint32_t RDP_CYCLE_COPY = (2u << 20);
 
 // Other mode bits for depth testing and blending
-static constexpr uint32_t RDP_Z_CMP       = 0x10;
-static constexpr uint32_t RDP_Z_UPD       = 0x20;
+static constexpr uint32_t RDP_Z_CMP = 0x10;
+static constexpr uint32_t RDP_Z_UPD = 0x20;
 static constexpr uint32_t RDP_FORCE_BLEND = (1u << 14);
 static constexpr uint32_t RDP_CVG_X_ALPHA = (1u << 12);
 
@@ -95,8 +95,8 @@ static constexpr uint32_t RDP_CVG_X_ALPHA = (1u << 12);
 // Bit 11 = bi_lerp_0: enable bilinear filtering in cycle 0 (and skip YUV conversion).
 // Without this, the RDP applies texture-convert using K0-K5 registers, which default
 // to zero and produce (B,B,B,B) output — effectively destroying the texture color.
-static constexpr uint32_t RDP_BILERP_0    = (1u << 11);
-static constexpr uint32_t RDP_BILERP_1    = (1u << 10);
+static constexpr uint32_t RDP_BILERP_0 = (1u << 11);
+static constexpr uint32_t RDP_BILERP_1 = (1u << 10);
 static constexpr uint32_t RDP_ZMODE_DECAL = (3u << 10);
 
 struct RDPCommand {
@@ -105,15 +105,13 @@ struct RDPCommand {
 };
 
 static RDPCommand MakeSetColorImage(uint32_t fmt, uint32_t siz, uint32_t width, uint32_t addr) {
-    return { (RDP_CMD_SET_COLOR_IMAGE << 24) | (fmt << 21) | (siz << 19) | ((width - 1) & 0x3FF),
-             addr & 0x03FFFFFF };
+    return { (RDP_CMD_SET_COLOR_IMAGE << 24) | (fmt << 21) | (siz << 19) | ((width - 1) & 0x3FF), addr & 0x03FFFFFF };
 }
 static RDPCommand MakeSetMaskImage(uint32_t addr) {
     return { (RDP_CMD_SET_MASK_IMAGE << 24), addr & 0x03FFFFFF };
 }
 static RDPCommand MakeSetScissor(uint32_t xh, uint32_t yh, uint32_t xl, uint32_t yl) {
-    return { (RDP_CMD_SET_SCISSOR << 24) | ((xh & 0xFFF) << 12) | (yh & 0xFFF),
-             ((xl & 0xFFF) << 12) | (yl & 0xFFF) };
+    return { (RDP_CMD_SET_SCISSOR << 24) | ((xh & 0xFFF) << 12) | (yh & 0xFFF), ((xl & 0xFFF) << 12) | (yl & 0xFFF) };
 }
 static RDPCommand MakeSetOtherModes(uint32_t hi, uint32_t lo) {
     return { (RDP_CMD_SET_OTHER_MODES << 24) | (hi & 0x00FFFFFF), lo };
@@ -128,8 +126,7 @@ static RDPCommand MakeFillRectangle(uint32_t xh, uint32_t yh, uint32_t xl, uint3
 static RDPCommand MakeSetCombine(uint32_t hi, uint32_t lo) {
     return { (RDP_CMD_SET_COMBINE << 24) | (hi & 0x00FFFFFF), lo };
 }
-static RDPCommand MakeSetPrimColor(uint8_t minLevel, uint8_t lodFrac,
-                                    uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+static RDPCommand MakeSetPrimColor(uint8_t minLevel, uint8_t lodFrac, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     return { (RDP_CMD_SET_PRIM_COLOR << 24) | ((uint32_t)minLevel << 8) | lodFrac,
              ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a };
 }
@@ -146,64 +143,50 @@ static RDPCommand MakeSetPrimDepth(uint16_t z, uint16_t dz) {
     return { (RDP_CMD_SET_PRIM_DEPTH << 24), ((uint32_t)z << 16) | dz };
 }
 static RDPCommand MakeSetTextureImage(uint32_t fmt, uint32_t siz, uint32_t width, uint32_t addr) {
-    return { (0xFDu << 24) | (fmt << 21) | (siz << 19) | ((width - 1) & 0x3FF),
-             addr & 0x03FFFFFF };
+    return { (0xFDu << 24) | (fmt << 21) | (siz << 19) | ((width - 1) & 0x3FF), addr & 0x03FFFFFF };
 }
-static RDPCommand MakeSetTile(uint32_t fmt, uint32_t siz, uint32_t line,
-                               uint32_t tmem, uint32_t tile,
-                               uint32_t cms, uint32_t cmt,
-                               uint32_t masks, uint32_t maskt,
-                               uint32_t shifts, uint32_t shiftt,
-                               uint32_t palette) {
+static RDPCommand MakeSetTile(uint32_t fmt, uint32_t siz, uint32_t line, uint32_t tmem, uint32_t tile, uint32_t cms,
+                              uint32_t cmt, uint32_t masks, uint32_t maskt, uint32_t shifts, uint32_t shiftt,
+                              uint32_t palette) {
     return { (0xF5u << 24) | (fmt << 21) | (siz << 19) | ((line & 0x1FF) << 9) | (tmem & 0x1FF),
-             ((tile & 0x7) << 24) | ((palette & 0xF) << 20) |
-             ((cmt & 0x1) << 19) | ((maskt & 0xF) << 14) | ((shiftt & 0xF) << 10) |
-             ((cms & 0x1) << 9) | ((masks & 0xF) << 4) | (shifts & 0xF) };
+             ((tile & 0x7) << 24) | ((palette & 0xF) << 20) | ((cmt & 0x1) << 19) | ((maskt & 0xF) << 14) |
+                 ((shiftt & 0xF) << 10) | ((cms & 0x1) << 9) | ((masks & 0xF) << 4) | (shifts & 0xF) };
 }
-static RDPCommand MakeLoadBlock(uint32_t tile, uint32_t sl, uint32_t tl,
-                                 uint32_t sh, uint32_t dxt) {
+static RDPCommand MakeLoadBlock(uint32_t tile, uint32_t sl, uint32_t tl, uint32_t sh, uint32_t dxt) {
     return { (0xF3u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
              ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (dxt & 0xFFF) };
 }
 // LoadTile (cmd 0x34): load a rectangular region of texels into TMEM.
 // Coordinates are in 10.2 fixed-point format.
-static RDPCommand MakeLoadTile(uint32_t tile, uint32_t sl, uint32_t tl,
-                                uint32_t sh, uint32_t th) {
+static RDPCommand MakeLoadTile(uint32_t tile, uint32_t sl, uint32_t tl, uint32_t sh, uint32_t th) {
     return { (0xF4u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
              ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (th & 0xFFF) };
 }
-static RDPCommand MakeSetTileSize(uint32_t tile, uint32_t sl, uint32_t tl,
-                                   uint32_t sh, uint32_t th) {
+static RDPCommand MakeSetTileSize(uint32_t tile, uint32_t sl, uint32_t tl, uint32_t sh, uint32_t th) {
     return { (0xF2u << 24) | ((sl & 0xFFF) << 12) | (tl & 0xFFF),
              ((tile & 0x7) << 24) | ((sh & 0xFFF) << 12) | (th & 0xFFF) };
 }
 // LoadTLUT (cmd 0x30): load a range of palette entries into upper TMEM.
 // sh is the last palette index to load (e.g. 15 for CI4, 255 for CI8).
 static RDPCommand MakeLoadTLUT(uint32_t tile, uint32_t sl, uint32_t sh) {
-    return { (0xF0u << 24) | ((sl & 0xFFF) << 14),
-             ((tile & 0x7) << 24) | ((sh & 0xFFF) << 14) };
+    return { (0xF0u << 24) | ((sl & 0xFFF) << 14), ((tile & 0x7) << 24) | ((sh & 0xFFF) << 14) };
 }
-static RDPCommand MakeTextureRectangle(uint32_t tile, uint32_t xl, uint32_t yl,
-                                        uint32_t xh, uint32_t yh,
-                                        int16_t s, int16_t t,
-                                        int16_t dsdx, int16_t dtdy) {
+static RDPCommand MakeTextureRectangle(uint32_t tile, uint32_t xl, uint32_t yl, uint32_t xh, uint32_t yh, int16_t s,
+                                       int16_t t, int16_t dsdx, int16_t dtdy) {
     // Texture rectangle is 4 words (two RDPCommands submitted back-to-back).
     // However, we return only the first pair here; the caller must also
     // submit the second pair with MakeTextureRectangleST.
     return { (0xE4u << 24) | ((xl & 0xFFF) << 12) | (yl & 0xFFF),
              ((tile & 0x7) << 24) | ((xh & 0xFFF) << 12) | (yh & 0xFFF) };
 }
-static RDPCommand MakeTextureRectangleST(int16_t s, int16_t t,
-                                          int16_t dsdx, int16_t dtdy) {
-    return { ((uint32_t)(uint16_t)s << 16) | (uint16_t)t,
-             ((uint32_t)(uint16_t)dsdx << 16) | (uint16_t)dtdy };
+static RDPCommand MakeTextureRectangleST(int16_t s, int16_t t, int16_t dsdx, int16_t dtdy) {
+    return { ((uint32_t)(uint16_t)s << 16) | (uint16_t)t, ((uint32_t)(uint16_t)dsdx << 16) | (uint16_t)dtdy };
 }
 // Build a complete 4-word Texture Rectangle as raw words for ParallelRDP.
 // ParallelRDP's op_texture_rectangle reads words[0..3] in one call, so
 // the texture rectangle must be enqueued as a single 4-word command.
-static std::vector<uint32_t> MakeTextureRectangleWords(
-    uint32_t tile, uint32_t xl, uint32_t yl, uint32_t xh, uint32_t yh,
-    int16_t s, int16_t t, int16_t dsdx, int16_t dtdy) {
+static std::vector<uint32_t> MakeTextureRectangleWords(uint32_t tile, uint32_t xl, uint32_t yl, uint32_t xh,
+                                                       uint32_t yh, int16_t s, int16_t t, int16_t dsdx, int16_t dtdy) {
     return {
         (0xE4u << 24) | ((xl & 0xFFF) << 12) | (yl & 0xFFF),
         ((tile & 0x7) << 24) | ((xh & 0xFFF) << 12) | (yh & 0xFFF),
@@ -211,10 +194,18 @@ static std::vector<uint32_t> MakeTextureRectangleWords(
         ((uint32_t)(uint16_t)dsdx << 16) | (uint16_t)dtdy,
     };
 }
-static RDPCommand MakeSyncFull() { return { (RDP_CMD_SYNC_FULL << 24), 0 }; }
-static RDPCommand MakeSyncPipe() { return { (RDP_CMD_SYNC_PIPE << 24), 0 }; }
-static RDPCommand MakeSyncTile() { return { (0xE8u << 24), 0 }; }
-static RDPCommand MakeSyncLoad() { return { (0xE6u << 24), 0 }; }
+static RDPCommand MakeSyncFull() {
+    return { (RDP_CMD_SYNC_FULL << 24), 0 };
+}
+static RDPCommand MakeSyncPipe() {
+    return { (RDP_CMD_SYNC_PIPE << 24), 0 };
+}
+static RDPCommand MakeSyncTile() {
+    return { (0xE8u << 24), 0 };
+}
+static RDPCommand MakeSyncLoad() {
+    return { (0xE6u << 24), 0 };
+}
 
 // ---------------------------------------------------------------
 // N64 RDP Triangle Edge Coefficient Builders
@@ -238,8 +229,7 @@ static RDPCommand MakeSyncLoad() { return { (0xE6u << 24), 0 }; }
 // lower minor edge goes diagonally from TR to BL.
 // The 'tile' parameter occupies bits 16-21 in word 0 (same as the RDP spec's
 // tile+level field); for simple tests it defaults to 0.
-static void PackEdgeCoeffs(uint32_t* words, uint32_t cmdId,
-                           uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
+static void PackEdgeCoeffs(uint32_t* words, uint32_t cmdId, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
                            uint32_t tile = 0) {
     int32_t yh_fp = y0 * 4;
     int32_t ym_fp = y0 * 4;
@@ -289,9 +279,8 @@ static void PackZCoeffs(uint32_t* words, uint32_t z_s1516) {
 }
 
 // Build a shade triangle (0xCC): 24 words
-static std::vector<uint32_t> MakeShadeTriangleWords(
-    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
-    uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+static std::vector<uint32_t> MakeShadeTriangleWords(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, uint8_t r,
+                                                    uint8_t g, uint8_t b, uint8_t a) {
     std::vector<uint32_t> words(24, 0);
     PackEdgeCoeffs(words.data(), RDP_CMD_TRI_SHADE, x0, y0, x1, y1);
     PackShadeCoeffs(words.data() + 8, r, g, b, a);
@@ -299,10 +288,8 @@ static std::vector<uint32_t> MakeShadeTriangleWords(
 }
 
 // Build a shade+zbuff triangle (0xCD): 28 words
-static std::vector<uint32_t> MakeShadeZbuffTriangleWords(
-    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1,
-    uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-    uint32_t z_s1516) {
+static std::vector<uint32_t> MakeShadeZbuffTriangleWords(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, uint8_t r,
+                                                         uint8_t g, uint8_t b, uint8_t a, uint32_t z_s1516) {
     std::vector<uint32_t> words(28, 0);
     PackEdgeCoeffs(words.data(), RDP_CMD_TRI_SHADE_ZBUFF, x0, y0, x1, y1);
     PackShadeCoeffs(words.data() + 8, r, g, b, a);
@@ -311,8 +298,7 @@ static std::vector<uint32_t> MakeShadeZbuffTriangleWords(
 }
 
 // Build a fill triangle (0xC8): 8 words
-static std::vector<uint32_t> MakeFillTriangleWords(
-    uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
+static std::vector<uint32_t> MakeFillTriangleWords(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
     std::vector<uint32_t> words(8, 0);
     PackEdgeCoeffs(words.data(), RDP_CMD_TRI_FILL, x0, y0, x1, y1);
     return words;
@@ -327,10 +313,8 @@ struct ComparisonResult {
     bool vulkanAvailable;
 };
 
-static ComparisonResult CompareRGBA16Buffers(
-    const uint16_t* prdpFb, const uint16_t* fast3dFb,
-    uint32_t width, uint32_t height)
-{
+static ComparisonResult CompareRGBA16Buffers(const uint16_t* prdpFb, const uint16_t* fast3dFb, uint32_t width,
+                                             uint32_t height) {
     ComparisonResult result = {};
     result.totalPixels = width * height;
     result.vulkanAvailable = true;
@@ -359,7 +343,8 @@ static ComparisonResult CompareRGBA16Buffers(
         mse += (double)(dr * dr + dg * dg + db * db) / 3.0;
     }
 
-    if (result.totalPixels > 0) mse /= result.totalPixels;
+    if (result.totalPixels > 0)
+        mse /= result.totalPixels;
     if (mse > 0.0)
         result.psnr = 10.0 * std::log10((31.0 * 31.0) / mse);
     else
@@ -381,7 +366,8 @@ static void PrintComparisonResult(const char* testName, const ComparisonResult& 
             double pct = 100.0 * r.mismatchCount / r.totalPixels;
             std::cout << " (" << std::fixed << std::setprecision(2) << pct << "%)";
         }
-        std::cout << std::setw(10) << "" << "║\n";
+        std::cout << std::setw(10) << ""
+                  << "║\n";
         std::cout << "║  Max delta (R):   " << std::setw(10) << r.maxDeltaR << "                     ║\n";
         std::cout << "║  Max delta (G):   " << std::setw(10) << r.maxDeltaG << "                     ║\n";
         std::cout << "║  Max delta (B):   " << std::setw(10) << r.maxDeltaB << "                     ║\n";
@@ -399,23 +385,29 @@ static void PrintComparisonResult(const char* testName, const ComparisonResult& 
 // RDRAM layout
 static constexpr size_t RDRAM_SIZE = 4 * 1024 * 1024;
 static constexpr size_t HIDDEN_RDRAM_SIZE = 2 * 1024 * 1024;
-static constexpr uint32_t FB_ADDR   = 0x100000;
+static constexpr uint32_t FB_ADDR = 0x100000;
 static constexpr uint32_t ZBUF_ADDR = 0x200000;
-static constexpr uint32_t FB_WIDTH  = 320;
+static constexpr uint32_t FB_WIDTH = 320;
 static constexpr uint32_t FB_HEIGHT = 240;
 
 class ParallelRDPContext {
-public:
+  public:
     bool Initialize() {
-        if (volkInitialize() != VK_SUCCESS) { available_ = false; return false; }
-        if (!Vulkan::Context::init_loader(nullptr)) { available_ = false; return false; }
+        if (volkInitialize() != VK_SUCCESS) {
+            available_ = false;
+            return false;
+        }
+        if (!Vulkan::Context::init_loader(nullptr)) {
+            available_ = false;
+            return false;
+        }
 
         auto ctx = std::make_unique<Vulkan::Context>();
-        if (!ctx->init_instance_and_device(nullptr, 0, nullptr, 0,
-                Vulkan::CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT)) {
+        if (!ctx->init_instance_and_device(nullptr, 0, nullptr, 0, Vulkan::CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT)) {
             ctx = std::make_unique<Vulkan::Context>();
             if (!ctx->init_instance_and_device(nullptr, 0, nullptr, 0, 0)) {
-                available_ = false; return false;
+                available_ = false;
+                return false;
             }
         }
 
@@ -424,18 +416,23 @@ public:
         context_ = std::move(ctx);
 
         rdram_.resize(RDRAM_SIZE, 0);
-        processor_ = std::make_unique<RDP::CommandProcessor>(
-            *device_, rdram_.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
-            RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
-        if (!processor_->device_is_supported()) { available_ = false; return false; }
+        processor_ = std::make_unique<RDP::CommandProcessor>(*device_, rdram_.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
+                                                             RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
+        if (!processor_->device_is_supported()) {
+            available_ = false;
+            return false;
+        }
 
         available_ = true;
         return true;
     }
-    bool IsAvailable() const { return available_; }
+    bool IsAvailable() const {
+        return available_;
+    }
 
     void SubmitCommands(const std::vector<RDPCommand>& cmds) {
-        if (!available_) return;
+        if (!available_)
+            return;
         processor_->begin_frame_context();
         for (auto& cmd : cmds) {
             uint32_t words[2] = { cmd.w0, cmd.w1 };
@@ -447,7 +444,8 @@ public:
     // Submit a mixed command sequence: 2-word RDPCommands and variable-length
     // raw word arrays (e.g., triangle edge coefficients).
     void SubmitRawCommands(const std::vector<uint32_t>& words, size_t numWords) {
-        if (!available_) return;
+        if (!available_)
+            return;
         processor_->begin_frame_context();
         processor_->enqueue_command(numWords, words.data());
         processor_->wait_for_timeline(processor_->signal_timeline());
@@ -455,10 +453,10 @@ public:
 
     // Submit a sequence of RDPCommands followed by a multi-word command,
     // then more RDPCommands. Use for triangle tests that need setup first.
-    void SubmitMixedCommands(const std::vector<RDPCommand>& setup,
-                             const std::vector<uint32_t>& triWords,
+    void SubmitMixedCommands(const std::vector<RDPCommand>& setup, const std::vector<uint32_t>& triWords,
                              const std::vector<RDPCommand>& teardown) {
-        if (!available_) return;
+        if (!available_)
+            return;
         processor_->begin_frame_context();
         for (auto& cmd : setup) {
             uint32_t w[2] = { cmd.w0, cmd.w1 };
@@ -480,7 +478,8 @@ public:
     void SubmitMultiTriCommands(const std::vector<RDPCommand>& setup,
                                 const std::vector<std::vector<uint32_t>>& triWordsList,
                                 const std::vector<RDPCommand>& teardown) {
-        if (!available_) return;
+        if (!available_)
+            return;
         processor_->begin_frame_context();
         for (auto& cmd : setup) {
             uint32_t w[2] = { cmd.w0, cmd.w1 };
@@ -503,12 +502,13 @@ public:
     // either a pair of {RDPCommand list, raw word vector}. This preserves
     // RDP state across the entire sequence (no begin_frame_context between steps).
     struct CommandStep {
-        std::vector<RDPCommand> cmds;     // 2-word commands to send
-        std::vector<uint32_t> rawWords;   // multi-word command (e.g., triangle)
+        std::vector<RDPCommand> cmds;   // 2-word commands to send
+        std::vector<uint32_t> rawWords; // multi-word command (e.g., triangle)
     };
 
     void SubmitSequence(const std::vector<CommandStep>& steps) {
-        if (!available_) return;
+        if (!available_)
+            return;
         processor_->begin_frame_context();
         for (auto& step : steps) {
             for (auto& cmd : step.cmds) {
@@ -526,7 +526,8 @@ public:
     // within a single frame context. Used by BatchingPRDPBackend to forward accumulated
     // Fast3D interpreter RDP emissions to ParallelRDP in one shot.
     void SubmitFlatBatch(const std::vector<std::vector<uint32_t>>& cmds) {
-        if (!available_ || cmds.empty()) return;
+        if (!available_ || cmds.empty())
+            return;
         processor_->begin_frame_context();
         for (auto& c : cmds)
             if (!c.empty())
@@ -536,7 +537,8 @@ public:
 
     std::vector<uint16_t> ReadFramebuffer(uint32_t addr, uint32_t width, uint32_t height) {
         std::vector<uint16_t> fb(width * height);
-        if (!available_) return fb;
+        if (!available_)
+            return fb;
         // ParallelRDP's store_vram_color writes each RGBA5551 pixel to vram16[index ^ 1],
         // swapping adjacent uint16_t pairs within every 32-bit RDRAM word.  A plain memcpy
         // would return those pairs in swapped order, making checkerboard and other
@@ -548,11 +550,14 @@ public:
         return fb;
     }
 
-    void ClearRDRAM() { std::fill(rdram_.begin(), rdram_.end(), 0); }
+    void ClearRDRAM() {
+        std::fill(rdram_.begin(), rdram_.end(), 0);
+    }
 
     // Write data into RDRAM at the given byte address (for texture uploads, etc.)
     void WriteRDRAM(uint32_t addr, const void* data, size_t size) {
-        if (!available_ || addr + size > rdram_.size()) return;
+        if (!available_ || addr + size > rdram_.size())
+            return;
         memcpy(rdram_.data() + addr, data, size);
     }
 
@@ -564,10 +569,11 @@ public:
     // 32-bit word byte-swap storage.  Pre-swapping compensates for this so that
     // texel[n] ends up in the TMEM slot the sampler expects.
     void WriteRDRAMTexture16(uint32_t addr, const std::vector<uint16_t>& data) {
-        if (!available_) return;
+        if (!available_)
+            return;
         std::vector<uint16_t> swapped(data.size());
         for (size_t i = 0; i + 1 < data.size(); i += 2) {
-            swapped[i]     = data[i + 1];
+            swapped[i] = data[i + 1];
             swapped[i + 1] = data[i];
         }
         if (data.size() & 1)
@@ -588,11 +594,12 @@ public:
     // each 32-bit RDRAM word.  Pre-swapping bytes [0,1]↔[2,3] compensates so
     // the correct texels appear after the hardware's internal swap.
     void WriteRDRAMTexture4(uint32_t addr, const void* data, size_t size) {
-        if (!available_) return;
+        if (!available_)
+            return;
         std::vector<uint8_t> buf(size);
         const uint8_t* src = static_cast<const uint8_t*>(data);
         for (size_t i = 0; i + 3 < size; i += 4) {
-            buf[i]     = src[i + 2];
+            buf[i] = src[i + 2];
             buf[i + 1] = src[i + 3];
             buf[i + 2] = src[i];
             buf[i + 3] = src[i + 1];
@@ -610,11 +617,12 @@ public:
     // etc.).  Pre-swapping compensates so the correct texels appear after the
     // hardware's internal swap.
     void WriteRDRAMTexture8(uint32_t addr, const void* data, size_t size) {
-        if (!available_) return;
+        if (!available_)
+            return;
         std::vector<uint8_t> buf(size);
         const uint8_t* src = static_cast<const uint8_t*>(data);
         for (size_t i = 0; i + 1 < size; i += 2) {
-            buf[i]     = src[i + 1];
+            buf[i] = src[i + 1];
             buf[i + 1] = src[i];
         }
         if (size & 1)
@@ -622,9 +630,11 @@ public:
         WriteRDRAM(addr, buf.data(), size);
     }
 
-    uint8_t* GetRDRAM() { return rdram_.data(); }
+    uint8_t* GetRDRAM() {
+        return rdram_.data();
+    }
 
-private:
+  private:
     bool available_ = false;
     std::unique_ptr<Vulkan::Context> context_;
     std::unique_ptr<Vulkan::Device> device_;
@@ -647,10 +657,9 @@ static ParallelRDPContext& GetPRDPContext() {
 }
 
 // Build a standard fill-screen RDP command sequence for ParallelRDP
-static std::vector<RDPCommand> BuildFillScreenCmds(uint32_t fillColor32,
-                                                    uint32_t xh = 0, uint32_t yh = 0,
-                                                    uint32_t xl = (FB_WIDTH - 1) * 4,
-                                                    uint32_t yl = (FB_HEIGHT - 1) * 4) {
+static std::vector<RDPCommand> BuildFillScreenCmds(uint32_t fillColor32, uint32_t xh = 0, uint32_t yh = 0,
+                                                   uint32_t xl = (FB_WIDTH - 1) * 4,
+                                                   uint32_t yl = (FB_HEIGHT - 1) * 4) {
     std::vector<RDPCommand> cmds;
     cmds.push_back(MakeSetColorImage(RDP_FMT_RGBA, RDP_SIZ_16b, FB_WIDTH, FB_ADDR));
     cmds.push_back(MakeSetMaskImage(ZBUF_ADDR));
@@ -665,10 +674,8 @@ static std::vector<RDPCommand> BuildFillScreenCmds(uint32_t fillColor32,
 
 // Construct a reference RGBA16 framebuffer filled with a uniform 5551 color
 // in the given rectangular region (U10.2 coords, inclusive).
-static std::vector<uint16_t> BuildReferenceFb(uint16_t color5551,
-                                               uint32_t xh = 0, uint32_t yh = 0,
-                                               uint32_t xl = (FB_WIDTH - 1) * 4,
-                                               uint32_t yl = (FB_HEIGHT - 1) * 4) {
+static std::vector<uint16_t> BuildReferenceFb(uint16_t color5551, uint32_t xh = 0, uint32_t yh = 0,
+                                              uint32_t xl = (FB_WIDTH - 1) * 4, uint32_t yl = (FB_HEIGHT - 1) * 4) {
     std::vector<uint16_t> fb(FB_WIDTH * FB_HEIGHT, 0);
     uint32_t px0 = xh / 4, py0 = yh / 4;
     uint32_t px1 = xl / 4, py1 = yl / 4;
@@ -681,11 +688,8 @@ static std::vector<uint16_t> BuildReferenceFb(uint16_t color5551,
 // Run ParallelRDP and compare its RDRAM output against the expected reference
 // framebuffer derived from Fast3D's fill color state. Returns the comparison
 // result. This is the core "same display list → both renderers → compare" path.
-static ComparisonResult RunFillComparison(const char* testName,
-                                           uint16_t color5551,
-                                           uint32_t xh = 0, uint32_t yh = 0,
-                                           uint32_t xl = (FB_WIDTH - 1) * 4,
-                                           uint32_t yl = (FB_HEIGHT - 1) * 4) {
+static ComparisonResult RunFillComparison(const char* testName, uint16_t color5551, uint32_t xh = 0, uint32_t yh = 0,
+                                          uint32_t xl = (FB_WIDTH - 1) * 4, uint32_t yl = (FB_HEIGHT - 1) * 4) {
     auto& prdp = GetPRDPContext();
     if (!prdp.IsAvailable()) {
         ComparisonResult r = {};
@@ -731,23 +735,11 @@ struct CombinerCycle {
 };
 
 static RDPCommand MakeSetCombineMode(CombinerCycle c0, CombinerCycle c1) {
-    uint32_t w0 = (RDP_CMD_SET_COMBINE << 24) |
-                  ((c0.rgb_a & 0xF) << 20) |
-                  ((c0.rgb_c & 0x1F) << 15) |
-                  ((c0.a_a & 0x7) << 12) |
-                  ((c0.a_c & 0x7) << 9) |
-                  ((c1.rgb_a & 0xF) << 5) |
-                  ((c1.rgb_c & 0x1F) << 0);
-    uint32_t w1 = ((c0.rgb_b & 0xF) << 28) |
-                  ((c1.rgb_b & 0xF) << 24) |
-                  ((c1.a_a & 0x7) << 21) |
-                  ((c1.a_c & 0x7) << 18) |
-                  ((c0.rgb_d & 0x7) << 15) |
-                  ((c0.a_b & 0x7) << 12) |
-                  ((c0.a_d & 0x7) << 9) |
-                  ((c1.rgb_d & 0x7) << 6) |
-                  ((c1.a_b & 0x7) << 3) |
-                  ((c1.a_d & 0x7) << 0);
+    uint32_t w0 = (RDP_CMD_SET_COMBINE << 24) | ((c0.rgb_a & 0xF) << 20) | ((c0.rgb_c & 0x1F) << 15) |
+                  ((c0.a_a & 0x7) << 12) | ((c0.a_c & 0x7) << 9) | ((c1.rgb_a & 0xF) << 5) | ((c1.rgb_c & 0x1F) << 0);
+    uint32_t w1 = ((c0.rgb_b & 0xF) << 28) | ((c1.rgb_b & 0xF) << 24) | ((c1.a_a & 0x7) << 21) |
+                  ((c1.a_c & 0x7) << 18) | ((c0.rgb_d & 0x7) << 15) | ((c0.a_b & 0x7) << 12) | ((c0.a_d & 0x7) << 9) |
+                  ((c1.rgb_d & 0x7) << 6) | ((c1.a_b & 0x7) << 3) | ((c1.a_d & 0x7) << 0);
     return { w0, w1 };
 }
 
@@ -756,12 +748,12 @@ static RDPCommand MakeSetCombineMode(CombinerCycle c0, CombinerCycle c1) {
 // CC_PRIM:  output = primitive color      → A=0,B=0,C=0,D=PRIM(3)
 // CC_ENV:   output = environment color    → A=0,B=0,C=0,D=ENV(5)
 // CC_TEXEL0_SHADE: output = Texel0*Shade  → A=TEXEL0(1),B=0,C=SHADE(4),D=0
-static constexpr CombinerCycle CC_SHADE_RGB     = { 0, 0, 0, 4,  0, 0, 0, 4 };
-static constexpr CombinerCycle CC_PRIM_RGB      = { 0, 0, 0, 3,  0, 0, 0, 3 };
-static constexpr CombinerCycle CC_ENV_RGB       = { 0, 0, 0, 5,  0, 0, 0, 5 };
-static constexpr CombinerCycle CC_TEXEL0        = { 0, 0, 0, 1,  0, 0, 0, 1 };
-static constexpr CombinerCycle CC_TEXEL0_SHADE  = { 1, 0, 4, 0,  1, 0, 4, 0 };
-static constexpr CombinerCycle CC_OUTPUT_ZERO   = { 0, 0, 0, 7,  0, 0, 0, 7 };  // D=Zero(7) → outputs black
+static constexpr CombinerCycle CC_SHADE_RGB = { 0, 0, 0, 4, 0, 0, 0, 4 };
+static constexpr CombinerCycle CC_PRIM_RGB = { 0, 0, 0, 3, 0, 0, 0, 3 };
+static constexpr CombinerCycle CC_ENV_RGB = { 0, 0, 0, 5, 0, 0, 0, 5 };
+static constexpr CombinerCycle CC_TEXEL0 = { 0, 0, 0, 1, 0, 0, 0, 1 };
+static constexpr CombinerCycle CC_TEXEL0_SHADE = { 1, 0, 4, 0, 1, 0, 4, 0 };
+static constexpr CombinerCycle CC_OUTPUT_ZERO = { 0, 0, 0, 7, 0, 0, 0, 7 }; // D=Zero(7) → outputs black
 
 // SET_OTHER_MODES helpers for common render modes
 // The cycle type bits occupy bits 20-21 of the hi parameter, which maps to
@@ -771,13 +763,11 @@ static constexpr CombinerCycle CC_OUTPUT_ZERO   = { 0, 0, 0, 7,  0, 0, 0, 7 };  
 // texel color. Without it, the RDP applies texture-convert (YUV→RGB) using
 // the K0-K5 registers, which zeroes out non-blue channels on RGBA textures.
 static RDPCommand MakeOtherModes1Cycle(uint32_t extraHi = 0, uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_1CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi,
-                             RDP_FORCE_BLEND | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_1CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi, RDP_FORCE_BLEND | extraLo);
 }
 
 static RDPCommand MakeOtherModes2Cycle(uint32_t extraHi = 0, uint32_t extraLo = 0) {
-    return MakeSetOtherModes(RDP_CYCLE_2CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi,
-                             RDP_FORCE_BLEND | extraLo);
+    return MakeSetOtherModes(RDP_CYCLE_2CYC | RDP_BILERP_0 | RDP_BILERP_1 | extraHi, RDP_FORCE_BLEND | extraLo);
 }
 
 // Build an RDP command sequence that fills the Z buffer with maximum depth.
@@ -788,7 +778,7 @@ static std::vector<RDPCommand> BuildZBufferInit() {
     cmds.push_back(MakeSetColorImage(RDP_FMT_RGBA, RDP_SIZ_16b, FB_WIDTH, ZBUF_ADDR));
     cmds.push_back(MakeSyncPipe());
     cmds.push_back(MakeSetOtherModes(RDP_CYCLE_FILL, 0));
-    cmds.push_back(MakeSetFillColor(0xFFFEFFFE));   // max Z value per pixel pair
+    cmds.push_back(MakeSetFillColor(0xFFFEFFFE)); // max Z value per pixel pair
     cmds.push_back(MakeSetScissor(0, 0, FB_WIDTH * 4, FB_HEIGHT * 4));
     cmds.push_back(MakeFillRectangle(0, 0, (FB_WIDTH - 1) * 4, (FB_HEIGHT - 1) * 4));
     cmds.push_back(MakeSyncPipe());
@@ -798,12 +788,9 @@ static std::vector<RDPCommand> BuildZBufferInit() {
 
 // Run PRDP with a sequence of setup commands + a multi-word triangle + sync,
 // and compare against a reference framebuffer.
-static ComparisonResult RunTriangleComparison(
-    const char* testName,
-    const std::vector<RDPCommand>& setup,
-    const std::vector<uint32_t>& triWords,
-    const std::vector<uint16_t>& referenceFb)
-{
+static ComparisonResult RunTriangleComparison(const char* testName, const std::vector<RDPCommand>& setup,
+                                              const std::vector<uint32_t>& triWords,
+                                              const std::vector<uint16_t>& referenceFb) {
     auto& prdp = GetPRDPContext();
     if (!prdp.IsAvailable()) {
         ComparisonResult r = {};
@@ -842,7 +829,7 @@ static constexpr uint32_t PAL_ADDR = TEX_ADDR + 0x1000;
 //      frame context, then clears the buffer.
 // ---------------------------------------------------------------
 class BatchingPRDPBackend : public Fast::RdpCommandBackend {
-public:
+  public:
     std::vector<std::vector<uint32_t>> commands_;
 
     void SubmitCommand(size_t numWords, const uint32_t* words) override {
@@ -867,7 +854,9 @@ public:
         commands_.clear();
     }
 
-    void Clear() { commands_.clear(); }
+    void Clear() {
+        commands_.clear();
+    }
 };
 
 } // namespace prdp
@@ -922,13 +911,22 @@ class PixelCapturingRenderingAPI : public Fast::GfxRenderingAPI {
     bool usedTextures0 = false;
     bool usedTextures1 = false;
 
-    const char* GetName() override { return "PixelCapture"; }
-    int GetMaxTextureSize() override { return 64; }
-    Fast::GfxClipParameters GetClipParameters() override { return { false, false }; }
+    const char* GetName() override {
+        return "PixelCapture";
+    }
+    int GetMaxTextureSize() override {
+        return 64;
+    }
+    Fast::GfxClipParameters GetClipParameters() override {
+        return { false, false };
+    }
 
-    void UnloadShader(Fast::ShaderProgram*) override {}
-    void LoadShader(Fast::ShaderProgram*) override {}
-    void ClearShaderCache() override {}
+    void UnloadShader(Fast::ShaderProgram*) override {
+    }
+    void LoadShader(Fast::ShaderProgram*) override {
+    }
+    void ClearShaderCache() override {
+    }
 
     Fast::ShaderProgram* CreateAndLoadNewShader(uint64_t, uint64_t) override {
         shaderCreateCount++;
@@ -944,10 +942,15 @@ class PixelCapturingRenderingAPI : public Fast::GfxRenderingAPI {
         usedTextures[1] = usedTextures1;
     }
 
-    uint32_t NewTexture() override { return 1; }
-    void SelectTexture(int, uint32_t) override {}
-    void UploadTexture(const uint8_t*, uint32_t, uint32_t) override {}
-    void SetSamplerParameters(int, bool, uint32_t, uint32_t) override {}
+    uint32_t NewTexture() override {
+        return 1;
+    }
+    void SelectTexture(int, uint32_t) override {
+    }
+    void UploadTexture(const uint8_t*, uint32_t, uint32_t) override {
+    }
+    void SetSamplerParameters(int, bool, uint32_t, uint32_t) override {
+    }
 
     void SetDepthTestAndMask(bool depthTest, bool depthMask) override {
         depthStates.push_back({ depthTest, depthMask });
@@ -972,29 +975,55 @@ class PixelCapturingRenderingAPI : public Fast::GfxRenderingAPI {
         drawCalls.push_back(std::move(call));
     }
 
-    void Init() override {}
-    void OnResize() override {}
-    void StartFrame() override {}
-    void EndFrame() override {}
-    void FinishRender() override {}
+    void Init() override {
+    }
+    void OnResize() override {
+    }
+    void StartFrame() override {
+    }
+    void EndFrame() override {
+    }
+    void FinishRender() override {
+    }
 
-    int CreateFramebuffer() override { return 1; }
-    void UpdateFramebufferParameters(int, uint32_t, uint32_t, uint32_t, bool, bool, bool, bool) override {}
-    void StartDrawToFramebuffer(int, float) override {}
-    void CopyFramebuffer(int, int, int, int, int, int, int, int, int, int) override {}
-    void ClearFramebuffer(bool, bool) override {}
-    void ClearDepthRegion(int, int, int, int) override {}
-    void ReadFramebufferToCPU(int, uint32_t, uint32_t, uint16_t*) override {}
-    void ResolveMSAAColorBuffer(int, int) override {}
+    int CreateFramebuffer() override {
+        return 1;
+    }
+    void UpdateFramebufferParameters(int, uint32_t, uint32_t, uint32_t, bool, bool, bool, bool) override {
+    }
+    void StartDrawToFramebuffer(int, float) override {
+    }
+    void CopyFramebuffer(int, int, int, int, int, int, int, int, int, int) override {
+    }
+    void ClearFramebuffer(bool, bool) override {
+    }
+    void ClearDepthRegion(int, int, int, int) override {
+    }
+    void ReadFramebufferToCPU(int, uint32_t, uint32_t, uint16_t*) override {
+    }
+    void ResolveMSAAColorBuffer(int, int) override {
+    }
     std::unordered_map<std::pair<float, float>, uint16_t, Fast::hash_pair_ff>
-    GetPixelDepth(int, const std::set<std::pair<float, float>>&) override { return {}; }
-    void* GetFramebufferTextureId(int) override { return nullptr; }
-    void SelectTextureFb(int) override {}
-    void DeleteTexture(uint32_t) override {}
-    void SetTextureFilter(Fast::FilteringMode) override {}
-    Fast::FilteringMode GetTextureFilter() override { return Fast::FILTER_NONE; }
-    void SetSrgbMode() override {}
-    ImTextureID GetTextureById(int) override { return nullptr; }
+    GetPixelDepth(int, const std::set<std::pair<float, float>>&) override {
+        return {};
+    }
+    void* GetFramebufferTextureId(int) override {
+        return nullptr;
+    }
+    void SelectTextureFb(int) override {
+    }
+    void DeleteTexture(uint32_t) override {
+    }
+    void SetTextureFilter(Fast::FilteringMode) override {
+    }
+    Fast::FilteringMode GetTextureFilter() override {
+        return Fast::FILTER_NONE;
+    }
+    void SetSrgbMode() override {
+    }
+    ImTextureID GetTextureById(int) override {
+        return nullptr;
+    }
 };
 
 constexpr float kScreenWidth = 320.0f;
@@ -1052,14 +1081,29 @@ class DLPixelTest : public ::testing::Test {
     // Load 3 visible triangle vertices (inside clip space, identity transform)
     void LoadTriangleVertices() {
         Fast::F3DVtx verts[3] = {};
-        verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50; verts[0].v.ob[2] = 0;
-        verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 0; verts[0].v.cn[2] = 0; verts[0].v.cn[3] = 255;
+        verts[0].v.ob[0] = -50;
+        verts[0].v.ob[1] = 50;
+        verts[0].v.ob[2] = 0;
+        verts[0].v.cn[0] = 255;
+        verts[0].v.cn[1] = 0;
+        verts[0].v.cn[2] = 0;
+        verts[0].v.cn[3] = 255;
 
-        verts[1].v.ob[0] = -50; verts[1].v.ob[1] = -50; verts[1].v.ob[2] = 0;
-        verts[1].v.cn[0] = 0; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 0; verts[1].v.cn[3] = 255;
+        verts[1].v.ob[0] = -50;
+        verts[1].v.ob[1] = -50;
+        verts[1].v.ob[2] = 0;
+        verts[1].v.cn[0] = 0;
+        verts[1].v.cn[1] = 255;
+        verts[1].v.cn[2] = 0;
+        verts[1].v.cn[3] = 255;
 
-        verts[2].v.ob[0] = 50; verts[2].v.ob[1] = 0; verts[2].v.ob[2] = 0;
-        verts[2].v.cn[0] = 0; verts[2].v.cn[1] = 0; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+        verts[2].v.ob[0] = 50;
+        verts[2].v.ob[1] = 0;
+        verts[2].v.ob[2] = 0;
+        verts[2].v.cn[0] = 0;
+        verts[2].v.cn[1] = 0;
+        verts[2].v.cn[2] = 255;
+        verts[2].v.cn[3] = 255;
 
         interp->GfxSpVertex(3, 0, verts);
     }
@@ -1113,7 +1157,7 @@ TEST_F(DLPixelTest, Triangle_PositionData_IdentityTransform) {
 
     // ShaderGetInfo reports numInputs=1 with no textures, fog, or grayscale.
     // VBO layout: 4(pos) + 3(rgb per input) = 7 floats per vertex, no alpha.
-    size_t expectedFloatsPerVertex = 4 + 3; // pos(4) + rgb(3), no alpha
+    size_t expectedFloatsPerVertex = 4 + 3;             // pos(4) + rgb(3), no alpha
     size_t expectedTotal = expectedFloatsPerVertex * 3; // 3 vertices
     EXPECT_EQ(call.vboData.size(), expectedTotal);
 
@@ -1197,14 +1241,29 @@ TEST_F(DLPixelTest, ColorCombiner_ShadeOnly_DistinctVertexColors) {
 
     // Load 3 vertices with different colors
     Fast::F3DVtx verts[3] = {};
-    verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50; verts[0].v.ob[2] = 0;
-    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 0; verts[0].v.cn[2] = 0; verts[0].v.cn[3] = 255;
+    verts[0].v.ob[0] = -50;
+    verts[0].v.ob[1] = 50;
+    verts[0].v.ob[2] = 0;
+    verts[0].v.cn[0] = 255;
+    verts[0].v.cn[1] = 0;
+    verts[0].v.cn[2] = 0;
+    verts[0].v.cn[3] = 255;
 
-    verts[1].v.ob[0] = -50; verts[1].v.ob[1] = -50; verts[1].v.ob[2] = 0;
-    verts[1].v.cn[0] = 0; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 0; verts[1].v.cn[3] = 255;
+    verts[1].v.ob[0] = -50;
+    verts[1].v.ob[1] = -50;
+    verts[1].v.ob[2] = 0;
+    verts[1].v.cn[0] = 0;
+    verts[1].v.cn[1] = 255;
+    verts[1].v.cn[2] = 0;
+    verts[1].v.cn[3] = 255;
 
-    verts[2].v.ob[0] = 50; verts[2].v.ob[1] = 0; verts[2].v.ob[2] = 0;
-    verts[2].v.cn[0] = 0; verts[2].v.cn[1] = 0; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    verts[2].v.ob[0] = 50;
+    verts[2].v.ob[1] = 0;
+    verts[2].v.ob[2] = 0;
+    verts[2].v.cn[0] = 0;
+    verts[2].v.cn[1] = 0;
+    verts[2].v.cn[2] = 255;
+    verts[2].v.cn[3] = 255;
 
     interp->GfxSpVertex(3, 0, verts);
     interp->GfxSpTri1(0, 1, 2, false);
@@ -1253,12 +1312,9 @@ TEST_F(DLPixelTest, ColorCombiner_EnvColor_InVBO) {
     // With env color as input, the VBO should contain the env color
     size_t fpv = 7; // 4 pos + 3 rgb
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 128.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 64.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 32.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 128.0f / 255.0f, 0.01f) << "Vertex " << v << " env red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 64.0f / 255.0f, 0.01f) << "Vertex " << v << " env green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 32.0f / 255.0f, 0.01f) << "Vertex " << v << " env blue";
     }
 }
 
@@ -1283,12 +1339,9 @@ TEST_F(DLPixelTest, ColorCombiner_PrimColor_InVBO) {
 
     size_t fpv = 7;
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 192.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " prim red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 96.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " prim green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 48.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " prim blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 192.0f / 255.0f, 0.01f) << "Vertex " << v << " prim red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 96.0f / 255.0f, 0.01f) << "Vertex " << v << " prim green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 48.0f / 255.0f, 0.01f) << "Vertex " << v << " prim blue";
     }
 }
 
@@ -1391,12 +1444,9 @@ TEST_F(DLPixelTest, FillRect_MidGrayFill_VertexColors) {
 
     size_t numVertices = call.vboData.size() / fpv;
     for (size_t v = 0; v < numVertices && v < 6; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], expectedGray, 0.01f)
-            << "Vertex " << v << " gray red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], expectedGray, 0.01f)
-            << "Vertex " << v << " gray green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], expectedGray, 0.01f)
-            << "Vertex " << v << " gray blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], expectedGray, 0.01f) << "Vertex " << v << " gray red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], expectedGray, 0.01f) << "Vertex " << v << " gray green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], expectedGray, 0.01f) << "Vertex " << v << " gray blue";
     }
 
     free(interp->mTexUploadBuffer);
@@ -1513,8 +1563,7 @@ TEST_F(DLPixelTest, AlphaBlending_WithAlpha_VBOHasAlphaData) {
     // Verify alpha values
     for (int v = 0; v < 3; v++) {
         float a = call.vboData[v * fpv + 7]; // alpha after rgb
-        EXPECT_NEAR(a, 200.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " alpha";
+        EXPECT_NEAR(a, 200.0f / 255.0f, 0.01f) << "Vertex " << v << " alpha";
     }
 }
 
@@ -1539,7 +1588,7 @@ TEST_F(DLPixelTest, FogEnabled_VBOContainsFogData) {
     // With fog + alpha: 4(pos) + 4(fog) + 3(rgb) + 1(alpha) = 12
     // Actually: fog implies use_alpha=true via texture_edge path... let's check the actual size
     // Fog: use_fog=true, use_alpha is separate
-    // For fog without alpha blending: 4(pos) + 4(fog) + 3(rgb) = 11? 
+    // For fog without alpha blending: 4(pos) + 4(fog) + 3(rgb) = 11?
     // Let me check: fog contributes SHADER_OPT(FOG), which adds 4 floats.
     // Let's just verify fog data exists by checking VBO size is larger than no-fog case
     EXPECT_GT(call.vboData.size(), 7u * 3); // more than basic 7 floats * 3 vertices
@@ -1553,12 +1602,9 @@ TEST_F(DLPixelTest, FogEnabled_VBOContainsFogData) {
 
     // Fog data is after position (offset 4)
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 100.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " fog red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 150.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " fog green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 200.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " fog blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 100.0f / 255.0f, 0.01f) << "Vertex " << v << " fog red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 150.0f / 255.0f, 0.01f) << "Vertex " << v << " fog green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 200.0f / 255.0f, 0.01f) << "Vertex " << v << " fog blue";
         EXPECT_NEAR(call.vboData[v * fpv + 7], 128.0f / 255.0f, 0.01f)
             << "Vertex " << v << " fog factor (vertex alpha)";
     }
@@ -1587,14 +1633,10 @@ TEST_F(DLPixelTest, GrayscaleEnabled_VBOContainsGrayscaleData) {
 
     // Grayscale data comes after position (at offset 4)
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 64.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " grayscale red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 128.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " grayscale green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 192.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " grayscale blue";
-        EXPECT_NEAR(call.vboData[v * fpv + 7], 100.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " grayscale lerp factor";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 64.0f / 255.0f, 0.01f) << "Vertex " << v << " grayscale red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 128.0f / 255.0f, 0.01f) << "Vertex " << v << " grayscale green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 192.0f / 255.0f, 0.01f) << "Vertex " << v << " grayscale blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 7], 100.0f / 255.0f, 0.01f) << "Vertex " << v << " grayscale lerp factor";
     }
 }
 
@@ -1607,20 +1649,50 @@ TEST_F(DLPixelTest, TwoTriangles_BatchedIntoOneDrawCall) {
     // With identity MP, clip space is [-w,w] = [-1,1]. Use small coordinates.
     Fast::F3DVtx verts[6] = {};
     // Triangle 1: spans left and right to avoid clip rejection
-    verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50; verts[0].v.ob[2] = 0;
-    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 0; verts[0].v.cn[2] = 0; verts[0].v.cn[3] = 255;
-    verts[1].v.ob[0] = -50; verts[1].v.ob[1] = -50; verts[1].v.ob[2] = 0;
-    verts[1].v.cn[0] = 0; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 0; verts[1].v.cn[3] = 255;
-    verts[2].v.ob[0] = 50; verts[2].v.ob[1] = 0; verts[2].v.ob[2] = 0;
-    verts[2].v.cn[0] = 0; verts[2].v.cn[1] = 0; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    verts[0].v.ob[0] = -50;
+    verts[0].v.ob[1] = 50;
+    verts[0].v.ob[2] = 0;
+    verts[0].v.cn[0] = 255;
+    verts[0].v.cn[1] = 0;
+    verts[0].v.cn[2] = 0;
+    verts[0].v.cn[3] = 255;
+    verts[1].v.ob[0] = -50;
+    verts[1].v.ob[1] = -50;
+    verts[1].v.ob[2] = 0;
+    verts[1].v.cn[0] = 0;
+    verts[1].v.cn[1] = 255;
+    verts[1].v.cn[2] = 0;
+    verts[1].v.cn[3] = 255;
+    verts[2].v.ob[0] = 50;
+    verts[2].v.ob[1] = 0;
+    verts[2].v.ob[2] = 0;
+    verts[2].v.cn[0] = 0;
+    verts[2].v.cn[1] = 0;
+    verts[2].v.cn[2] = 255;
+    verts[2].v.cn[3] = 255;
 
     // Triangle 2: another spanning triangle
-    verts[3].v.ob[0] = 50; verts[3].v.ob[1] = 50; verts[3].v.ob[2] = 0;
-    verts[3].v.cn[0] = 255; verts[3].v.cn[1] = 255; verts[3].v.cn[2] = 0; verts[3].v.cn[3] = 255;
-    verts[4].v.ob[0] = -50; verts[4].v.ob[1] = -50; verts[4].v.ob[2] = 0;
-    verts[4].v.cn[0] = 0; verts[4].v.cn[1] = 255; verts[4].v.cn[2] = 255; verts[4].v.cn[3] = 255;
-    verts[5].v.ob[0] = 50; verts[5].v.ob[1] = -50; verts[5].v.ob[2] = 0;
-    verts[5].v.cn[0] = 255; verts[5].v.cn[1] = 255; verts[5].v.cn[2] = 255; verts[5].v.cn[3] = 255;
+    verts[3].v.ob[0] = 50;
+    verts[3].v.ob[1] = 50;
+    verts[3].v.ob[2] = 0;
+    verts[3].v.cn[0] = 255;
+    verts[3].v.cn[1] = 255;
+    verts[3].v.cn[2] = 0;
+    verts[3].v.cn[3] = 255;
+    verts[4].v.ob[0] = -50;
+    verts[4].v.ob[1] = -50;
+    verts[4].v.ob[2] = 0;
+    verts[4].v.cn[0] = 0;
+    verts[4].v.cn[1] = 255;
+    verts[4].v.cn[2] = 255;
+    verts[4].v.cn[3] = 255;
+    verts[5].v.ob[0] = 50;
+    verts[5].v.ob[1] = -50;
+    verts[5].v.ob[2] = 0;
+    verts[5].v.cn[0] = 255;
+    verts[5].v.cn[1] = 255;
+    verts[5].v.cn[2] = 255;
+    verts[5].v.cn[3] = 255;
 
     interp->GfxSpVertex(6, 0, verts);
 
@@ -1749,8 +1821,7 @@ TEST_F(DLPixelTest, FillRect_ViaDisplayList_SetsColorAndDraws) {
     Fast::F3DGfx dl[4];
 
     // G_RDPSETOTHERMODE: set fill cycle type
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24 | ((G_CYC_FILL >> 8) & 0xFFFFFF),
-                    0);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24 | ((G_CYC_FILL >> 8) & 0xFFFFFF), 0);
     // SetFillColor: green = (0<<11)|(31<<6)|(0<<1)|1 = 0x07C1
     uint16_t green5551 = (0 << 11) | (31 << 6) | (0 << 1) | 1;
     uint32_t greenPacked = ((uint32_t)green5551 << 16) | green5551;
@@ -1783,12 +1854,11 @@ TEST_F(DLPixelTest, FillRect_ViaDisplayList_SetsColorAndDraws) {
 
 TEST_F(DLPixelTest, MultipleColorCommands_ViaDisplayList) {
     Fast::F3DGfx dl[5];
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24,
-                    (50u << 24) | (100u << 16) | (150u << 8) | 200u);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24, (50u << 24) | (100u << 16) | (150u << 8) | 200u);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETPRIMCOLOR << 24 | (3u << 8) | 128u,
                     (10u << 24) | (20u << 16) | (30u << 8) | 40u);
-    dl[2] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFOGCOLOR << 24,
-                    (200u << 24) | (180u << 16) | (160u << 8) | 140u);
+    dl[2] =
+        MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFOGCOLOR << 24, (200u << 24) | (180u << 16) | (160u << 8) | 140u);
     dl[3] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETFILLCOLOR << 24, 0xF801F801u);
     dl[4] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
@@ -1824,8 +1894,7 @@ TEST_F(DLPixelTest, GeometryMode_ZBufferAndLighting_ViaDisplayList) {
     Fast::F3DGfx dl[2];
     uint32_t clearBits = 0;
     uint32_t setBits = G_ZBUFFER | G_LIGHTING;
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF),
-                    setBits);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF), setBits);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
     interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
@@ -1842,8 +1911,7 @@ TEST_F(DLPixelTest, GeometryMode_ClearAndSet_ViaDisplayList) {
     uint32_t clearBits = G_FOG;
     uint32_t setBits = G_LIGHTING;
     Fast::F3DGfx dl[2];
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF),
-                    setBits);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_GEOMETRYMODE << 24 | (~clearBits & 0xFFFFFF), setBits);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
     interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
@@ -1859,8 +1927,7 @@ TEST_F(DLPixelTest, GeometryMode_ClearAndSet_ViaDisplayList) {
 
 TEST_F(DLPixelTest, OtherMode_DepthFlags_ViaDisplayList) {
     Fast::F3DGfx dl[2];
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24,
-                    Z_CMP | Z_UPD | ZMODE_DEC);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_RDPSETOTHERMODE << 24, Z_CMP | Z_UPD | ZMODE_DEC);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
     interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
@@ -1884,16 +1951,14 @@ TEST_F(DLPixelTest, SetCombine_ViaDisplayList) {
     //
     // For testing, just verify the command is processed by checking combine_mode changes
     uint64_t prevCombine = interp->mRdp->combine_mode;
-    
+
     // Build a simple SetCombine command with non-zero values
     // Use a known pattern: a0=1, b0=2, c0=3, d0=4, Aa0=1, Ab0=2, Ac0=3, Ad0=4
-    uint32_t w0 = ((uint32_t)(uint8_t)Fast::RDP_G_SETCOMBINE << 24) |
-                  ((1 & 0xF) << 20) | ((3 & 0x1F) << 15) | ((1 & 0x7) << 12) |
-                  ((3 & 0x7) << 9) | ((2 & 0xF) << 5) | (4 & 0x1F);
-    uint32_t w1 = ((2 & 0xF) << 28) | ((5 & 0xF) << 24) | ((2 & 0x7) << 21) | ((4 & 0x7) << 18) |
-                  ((4 & 0x7) << 15) | ((3 & 0x7) << 12) | ((5 & 0x7) << 9) |
-                  ((6 & 0x7) << 6) | ((1 & 0x7) << 3) | (7 & 0x7);
-    
+    uint32_t w0 = ((uint32_t)(uint8_t)Fast::RDP_G_SETCOMBINE << 24) | ((1 & 0xF) << 20) | ((3 & 0x1F) << 15) |
+                  ((1 & 0x7) << 12) | ((3 & 0x7) << 9) | ((2 & 0xF) << 5) | (4 & 0x1F);
+    uint32_t w1 = ((2 & 0xF) << 28) | ((5 & 0xF) << 24) | ((2 & 0x7) << 21) | ((4 & 0x7) << 18) | ((4 & 0x7) << 15) |
+                  ((3 & 0x7) << 12) | ((5 & 0x7) << 9) | ((6 & 0x7) << 6) | ((1 & 0x7) << 3) | (7 & 0x7);
+
     Fast::F3DGfx dl[2];
     dl[0] = MakeCmd(w0, w1);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
@@ -1914,8 +1979,8 @@ TEST_F(DLPixelTest, SetScissor_ThenTriangle_ScissorApplied) {
     uint32_t lrx = 300 * 4, lry = 230 * 4;
 
     Fast::F3DGfx dl[2];
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETSCISSOR << 24 | (ulx << 12) | uly,
-                    (0u << 24) | (lrx << 12) | lry);
+    dl[0] =
+        MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETSCISSOR << 24 | (ulx << 12) | uly, (0u << 24) | (lrx << 12) | lry);
     dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
     interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
@@ -1939,11 +2004,9 @@ TEST_F(DLPixelTest, SetScissor_ThenTriangle_ScissorApplied) {
 TEST_F(DLPixelTest, FullPipeline_SetColors_DrawTriangle_VerifyVBO) {
     // Set env color via DL
     Fast::F3DGfx dl[3];
-    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24,
-                    (100u << 24) | (200u << 16) | (50u << 8) | 255u);
+    dl[0] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETENVCOLOR << 24, (100u << 24) | (200u << 16) | (50u << 8) | 255u);
     // Set scissor
-    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETSCISSOR << 24,
-                    (0u << 24) | ((320u * 4) << 12) | (240u * 4));
+    dl[1] = MakeCmd((uintptr_t)(uint8_t)Fast::RDP_G_SETSCISSOR << 24, (0u << 24) | ((320u * 4) << 12) | (240u * 4));
     dl[2] = MakeCmd((uintptr_t)(uint8_t)Fast::F3DEX2_G_ENDDL << 24, 0);
 
     interp->RunDisplayListForTest((Gfx*)dl, emptyMtxReplacements);
@@ -1964,12 +2027,9 @@ TEST_F(DLPixelTest, FullPipeline_SetColors_DrawTriangle_VerifyVBO) {
     EXPECT_GE(fpv, 7u);
 
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 100.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 200.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 50.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 100.0f / 255.0f, 0.01f) << "Vertex " << v << " env red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 200.0f / 255.0f, 0.01f) << "Vertex " << v << " env green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 50.0f / 255.0f, 0.01f) << "Vertex " << v << " env blue";
     }
 }
 
@@ -2014,16 +2074,10 @@ TEST_F(DLPixelTest, FillColor_AllChannels_VBOVerification) {
         uint8_t r5, g5, b5, a1;
     };
     FillCase cases[] = {
-        {"Black_NoAlpha", 0,  0,  0,  0},
-        {"Black_Alpha",   0,  0,  0,  1},
-        {"Red",           31, 0,  0,  1},
-        {"Green",         0,  31, 0,  1},
-        {"Blue",          0,  0,  31, 1},
-        {"White",         31, 31, 31, 1},
-        {"Yellow",        31, 31, 0,  1},
-        {"Cyan",          0,  31, 31, 1},
-        {"Magenta",       31, 0,  31, 1},
-        {"MidGray",       16, 16, 16, 1},
+        { "Black_NoAlpha", 0, 0, 0, 0 }, { "Black_Alpha", 0, 0, 0, 1 }, { "Red", 31, 0, 0, 1 },
+        { "Green", 0, 31, 0, 1 },        { "Blue", 0, 0, 31, 1 },       { "White", 31, 31, 31, 1 },
+        { "Yellow", 31, 31, 0, 1 },      { "Cyan", 0, 31, 31, 1 },      { "Magenta", 31, 0, 31, 1 },
+        { "MidGray", 16, 16, 16, 1 },
     };
 
     int maxTex = cap->GetMaxTextureSize();
@@ -2039,14 +2093,10 @@ TEST_F(DLPixelTest, FillColor_AllChannels_VBOVerification) {
         interp->GfxDpSetFillColor(packed);
 
         // Verify internal fill color
-        EXPECT_EQ(interp->mRdp->fill_color.r, SCALE_5_8(c.r5))
-            << c.name << " fill red";
-        EXPECT_EQ(interp->mRdp->fill_color.g, SCALE_5_8(c.g5))
-            << c.name << " fill green";
-        EXPECT_EQ(interp->mRdp->fill_color.b, SCALE_5_8(c.b5))
-            << c.name << " fill blue";
-        EXPECT_EQ(interp->mRdp->fill_color.a, c.a1 * 255)
-            << c.name << " fill alpha";
+        EXPECT_EQ(interp->mRdp->fill_color.r, SCALE_5_8(c.r5)) << c.name << " fill red";
+        EXPECT_EQ(interp->mRdp->fill_color.g, SCALE_5_8(c.g5)) << c.name << " fill green";
+        EXPECT_EQ(interp->mRdp->fill_color.b, SCALE_5_8(c.b5)) << c.name << " fill blue";
+        EXPECT_EQ(interp->mRdp->fill_color.a, c.a1 * 255) << c.name << " fill alpha";
 
         interp->GfxDpFillRectangle(40 * 4, 40 * 4, 200 * 4, 150 * 4);
         interp->Flush();
@@ -2060,12 +2110,9 @@ TEST_F(DLPixelTest, FillColor_AllChannels_VBOVerification) {
                 float expectedG = SCALE_5_8(c.g5) / 255.0f;
                 float expectedB = SCALE_5_8(c.b5) / 255.0f;
                 // Check first vertex
-                EXPECT_NEAR(call.vboData[4], expectedR, 0.01f)
-                    << c.name << " VBO red";
-                EXPECT_NEAR(call.vboData[5], expectedG, 0.01f)
-                    << c.name << " VBO green";
-                EXPECT_NEAR(call.vboData[6], expectedB, 0.01f)
-                    << c.name << " VBO blue";
+                EXPECT_NEAR(call.vboData[4], expectedR, 0.01f) << c.name << " VBO red";
+                EXPECT_NEAR(call.vboData[5], expectedG, 0.01f) << c.name << " VBO green";
+                EXPECT_NEAR(call.vboData[6], expectedB, 0.01f) << c.name << " VBO blue";
             }
         }
 
@@ -2073,8 +2120,7 @@ TEST_F(DLPixelTest, FillColor_AllChannels_VBOVerification) {
         // Send the same fill command through ParallelRDP and compare
         // against the expected reference framebuffer (informational)
         std::string prdpName = std::string("FillAllChannels_") + c.name;
-        prdp::RunFillComparison(prdpName.c_str(), packed,
-                                40 * 4, 40 * 4, 200 * 4, 150 * 4);
+        prdp::RunFillComparison(prdpName.c_str(), packed, 40 * 4, 40 * 4, 200 * 4, 150 * 4);
 #endif
     }
 
@@ -2108,20 +2154,50 @@ TEST_F(DLPixelTest, MultipleTriangles_DifferentShadeColors_InVBO) {
     Fast::F3DVtx verts2[3] = {};
 
     // First triangle: red vertices (spanning clip planes)
-    verts1[0].v.ob[0] = -50; verts1[0].v.ob[1] = 50; verts1[0].v.ob[2] = 0;
-    verts1[0].v.cn[0] = 255; verts1[0].v.cn[1] = 0; verts1[0].v.cn[2] = 0; verts1[0].v.cn[3] = 255;
-    verts1[1].v.ob[0] = -50; verts1[1].v.ob[1] = -50; verts1[1].v.ob[2] = 0;
-    verts1[1].v.cn[0] = 255; verts1[1].v.cn[1] = 0; verts1[1].v.cn[2] = 0; verts1[1].v.cn[3] = 255;
-    verts1[2].v.ob[0] = 50; verts1[2].v.ob[1] = 0; verts1[2].v.ob[2] = 0;
-    verts1[2].v.cn[0] = 255; verts1[2].v.cn[1] = 0; verts1[2].v.cn[2] = 0; verts1[2].v.cn[3] = 255;
+    verts1[0].v.ob[0] = -50;
+    verts1[0].v.ob[1] = 50;
+    verts1[0].v.ob[2] = 0;
+    verts1[0].v.cn[0] = 255;
+    verts1[0].v.cn[1] = 0;
+    verts1[0].v.cn[2] = 0;
+    verts1[0].v.cn[3] = 255;
+    verts1[1].v.ob[0] = -50;
+    verts1[1].v.ob[1] = -50;
+    verts1[1].v.ob[2] = 0;
+    verts1[1].v.cn[0] = 255;
+    verts1[1].v.cn[1] = 0;
+    verts1[1].v.cn[2] = 0;
+    verts1[1].v.cn[3] = 255;
+    verts1[2].v.ob[0] = 50;
+    verts1[2].v.ob[1] = 0;
+    verts1[2].v.ob[2] = 0;
+    verts1[2].v.cn[0] = 255;
+    verts1[2].v.cn[1] = 0;
+    verts1[2].v.cn[2] = 0;
+    verts1[2].v.cn[3] = 255;
 
     // Second triangle: blue vertices (spanning clip planes)
-    verts2[0].v.ob[0] = 50; verts2[0].v.ob[1] = 50; verts2[0].v.ob[2] = 0;
-    verts2[0].v.cn[0] = 0; verts2[0].v.cn[1] = 0; verts2[0].v.cn[2] = 255; verts2[0].v.cn[3] = 255;
-    verts2[1].v.ob[0] = -50; verts2[1].v.ob[1] = -50; verts2[1].v.ob[2] = 0;
-    verts2[1].v.cn[0] = 0; verts2[1].v.cn[1] = 0; verts2[1].v.cn[2] = 255; verts2[1].v.cn[3] = 255;
-    verts2[2].v.ob[0] = 50; verts2[2].v.ob[1] = -50; verts2[2].v.ob[2] = 0;
-    verts2[2].v.cn[0] = 0; verts2[2].v.cn[1] = 0; verts2[2].v.cn[2] = 255; verts2[2].v.cn[3] = 255;
+    verts2[0].v.ob[0] = 50;
+    verts2[0].v.ob[1] = 50;
+    verts2[0].v.ob[2] = 0;
+    verts2[0].v.cn[0] = 0;
+    verts2[0].v.cn[1] = 0;
+    verts2[0].v.cn[2] = 255;
+    verts2[0].v.cn[3] = 255;
+    verts2[1].v.ob[0] = -50;
+    verts2[1].v.ob[1] = -50;
+    verts2[1].v.ob[2] = 0;
+    verts2[1].v.cn[0] = 0;
+    verts2[1].v.cn[1] = 0;
+    verts2[1].v.cn[2] = 255;
+    verts2[1].v.cn[3] = 255;
+    verts2[2].v.ob[0] = 50;
+    verts2[2].v.ob[1] = -50;
+    verts2[2].v.ob[2] = 0;
+    verts2[2].v.cn[0] = 0;
+    verts2[2].v.cn[1] = 0;
+    verts2[2].v.cn[2] = 255;
+    verts2[2].v.cn[3] = 255;
 
     interp->GfxSpVertex(3, 0, verts1);
     interp->GfxSpTri1(0, 1, 2, false);
@@ -2200,14 +2276,29 @@ TEST_F(DLPixelTest, Triangle_ZCoordinate_Preserved) {
     // With identity transform, w=1, so z must be <= w (=1) to avoid CLIP_FAR.
     // The vertices must span different clip regions to avoid rejection.
     Fast::F3DVtx verts[3] = {};
-    verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50;  verts[0].v.ob[2] = 0;
-    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 255; verts[0].v.cn[2] = 255; verts[0].v.cn[3] = 255;
+    verts[0].v.ob[0] = -50;
+    verts[0].v.ob[1] = 50;
+    verts[0].v.ob[2] = 0;
+    verts[0].v.cn[0] = 255;
+    verts[0].v.cn[1] = 255;
+    verts[0].v.cn[2] = 255;
+    verts[0].v.cn[3] = 255;
 
-    verts[1].v.ob[0] = -50; verts[1].v.ob[1] = -50; verts[1].v.ob[2] = 0;
-    verts[1].v.cn[0] = 255; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 255; verts[1].v.cn[3] = 255;
+    verts[1].v.ob[0] = -50;
+    verts[1].v.ob[1] = -50;
+    verts[1].v.ob[2] = 0;
+    verts[1].v.cn[0] = 255;
+    verts[1].v.cn[1] = 255;
+    verts[1].v.cn[2] = 255;
+    verts[1].v.cn[3] = 255;
 
-    verts[2].v.ob[0] = 50;  verts[2].v.ob[1] = 0;   verts[2].v.ob[2] = 0;
-    verts[2].v.cn[0] = 255; verts[2].v.cn[1] = 255; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    verts[2].v.ob[0] = 50;
+    verts[2].v.ob[1] = 0;
+    verts[2].v.ob[2] = 0;
+    verts[2].v.cn[0] = 255;
+    verts[2].v.cn[1] = 255;
+    verts[2].v.cn[2] = 255;
+    verts[2].v.cn[3] = 255;
 
     interp->GfxSpVertex(3, 0, verts);
     interp->GfxSpTri1(0, 1, 2, false);
@@ -2240,12 +2331,9 @@ TEST_F(DLPixelTest, FillColor_RedSweep_5BitRange) {
     for (uint8_t r = 0; r < 32; r++) {
         uint16_t packed = (r << 11) | (0 << 6) | (0 << 1) | 1;
         interp->GfxDpSetFillColor(packed);
-        EXPECT_EQ(interp->mRdp->fill_color.r, SCALE_5_8(r))
-            << "Red value " << (int)r << " mismatch";
-        EXPECT_EQ(interp->mRdp->fill_color.g, 0)
-            << "Green should be 0 for red sweep";
-        EXPECT_EQ(interp->mRdp->fill_color.b, 0)
-            << "Blue should be 0 for red sweep";
+        EXPECT_EQ(interp->mRdp->fill_color.r, SCALE_5_8(r)) << "Red value " << (int)r << " mismatch";
+        EXPECT_EQ(interp->mRdp->fill_color.g, 0) << "Green should be 0 for red sweep";
+        EXPECT_EQ(interp->mRdp->fill_color.b, 0) << "Blue should be 0 for red sweep";
     }
 
     free(interp->mTexUploadBuffer);
@@ -2333,12 +2421,9 @@ TEST_F(DLPixelTest, CompleteSequence_EnvColor_Geometry_Scissor_Triangle) {
     // VBO should contain env color
     size_t fpv = call.vboData.size() / 3;
     for (int v = 0; v < 3; v++) {
-        EXPECT_NEAR(call.vboData[v * fpv + 4], 80.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env red";
-        EXPECT_NEAR(call.vboData[v * fpv + 5], 160.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env green";
-        EXPECT_NEAR(call.vboData[v * fpv + 6], 240.0f / 255.0f, 0.01f)
-            << "Vertex " << v << " env blue";
+        EXPECT_NEAR(call.vboData[v * fpv + 4], 80.0f / 255.0f, 0.01f) << "Vertex " << v << " env red";
+        EXPECT_NEAR(call.vboData[v * fpv + 5], 160.0f / 255.0f, 0.01f) << "Vertex " << v << " env green";
+        EXPECT_NEAR(call.vboData[v * fpv + 6], 240.0f / 255.0f, 0.01f) << "Vertex " << v << " env blue";
     }
 }
 
@@ -2370,17 +2455,35 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_TEXEL0_HasUVs) {
 
     // Load vertices with texture coordinates
     Fast::F3DVtx verts[3] = {};
-    verts[0].v.ob[0] = -50; verts[0].v.ob[1] = 50; verts[0].v.ob[2] = 0;
-    verts[0].v.tc[0] = 0;   verts[0].v.tc[1] = 0;
-    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 0; verts[0].v.cn[2] = 0; verts[0].v.cn[3] = 255;
+    verts[0].v.ob[0] = -50;
+    verts[0].v.ob[1] = 50;
+    verts[0].v.ob[2] = 0;
+    verts[0].v.tc[0] = 0;
+    verts[0].v.tc[1] = 0;
+    verts[0].v.cn[0] = 255;
+    verts[0].v.cn[1] = 0;
+    verts[0].v.cn[2] = 0;
+    verts[0].v.cn[3] = 255;
 
-    verts[1].v.ob[0] = 50; verts[1].v.ob[1] = 50; verts[1].v.ob[2] = 0;
-    verts[1].v.tc[0] = 1024; verts[1].v.tc[1] = 0;  // s=1024 = 32.0 in S10.5
-    verts[1].v.cn[0] = 0; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 0; verts[1].v.cn[3] = 255;
+    verts[1].v.ob[0] = 50;
+    verts[1].v.ob[1] = 50;
+    verts[1].v.ob[2] = 0;
+    verts[1].v.tc[0] = 1024;
+    verts[1].v.tc[1] = 0; // s=1024 = 32.0 in S10.5
+    verts[1].v.cn[0] = 0;
+    verts[1].v.cn[1] = 255;
+    verts[1].v.cn[2] = 0;
+    verts[1].v.cn[3] = 255;
 
-    verts[2].v.ob[0] = 0; verts[2].v.ob[1] = -50; verts[2].v.ob[2] = 0;
-    verts[2].v.tc[0] = 512; verts[2].v.tc[1] = 1024;
-    verts[2].v.cn[0] = 0; verts[2].v.cn[1] = 0; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    verts[2].v.ob[0] = 0;
+    verts[2].v.ob[1] = -50;
+    verts[2].v.ob[2] = 0;
+    verts[2].v.tc[0] = 512;
+    verts[2].v.tc[1] = 1024;
+    verts[2].v.cn[0] = 0;
+    verts[2].v.cn[1] = 0;
+    verts[2].v.cn[2] = 255;
+    verts[2].v.cn[3] = 255;
 
     interp->GfxSpVertex(3, 0, verts);
     interp->GfxSpTri1(0, 1, 2, false);
@@ -2396,8 +2499,8 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_TEXEL0_HasUVs) {
     size_t fpv = call.vboData.size() / 3;
     EXPECT_GT(fpv, 7u) << "Textured VBO should have more floats per vertex than untextured";
 
-    std::cout << "  [INFO] Fast3D TexturedMesh TEXEL0: " << call.numTris << " tri, "
-              << fpv << " floats/vertex, " << call.vboData.size() << " total floats\n";
+    std::cout << "  [INFO] Fast3D TexturedMesh TEXEL0: " << call.numTris << " tri, " << fpv << " floats/vertex, "
+              << call.vboData.size() << " total floats\n";
 }
 
 TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
@@ -2406,8 +2509,8 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
 
     struct F3DCombinerCase {
         const char* name;
-        uint32_t rgb;    // combine mode RGB word
-        uint32_t alpha;  // combine mode alpha word
+        uint32_t rgb;   // combine mode RGB word
+        uint32_t alpha; // combine mode alpha word
     };
 
     // Build combine mode words for each permutation:
@@ -2421,10 +2524,10 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
     uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_TEXEL0 & 7) << 13);
 
     F3DCombinerCase cases[] = {
-        { "SHADE",   shadeRgb,  0 },
-        { "ENV",     envRgb,    0 },
-        { "PRIM",    primRgb,   0 },
-        { "TEXEL0",  texel0Rgb, 0 },
+        { "SHADE", shadeRgb, 0 },
+        { "ENV", envRgb, 0 },
+        { "PRIM", primRgb, 0 },
+        { "TEXEL0", texel0Rgb, 0 },
     };
 
     // Set env and prim colors so we can distinguish combiner outputs
@@ -2442,8 +2545,7 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
         interp->GfxSpTri1(0, 1, 2, false);
         interp->Flush();
 
-        ASSERT_GE(cap->drawCalls.size(), 1u)
-            << c.name << ": should produce a draw call";
+        ASSERT_GE(cap->drawCalls.size(), 1u) << c.name << ": should produce a draw call";
         auto& call = cap->drawCalls.back();
 
         // Report the first vertex's color data
@@ -2454,10 +2556,8 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
             g = call.vboData[5];
             b = call.vboData[6];
         }
-        std::cout << "    " << std::left << std::setw(8) << c.name
-                  << " R=" << std::fixed << std::setprecision(3) << r
-                  << " G=" << g << " B=" << b
-                  << " (fpv=" << fpv << ")\n";
+        std::cout << "    " << std::left << std::setw(8) << c.name << " R=" << std::fixed << std::setprecision(3) << r
+                  << " G=" << g << " B=" << b << " (fpv=" << fpv << ")\n";
     }
 }
 
@@ -2474,7 +2574,7 @@ TEST_F(DLPixelTest, TexturedMesh_Fast3D_CombinerPermutations) {
 #ifdef LUS_PRDP_TESTS_ENABLED
 
 class ParallelRDPComparisonTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         prdp_ = &prdp::GetPRDPContext();
 
@@ -2520,8 +2620,8 @@ TEST_F(ParallelRDPComparisonTest, FillScreen_White) {
 
     auto result = prdp::RunFillComparison("FillScreen_White", white5551);
     if (result.vulkanAvailable) {
-        std::cout << "  [INFO] ParallelRDP rendered " << result.totalPixels
-                  << " pixels, " << result.mismatchCount << " mismatched vs reference\n";
+        std::cout << "  [INFO] ParallelRDP rendered " << result.totalPixels << " pixels, " << result.mismatchCount
+                  << " mismatched vs reference\n";
     }
 }
 
@@ -2551,20 +2651,18 @@ TEST_F(ParallelRDPComparisonTest, FillPartialRegion) {
     interp_->GfxDpSetFillColor(blue5551);
     EXPECT_EQ(interp_->mRdp->fill_color.b, SCALE_5_8(31));
 
-    prdp::RunFillComparison("FillPartialRegion", blue5551,
-                            40 * 4, 30 * 4, 200 * 4, 150 * 4);
+    prdp::RunFillComparison("FillPartialRegion", blue5551, 40 * 4, 30 * 4, 200 * 4, 150 * 4);
 }
 
 TEST_F(ParallelRDPComparisonTest, FillScreen_AllChannels) {
-    struct FillCase { const char* name; uint8_t r5, g5, b5, a1; };
+    struct FillCase {
+        const char* name;
+        uint8_t r5, g5, b5, a1;
+    };
     FillCase cases[] = {
-        {"Black_NoAlpha", 0,  0,  0,  0},
-        {"Black_Alpha",   0,  0,  0,  1},
-        {"Green",         0,  31, 0,  1},
-        {"Blue",          0,  0,  31, 1},
-        {"Yellow",        31, 31, 0,  1},
-        {"Cyan",          0,  31, 31, 1},
-        {"Magenta",       31, 0,  31, 1},
+        { "Black_NoAlpha", 0, 0, 0, 0 }, { "Black_Alpha", 0, 0, 0, 1 }, { "Green", 0, 31, 0, 1 },
+        { "Blue", 0, 0, 31, 1 },         { "Yellow", 31, 31, 0, 1 },    { "Cyan", 0, 31, 31, 1 },
+        { "Magenta", 31, 0, 31, 1 },
     };
 
     for (auto& c : cases) {
@@ -2572,14 +2670,10 @@ TEST_F(ParallelRDPComparisonTest, FillScreen_AllChannels) {
 
         // Fast3D state verification (same display list commands)
         interp_->GfxDpSetFillColor(packed);
-        EXPECT_EQ(interp_->mRdp->fill_color.r, SCALE_5_8(c.r5))
-            << "Fill color " << c.name << " red mismatch";
-        EXPECT_EQ(interp_->mRdp->fill_color.g, SCALE_5_8(c.g5))
-            << "Fill color " << c.name << " green mismatch";
-        EXPECT_EQ(interp_->mRdp->fill_color.b, SCALE_5_8(c.b5))
-            << "Fill color " << c.name << " blue mismatch";
-        EXPECT_EQ(interp_->mRdp->fill_color.a, c.a1 * 255)
-            << "Fill color " << c.name << " alpha mismatch";
+        EXPECT_EQ(interp_->mRdp->fill_color.r, SCALE_5_8(c.r5)) << "Fill color " << c.name << " red mismatch";
+        EXPECT_EQ(interp_->mRdp->fill_color.g, SCALE_5_8(c.g5)) << "Fill color " << c.name << " green mismatch";
+        EXPECT_EQ(interp_->mRdp->fill_color.b, SCALE_5_8(c.b5)) << "Fill color " << c.name << " blue mismatch";
+        EXPECT_EQ(interp_->mRdp->fill_color.a, c.a1 * 255) << "Fill color " << c.name << " alpha mismatch";
 
         // ParallelRDP comparison (same commands → compare output)
         std::string name = std::string("FillScreen_") + c.name;
@@ -2603,8 +2697,7 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatRed_1Cycle) {
 
     // Setup: 1-cycle mode, combiner = SHADE, framebuffer configured
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2635,19 +2728,20 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatRed_1Cycle) {
                 int sg = (px >> 6) & 0x1F;
                 int sb = (px >> 1) & 0x1F;
                 int sa = px & 1;
-                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec
-                          << " R=" << sr << " G=" << sg << " B=" << sb << " A=" << sa << "\n";
+                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec << " R=" << sr << " G=" << sg
+                          << " B=" << sb << " A=" << sa << "\n";
                 dumpedSample = true;
             }
         }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 20 && g < 5 && b < 5) redPixels++;
+        if (r > 20 && g < 5 && b < 5)
+            redPixels++;
     }
 
-    std::cout << "  [INFO] ShadeTriangle_FlatRed: " << nonBlackPixels
-              << " non-black pixels, " << redPixels << " red pixels\n";
+    std::cout << "  [INFO] ShadeTriangle_FlatRed: " << nonBlackPixels << " non-black pixels, " << redPixels
+              << " red pixels\n";
 
     EXPECT_GT(nonBlackPixels, 0u) << "Triangle should have rendered some pixels";
 }
@@ -2658,8 +2752,7 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatGreen_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2686,19 +2779,19 @@ TEST_F(ParallelRDPComparisonTest, ShadeTriangle_FlatGreen_1Cycle) {
                 int sg = (px >> 6) & 0x1F;
                 int sb = (px >> 1) & 0x1F;
                 int sa = px & 1;
-                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec
-                          << " R=" << sr << " G=" << sg << " B=" << sb << " A=" << sa << "\n";
+                std::cout << "  [DEBUG] Sample pixel: 0x" << std::hex << px << std::dec << " R=" << sr << " G=" << sg
+                          << " B=" << sb << " A=" << sa << "\n";
                 dumpedSample = true;
             }
         }
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (g > 20 && r < 5 && b < 5) greenPixels++;
+        if (g > 20 && r < 5 && b < 5)
+            greenPixels++;
     }
 
-    std::cout << "  [INFO] ShadeTriangle_FlatGreen: " << nonBlack << " non-black, "
-              << greenPixels << " green pixels\n";
+    std::cout << "  [INFO] ShadeTriangle_FlatGreen: " << nonBlack << " non-black, " << greenPixels << " green pixels\n";
     EXPECT_GT(greenPixels, 0u) << "Green triangle should have rendered pixels";
 }
 
@@ -2708,8 +2801,7 @@ TEST_F(ParallelRDPComparisonTest, FillTriangle_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2729,7 +2821,8 @@ TEST_F(ParallelRDPComparisonTest, FillTriangle_1Cycle) {
     uint32_t bluePixels = 0;
     for (auto px : prdpFb) {
         int b = (px >> 1) & 0x1F;
-        if (b > 20) bluePixels++;
+        if (b > 20)
+            bluePixels++;
     }
 
     std::cout << "  [INFO] FillTriangle: " << bluePixels << " blue pixels\n";
@@ -2750,8 +2843,7 @@ TEST_F(ParallelRDPComparisonTest, Combiner_PrimColor_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2770,15 +2862,16 @@ TEST_F(ParallelRDPComparisonTest, Combiner_PrimColor_1Cycle) {
 
     uint32_t orangePixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 25 && g > 10 && g < 20 && b < 5) orangePixels++;
+        if (r > 25 && g > 10 && g < 20 && b < 5)
+            orangePixels++;
     }
 
-    std::cout << "  [INFO] Combiner_PrimColor: " << orangePixels
-              << " orange pixels (prim color)\n";
+    std::cout << "  [INFO] Combiner_PrimColor: " << orangePixels << " orange pixels (prim color)\n";
     EXPECT_GT(orangePixels, 0u) << "Prim color combiner should produce orange pixels";
 }
 
@@ -2788,8 +2881,7 @@ TEST_F(ParallelRDPComparisonTest, Combiner_EnvColor_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2808,15 +2900,16 @@ TEST_F(ParallelRDPComparisonTest, Combiner_EnvColor_1Cycle) {
 
     uint32_t bluePixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (b > 20 && r < 5 && g < 5) bluePixels++;
+        if (b > 20 && r < 5 && g < 5)
+            bluePixels++;
     }
 
-    std::cout << "  [INFO] Combiner_EnvColor: " << bluePixels
-              << " blue pixels (env color)\n";
+    std::cout << "  [INFO] Combiner_EnvColor: " << bluePixels << " blue pixels (env color)\n";
     EXPECT_GT(bluePixels, 0u) << "Env color combiner should produce blue pixels";
 }
 
@@ -2826,8 +2919,7 @@ TEST_F(ParallelRDPComparisonTest, Combiner_ShadeColor_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -2845,15 +2937,16 @@ TEST_F(ParallelRDPComparisonTest, Combiner_ShadeColor_1Cycle) {
 
     uint32_t yellowPixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 20 && g > 20 && b < 5) yellowPixels++;
+        if (r > 20 && g > 20 && b < 5)
+            yellowPixels++;
     }
 
-    std::cout << "  [INFO] Combiner_ShadeColor: " << yellowPixels
-              << " yellow pixels (shade)\n";
+    std::cout << "  [INFO] Combiner_ShadeColor: " << yellowPixels << " yellow pixels (shade)\n";
     EXPECT_GT(yellowPixels, 0u) << "Shade combiner should produce yellow pixels";
 }
 
@@ -2867,15 +2960,14 @@ TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_EnvPassthrough) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
     setup.push_back(prdp::MakeOtherModes2Cycle());
 
-    prdp::CombinerCycle c0 = { 0, 0, 0, 5,  0, 0, 0, 5 }; // D=ENV(5)
-    prdp::CombinerCycle c1 = { 0, 0, 0, 0,  0, 0, 0, 0 }; // D=COMBINED(0)
+    prdp::CombinerCycle c0 = { 0, 0, 0, 5, 0, 0, 0, 5 }; // D=ENV(5)
+    prdp::CombinerCycle c1 = { 0, 0, 0, 0, 0, 0, 0, 0 }; // D=COMBINED(0)
     setup.push_back(prdp::MakeSetCombineMode(c0, c1));
     setup.push_back(prdp::MakeSetEnvColor(200, 0, 200, 255));
 
@@ -2890,15 +2982,16 @@ TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_EnvPassthrough) {
 
     uint32_t purplePixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 15 && b > 15 && g < 5) purplePixels++;
+        if (r > 15 && b > 15 && g < 5)
+            purplePixels++;
     }
 
-    std::cout << "  [INFO] 2CycleMode_EnvPassthrough: " << purplePixels
-              << " purple pixels\n";
+    std::cout << "  [INFO] 2CycleMode_EnvPassthrough: " << purplePixels << " purple pixels\n";
     EXPECT_GT(purplePixels, 0u) << "2-cycle ENV→COMBINED should produce purple pixels";
 }
 
@@ -2908,15 +3001,14 @@ TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_PrimThenEnvOverride) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
     setup.push_back(prdp::MakeOtherModes2Cycle());
 
-    prdp::CombinerCycle c0 = { 0, 0, 0, 3,  0, 0, 0, 3 }; // D=PRIM(3)
-    prdp::CombinerCycle c1 = { 0, 0, 0, 5,  0, 0, 0, 5 }; // D=ENV(5)
+    prdp::CombinerCycle c0 = { 0, 0, 0, 3, 0, 0, 0, 3 }; // D=PRIM(3)
+    prdp::CombinerCycle c1 = { 0, 0, 0, 5, 0, 0, 0, 5 }; // D=ENV(5)
     setup.push_back(prdp::MakeSetCombineMode(c0, c1));
     setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 0, 0, 255));
     setup.push_back(prdp::MakeSetEnvColor(0, 255, 0, 255));
@@ -2932,17 +3024,17 @@ TEST_F(ParallelRDPComparisonTest, Combiner_2CycleMode_PrimThenEnvOverride) {
 
     uint32_t greenPixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (g > 20 && r < 5 && b < 5) greenPixels++;
+        if (g > 20 && r < 5 && b < 5)
+            greenPixels++;
     }
 
-    std::cout << "  [INFO] 2CycleMode_PrimThenEnv: " << greenPixels
-              << " green pixels (cycle 1 override)\n";
-    EXPECT_GT(greenPixels, 0u)
-        << "2-cycle mode cycle 1 ENV should override cycle 0 PRIM";
+    std::cout << "  [INFO] 2CycleMode_PrimThenEnv: " << greenPixels << " green pixels (cycle 1 override)\n";
+    EXPECT_GT(greenPixels, 0u) << "2-cycle mode cycle 1 ENV should override cycle 0 PRIM";
 }
 
 // ************************************************************
@@ -2960,38 +3052,38 @@ TEST_F(ParallelRDPComparisonTest, Depth_FrontOccludesBack) {
     auto zbufInit = prdp::BuildZBufferInit();
     std::vector<prdp::RDPCommand> setup;
     setup.insert(setup.end(), zbufInit.begin(), zbufInit.end());
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
     setup.push_back(prdp::MakeOtherModes1Cycle(0, depthBits));
     setup.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
-    auto backTri = prdp::MakeShadeZbuffTriangleWords(
-        10, 10, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
-    auto frontTri = prdp::MakeShadeZbuffTriangleWords(
-        50, 50, 250, 250, 0, 255, 0, 255, 0x10000000u);
+    auto backTri = prdp::MakeShadeZbuffTriangleWords(10, 10, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
+    auto frontTri = prdp::MakeShadeZbuffTriangleWords(50, 50, 250, 250, 0, 255, 0, 255, 0x10000000u);
 
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
-    prdp.SubmitMultiTriCommands(setup, {backTri, frontTri}, { prdp::MakeSyncFull() });
+    prdp.SubmitMultiTriCommands(setup, { backTri, frontTri }, { prdp::MakeSyncFull() });
 
     auto prdpFb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t redPixels = 0, greenPixels = 0, nonBlack = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         nonBlack++;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 20 && g < 5 && b < 5) redPixels++;
-        if (g > 20 && r < 5 && b < 5) greenPixels++;
+        if (r > 20 && g < 5 && b < 5)
+            redPixels++;
+        if (g > 20 && r < 5 && b < 5)
+            greenPixels++;
     }
 
-    std::cout << "  [INFO] Depth_FrontOccludesBack: " << nonBlack << " non-black, "
-              << redPixels << " red, " << greenPixels << " green\n";
+    std::cout << "  [INFO] Depth_FrontOccludesBack: " << nonBlack << " non-black, " << redPixels << " red, "
+              << greenPixels << " green\n";
     EXPECT_GT(nonBlack, 0u) << "Should render something with depth test";
 }
 
@@ -3006,8 +3098,7 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
     auto zbufInit = prdp::BuildZBufferInit();
     std::vector<prdp::RDPCommand> setup;
     setup.insert(setup.end(), zbufInit.begin(), zbufInit.end());
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -3016,8 +3107,7 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
     setup.push_back(prdp::MakeSetPrimColor(0, 0, 255, 0, 0, 255));
     setup.push_back(prdp::MakeSetPrimDepth(0x7FFF, 0));
 
-    auto backTri = prdp::MakeShadeZbuffTriangleWords(
-        20, 20, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
+    auto backTri = prdp::MakeShadeZbuffTriangleWords(20, 20, 200, 200, 255, 0, 0, 255, 0x7FFF0000u);
 
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
@@ -3027,7 +3117,8 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 
     uint32_t nonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) nonBlack++;
+        if (px != 0)
+            nonBlack++;
 
     std::cout << "  [INFO] Depth_PrimDepth: " << nonBlack << " non-black pixels\n";
 }
@@ -3038,11 +3129,10 @@ TEST_F(ParallelRDPComparisonTest, Depth_PrimDepth_ShadeZTriangle) {
 
 // Save a RGBA16 (N64 format) framebuffer as PPM (forward declaration
 // for use in texture tests; definition below in screenshot section).
-static void SaveFramebufferPPM(const std::string& path,
-                                const std::vector<uint16_t>& fb,
-                                uint32_t width, uint32_t height);
-static std::vector<uint16_t> RenderFast3DTexturedQuad(
-    const std::vector<uint16_t>& texRGBA16, uint32_t texWidth, uint32_t texHeight);
+static void SaveFramebufferPPM(const std::string& path, const std::vector<uint16_t>& fb, uint32_t width,
+                               uint32_t height);
+static std::vector<uint16_t> RenderFast3DTexturedQuad(const std::vector<uint16_t>& texRGBA16, uint32_t texWidth,
+                                                      uint32_t texHeight);
 
 // Resolve a filename to docs/images/ relative to the source tree.
 // __FILE__ lives in src/fast/tests/ so we walk up 4 path components.
@@ -3050,7 +3140,8 @@ static std::string RepoImagePath(const std::string& filename) {
     std::string dir(__FILE__);
     for (int i = 0; i < 4; ++i) {
         auto pos = dir.find_last_of("/\\");
-        if (pos != std::string::npos) dir = dir.substr(0, pos);
+        if (pos != std::string::npos)
+            dir = dir.substr(0, pos);
     }
     return dir + "/docs/images/" + filename;
 }
@@ -3069,25 +3160,21 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     // 1-cycle mode with bilerp0 enabled (via MakeOtherModes1Cycle)
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
 
     prdp.SubmitSequence({
         { cmds, texRect },
@@ -3104,19 +3191,23 @@ TEST_F(ParallelRDPComparisonTest, Texture_SolidColor_1Cycle) {
     uint32_t cyanPixels = 0, nonBlack = 0;
     for (size_t i = 0; i < prdpFb.size(); i++) {
         uint16_t px = prdpFb[i];
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         nonBlack++;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (g > 20 && b > 20 && r < 5) cyanPixels++;
+        if (g > 20 && b > 20 && r < 5)
+            cyanPixels++;
     }
 
-    std::cout << "  [INFO] Texture_SolidColor: " << nonBlack << " non-black, "
-              << cyanPixels << " cyan pixels from texture\n";
+    std::cout << "  [INFO] Texture_SolidColor: " << nonBlack << " non-black, " << cyanPixels
+              << " cyan pixels from texture\n";
     EXPECT_GT(cyanPixels, 0u) << "Texture rectangle should render cyan pixels";
     uint32_t fast3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) fast3dNonBlack++;
+    for (auto px : fast3dFb)
+        if (px != 0)
+            fast3dNonBlack++;
     EXPECT_GT(fast3dNonBlack, 0u) << "Fast3D comparison image should render colored pixels";
 }
 
@@ -3128,7 +3219,7 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
-    uint16_t red5551   = (31 << 11) | (0 << 6) | (0 << 1) | 1;
+    uint16_t red5551 = (31 << 11) | (0 << 6) | (0 << 1) | 1;
     uint16_t white5551 = (31 << 11) | (31 << 6) | (31 << 1) | 1;
 
     // Write texture data with adjacent uint16_t pairs swapped to compensate for
@@ -3142,21 +3233,18 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
     prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
     // Use wrap mode (cms=0, cmt=0) so the 4×4 checkerboard tiles correctly.
     // LoadTile gives reliable TMEM upload; LoadBlock with clamp caused all
     // texels beyond the tile boundary to clamp to the edge colour, making
     // the pattern degenerate to a solid stripe.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
@@ -3181,20 +3269,24 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
 
     uint32_t redPixels = 0, whitePixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 20 && g < 5 && b < 5) redPixels++;
-        if (r > 20 && g > 20 && b > 20) whitePixels++;
+        if (r > 20 && g < 5 && b < 5)
+            redPixels++;
+        if (r > 20 && g > 20 && b > 20)
+            whitePixels++;
     }
 
-    std::cout << "  [INFO] Texture_Checkerboard: " << redPixels << " red, "
-              << whitePixels << " white\n";
+    std::cout << "  [INFO] Texture_Checkerboard: " << redPixels << " red, " << whitePixels << " white\n";
     uint32_t totalColored = redPixels + whitePixels;
     EXPECT_GT(totalColored, 0u) << "Checkerboard texture should produce colored pixels";
     uint32_t fast3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) fast3dNonBlack++;
+    for (auto px : fast3dFb)
+        if (px != 0)
+            fast3dNonBlack++;
     EXPECT_GT(fast3dNonBlack, 0u) << "Fast3D comparison image should render colored pixels";
 }
 
@@ -3209,7 +3301,8 @@ TEST_F(ParallelRDPComparisonTest, Texture_Checkerboard_1Cycle) {
 
 // --- RGBA32 ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3218,8 +3311,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
     prdp.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint32_t));
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
@@ -3227,28 +3319,29 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_RGBA32) {
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 4, prdp::TEX_ADDR));
     // RGBA32: stride = 4 texels * 4B = 16B = 2 TMEM 64-bit words
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b,
-                                      2, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 2, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_rgba32.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_rgba32.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_RGBA32: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "RGBA32 texture should render visible pixels";
 }
 
 // --- I4 (4-bit intensity, displayed as grayscale) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3259,8 +3352,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
     prdp.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
@@ -3270,29 +3362,30 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I4) {
     // Real N64 RSP converts 4b → 8b before sending to RDP; ParallelRDP rejects 4b VRAM pointers.
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
     // I4 tile: line = 1 (4 texels * 0.5B = 2B, rounds up to 1 TMEM line of 8B)
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     // sh = (2 - 1) * 4 = 4: 2 8b "texels" per row in 10.2 fixed-point
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_i4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_i4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_I4: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "I4 texture should render visible pixels";
 }
 
 // --- I8 (8-bit intensity) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3301,8 +3394,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
     prdp.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
@@ -3310,28 +3402,29 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_I8) {
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
     // I8: line = 1 (4 texels * 1B = 4B, rounds up to 1 TMEM 64-bit word)
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_i8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_i8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_I8: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "I8 texture should render visible pixels";
 }
 
 // --- IA4 (4-bit intensity + alpha: 3 bits I, 1 bit A) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3342,8 +3435,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
     prdp.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
@@ -3351,28 +3443,29 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA4) {
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     // IA4 texture image: load as 8b (2 IA4 texels packed per byte), width = 4/2 = 2.
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA4: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "IA4 texture should render visible pixels";
 }
 
 // --- IA8 (8-bit: 4 bits intensity + 4 bits alpha) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3382,36 +3475,36 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA8) {
     prdp.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA8: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "IA8 texture should render visible pixels";
 }
 
 // --- IA16 (16-bit: 8 bits intensity + 8 bits alpha) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3421,8 +3514,7 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
     prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
@@ -3430,28 +3522,29 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_IA16) {
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
     // IA16: same stride as RGBA16 (2 bytes per texel, 4 texels = 8B = 1 TMEM line)
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ia16.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ia16.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_IA16: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "IA16 texture should render visible pixels";
 }
 
 // --- CI4 (4-bit palette index with TLUT) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3465,59 +3558,55 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI4) {
     // Entry 0 = white (0xFFFF).
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
     std::vector<uint16_t> palette(16, 0x0001);
-    palette[0] = 0xFFFF;  // white
+    palette[0] = 0xFFFF; // white
     prdp.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     // Enable TLUT (bit 15 = tlut_en, bit 14 = tlut_type: 0 = RGBA16)
-    cmds.push_back(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                           prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
 
     // Load TLUT into upper TMEM (tile 7 is conventional for TLUT)
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     // N64 SDK (gsDPLoadTLUT_pal16) always uses fmt=0, siz=4b for the TLUT tile.
     // RDP_SIZ_4b triggers the vram_size-tmem_size==2 branch in ParallelRDP's
     // update_tmem_lut shader, which writes all 16 palette slots contiguously.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
-                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
 
     // Load CI4 texture: load as 8b (2 CI4 indices packed per byte), width = 4/2 = 2.
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                              2, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     // sh = (2 - 1) * 4 = 4: 2 8b "texels" per row in 10.2 fixed-point
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ci4.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ci4.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI4: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "CI4 texture with TLUT should render visible pixels";
 }
 
 // --- CI8 (8-bit palette index with TLUT) ---
 TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
 
@@ -3534,45 +3623,40 @@ TEST_F(ParallelRDPComparisonTest, TextureFormat_CI8) {
     prdp.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    cmds.push_back(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                           prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
 
     // Load TLUT
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     // N64 SDK (gsDPLoadTLUT_pal256) uses fmt=0, siz=4b for the TLUT tile.
     // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
-                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
 
     // Load CI8 texture
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 1, 0, 0, 1, 1, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
 
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
     prdp.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = prdp.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM("/tmp/prdp_texfmt_ci8.ppm", fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     SaveFramebufferPPM(RepoImagePath("prdp_texfmt_ci8.ppm"), fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
     std::cout << "  [INFO] TextureFormat_CI8: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "CI8 texture with TLUT should render visible pixels";
 }
@@ -3587,8 +3671,7 @@ TEST_F(ParallelRDPComparisonTest, Fog_SetFogColor_1Cycle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -3607,10 +3690,10 @@ TEST_F(ParallelRDPComparisonTest, Fog_SetFogColor_1Cycle) {
 
     uint32_t nonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) nonBlack++;
+        if (px != 0)
+            nonBlack++;
 
-    std::cout << "  [INFO] Fog_SetFogColor: " << nonBlack
-              << " non-black pixels (fog test)\n";
+    std::cout << "  [INFO] Fog_SetFogColor: " << nonBlack << " non-black pixels (fog test)\n";
     EXPECT_GT(nonBlack, 0u) << "Fog test should render something";
 }
 
@@ -3624,8 +3707,7 @@ TEST_F(ParallelRDPComparisonTest, BlendColor_SetAndRender) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -3644,7 +3726,8 @@ TEST_F(ParallelRDPComparisonTest, BlendColor_SetAndRender) {
 
     uint32_t nonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) nonBlack++;
+        if (px != 0)
+            nonBlack++;
 
     std::cout << "  [INFO] BlendColor: " << nonBlack << " non-black pixels\n";
     EXPECT_GT(nonBlack, 0u) << "Blend color test should render something";
@@ -3660,8 +3743,7 @@ TEST_F(ParallelRDPComparisonTest, Scissor_ClipsTriangle) {
     }
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(100 * 4, 80 * 4, 150 * 4, 130 * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -3681,7 +3763,8 @@ TEST_F(ParallelRDPComparisonTest, Scissor_ClipsTriangle) {
     for (uint32_t y = 0; y < prdp::FB_HEIGHT; y++) {
         for (uint32_t x = 0; x < prdp::FB_WIDTH; x++) {
             uint16_t px = prdpFb[y * prdp::FB_WIDTH + x];
-            if (px == 0) continue;
+            if (px == 0)
+                continue;
             if (x >= 100 && x < 150 && y >= 80 && y < 130)
                 insidePixels++;
             else
@@ -3689,8 +3772,7 @@ TEST_F(ParallelRDPComparisonTest, Scissor_ClipsTriangle) {
         }
     }
 
-    std::cout << "  [INFO] Scissor_ClipsTriangle: " << insidePixels
-              << " inside, " << outsidePixels << " outside\n";
+    std::cout << "  [INFO] Scissor_ClipsTriangle: " << insidePixels << " inside, " << outsidePixels << " outside\n";
     EXPECT_EQ(outsidePixels, 0u) << "No pixels should be drawn outside scissor";
     EXPECT_GT(insidePixels, 0u) << "Some pixels should be drawn inside scissor";
 }
@@ -3707,8 +3789,7 @@ TEST_F(ParallelRDPComparisonTest, AlphaCvg_CvgTimesAlpha) {
     uint32_t cvgBits = prdp::RDP_CVG_X_ALPHA | prdp::RDP_FORCE_BLEND;
 
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -3726,10 +3807,10 @@ TEST_F(ParallelRDPComparisonTest, AlphaCvg_CvgTimesAlpha) {
 
     uint32_t nonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) nonBlack++;
+        if (px != 0)
+            nonBlack++;
 
-    std::cout << "  [INFO] AlphaCvg: " << nonBlack
-              << " non-black pixels with CVG_X_ALPHA\n";
+    std::cout << "  [INFO] AlphaCvg: " << nonBlack << " non-black pixels with CVG_X_ALPHA\n";
 }
 
 // ************************************************************
@@ -3750,8 +3831,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
     // Step 1: Z buffer init + common setup + opaque mode + first triangle
     std::vector<prdp::RDPCommand> step1Cmds;
     step1Cmds.insert(step1Cmds.end(), zbufInit.begin(), zbufInit.end());
-    step1Cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                                  prdp::FB_WIDTH, prdp::FB_ADDR));
+    step1Cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     step1Cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     step1Cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     step1Cmds.push_back(prdp::MakeSyncPipe());
@@ -3759,8 +3839,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
     step1Cmds.push_back(prdp::MakeOtherModes1Cycle(0, opaqueBits));
     step1Cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
 
-    auto tri1 = prdp::MakeShadeZbuffTriangleWords(
-        20, 20, 200, 200, 255, 0, 0, 255, 0x40000000u);
+    auto tri1 = prdp::MakeShadeZbuffTriangleWords(20, 20, 200, 200, 255, 0, 0, 255, 0x40000000u);
 
     // Step 2: switch to decal Z mode + second triangle
     std::vector<prdp::RDPCommand> step2Cmds;
@@ -3768,8 +3847,7 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
     uint32_t decalBits = prdp::RDP_Z_CMP | prdp::RDP_Z_UPD | prdp::RDP_ZMODE_DECAL;
     step2Cmds.push_back(prdp::MakeOtherModes1Cycle(0, decalBits));
 
-    auto tri2 = prdp::MakeShadeZbuffTriangleWords(
-        60, 60, 240, 220, 0, 255, 0, 255, 0x40000000u);
+    auto tri2 = prdp::MakeShadeZbuffTriangleWords(60, 60, 240, 220, 0, 255, 0, 255, 0x40000000u);
 
     // Step 3: sync
     std::vector<prdp::RDPCommand> step3Cmds = { prdp::MakeSyncFull() };
@@ -3786,16 +3864,19 @@ TEST_F(ParallelRDPComparisonTest, ZmodeDecal_NoZFighting) {
 
     uint32_t redPixels = 0, greenPixels = 0;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         int r = (px >> 11) & 0x1F;
         int g = (px >> 6) & 0x1F;
         int b = (px >> 1) & 0x1F;
-        if (r > 20 && g < 5) redPixels++;
-        if (g > 20 && r < 5) greenPixels++;
+        if (r > 20 && g < 5)
+            redPixels++;
+        if (g > 20 && r < 5)
+            greenPixels++;
     }
 
-    std::cout << "  [INFO] ZmodeDecal: " << redPixels << " red, "
-              << greenPixels << " green (decal should allow both)\n";
+    std::cout << "  [INFO] ZmodeDecal: " << redPixels << " red, " << greenPixels
+              << " green (decal should allow both)\n";
     EXPECT_GT(redPixels + greenPixels, 0u) << "Decal mode should render triangles";
 }
 
@@ -3827,34 +3908,30 @@ static std::vector<uint16_t> GenerateCheckerboard8x8(uint16_t colorA, uint16_t c
 
 // Upload an 8x8 RGBA16 texture to RDRAM and build the RDP commands
 // to load it into TMEM tile 0.
-static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(
-    const std::vector<uint16_t>& texData,
-    prdp::CombinerCycle cc0, prdp::CombinerCycle cc1,
-    uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
+static std::vector<prdp::RDPCommand> BuildTextureMeshSetup(const std::vector<uint16_t>& texData,
+                                                           prdp::CombinerCycle cc0, prdp::CombinerCycle cc1,
+                                                           uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
     auto& prdp = prdp::GetPRDPContext();
 
     // Write texture data to RDRAM in native host byte order.
     prdp.WriteRDRAMTexture16(prdp::TEX_ADDR, texData);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    cmds.push_back(prdp::MakeSetOtherModes(otherModeCycleBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                                           prdp::RDP_FORCE_BLEND));
+    cmds.push_back(
+        prdp::MakeSetOtherModes(otherModeCycleBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1, prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(cc0, cc1));
     // Set prim/env colors for combiner tests that use them
-    cmds.push_back(prdp::MakeSetPrimColor(0, 0, 255, 128, 0, 255));   // orange
-    cmds.push_back(prdp::MakeSetEnvColor(0, 128, 255, 255));           // sky blue
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              8, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetPrimColor(0, 0, 255, 128, 0, 255)); // orange
+    cmds.push_back(prdp::MakeSetEnvColor(0, 128, 255, 255));        // sky blue
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 8, prdp::TEX_ADDR));
     // Tile descriptor: RGBA16, line=2 (8 texels * 2B = 16B = 2 TMEM 64-bit words),
     // tmem=0, tile=0, wrap S&T (no clamp), mask S&T = 3 (2^3=8 for 8x8 texture)
     // cms=0, cmt=0: no clamping — mask alone handles wrapping every 8 texels
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                      2, 0, 0, 0, 0, 3, 3, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 2, 0, 0, 0, 0, 3, 3, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     // Use LoadTile for reliable TMEM upload (10.2 fixed-point coordinates)
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 7 * 4, 7 * 4));
@@ -3871,10 +3948,9 @@ struct TexturedMeshResult {
     uint32_t maxR, maxG, maxB; // max channel values seen
 };
 
-static TexturedMeshResult RenderTexturedMeshPRDP(
-    const std::vector<uint16_t>& texData,
-    prdp::CombinerCycle cc0, prdp::CombinerCycle cc1,
-    uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
+static TexturedMeshResult RenderTexturedMeshPRDP(const std::vector<uint16_t>& texData, prdp::CombinerCycle cc0,
+                                                 prdp::CombinerCycle cc1,
+                                                 uint32_t otherModeCycleBits = prdp::RDP_CYCLE_1CYC) {
 
     auto& prdp = prdp::GetPRDPContext();
     prdp.ClearRDRAM();
@@ -3882,8 +3958,7 @@ static TexturedMeshResult RenderTexturedMeshPRDP(
     auto cmds = BuildTextureMeshSetup(texData, cc0, cc1, otherModeCycleBits);
 
     // Texture rectangle covering 64x64 pixel region at (50,50)-(114,114)
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 114 * 4, 114 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 114 * 4, 114 * 4, 50 * 4, 50 * 4, 0, 0, 1 << 10, 1 << 10);
 
     prdp.SubmitSequence({
         { cmds, texRect },
@@ -3895,7 +3970,8 @@ static TexturedMeshResult RenderTexturedMeshPRDP(
     TexturedMeshResult result = {};
     std::set<uint16_t> uniqueColors;
     for (auto px : prdpFb) {
-        if (px == 0) continue;
+        if (px == 0)
+            continue;
         result.totalNonBlack++;
         uniqueColors.insert(px);
 
@@ -3921,41 +3997,31 @@ struct CombinerPermutation {
 
 static const CombinerPermutation kTexturedMeshPermutations[] = {
     // Pure texture output (TEXEL0 passthrough)
-    { "TEXEL0_1Cycle",
-      prdp::CC_TEXEL0, prdp::CC_TEXEL0,
-      prdp::RDP_CYCLE_1CYC },
+    { "TEXEL0_1Cycle", prdp::CC_TEXEL0, prdp::CC_TEXEL0, prdp::RDP_CYCLE_1CYC },
 
     // Texture modulated by shade color (TEXEL0 * SHADE)
-    { "TEXEL0xSHADE_1Cycle",
-      prdp::CC_TEXEL0_SHADE, prdp::CC_TEXEL0_SHADE,
-      prdp::RDP_CYCLE_1CYC },
+    { "TEXEL0xSHADE_1Cycle", prdp::CC_TEXEL0_SHADE, prdp::CC_TEXEL0_SHADE, prdp::RDP_CYCLE_1CYC },
 
     // Texture modulated by primitive color
     { "TEXEL0xPRIM_1Cycle",
-      { 1, 0, 3, 0,  1, 0, 3, 0 },   // A=TEXEL0, B=0, C=PRIM, D=0
-      { 1, 0, 3, 0,  1, 0, 3, 0 },
+      { 1, 0, 3, 0, 1, 0, 3, 0 }, // A=TEXEL0, B=0, C=PRIM, D=0
+      { 1, 0, 3, 0, 1, 0, 3, 0 },
       prdp::RDP_CYCLE_1CYC },
 
     // Texture modulated by env color
     { "TEXEL0xENV_1Cycle",
-      { 1, 0, 5, 0,  1, 0, 5, 0 },   // A=TEXEL0, B=0, C=ENV, D=0
-      { 1, 0, 5, 0,  1, 0, 5, 0 },
+      { 1, 0, 5, 0, 1, 0, 5, 0 }, // A=TEXEL0, B=0, C=ENV, D=0
+      { 1, 0, 5, 0, 1, 0, 5, 0 },
       prdp::RDP_CYCLE_1CYC },
 
     // 2-cycle: TEXEL0 in cycle 0, combined passthrough in cycle 1
-    { "TEXEL0_2Cycle",
-      prdp::CC_TEXEL0, { 0, 0, 0, 0,  0, 0, 0, 0 },
-      prdp::RDP_CYCLE_2CYC },
+    { "TEXEL0_2Cycle", prdp::CC_TEXEL0, { 0, 0, 0, 0, 0, 0, 0, 0 }, prdp::RDP_CYCLE_2CYC },
 
     // Prim color only (ignores texture — verifies combiner overrides texel)
-    { "PrimOnly_1Cycle",
-      prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB,
-      prdp::RDP_CYCLE_1CYC },
+    { "PrimOnly_1Cycle", prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB, prdp::RDP_CYCLE_1CYC },
 
     // Env color only (ignores texture — verifies combiner overrides texel)
-    { "EnvOnly_1Cycle",
-      prdp::CC_ENV_RGB, prdp::CC_ENV_RGB,
-      prdp::RDP_CYCLE_1CYC },
+    { "EnvOnly_1Cycle", prdp::CC_ENV_RGB, prdp::CC_ENV_RGB, prdp::RDP_CYCLE_1CYC },
 };
 
 TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
@@ -3964,7 +4030,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
     }
 
     // Generate 8x8 checkerboard: red + cyan (procedurally generated, CC0)
-    uint16_t red5551  = (31 << 11) | (0 << 6) | (0 << 1) | 1;
+    uint16_t red5551 = (31 << 11) | (0 << 6) | (0 << 1) | 1;
     uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
     auto checkerboard = GenerateCheckerboard8x8(red5551, cyan5551);
 
@@ -3978,20 +4044,16 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
     std::cout << "╠════════════════════════════╪══════════╪════════╪════════════════════╣\n";
 
     for (const auto& perm : kTexturedMeshPermutations) {
-        auto result = RenderTexturedMeshPRDP(
-            checkerboard, perm.cc0, perm.cc1, perm.cycleBits);
+        auto result = RenderTexturedMeshPRDP(checkerboard, perm.cc0, perm.cc1, perm.cycleBits);
 
-        std::cout << "║  " << std::left << std::setw(26) << perm.name << " │ "
-                  << std::right << std::setw(8) << result.totalNonBlack << " │ "
-                  << std::setw(6) << result.distinctColors << " │ "
-                  << std::setw(4) << result.maxR << " "
-                  << std::setw(4) << result.maxG << " "
-                  << std::setw(4) << result.maxB
-                  << std::setw(6) << "" << " ║\n";
+        std::cout << "║  " << std::left << std::setw(26) << perm.name << " │ " << std::right << std::setw(8)
+                  << result.totalNonBlack << " │ " << std::setw(6) << result.distinctColors << " │ " << std::setw(4)
+                  << result.maxR << " " << std::setw(4) << result.maxG << " " << std::setw(4) << result.maxB
+                  << std::setw(6) << ""
+                  << " ║\n";
 
         // Every permutation should render non-black pixels in the 64x64 region
-        EXPECT_GT(result.totalNonBlack, 0u)
-            << perm.name << ": should render pixels";
+        EXPECT_GT(result.totalNonBlack, 0u) << perm.name << ": should render pixels";
     }
 
     std::cout << "╚═══════════════════════════════════════════════════════════════════════╝\n";
@@ -4010,9 +4072,8 @@ TEST_F(ParallelRDPComparisonTest, TexturedMesh_Permutations) {
 // ************************************************************
 
 // Save a 320x240 RGBA16 (N64 format) framebuffer as PPM
-static void SaveFramebufferPPM(const std::string& path,
-                                const std::vector<uint16_t>& fb,
-                                uint32_t width, uint32_t height) {
+static void SaveFramebufferPPM(const std::string& path, const std::vector<uint16_t>& fb, uint32_t width,
+                               uint32_t height) {
     std::filesystem::create_directories(std::filesystem::path(path).parent_path());
     std::ofstream f(path, std::ios::binary);
     f << "P6\n" << width << " " << height << "\n255\n";
@@ -4021,22 +4082,31 @@ static void SaveFramebufferPPM(const std::string& path,
         uint8_t r = ((px >> 11) & 0x1F) * 255 / 31;
         uint8_t g = ((px >> 6) & 0x1F) * 255 / 31;
         uint8_t b = ((px >> 1) & 0x1F) * 255 / 31;
-        f.put(r); f.put(g); f.put(b);
+        f.put(r);
+        f.put(g);
+        f.put(b);
     }
 }
 
 // Save a RGBA16 (N64 format) framebuffer as a PNG file using libpng.
-static bool SaveFramebufferPNG(const std::string& path,
-                                const std::vector<uint16_t>& fb,
-                                uint32_t width, uint32_t height) {
+static bool SaveFramebufferPNG(const std::string& path, const std::vector<uint16_t>& fb, uint32_t width,
+                               uint32_t height) {
     std::filesystem::create_directories(std::filesystem::path(path).parent_path());
     FILE* fp = fopen(path.c_str(), "wb");
-    if (!fp) return false;
+    if (!fp)
+        return false;
 
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-    if (!png) { fclose(fp); return false; }
+    if (!png) {
+        fclose(fp);
+        return false;
+    }
     png_infop info = png_create_info_struct(png);
-    if (!info) { png_destroy_write_struct(&png, nullptr); fclose(fp); return false; }
+    if (!info) {
+        png_destroy_write_struct(&png, nullptr);
+        fclose(fp);
+        return false;
+    }
 
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &info);
@@ -4045,8 +4115,8 @@ static bool SaveFramebufferPNG(const std::string& path,
     }
 
     png_init_io(png, fp);
-    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
-                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
     png_write_info(png, info);
 
     std::vector<uint8_t> row(width * 3);
@@ -4068,22 +4138,20 @@ static bool SaveFramebufferPNG(const std::string& path,
 
 // Save framebuffer as both PPM and PNG to repo docs/images/,
 // replacing the .ppm extension with .png for the PNG path.
-static void SaveFramebufferBoth(const std::string& ppmPath,
-                                 const std::vector<uint16_t>& fb,
-                                 uint32_t width, uint32_t height) {
+static void SaveFramebufferBoth(const std::string& ppmPath, const std::vector<uint16_t>& fb, uint32_t width,
+                                uint32_t height) {
     SaveFramebufferPPM(ppmPath, fb, width, height);
     std::string pngPath = ppmPath;
     auto dot = pngPath.rfind('.');
-    if (dot != std::string::npos) pngPath.replace(dot, std::string::npos, ".png");
+    if (dot != std::string::npos)
+        pngPath.replace(dot, std::string::npos, ".png");
     SaveFramebufferPNG(pngPath, fb, width, height);
 }
 
 // Simple software rasterizer for Fast3D VBO data → RGBA16 framebuffer.
 // Handles flat-bottomed/flat-topped triangle halves via scanline fill.
-static void SoftwareRasterizeVBO(std::vector<uint16_t>& fb,
-                                  uint32_t fbWidth, uint32_t fbHeight,
-                                  const std::vector<float>& vbo,
-                                  size_t floatsPerVertex, size_t numTris) {
+static void SoftwareRasterizeVBO(std::vector<uint16_t>& fb, uint32_t fbWidth, uint32_t fbHeight,
+                                 const std::vector<float>& vbo, size_t floatsPerVertex, size_t numTris) {
     for (size_t t = 0; t < numTris; t++) {
         size_t base = t * 3 * floatsPerVertex;
         // Extract 3 vertices: position (x,y) and color (r,g,b)
@@ -4107,10 +4175,10 @@ static void SoftwareRasterizeVBO(std::vector<uint16_t>& fb,
         }
 
         // Bounding box
-        float minX = std::min({sx[0], sx[1], sx[2]});
-        float maxX = std::max({sx[0], sx[1], sx[2]});
-        float minY = std::min({sy[0], sy[1], sy[2]});
-        float maxY = std::max({sy[0], sy[1], sy[2]});
+        float minX = std::min({ sx[0], sx[1], sx[2] });
+        float maxX = std::max({ sx[0], sx[1], sx[2] });
+        float minY = std::min({ sy[0], sy[1], sy[2] });
+        float maxY = std::max({ sy[0], sy[1], sy[2] });
 
         int x0 = std::max(0, (int)minX);
         int x1 = std::min((int)fbWidth - 1, (int)maxX);
@@ -4119,19 +4187,20 @@ static void SoftwareRasterizeVBO(std::vector<uint16_t>& fb,
 
         // For each pixel, check if inside triangle using barycentric coords
         float denom = (sy[1] - sy[2]) * (sx[0] - sx[2]) + (sx[2] - sx[1]) * (sy[0] - sy[2]);
-        if (std::abs(denom) < 0.001f) continue; // Degenerate
+        if (std::abs(denom) < 0.001f)
+            continue; // Degenerate
 
         for (int py = y0; py <= y1; py++) {
             for (int px = x0; px <= x1; px++) {
                 float fpx = px + 0.5f, fpy = py + 0.5f;
-                float w0 = ((sy[1]-sy[2])*(fpx-sx[2]) + (sx[2]-sx[1])*(fpy-sy[2])) / denom;
-                float w1 = ((sy[2]-sy[0])*(fpx-sx[2]) + (sx[0]-sx[2])*(fpy-sy[2])) / denom;
+                float w0 = ((sy[1] - sy[2]) * (fpx - sx[2]) + (sx[2] - sx[1]) * (fpy - sy[2])) / denom;
+                float w1 = ((sy[2] - sy[0]) * (fpx - sx[2]) + (sx[0] - sx[2]) * (fpy - sy[2])) / denom;
                 float w2 = 1.0f - w0 - w1;
 
                 if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
-                    float r = w0*cr[0] + w1*cr[1] + w2*cr[2];
-                    float g = w0*cg[0] + w1*cg[1] + w2*cg[2];
-                    float b = w0*cb[0] + w1*cb[1] + w2*cb[2];
+                    float r = w0 * cr[0] + w1 * cr[1] + w2 * cr[2];
+                    float g = w0 * cg[0] + w1 * cg[1] + w2 * cg[2];
+                    float b = w0 * cb[0] + w1 * cb[1] + w2 * cb[2];
 
                     uint16_t r5 = (uint16_t)(std::min(1.0f, std::max(0.0f, r)) * 31);
                     uint16_t g5 = (uint16_t)(std::min(1.0f, std::max(0.0f, g)) * 31);
@@ -4163,16 +4232,15 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     // Bottom-left face: blue
     // Bottom-right face: yellow
     TriDef tris[] = {
-        { 60,  20, 160, 120, 255,  50,  50, 255, "top-left red" },
-        {160,  20, 260, 120,  50, 255,  50, 255, "top-right green" },
-        { 60, 120, 160, 220,  80,  80, 255, 255, "bottom-left blue" },
-        {160, 120, 260, 220, 255, 255,  50, 255, "bottom-right yellow" },
+        { 60, 20, 160, 120, 255, 50, 50, 255, "top-left red" },
+        { 160, 20, 260, 120, 50, 255, 50, 255, "top-right green" },
+        { 60, 120, 160, 220, 80, 80, 255, 255, "bottom-left blue" },
+        { 160, 120, 260, 220, 255, 255, 50, 255, "bottom-right yellow" },
     };
 
     // Build PRDP commands: framebuffer setup + shade triangles
     std::vector<prdp::RDPCommand> setup;
-    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                             prdp::FB_WIDTH, prdp::FB_ADDR));
+    setup.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     setup.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     setup.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     setup.push_back(prdp::MakeSyncPipe());
@@ -4182,8 +4250,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     // Build triangle edge/shade coefficients
     std::vector<std::vector<uint32_t>> triWordsList;
     for (auto& t : tris) {
-        triWordsList.push_back(prdp::MakeShadeTriangleWords(
-            t.x0, t.y0, t.x1, t.y1, t.r, t.g, t.b, t.a));
+        triWordsList.push_back(prdp::MakeShadeTriangleWords(t.x0, t.y0, t.x1, t.y1, t.r, t.g, t.b, t.a));
     }
 
     auto& prdp = prdp::GetPRDPContext();
@@ -4198,7 +4265,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     // Count pixels
     uint32_t prdpNonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) prdpNonBlack++;
+        if (px != 0)
+            prdpNonBlack++;
 
     // ---- Fast3D: Render same mesh through display list interpreter ----
     // Create a separate interpreter with PixelCapturingRenderingAPI to capture VBO data
@@ -4241,22 +4309,37 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
 
         // Triangle vertices: top-left corner, top-right corner, bottom-right corner
         // (right triangle matching the PackEdgeCoeffs layout)
-        verts[vi].v.ob[0] = (int16_t)cx0; verts[vi].v.ob[1] = (int16_t)cy0; verts[vi].v.ob[2] = 0;
-        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        verts[vi].v.ob[0] = (int16_t)cx0;
+        verts[vi].v.ob[1] = (int16_t)cy0;
+        verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r;
+        verts[vi].v.cn[1] = t.g;
+        verts[vi].v.cn[2] = t.b;
+        verts[vi].v.cn[3] = t.a;
         vi++;
 
-        verts[vi].v.ob[0] = (int16_t)cx1; verts[vi].v.ob[1] = (int16_t)cy0; verts[vi].v.ob[2] = 0;
-        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        verts[vi].v.ob[0] = (int16_t)cx1;
+        verts[vi].v.ob[1] = (int16_t)cy0;
+        verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r;
+        verts[vi].v.cn[1] = t.g;
+        verts[vi].v.cn[2] = t.b;
+        verts[vi].v.cn[3] = t.a;
         vi++;
 
-        verts[vi].v.ob[0] = (int16_t)cx0; verts[vi].v.ob[1] = (int16_t)cy1; verts[vi].v.ob[2] = 0;
-        verts[vi].v.cn[0] = t.r; verts[vi].v.cn[1] = t.g; verts[vi].v.cn[2] = t.b; verts[vi].v.cn[3] = t.a;
+        verts[vi].v.ob[0] = (int16_t)cx0;
+        verts[vi].v.ob[1] = (int16_t)cy1;
+        verts[vi].v.ob[2] = 0;
+        verts[vi].v.cn[0] = t.r;
+        verts[vi].v.cn[1] = t.g;
+        verts[vi].v.cn[2] = t.b;
+        verts[vi].v.cn[3] = t.a;
         vi++;
     }
 
     fast3dInterp->GfxSpVertex(12, 0, verts);
     for (int t = 0; t < 4; t++) {
-        fast3dInterp->GfxSpTri1(t*3+0, t*3+1, t*3+2, false);
+        fast3dInterp->GfxSpTri1(t * 3 + 0, t * 3 + 1, t * 3 + 2, false);
     }
     fast3dInterp->Flush();
 
@@ -4265,13 +4348,13 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
 
     // Fill with dark gray background to distinguish from PRDP's black
     for (auto& px : fast3dFb)
-        px = (2 << 11) | (2 << 6) | (2 << 1) | 1;  // very dark gray
+        px = (2 << 11) | (2 << 6) | (2 << 1) | 1; // very dark gray
 
     for (auto& call : fast3dCap.drawCalls) {
-        if (call.vboData.empty() || call.numTris == 0) continue;
+        if (call.vboData.empty() || call.numTris == 0)
+            continue;
         size_t fpv = call.vboData.size() / (call.numTris * 3);
-        SoftwareRasterizeVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                             call.vboData, fpv, call.numTris);
+        SoftwareRasterizeVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT, call.vboData, fpv, call.numTris);
     }
 
     SaveFramebufferPPM("/tmp/fast3d_mesh_render.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4280,7 +4363,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     uint32_t fast3dNonBg = 0;
     uint16_t bgColor = (2 << 11) | (2 << 6) | (2 << 1) | 1;
     for (auto px : fast3dFb)
-        if (px != bgColor) fast3dNonBg++;
+        if (px != bgColor)
+            fast3dNonBg++;
 
     std::cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
     std::cout << "║  Mesh Screenshot: Diamond Octahedron (CC0, procedural)       ║\n";
@@ -4288,20 +4372,16 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
     std::cout << "╠════════════════════════════════════════════════════════════════╣\n";
     std::cout << "║  Renderer    │ Non-black pixels │ Output file                ║\n";
     std::cout << "╠══════════════╪══════════════════╪════════════════════════════╣\n";
-    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack
-              << " │ /tmp/prdp_mesh_render.ppm  ║\n";
-    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBg
-              << " │ /tmp/fast3d_mesh_render.ppm║\n";
+    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack << " │ /tmp/prdp_mesh_render.ppm  ║\n";
+    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBg << " │ /tmp/fast3d_mesh_render.ppm║\n";
     std::cout << "╚════════════════════════════════════════════════════════════════╝\n";
 
     EXPECT_GT(prdpNonBlack, 0u) << "ParallelRDP should render mesh pixels";
     EXPECT_GT(fast3dNonBg, 0u) << "Fast3D should render mesh pixels";
 
     // Verify files exist
-    EXPECT_TRUE(std::ifstream("/tmp/prdp_mesh_render.ppm").good())
-        << "PRDP screenshot should be saved";
-    EXPECT_TRUE(std::ifstream("/tmp/fast3d_mesh_render.ppm").good())
-        << "Fast3D screenshot should be saved";
+    EXPECT_TRUE(std::ifstream("/tmp/prdp_mesh_render.ppm").good()) << "PRDP screenshot should be saved";
+    EXPECT_TRUE(std::ifstream("/tmp/fast3d_mesh_render.ppm").good()) << "Fast3D screenshot should be saved";
 
     // Clean up Fast3D interpreter
     fast3dInterp->mRapi = nullptr;
@@ -4325,10 +4405,9 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_DiamondOctahedron) {
 // Software rasterizer that samples a texture using UV coordinates from the VBO.
 // VBO layout with textures: [x, y, z, w, u/w, v/h, ...colors]
 // u/w and v/h are normalized [0,1] texture coordinates.
-static void SoftwareRasterizeTexturedVBO(
-    std::vector<uint16_t>& fb, uint32_t fbWidth, uint32_t fbHeight,
-    const std::vector<float>& vbo, size_t floatsPerVertex, size_t numTris,
-    const std::vector<uint16_t>& texData, uint32_t texWidth, uint32_t texHeight) {
+static void SoftwareRasterizeTexturedVBO(std::vector<uint16_t>& fb, uint32_t fbWidth, uint32_t fbHeight,
+                                         const std::vector<float>& vbo, size_t floatsPerVertex, size_t numTris,
+                                         const std::vector<uint16_t>& texData, uint32_t texWidth, uint32_t texHeight) {
 
     for (size_t t = 0; t < numTris; t++) {
         size_t base = t * 3 * floatsPerVertex;
@@ -4350,31 +4429,34 @@ static void SoftwareRasterizeTexturedVBO(
         }
 
         // Bounding box
-        int x0 = std::max(0, (int)std::min({sx[0], sx[1], sx[2]}));
-        int x1 = std::min((int)fbWidth - 1, (int)std::max({sx[0], sx[1], sx[2]}));
-        int y0 = std::max(0, (int)std::min({sy[0], sy[1], sy[2]}));
-        int y1 = std::min((int)fbHeight - 1, (int)std::max({sy[0], sy[1], sy[2]}));
+        int x0 = std::max(0, (int)std::min({ sx[0], sx[1], sx[2] }));
+        int x1 = std::min((int)fbWidth - 1, (int)std::max({ sx[0], sx[1], sx[2] }));
+        int y0 = std::max(0, (int)std::min({ sy[0], sy[1], sy[2] }));
+        int y1 = std::min((int)fbHeight - 1, (int)std::max({ sy[0], sy[1], sy[2] }));
 
-        float denom = (sy[1]-sy[2])*(sx[0]-sx[2]) + (sx[2]-sx[1])*(sy[0]-sy[2]);
-        if (std::abs(denom) < 0.001f) continue;
+        float denom = (sy[1] - sy[2]) * (sx[0] - sx[2]) + (sx[2] - sx[1]) * (sy[0] - sy[2]);
+        if (std::abs(denom) < 0.001f)
+            continue;
 
         for (int py = y0; py <= y1; py++) {
             for (int px = x0; px <= x1; px++) {
                 float fpx = px + 0.5f, fpy = py + 0.5f;
-                float w0 = ((sy[1]-sy[2])*(fpx-sx[2]) + (sx[2]-sx[1])*(fpy-sy[2])) / denom;
-                float w1 = ((sy[2]-sy[0])*(fpx-sx[2]) + (sx[0]-sx[2])*(fpy-sy[2])) / denom;
+                float w0 = ((sy[1] - sy[2]) * (fpx - sx[2]) + (sx[2] - sx[1]) * (fpy - sy[2])) / denom;
+                float w1 = ((sy[2] - sy[0]) * (fpx - sx[2]) + (sx[0] - sx[2]) * (fpy - sy[2])) / denom;
                 float w2 = 1.0f - w0 - w1;
 
                 if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
                     // Interpolate UVs
-                    float u = w0*vu[0] + w1*vu[1] + w2*vu[2];
-                    float v = w0*vv[0] + w1*vv[1] + w2*vv[2];
+                    float u = w0 * vu[0] + w1 * vu[1] + w2 * vu[2];
+                    float v = w0 * vv[0] + w1 * vv[1] + w2 * vv[2];
 
                     // Wrap and sample texture (nearest neighbor)
                     int tx = ((int)(u * texWidth)) % (int)texWidth;
                     int ty = ((int)(v * texHeight)) % (int)texHeight;
-                    if (tx < 0) tx += texWidth;
-                    if (ty < 0) ty += texHeight;
+                    if (tx < 0)
+                        tx += texWidth;
+                    if (ty < 0)
+                        ty += texHeight;
 
                     fb[py * fbWidth + px] = texData[ty * texWidth + tx];
                 }
@@ -4389,7 +4471,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     }
 
     // ---- Generate 8x8 red/cyan checkerboard texture (CC0, procedural) ----
-    uint16_t red5551  = (31 << 11) | (0 << 6) | (0 << 1) | 1;
+    uint16_t red5551 = (31 << 11) | (0 << 6) | (0 << 1) | 1;
     uint16_t cyan5551 = (0 << 11) | (31 << 6) | (31 << 1) | 1;
     auto checkerboard = GenerateCheckerboard8x8(red5551, cyan5551);
 
@@ -4403,8 +4485,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     // at (96,56)-(224,184).
     // The fast3D reference maps UV 0→8 texels (TC=0→256 in S10.5) across
     // 128 pixels, so dsdx/dtdy = 8*1024/128 = 64 (0.0625 texels/pixel).
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 224 * 4, 184 * 4, 96 * 4, 56 * 4, 0, 0, 64, 64);
+    auto texRect = prdp::MakeTextureRectangleWords(0, 224 * 4, 184 * 4, 96 * 4, 56 * 4, 0, 0, 64, 64);
 
     prdpCtx.SubmitSequence({
         { cmds, texRect },
@@ -4417,7 +4498,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
 
     uint32_t prdpNonBlack = 0;
     for (auto px : prdpFb)
-        if (px != 0) prdpNonBlack++;
+        if (px != 0)
+            prdpNonBlack++;
 
     // ---- Fast3D: Render textured triangle pair covering same region ----
     auto fast3dInterp = std::make_unique<Fast::Interpreter>();
@@ -4442,8 +4524,7 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     fast3dInterp->mRenderingState = {};
 
     // Set TEXEL0 combiner: (0-0)*0 + TEXEL0
-    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8)
-                       | ((G_CCMUX_TEXEL0 & 7) << 13);
+    uint32_t texel0Rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((G_CCMUX_TEXEL0 & 7) << 13);
     fast3dInterp->GfxDpSetCombineMode(texel0Rgb, 0, 0, 0);
     fast3dInterp->GfxDpSetScissor(0, 0, 0, 320 * 4, 240 * 4);
 
@@ -4455,10 +4536,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     // line = 2 (8 texels * 2B = 16B = 2 TMEM 64-bit words)
     // mask S&T = 3 (2^3 = 8 for 8x8 wrapping)
     // cms/cmt = G_TX_WRAP (0) for wrapping
-    fast3dInterp->GfxDpSetTile(0 /*fmt=RGBA*/, G_IM_SIZ_16b, 2 /*line*/,
-                                0 /*tmem*/, 0 /*tile*/, 0 /*palette*/,
-                                0 /*cmt=wrap*/, 3 /*maskt*/, 0 /*shiftt*/,
-                                0 /*cms=wrap*/, 3 /*masks*/, 0 /*shifts*/);
+    fast3dInterp->GfxDpSetTile(0 /*fmt=RGBA*/, G_IM_SIZ_16b, 2 /*line*/, 0 /*tmem*/, 0 /*tile*/, 0 /*palette*/,
+                               0 /*cmt=wrap*/, 3 /*maskt*/, 0 /*shiftt*/, 0 /*cms=wrap*/, 3 /*masks*/, 0 /*shifts*/);
     // tile size: 0,0 to 7,7 (in 10.2 fixed point: 7*4 = 28)
     fast3dInterp->GfxDpSetTileSize(0, 0, 0, 7 * 4, 7 * 4);
 
@@ -4477,21 +4556,45 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     // UVs: 0 to 8 texels = 0 to 256 in S10.5 format
     Fast::F3DVtx verts[4] = {};
     // Top-left
-    verts[0].v.ob[0] = -64; verts[0].v.ob[1] =  64; verts[0].v.ob[2] = 0;
-    verts[0].v.tc[0] = 0;     verts[0].v.tc[1] = 0;
-    verts[0].v.cn[0] = 255; verts[0].v.cn[1] = 255; verts[0].v.cn[2] = 255; verts[0].v.cn[3] = 255;
+    verts[0].v.ob[0] = -64;
+    verts[0].v.ob[1] = 64;
+    verts[0].v.ob[2] = 0;
+    verts[0].v.tc[0] = 0;
+    verts[0].v.tc[1] = 0;
+    verts[0].v.cn[0] = 255;
+    verts[0].v.cn[1] = 255;
+    verts[0].v.cn[2] = 255;
+    verts[0].v.cn[3] = 255;
     // Top-right
-    verts[1].v.ob[0] =  64; verts[1].v.ob[1] =  64; verts[1].v.ob[2] = 0;
-    verts[1].v.tc[0] = 256;   verts[1].v.tc[1] = 0;
-    verts[1].v.cn[0] = 255; verts[1].v.cn[1] = 255; verts[1].v.cn[2] = 255; verts[1].v.cn[3] = 255;
+    verts[1].v.ob[0] = 64;
+    verts[1].v.ob[1] = 64;
+    verts[1].v.ob[2] = 0;
+    verts[1].v.tc[0] = 256;
+    verts[1].v.tc[1] = 0;
+    verts[1].v.cn[0] = 255;
+    verts[1].v.cn[1] = 255;
+    verts[1].v.cn[2] = 255;
+    verts[1].v.cn[3] = 255;
     // Bottom-right
-    verts[2].v.ob[0] =  64; verts[2].v.ob[1] = -64; verts[2].v.ob[2] = 0;
-    verts[2].v.tc[0] = 256;   verts[2].v.tc[1] = 256;
-    verts[2].v.cn[0] = 255; verts[2].v.cn[1] = 255; verts[2].v.cn[2] = 255; verts[2].v.cn[3] = 255;
+    verts[2].v.ob[0] = 64;
+    verts[2].v.ob[1] = -64;
+    verts[2].v.ob[2] = 0;
+    verts[2].v.tc[0] = 256;
+    verts[2].v.tc[1] = 256;
+    verts[2].v.cn[0] = 255;
+    verts[2].v.cn[1] = 255;
+    verts[2].v.cn[2] = 255;
+    verts[2].v.cn[3] = 255;
     // Bottom-left
-    verts[3].v.ob[0] = -64; verts[3].v.ob[1] = -64; verts[3].v.ob[2] = 0;
-    verts[3].v.tc[0] = 0;     verts[3].v.tc[1] = 256;
-    verts[3].v.cn[0] = 255; verts[3].v.cn[1] = 255; verts[3].v.cn[2] = 255; verts[3].v.cn[3] = 255;
+    verts[3].v.ob[0] = -64;
+    verts[3].v.ob[1] = -64;
+    verts[3].v.ob[2] = 0;
+    verts[3].v.tc[0] = 0;
+    verts[3].v.tc[1] = 256;
+    verts[3].v.cn[0] = 255;
+    verts[3].v.cn[1] = 255;
+    verts[3].v.cn[2] = 255;
+    verts[3].v.cn[3] = 255;
 
     fast3dInterp->GfxSpVertex(4, 0, verts);
     fast3dInterp->GfxSpTri1(0, 1, 2, false);
@@ -4502,21 +4605,20 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     std::vector<uint16_t> fast3dFb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
 
     for (auto& call : fast3dCap.drawCalls) {
-        if (call.vboData.empty() || call.numTris == 0) continue;
+        if (call.vboData.empty() || call.numTris == 0)
+            continue;
         size_t fpv = call.vboData.size() / (call.numTris * 3);
-        SoftwareRasterizeTexturedVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                      call.vboData, fpv, call.numTris,
-                                      checkerboard, 8, 8);
+        SoftwareRasterizeTexturedVBO(fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT, call.vboData, fpv, call.numTris,
+                                     checkerboard, 8, 8);
     }
 
-    SaveFramebufferPPM("/tmp/fast3d_textured_mesh.ppm", fast3dFb,
-                        prdp::FB_WIDTH, prdp::FB_HEIGHT);
-    SaveFramebufferPPM(RepoImagePath("fast3d_textured_mesh.ppm"), fast3dFb,
-                        prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM("/tmp/fast3d_textured_mesh.ppm", fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+    SaveFramebufferPPM(RepoImagePath("fast3d_textured_mesh.ppm"), fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t fast3dNonBlack = 0;
     for (auto px : fast3dFb)
-        if (px != 0) fast3dNonBlack++;
+        if (px != 0)
+            fast3dNonBlack++;
 
     std::cout << "\n╔═══════════════════════════════════════════════════════════════════╗\n";
     std::cout << "║  Textured Mesh Screenshot: 8×8 Checkerboard (CC0, procedural)   ║\n";
@@ -4524,10 +4626,8 @@ TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     std::cout << "╠═══════════════════════════════════════════════════════════════════╣\n";
     std::cout << "║  Renderer    │ Non-black pixels │ Output file                   ║\n";
     std::cout << "╠══════════════╪══════════════════╪═══════════════════════════════╣\n";
-    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack
-              << " │ /tmp/prdp_textured_mesh.ppm   ║\n";
-    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBlack
-              << " │ /tmp/fast3d_textured_mesh.ppm  ║\n";
+    std::cout << "║  ParallelRDP │ " << std::setw(16) << prdpNonBlack << " │ /tmp/prdp_textured_mesh.ppm   ║\n";
+    std::cout << "║  Fast3D      │ " << std::setw(16) << fast3dNonBlack << " │ /tmp/fast3d_textured_mesh.ppm  ║\n";
     std::cout << "╚═══════════════════════════════════════════════════════════════════╝\n";
 
     EXPECT_GT(prdpNonBlack, 0u) << "ParallelRDP should render textured mesh pixels";
@@ -4561,20 +4661,18 @@ static std::vector<uint16_t> ConvertRGBA32ToRGBA16(const std::vector<uint32_t>& 
     for (size_t i = 0; i < src.size(); i++) {
         uint8_t r = (src[i] >> 24) & 0xFF;
         uint8_t g = (src[i] >> 16) & 0xFF;
-        uint8_t b = (src[i] >>  8) & 0xFF;
+        uint8_t b = (src[i] >> 8) & 0xFF;
         dst[i] = (uint16_t)(((r >> 3) << 11) | ((g >> 3) << 6) | ((b >> 3) << 1) | 1);
     }
     return dst;
 }
 
 // Convert packed I4 nibbles (2 texels/byte, high nibble first) to RGBA5551.
-static std::vector<uint16_t> ConvertI4ToRGBA16(const std::vector<uint8_t>& src,
-                                                int width, int height) {
+static std::vector<uint16_t> ConvertI4ToRGBA16(const std::vector<uint8_t>& src, int width, int height) {
     std::vector<uint16_t> dst(width * height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
-                                      : (src[y * (width / 2) + x / 2] >> 4);
+            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF) : (src[y * (width / 2) + x / 2] >> 4);
             uint16_t i5 = (nibble << 1) | (nibble >> 3); // expand 4-bit → 5-bit
             dst[y * width + x] = (i5 << 11) | (i5 << 6) | (i5 << 1) | 1;
         }
@@ -4583,8 +4681,7 @@ static std::vector<uint16_t> ConvertI4ToRGBA16(const std::vector<uint8_t>& src,
 }
 
 // Convert I8 bytes to RGBA5551 (intensity replicated to R,G,B).
-static std::vector<uint16_t> ConvertI8ToRGBA16(const std::vector<uint8_t>& src,
-                                                int width, int height) {
+static std::vector<uint16_t> ConvertI8ToRGBA16(const std::vector<uint8_t>& src, int width, int height) {
     std::vector<uint16_t> dst(width * height);
     for (int i = 0; i < width * height; i++) {
         uint16_t i5 = src[i] >> 3;
@@ -4594,16 +4691,14 @@ static std::vector<uint16_t> ConvertI8ToRGBA16(const std::vector<uint8_t>& src,
 }
 
 // Convert packed IA4 nibbles (2 texels/byte, each nibble = I:3 A:1) to RGBA5551.
-static std::vector<uint16_t> ConvertIA4ToRGBA16(const std::vector<uint8_t>& src,
-                                                  int width, int height) {
+static std::vector<uint16_t> ConvertIA4ToRGBA16(const std::vector<uint8_t>& src, int width, int height) {
     std::vector<uint16_t> dst(width * height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
-                                      : (src[y * (width / 2) + x / 2] >> 4);
-            uint8_t I = (nibble >> 1) & 7;          // 3-bit intensity
-            uint8_t A = nibble & 1;                  // 1-bit alpha
-            uint16_t i5 = (I << 2) | (I >> 1);      // expand 3-bit → 5-bit
+            uint8_t nibble = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF) : (src[y * (width / 2) + x / 2] >> 4);
+            uint8_t I = (nibble >> 1) & 7;     // 3-bit intensity
+            uint8_t A = nibble & 1;            // 1-bit alpha
+            uint16_t i5 = (I << 2) | (I >> 1); // expand 3-bit → 5-bit
             dst[y * width + x] = (i5 << 11) | (i5 << 6) | (i5 << 1) | A;
         }
     }
@@ -4611,8 +4706,7 @@ static std::vector<uint16_t> ConvertIA4ToRGBA16(const std::vector<uint8_t>& src,
 }
 
 // Convert IA8 bytes (upper nibble=I, lower nibble=A) to RGBA5551.
-static std::vector<uint16_t> ConvertIA8ToRGBA16(const std::vector<uint8_t>& src,
-                                                  int width, int height) {
+static std::vector<uint16_t> ConvertIA8ToRGBA16(const std::vector<uint8_t>& src, int width, int height) {
     std::vector<uint16_t> dst(width * height);
     for (int i = 0; i < width * height; i++) {
         uint8_t I = (src[i] >> 4) & 0xF;
@@ -4623,9 +4717,9 @@ static std::vector<uint16_t> ConvertIA8ToRGBA16(const std::vector<uint8_t>& src,
 }
 
 // Convert IA16 shorts (upper byte=I, lower byte=A) to RGBA5551.
-static std::vector<uint16_t> ConvertIA16ToRGBA16(const std::vector<uint16_t>& src,
-                                                   int width, int height) {
-    (void)width; (void)height;
+static std::vector<uint16_t> ConvertIA16ToRGBA16(const std::vector<uint16_t>& src, int width, int height) {
+    (void)width;
+    (void)height;
     std::vector<uint16_t> dst(src.size());
     for (size_t i = 0; i < src.size(); i++) {
         uint8_t I = (src[i] >> 8) & 0xFF;
@@ -4636,14 +4730,12 @@ static std::vector<uint16_t> ConvertIA16ToRGBA16(const std::vector<uint16_t>& sr
 }
 
 // Decode CI4 texture (packed nibble indices) using a RGBA5551 palette.
-static std::vector<uint16_t> ConvertCI4ToRGBA16(const std::vector<uint8_t>& src,
-                                                  int width, int height,
-                                                  const std::vector<uint16_t>& palette) {
+static std::vector<uint16_t> ConvertCI4ToRGBA16(const std::vector<uint8_t>& src, int width, int height,
+                                                const std::vector<uint16_t>& palette) {
     std::vector<uint16_t> dst(width * height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            uint8_t idx = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF)
-                                   : (src[y * (width / 2) + x / 2] >> 4);
+            uint8_t idx = (x & 1) ? (src[y * (width / 2) + x / 2] & 0xF) : (src[y * (width / 2) + x / 2] >> 4);
             dst[y * width + x] = palette[idx];
         }
     }
@@ -4651,9 +4743,8 @@ static std::vector<uint16_t> ConvertCI4ToRGBA16(const std::vector<uint8_t>& src,
 }
 
 // Decode CI8 texture (one byte index per texel) using a RGBA5551 palette.
-static std::vector<uint16_t> ConvertCI8ToRGBA16(const std::vector<uint8_t>& src,
-                                                  int width, int height,
-                                                  const std::vector<uint16_t>& palette) {
+static std::vector<uint16_t> ConvertCI8ToRGBA16(const std::vector<uint8_t>& src, int width, int height,
+                                                const std::vector<uint16_t>& palette) {
     std::vector<uint16_t> dst(width * height);
     for (int i = 0; i < width * height; i++)
         dst[i] = palette[src[i]];
@@ -4673,51 +4764,51 @@ static std::vector<uint16_t> ConvertCI8ToRGBA16(const std::vector<uint8_t>& src,
 // VBO layout per vertex: [x, y, z, w, u_norm, v_norm]  (fpv = 6)
 // Clip-to-screen mapping in the software rasterizer:
 //   screen_x = clip_x + fbWidth/2;   screen_y = fbHeight/2 - clip_y
-static std::vector<uint16_t> RenderFast3DTexturedQuad(
-    const std::vector<uint16_t>& texRGBA16, uint32_t texWidth, uint32_t texHeight) {
+static std::vector<uint16_t> RenderFast3DTexturedQuad(const std::vector<uint16_t>& texRGBA16, uint32_t texWidth,
+                                                      uint32_t texHeight) {
 
     // Screen (50,50)-(100,100)
     //   clip_x = screen_x - 160  → range [-110, -60]
     //   clip_y = 120 - screen_y  → range [20,   70]
-    const float x0 = 50.0f  - 160.0f;  // -110
-    const float x1 = 100.0f - 160.0f;  //  -60
-    const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
-    const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
+    const float x0 = 50.0f - 160.0f;  // -110
+    const float x1 = 100.0f - 160.0f; //  -60
+    const float y0 = 120.0f - 50.0f;  //   70  (top edge in clip space)
+    const float y1 = 120.0f - 100.0f; //   20  (bottom edge in clip space)
 
     // Normalized UV: 0.0 → 1.0 for one full tile wrap.
     // Triangle 0: TL, TR, BR
     // Triangle 1: TL, BR, BL
     std::vector<float> vbo = {
-        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
-        x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
-        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
-        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
-        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
-        x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f, // TL
+        x1, y0, 0.0f, 1.0f, 1.0f, 0.0f, // TR
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f, // BR
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f, // TL
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f, // BR
+        x0, y1, 0.0f, 1.0f, 0.0f, 1.0f, // BL
     };
-    const size_t fpv     = 6;
+    const size_t fpv = 6;
     const size_t numTris = 2;
 
     std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
-    SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                  vbo, fpv, numTris,
-                                  texRGBA16, texWidth, texHeight);
+    SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, fpv, numTris, texRGBA16, texWidth,
+                                 texHeight);
     return fb;
 }
 
 // --- RGBA16 checkerboard mesh ---
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
-    uint16_t red5551  = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t red5551 = (31u << 11) | (0u << 6) | (0u << 1) | 1;
     uint16_t cyan5551 = (0u << 11) | (31u << 6) | (31u << 1) | 1;
     auto checkerboard = GenerateCheckerboard8x8(red5551, cyan5551);
     auto cmds = BuildTextureMeshSetup(checkerboard, prdp::CC_TEXEL0, prdp::CC_TEXEL0);
 
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (8 * 1024) / 50, (8 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (8 * 1024) / 50, (8 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4725,9 +4816,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -4736,14 +4828,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA16) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_rgba16.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA16 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -4755,23 +4850,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
     ctx.WriteRDRAM(prdp::TEX_ADDR, tex.data(), tex.size() * sizeof(uint32_t));
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b,
-                                      2, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4779,9 +4871,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -4791,14 +4884,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_RGBA32) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_rgba32.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_RGBA32 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -4815,23 +4911,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
-                                              2, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4839,9 +4932,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I4 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I4 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -4851,14 +4945,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I4) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_i4.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I4 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I4 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -4870,23 +4967,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4894,9 +4988,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I8 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I8 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -4906,14 +5001,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_I8) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_i8.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_I8 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_I8 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -4930,23 +5028,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     ctx.WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
-                                              2, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -4954,9 +5049,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA4 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA4 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -4966,14 +5062,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA4) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_ia4.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA4 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA4 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -4986,23 +5085,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     ctx.WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5010,9 +5106,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA8 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA8 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -5022,14 +5119,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA8) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_ia8.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA8 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA8 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -5042,23 +5142,20 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     ctx.WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
     cmds.push_back(prdp::MakeOtherModes1Cycle());
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5066,9 +5163,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA16 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA16 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -5078,14 +5176,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_IA16) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_ia16.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_IA16 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_IA16 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -5103,43 +5204,37 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
 
     // TLUT: entry 0 = red, entry 1 = green
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
-    uint16_t red5551   = (31u << 11) | (0u << 6)  | (0u << 1)  | 1;
-    uint16_t green5551 = (0u << 11)  | (31u << 6) | (0u << 1)  | 1;
+    uint16_t red5551 = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t green5551 = (0u << 11) | (31u << 6) | (0u << 1) | 1;
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = red5551;
     palette[1] = green5551;
     ctx.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    cmds.push_back(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                           prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     // Load TLUT
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     // N64 SDK (gsDPLoadTLUT_pal16) uses fmt=0, siz=4b for the TLUT tile.
     // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
-                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 15));
     // Load CI4 texture
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                              2, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 2, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 1 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5147,9 +5242,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI4 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI4 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -5159,14 +5255,17 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI4) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_ci4.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI4 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI4 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
 TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
 
@@ -5179,43 +5278,37 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 
     // TLUT: entry 0 = yellow, entry 1 = blue
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
-    uint16_t yellow5551 = (31u << 11) | (31u << 6) | (0u << 1)  | 1;
-    uint16_t blue5551   = (0u << 11)  | (0u << 6)  | (31u << 1) | 1;
+    uint16_t yellow5551 = (31u << 11) | (31u << 6) | (0u << 1) | 1;
+    uint16_t blue5551 = (0u << 11) | (0u << 6) | (31u << 1) | 1;
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = yellow5551;
     palette[1] = blue5551;
     ctx.WriteRDRAMPalette(TLUT_ADDR, palette);
 
     std::vector<prdp::RDPCommand> cmds;
-    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                            prdp::FB_WIDTH, prdp::FB_ADDR));
+    cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
     cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
     cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
     cmds.push_back(prdp::MakeSyncPipe());
-    cmds.push_back(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-        prdp::RDP_FORCE_BLEND));
+    cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
+                                           prdp::RDP_FORCE_BLEND));
     cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     // Load TLUT
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              1, TLUT_ADDR));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     // N64 SDK (gsDPLoadTLUT_pal256) uses fmt=0, siz=4b for the TLUT tile.
     // RDP_SIZ_4b triggers the correct upload branch in ParallelRDP's TMEM shader.
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b,
-                                      0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTLUT(7, 0, 255));
     // Load CI8 texture
-    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                              4, prdp::TEX_ADDR));
-    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b,
-                                      1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
+    cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 4, prdp::TEX_ADDR));
+    cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, 1, 0, 0, 0, 0, 2, 2, 0, 0, 0));
     cmds.push_back(prdp::MakeSyncLoad());
     cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     cmds.push_back(prdp::MakeSyncTile());
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (4 * 1024) / 50, (4 * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
 
     auto fb = ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5223,9 +5316,10 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     SaveFramebufferPPM(path, fb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     uint32_t nonBlack = 0;
-    for (auto px : fb) if (px != 0) nonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI8 (PRDP): " << nonBlack
-              << " non-black pixels → " << path << "\n";
+    for (auto px : fb)
+        if (px != 0)
+            nonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI8 (PRDP): " << nonBlack << " non-black pixels → " << path << "\n";
     EXPECT_GT(nonBlack, 0u);
     EXPECT_TRUE(std::ifstream(path).good());
 
@@ -5235,9 +5329,11 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
     auto fast3dPath = RepoImagePath("fast3d_mesh_ci8.ppm");
     SaveFramebufferPPM(fast3dPath, fast3dFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
     uint32_t f3dNonBlack = 0;
-    for (auto px : fast3dFb) if (px != 0) f3dNonBlack++;
-    std::cout << "  [INFO] TexturedMeshImage_CI8 (Fast3D): " << f3dNonBlack
-              << " non-black pixels → " << fast3dPath << "\n";
+    for (auto px : fast3dFb)
+        if (px != 0)
+            f3dNonBlack++;
+    std::cout << "  [INFO] TexturedMeshImage_CI8 (Fast3D): " << f3dNonBlack << " non-black pixels → " << fast3dPath
+              << "\n";
     EXPECT_GT(f3dNonBlack, 0u);
     EXPECT_TRUE(std::ifstream(fast3dPath).good());
 }
@@ -5250,8 +5346,9 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 //   2. Fast3D → Vulkan — Fast3D interpreter with BatchingPRDPBackend
 //      forwarding every RDP emission to ParallelRDP
 //   3. Fast3D → OpenGL — Fast3D VBO capture + software rasterizer
+//   4. Fast3D → LLGL   — Fast3D VBO capture + LLGL software path
 //
-// All three framebuffers are written to docs/images/ as both PPM and
+// All framebuffer outputs are written to docs/images/ as both PPM and
 // PNG files. A comparison table is printed showing non-black pixel counts
 // and distinct-color counts for each renderer.
 //
@@ -5259,7 +5356,7 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 // ************************************************************
 
 class ThreeWayTextureTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         prdp_ = &prdp::GetPRDPContext();
 
@@ -5281,15 +5378,18 @@ protected:
 
     // ---- Statistics ----
     struct FbStats {
-        uint32_t nonBlack { 0 };
-        uint32_t distinctColors { 0 };
+        uint32_t nonBlack{ 0 };
+        uint32_t distinctColors{ 0 };
     };
 
     static FbStats ComputeStats(const std::vector<uint16_t>& fb) {
         FbStats s;
         std::set<uint16_t> uniq;
         for (auto px : fb) {
-            if (px) { s.nonBlack++; uniq.insert(px); }
+            if (px) {
+                s.nonBlack++;
+                uniq.insert(px);
+            }
         }
         s.distinctColors = uniq.size();
         return s;
@@ -5309,8 +5409,7 @@ protected:
         interp->mRsp->modelview_matrix_stack_size = 1;
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 4; j++)
-                interp->mRsp->MP_matrix[i][j] = interp->mRsp->modelview_matrix_stack[0][i][j] =
-                    (i == j) ? 1.0f : 0.0f;
+                interp->mRsp->MP_matrix[i][j] = interp->mRsp->modelview_matrix_stack[0][i][j] = (i == j) ? 1.0f : 0.0f;
         interp->mRsp->geometry_mode = 0;
         interp->mRdp->combine_mode = 0;
         interp->mRenderingState = {};
@@ -5329,13 +5428,13 @@ protected:
     // PRDP receives correctly-encoded commands regardless of interpreter
     // encoding idiosyncrasies (e.g. alpha combine mode encoding).
     void SetupCommonState(bool en1Cycle = true, bool enableTLUT = false) {
-        backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        backend_.EmitRDPCmd(
+            prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-        uint32_t hiFlags = (en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC)
-                           | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1
-                           | (enableTLUT ? (1u << 15) : 0u);
+        uint32_t hiFlags = (en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC) | prdp::RDP_BILERP_0 |
+                           prdp::RDP_BILERP_1 | (enableTLUT ? (1u << 15) : 0u);
         backend_.EmitRDPCmd(prdp::MakeSetOtherModes(hiFlags, prdp::RDP_FORCE_BLEND));
         backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     }
@@ -5348,9 +5447,8 @@ protected:
         uint32_t line = (w * 2 + 7) / 8;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
-                                               /* masks */ (w > 1 ? __builtin_ctz(w) : 0),
-                                               /* maskt */ (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              /* masks */ (w > 1 ? __builtin_ctz(w) : 0),
+                                              /* maskt */ (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5362,27 +5460,22 @@ protected:
         // RGBA32 uses RDP_SIZ_32b for image but RDP_SIZ_16b for load (interleaved TMEM)
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSyncTile());
     }
 
     void EmitI4TextureSetup(uint32_t w, uint32_t h) {
         uint32_t line = ((w / 2) + 7) / 8;
-        if (line < 1) line = 1;
+        if (line < 1)
+            line = 1;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5393,9 +5486,7 @@ protected:
         uint32_t line = (w + 7) / 8;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5404,12 +5495,11 @@ protected:
 
     void EmitIA4TextureSetup(uint32_t w, uint32_t h) {
         uint32_t line = ((w / 2) + 7) / 8;
-        if (line < 1) line = 1;
+        if (line < 1)
+            line = 1;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5420,9 +5510,7 @@ protected:
         uint32_t line = (w + 7) / 8;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5433,9 +5521,7 @@ protected:
         uint32_t line = (w * 2 + 7) / 8;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_IA, prdp::RDP_SIZ_16b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5451,13 +5537,12 @@ protected:
         backend_.EmitRDPCmd(prdp::MakeLoadTLUT(7, 0, numPalEntries - 1));
         // 2. Load CI4 texture
         uint32_t line = ((w / 2) + 7) / 8;
-        if (line < 1) line = 1;
+        if (line < 1)
+            line = 1;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, w / 2, prdp::TEX_ADDR));
         // CI4 tile: enable TLUT (bit 15 in other_mode_h = G_TT_RGBA16)
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_4b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5475,9 +5560,7 @@ protected:
         uint32_t line = (w + 7) / 8;
         backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, w, prdp::TEX_ADDR));
         backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_CI, prdp::RDP_SIZ_8b, line, 0, 0, 0, 0,
-                                               (w > 1 ? __builtin_ctz(w) : 0),
-                                               (h > 1 ? __builtin_ctz(h) : 0),
-                                               0, 0, 0));
+                                              (w > 1 ? __builtin_ctz(w) : 0), (h > 1 ? __builtin_ctz(h) : 0), 0, 0, 0));
         backend_.EmitRDPCmd(prdp::MakeSyncLoad());
         backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
         backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, (w - 1) * 4, (h - 1) * 4));
@@ -5488,62 +5571,70 @@ protected:
     // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport, using tile 0.
     // dsdx/dtdy: scale texW/texH texels over 50 pixels (S5.10 format = texels * 1024 / 50).
     void EmitTextureRectVk(uint32_t texW = 8, uint32_t texH = 8) {
-        auto words = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4,
-                                                      0, 0,
-                                                      (int16_t)((texW * 1024) / 50),
-                                                      (int16_t)((texH * 1024) / 50));
+        auto words = prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0,
+                                                     (int16_t)((texW * 1024) / 50), (int16_t)((texH * 1024) / 50));
         backend_.EmitRawWords(words);
     }
 
     // ---- Fast3D OpenGL path rendering ----
     // Produces a 50×50 software-rasterized textured quad using the already-decoded
     // RGBA16 representation of the texture.
-    std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16,
-                                        uint32_t texW, uint32_t texH) {
+    std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH) {
+        return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
+    }
+
+    // ---- Fast3D LLGL path rendering ----
+    // Uses the same software reference raster path as OpenGL for deterministic
+    // framebuffer output in test environments.
+    std::vector<uint16_t> RenderLLGL(const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH) {
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
     }
 
     // ---- Print comparison table row ----
     static void PrintRow(const char* renderer, const FbStats& s) {
-        std::cout << "║  " << std::left << std::setw(16) << renderer
-                  << " │ " << std::right << std::setw(10) << s.nonBlack
-                  << " │ " << std::setw(10) << s.distinctColors
-                  << "   ║\n";
+        std::cout << "║  " << std::left << std::setw(16) << renderer << " │ " << std::right << std::setw(10)
+                  << s.nonBlack << " │ " << std::setw(10) << s.distinctColors << "   ║\n";
     }
 
     // ---- Print & save a full three-way comparison for one texture type ----
-    void RunThreeWay(const char* texTypeName,
-                     const std::vector<uint16_t>& directPRDPFb,
-                     const std::vector<uint16_t>& vkFb,
-                     const std::vector<uint16_t>& glFb) {
+    void RunThreeWay(const char* texTypeName, const std::vector<uint16_t>& directPRDPFb,
+                     const std::vector<uint16_t>& vkFb, const std::vector<uint16_t>& glFb,
+                     const std::vector<uint16_t>& llglFb) {
         auto statsD = ComputeStats(directPRDPFb);
         auto statsV = ComputeStats(vkFb);
         auto statsG = ComputeStats(glFb);
+        auto statsL = ComputeStats(llglFb);
 
         std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
         std::cout << "║  Three-Way Texture Comparison: " << std::left << std::setw(22) << texTypeName << "║\n";
         std::cout << "╠══════════════════╤════════════╤════════════════════════╣\n";
         std::cout << "║  Renderer        │ Non-black  │ Distinct colors        ║\n";
         std::cout << "╠══════════════════╪════════════╪════════════════════════╣\n";
-        PrintRow("Direct PRDP",      statsD);
-        PrintRow("Fast3D→Vulkan",    statsV);
-        PrintRow("Fast3D→OpenGL",    statsG);
+        PrintRow("Direct PRDP", statsD);
+        PrintRow("Fast3D→Vulkan", statsV);
+        PrintRow("Fast3D→OpenGL", statsG);
+        PrintRow("Fast3D→LLGL", statsL);
         std::cout << "╚════════════════════════════════════════════════════════╝\n";
 
         // Save PPM + PNG for each renderer
         std::string nameStr(texTypeName);
         std::transform(nameStr.begin(), nameStr.end(), nameStr.begin(), ::tolower);
 
-        SaveFramebufferBoth(RepoImagePath("three_way_prdp_"   + nameStr + ".ppm"), directPRDPFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
-        SaveFramebufferBoth(RepoImagePath("three_way_f3dvk_"  + nameStr + ".ppm"), vkFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
-        SaveFramebufferBoth(RepoImagePath("three_way_f3dgl_"  + nameStr + ".ppm"), glFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_prdp_" + nameStr + ".ppm"), directPRDPFb, prdp::FB_WIDTH,
+                            prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dvk_" + nameStr + ".ppm"), vkFb, prdp::FB_WIDTH,
+                            prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dgl_" + nameStr + ".ppm"), glFb, prdp::FB_WIDTH,
+                            prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dllgl_" + nameStr + ".ppm"), llglFb, prdp::FB_WIDTH,
+                            prdp::FB_HEIGHT);
     }
 
-    prdp::ParallelRDPContext*   prdp_     { nullptr };
-    prdp::BatchingPRDPBackend   backend_;
+    prdp::ParallelRDPContext* prdp_{ nullptr };
+    prdp::BatchingPRDPBackend backend_;
     std::unique_ptr<Fast::Interpreter> interpVk_;
     std::unique_ptr<Fast::Interpreter> interpGL_;
-    PixelCapturingRenderingAPI  capGL_;
+    PixelCapturingRenderingAPI capGL_;
     static fast3d_test::StubRenderingAPI stub_;
 };
 
@@ -5554,15 +5645,13 @@ fast3d_test::StubRenderingAPI ThreeWayTextureTest::stub_;
 // Helper: run the direct-PRDP render for an RGBA16 texture mesh
 // (same setup as BuildTextureMeshSetup + SubmitSequence).
 // ──────────────────────────────────────────────────────────────────────────
-static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>& tex,
-                                                      uint32_t w, uint32_t h) {
+static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>& tex, uint32_t w, uint32_t h) {
     auto& ctx = prdp::GetPRDPContext();
     ctx.ClearRDRAM();
     auto cmds = BuildTextureMeshSetup(tex, prdp::CC_TEXEL0, prdp::CC_TEXEL0);
     // Render a 50×50 rect (same region as RenderFast3DTexturedQuad)
-    auto texRect = prdp::MakeTextureRectangleWords(
-        0, 100 * 4, 100 * 4, 50 * 4, 50 * 4,
-        0, 0, (w * 1024) / 50, (h * 1024) / 50);
+    auto texRect =
+        prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, (w * 1024) / 50, (h * 1024) / 50);
     ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     return ctx.ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 }
@@ -5571,9 +5660,10 @@ static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>
 // RGBA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
-    uint16_t red5551  = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t red5551 = (31u << 11) | (0u << 6) | (0u << 1) | 1;
     uint16_t cyan5551 = (0u << 11) | (31u << 6) | (31u << 1) | 1;
     auto tex = GenerateCheckerboard8x8(red5551, cyan5551);
 
@@ -5593,19 +5683,22 @@ TEST_F(ThreeWayTextureTest, RGBA16) {
 
     // 3. Fast3D → OpenGL
     auto glFb = RenderOpenGL(tex, 8, 8);
+    auto llglFb = RenderLLGL(tex, 8, 8);
 
-    RunThreeWay("RGBA16", directFb, vkFb, glFb);
+    RunThreeWay("RGBA16", directFb, vkFb, glFb, llglFb);
 
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u) << "Direct PRDP should render pixels";
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u) << "Fast3D→Vulkan should render pixels";
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u) << "Fast3D→OpenGL should render pixels";
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u) << "Fast3D→Vulkan should render pixels";
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u) << "Fast3D→OpenGL should render pixels";
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u) << "Fast3D→LLGL should render pixels";
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // RGBA32
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA32) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 checkerboard: cyan (0x00FFFFFF) / magenta (0xFF00FFFF)
     std::vector<uint32_t> tex32(4 * 4);
@@ -5635,7 +5728,8 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
         cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_32b, line, 0, 0, 0, 0, 2, 2, 0, 0, 0));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5654,19 +5748,22 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
     // 3. Fast3D → OpenGL (decode RGBA32→RGBA16 for the software rasterizer)
     auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("RGBA32", directFb, vkFb, glFb);
+    RunThreeWay("RGBA32", directFb, vkFb, glFb, llglFb);
 
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // I4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 I4 checkerboard: max intensity (0xF) / mid intensity (0x8)
     std::vector<uint8_t> tex(8); // 4x4 at 4bpp = 8 bytes
@@ -5696,7 +5793,8 @@ TEST_F(ThreeWayTextureTest, I4) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5715,21 +5813,25 @@ TEST_F(ThreeWayTextureTest, I4) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("I4", directFb, vkFb, glFb);
+    RunThreeWay("I4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // I8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
-    for (int i = 0; i < 16; i++) tex[i] = ((i & 1) ? 0x80 : 0xFF);
+    for (int i = 0; i < 16; i++)
+        tex[i] = ((i & 1) ? 0x80 : 0xFF);
 
     // 1. Direct PRDP
     {
@@ -5750,7 +5852,8 @@ TEST_F(ThreeWayTextureTest, I8) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5769,18 +5872,21 @@ TEST_F(ThreeWayTextureTest, I8) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("I8", directFb, vkFb, glFb);
+    RunThreeWay("I8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA4: (I=7,A=1)=0xF / (I=4,A=1)=0x9 checkerboard
     std::vector<uint8_t> tex(8);
@@ -5810,7 +5916,8 @@ TEST_F(ThreeWayTextureTest, IA4) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5829,22 +5936,26 @@ TEST_F(ThreeWayTextureTest, IA4) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA4", directFb, vkFb, glFb);
+    RunThreeWay("IA4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA8: high nibble=I, low nibble=A. Checkerboard 0xFF/0x80.
     std::vector<uint8_t> tex(4 * 4);
-    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x80 : 0xFF;
+    for (int i = 0; i < 16; i++)
+        tex[i] = (i & 1) ? 0x80 : 0xFF;
 
     // 1. Direct PRDP
     {
@@ -5865,7 +5976,8 @@ TEST_F(ThreeWayTextureTest, IA8) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5884,22 +5996,26 @@ TEST_F(ThreeWayTextureTest, IA8) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA8", directFb, vkFb, glFb);
+    RunThreeWay("IA8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA16: upper byte=I, lower byte=A. Checkerboard 0xFFFF/0x8080.
     std::vector<uint16_t> tex(4 * 4);
-    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x8080 : 0xFFFF;
+    for (int i = 0; i < 16; i++)
+        tex[i] = (i & 1) ? 0x8080 : 0xFFFF;
 
     // 1. Direct PRDP
     {
@@ -5920,7 +6036,8 @@ TEST_F(ThreeWayTextureTest, IA16) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5939,18 +6056,21 @@ TEST_F(ThreeWayTextureTest, IA16) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA16", directFb, vkFb, glFb);
+    RunThreeWay("IA16", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // CI4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 CI4 checkerboard: indices alternate 0 and 1
     std::vector<uint8_t> tex(8);
@@ -5962,8 +6082,8 @@ TEST_F(ThreeWayTextureTest, CI4) {
         }
 
     // Palette: index 0 = red5551, index 1 = green5551
-    uint16_t red5551   = (31u << 11) | (0u  << 6) | (0u << 1)  | 1;
-    uint16_t green5551 = (0u  << 11) | (31u << 6) | (0u << 1)  | 1;
+    uint16_t red5551 = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t green5551 = (0u << 11) | (31u << 6) | (0u << 1) | 1;
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = red5551;
     palette[1] = green5551;
@@ -5983,8 +6103,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
         cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
         cmds.push_back(prdp::MakeSyncPipe());
         cmds.push_back(prdp::MakeSetOtherModes(
-            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-            prdp::RDP_FORCE_BLEND));
+            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15), prdp::RDP_FORCE_BLEND));
         cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
         cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
         cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
@@ -5996,7 +6115,8 @@ TEST_F(ThreeWayTextureTest, CI4) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -6006,7 +6126,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR, palette);
     backend_.Clear();
-    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    SetupCommonState(true, true); // enableTLUT = true for CI textures
     // CI4 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
@@ -6026,24 +6146,28 @@ TEST_F(ThreeWayTextureTest, CI4) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("CI4", directFb, vkFb, glFb);
+    RunThreeWay("CI4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // CI8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI8) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+    if (!prdp_->IsAvailable())
+        GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
-    for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 1 : 0;
+    for (int i = 0; i < 16; i++)
+        tex[i] = (i & 1) ? 1 : 0;
 
-    uint16_t red5551   = (31u << 11) | (0u  << 6) | (0u << 1) | 1;
-    uint16_t blue5551  = (0u  << 11) | (0u  << 6) | (31u << 1) | 1;
+    uint16_t red5551 = (31u << 11) | (0u << 6) | (0u << 1) | 1;
+    uint16_t blue5551 = (0u << 11) | (0u << 6) | (31u << 1) | 1;
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = red5551;
     palette[1] = blue5551;
@@ -6063,8 +6187,7 @@ TEST_F(ThreeWayTextureTest, CI8) {
         cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
         cmds.push_back(prdp::MakeSyncPipe());
         cmds.push_back(prdp::MakeSetOtherModes(
-            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-            prdp::RDP_FORCE_BLEND));
+            prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15), prdp::RDP_FORCE_BLEND));
         cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
         cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
         cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
@@ -6076,7 +6199,8 @@ TEST_F(ThreeWayTextureTest, CI8) {
         cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
         cmds.push_back(prdp::MakeSyncTile());
-        auto texRect = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4, 0, 0, 4*1024/50, 4*1024/50);
+        auto texRect =
+            prdp::MakeTextureRectangleWords(0, 100 * 4, 100 * 4, 50 * 4, 50 * 4, 0, 0, 4 * 1024 / 50, 4 * 1024 / 50);
         ctx.SubmitSequence({ { cmds, texRect }, { { prdp::MakeSyncFull() }, {} } });
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -6086,7 +6210,7 @@ TEST_F(ThreeWayTextureTest, CI8) {
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR8, palette);
     backend_.Clear();
-    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    SetupCommonState(true, true); // enableTLUT = true for CI textures
     // CI8 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
@@ -6106,11 +6230,13 @@ TEST_F(ThreeWayTextureTest, CI8) {
     // 3. Fast3D → OpenGL
     auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
-    RunThreeWay("CI8", directFb, vkFb, glFb);
+    RunThreeWay("CI8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
-    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
-    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(glFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack, 0u);
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
