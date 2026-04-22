@@ -5324,25 +5324,20 @@ protected:
         backend_.Clear();
     }
 
-    // ---- Common RDP state setup (emitted via Fast3D interpreter) ----
-    // Returns interpreter with state set; also pushes those commands to backend.
-    void SetupCommonState(Fast::Interpreter& interp, bool en1Cycle = true) {
-        // Use fake pointers whose low 26 bits match FB_ADDR / ZBUF_ADDR so
-        // ParallelRDP reads/writes from the correct RDRAM locations.
-        interp.GfxDpSetColorImage(0 /*RGBA*/, 1 /*16b*/, prdp::FB_WIDTH,
-                                   reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-        interp.GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-        interp.GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-
-        uint32_t cycBits = en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC;
-        interp.GfxDpSetOtherMode(cycBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                                  prdp::RDP_FORCE_BLEND);
-
-        // TEXEL0 combiner: output = texel colour directly
-        // SET_COMBINE encoding: A=0, B=0, C=0, D=TEXEL0(1)
-        constexpr uint32_t texel0D = 1;
-        uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-        interp.GfxDpSetCombineMode(rgb, 0, 0, 0);
+    // ---- Common RDP state setup (injected directly to backend) ----
+    // Emits the same RDP header sequence as the Direct PRDP tests so that
+    // PRDP receives correctly-encoded commands regardless of interpreter
+    // encoding idiosyncrasies (e.g. alpha combine mode encoding).
+    void SetupCommonState(bool en1Cycle = true, bool enableTLUT = false) {
+        backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        uint32_t hiFlags = (en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC)
+                           | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1
+                           | (enableTLUT ? (1u << 15) : 0u);
+        backend_.EmitRDPCmd(prdp::MakeSetOtherModes(hiFlags, prdp::RDP_FORCE_BLEND));
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     }
 
     // ---- Texture loading helpers for the Vulkan path ----
@@ -5489,13 +5484,15 @@ protected:
         backend_.EmitRDPCmd(prdp::MakeSyncTile());
     }
 
-    // ---- Texture rectangle emission via Fast3D interpreter ----
-    // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport.
-    void EmitTextureRectVk(Fast::Interpreter& interp) {
-        // Screen (50,50)–(100,100); UVs 0→4 texels (mask=2 → wraps at 4).
-        // Coordinates are U10.2 (pixel*4).  dsdx/dtdy are S5.10 (texel/pixel * 1024).
-        interp.GfxDpTextureRectangle(50 * 4, 50 * 4, 100 * 4, 100 * 4,
-                                      0 /*tile*/, 0, 0, 1 << 10, 1 << 10, false);
+    // ---- Texture rectangle emission ----
+    // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport, using tile 0.
+    // dsdx/dtdy: scale texW/texH texels over 50 pixels (S5.10 format = texels * 1024 / 50).
+    void EmitTextureRectVk(uint32_t texW = 8, uint32_t texH = 8) {
+        auto words = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4,
+                                                      0, 0,
+                                                      (int16_t)((texW * 1024) / 50),
+                                                      (int16_t)((texH * 1024) / 50));
+        backend_.EmitRawWords(words);
     }
 
     // ---- Fast3D OpenGL path rendering ----
@@ -5587,9 +5584,9 @@ TEST_F(ThreeWayTextureTest, RGBA16) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitRGBA16TextureSetup(8, 8);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(8, 8);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5647,9 +5644,9 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAM(prdp::TEX_ADDR, tex32.data(), tex32.size() * 4);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitRGBA32TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5708,9 +5705,9 @@ TEST_F(ThreeWayTextureTest, I4) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitI4TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5721,6 +5718,7 @@ TEST_F(ThreeWayTextureTest, I4) {
 
     RunThreeWay("I4", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -5761,9 +5759,9 @@ TEST_F(ThreeWayTextureTest, I8) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitI8TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5774,6 +5772,7 @@ TEST_F(ThreeWayTextureTest, I8) {
 
     RunThreeWay("I8", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -5820,9 +5819,9 @@ TEST_F(ThreeWayTextureTest, IA4) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA4TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5833,6 +5832,7 @@ TEST_F(ThreeWayTextureTest, IA4) {
 
     RunThreeWay("IA4", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -5874,9 +5874,9 @@ TEST_F(ThreeWayTextureTest, IA8) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA8TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5887,6 +5887,7 @@ TEST_F(ThreeWayTextureTest, IA8) {
 
     RunThreeWay("IA8", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -5928,9 +5929,9 @@ TEST_F(ThreeWayTextureTest, IA16) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA16TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -5941,6 +5942,7 @@ TEST_F(ThreeWayTextureTest, IA16) {
 
     RunThreeWay("IA16", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -5999,22 +6001,13 @@ TEST_F(ThreeWayTextureTest, CI4) {
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
-    // 2. Fast3D → Vulkan  (state via interpreter, textures directly to backend)
+    // 2. Fast3D → Vulkan  (state via direct injection, textures directly to backend)
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR, palette);
     backend_.Clear();
-    // State commands through interpreter (accumulate in backend via RdpCommandBackend)
-    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-    // Enable TLUT (bit 15 = G_TT_RGBA16) in other_mode_h for CI texture lookup
-    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-                                   prdp::RDP_FORCE_BLEND);
-    constexpr uint32_t texel0D = 1;
-    uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-    interpVk_->GfxDpSetCombineMode(rgb, 0, 0, 0);
-    // CI4 texture setup directly to backend with the correct TLUT_ADDR
+    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    // CI4 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     backend_.EmitRDPCmd(prdp::MakeSyncLoad());
@@ -6025,8 +6018,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
     backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
-    // Texture rectangle via interpreter (emits the 4-word command to backend)
-    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -6037,6 +6029,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
 
     RunThreeWay("CI4", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
@@ -6088,22 +6081,13 @@ TEST_F(ThreeWayTextureTest, CI8) {
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
-    // 2. Fast3D → Vulkan (state via interpreter, textures directly to backend)
+    // 2. Fast3D → Vulkan (state via direct injection, textures directly to backend)
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR8, palette);
     backend_.Clear();
-    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-                                   prdp::RDP_FORCE_BLEND);
-    {
-        constexpr uint32_t texel0D = 1;
-        uint32_t rgb2 = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-        interpVk_->GfxDpSetCombineMode(rgb2, 0, 0, 0);
-    }
-    // CI8 texture setup directly to backend (state commands already in backend from above)
+    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    // CI8 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     backend_.EmitRDPCmd(prdp::MakeSyncLoad());
@@ -6114,7 +6098,7 @@ TEST_F(ThreeWayTextureTest, CI8) {
     backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
-    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
@@ -6125,6 +6109,7 @@ TEST_F(ThreeWayTextureTest, CI8) {
 
     RunThreeWay("CI8", directFb, vkFb, glFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
 }
 
