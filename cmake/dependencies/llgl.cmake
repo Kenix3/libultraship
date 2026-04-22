@@ -90,6 +90,7 @@ set(ENABLE_CTEST             OFF CACHE BOOL "" FORCE)
 set(BUILD_EXTERNAL           OFF CACHE BOOL "" FORCE)
 set(GLSLANG_TESTS            OFF CACHE BOOL "" FORCE)
 set(GLSLANG_ENABLE_INSTALL   OFF CACHE BOOL "" FORCE)
+set(ENABLE_OPT               OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
     glslang

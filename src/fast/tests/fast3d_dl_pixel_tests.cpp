@@ -873,10 +873,15 @@ public:
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
 
-// (LUS_LLGL offscreen renderer removed – LLGL path uses the same
-//  CPU software rasterizer as the OpenGL path; see RenderLLGL below.)
+// ============================================================
+// LLGL offscreen VBO renderer (optional, requires LUS_LLGL_TESTS_ENABLED)
+//
+// Accepts a Fast3D-format VBO (fpv=6: x,y,z,w,u,v in clip space) and an
+// RGBA16 texture, renders them to a 320×240 offscreen framebuffer via LLGL
+// (Vulkan backend), and returns the result as RGBA16.
+// ============================================================
+#ifdef LUS_LLGL_TESTS_ENABLED
 
-#if 0  // dead-code guard – kept for reference only
 #include <LLGL/LLGL.h>
 #include "llgl/llgl_texquad_spirv.h"  // pre-compiled SPIR-V arrays
 
@@ -897,9 +902,12 @@ static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
     }
 }
 
-// Render a textured quad using LLGL (Vulkan backend with lavapipe).
+// Render a Fast3D VBO via LLGL (Vulkan backend with lavapipe).
+// vboData: interleaved [x, y, z, w, u, v] floats (fpv=6), clip-space positions.
+// numVerts: number of vertices in vboData (must be a multiple of 3).
 // Returns a FB_W×FB_H RGBA16 framebuffer, or an empty vector on failure.
-static std::vector<uint16_t> RenderTexturedQuad(
+static std::vector<uint16_t> RenderTexturedVBO(
+        const float* vboData, size_t numVerts,
         const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH)
 {
     // ---- Load LLGL Vulkan renderer ----
@@ -1006,10 +1014,9 @@ static std::vector<uint16_t> RenderTexturedQuad(
     psoDesc.vertexShader      = vs;
     psoDesc.fragmentShader    = fs;
     psoDesc.primitiveTopology = LLGL::PrimitiveTopology::TriangleList;
-    LLGL::Report psoReport;
-    auto* pso = renderer->CreatePipelineState(psoDesc, &psoReport);
-    if (psoReport.HasErrors()) {
-        std::cerr << "[LLGL-test] PSO error: " << psoReport.GetText() << "\n";
+    auto* pso = renderer->CreatePipelineState(psoDesc);
+    if (pso->GetReport() && pso->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] PSO error: " << pso->GetReport()->GetText() << "\n";
         LLGL::RenderSystem::Unload(std::move(renderer));
         return {};
     }
@@ -1017,31 +1024,17 @@ static std::vector<uint16_t> RenderTexturedQuad(
     // ---- Resource heap ----
     LLGL::ResourceHeapDescriptor rhDesc;
     rhDesc.pipelineLayout = pipelineLayout;
-    rhDesc.resourceViews  = {
-        LLGL::ResourceViewDescriptor{ srcTex },
-        LLGL::ResourceViewDescriptor{ sampler },
-    };
-    auto* resourceHeap = renderer->CreateResourceHeap(rhDesc);
+    auto* resourceHeap = renderer->CreateResourceHeap(rhDesc,
+        { LLGL::ResourceViewDescriptor{ srcTex },
+          LLGL::ResourceViewDescriptor{ sampler } });
 
-    // ---- Vertex buffer: same quad as RenderFast3DTexturedQuad ----
-    // Positions in game-clip-space; the SPIR-V vert shader converts to NDC.
-    const float x0 = 50.0f  - 160.0f;  // -110
-    const float x1 = 100.0f - 160.0f;  //  -60
-    const float y0 = 120.0f - 50.0f;   //   70  (top in clip space)
-    const float y1 = 120.0f - 100.0f;  //   20  (bottom in clip space)
-    // interleaved [x, y, z, w, u, v] (6 floats per vertex)
-    const float vbo[] = {
-        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
-        x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
-        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
-        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
-        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
-        x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
-    };
+    // ---- Vertex buffer: Fast3D-format VBO passed in by the caller ----
+    // [x, y, z, w, u, v] per vertex in clip-space; the SPIR-V vert shader
+    // maps positions to Vulkan NDC (x/160, -y/120).
     LLGL::BufferDescriptor vbDesc;
-    vbDesc.size      = sizeof(vbo);
+    vbDesc.size      = numVerts * 6 * sizeof(float);
     vbDesc.bindFlags = LLGL::BindFlags::VertexBuffer;
-    auto* vertexBuffer = renderer->CreateBuffer(vbDesc, vbo);
+    auto* vertexBuffer = renderer->CreateBuffer(vbDesc, vboData);
 
     // ---- Record and submit commands ----
     LLGL::CommandBufferDescriptor cbDesc;
@@ -1058,7 +1051,7 @@ static std::vector<uint16_t> RenderTexturedQuad(
         cmdBuf->SetPipelineState(*pso);
         cmdBuf->SetResourceHeap(*resourceHeap);
         cmdBuf->SetVertexBuffer(*vertexBuffer);
-        cmdBuf->Draw(6, 0);
+        cmdBuf->Draw(static_cast<uint32_t>(numVerts), 0);
     }
     cmdBuf->EndRenderPass();
     cmdBuf->End();
@@ -1102,7 +1095,7 @@ static std::vector<uint16_t> RenderTexturedQuad(
 }
 
 } // namespace llgl_offscreen
-#endif // dead-code guard
+#endif // LUS_LLGL_TESTS_ENABLED
 
 using namespace fast3d_test;
 
@@ -5493,7 +5486,11 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 class ThreeWayTextureTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        prdp_ = &prdp::GetPRDPContext();
+        // prdp_ is initialized lazily in each test body, after RenderLLGL has run.
+        // Reason: lavapipe (software Vulkan) crashes when two VkInstances exist in
+        // the same process simultaneously.  LLGL creates and destroys its own
+        // VkInstance, so it must run before ParallelRDP opens its Vulkan device.
+        prdp_ = nullptr;
 
         // Interpreter for Fast3D → Vulkan path (uses BatchingPRDPBackend)
         interpVk_ = MakeInterp();
@@ -5737,7 +5734,37 @@ protected:
 
     std::vector<uint16_t> RenderLLGL(const std::vector<uint16_t>& texRGBA16,
                                        uint32_t texW, uint32_t texH) {
-        return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
+        // Build the same Fast3D VBO as RenderFast3DTexturedQuad.
+        // Screen (50,50)-(100,100) mapped to clip space with an identity matrix:
+        //   clip_x = screen_x - 160,  clip_y = 120 - screen_y
+        // Layout: [x, y, z, w, u, v] per vertex — the format Fast3D emits.
+        const float x0 = 50.0f  - 160.0f;  // -110
+        const float x1 = 100.0f - 160.0f;  //  -60
+        const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
+        const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
+        const float vboData[] = {
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+        };
+        static constexpr size_t kNumVerts = 6;
+#ifdef LUS_LLGL_TESTS_ENABLED
+        // Use LLGL (Vulkan) to render the Fast3D VBO on the GPU.
+        // Falls back to the CPU software rasterizer when Vulkan is unavailable.
+        auto result = llgl_offscreen::RenderTexturedVBO(vboData, kNumVerts,
+                                                         texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [LLGL] Vulkan unavailable, falling back to software rasteriser\n";
+#endif
+        // CPU fallback: same VBO + software rasterizer (identical to RenderOpenGL).
+        std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                     std::vector<float>(vboData, vboData + kNumVerts * 6),
+                                     6, kNumVerts / 3, texRGBA16, texW, texH);
+        return fb;
     }
 
     // ---- Print comparison table row ----
@@ -5812,11 +5839,16 @@ static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>
 // RGBA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     uint16_t red5551  = (31u << 11) | (0u << 6) | (0u << 1) | 1;
     uint16_t cyan5551 = (0u << 11) | (31u << 6) | (31u << 1) | 1;
     auto tex = GenerateCheckerboard8x8(red5551, cyan5551);
+
+    // LLGL must run before PRDP initializes Vulkan (lavapipe can't have two
+    // concurrent VkInstances in the same process).
+    auto llglFb = RenderLLGL(tex, 8, 8);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP
     auto directFb = RenderDirectPRDP_RGBA16(tex, 8, 8);
@@ -5834,7 +5866,7 @@ TEST_F(ThreeWayTextureTest, RGBA16) {
 
     // 3. Fast3D → OpenGL
     auto glFb = RenderOpenGL(tex, 8, 8);
-    auto llglFb = RenderLLGL(tex, 8, 8);
+    // (llglFb computed before PRDP above)
 
     RunThreeWay("RGBA16", directFb, vkFb, glFb, llglFb);
 
@@ -5848,13 +5880,18 @@ TEST_F(ThreeWayTextureTest, RGBA16) {
 // RGBA32
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA32) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     // 4×4 checkerboard: cyan (0x00FFFFFF) / magenta (0xFF00FFFF)
     std::vector<uint32_t> tex32(4 * 4);
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex32[y * 4 + x] = ((x + y) & 1) ? 0xFF00FFFFu : 0x00FFFFFFu;
+
+    // LLGL before PRDP Vulkan init.
+    auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP — write raw 32-bit data, use existing CI test infrastructure
     {
@@ -5895,9 +5932,8 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL (decode RGBA32→RGBA16 for the software rasterizer)
-    auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
+    // (llglFb computed before PRDP above)
 
     RunThreeWay("RGBA32", directFb, vkFb, glFb, llglFb);
 
@@ -5911,8 +5947,6 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
 // I4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     // 4×4 I4 checkerboard: max intensity (0xF) / mid intensity (0x8)
     std::vector<uint8_t> tex(8); // 4x4 at 4bpp = 8 bytes
     for (int y = 0; y < 4; y++)
@@ -5921,6 +5955,12 @@ TEST_F(ThreeWayTextureTest, I4) {
             uint8_t lo = ((x + 1 + y) & 1) ? 0x8 : 0xF;
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
+
+    auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP
     {
