@@ -6013,10 +6013,14 @@ TEST_F(ThreeWayTextureTest, I4) {
 // I8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = ((i & 1) ? 0x80 : 0xFF);
+
+    auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -6054,9 +6058,7 @@ TEST_F(ThreeWayTextureTest, I8) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("I8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
@@ -6069,6 +6071,7 @@ TEST_F(ThreeWayTextureTest, I8) {
 // IA4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA4) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA4: (I=7,A=1)=0xF / (I=4,A=1)=0x9 checkerboard
@@ -6079,6 +6082,9 @@ TEST_F(ThreeWayTextureTest, IA4) {
             uint8_t lo = ((x + 1 + y) & 1) ? 0x9 : 0xF;
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
+
+    auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -6116,9 +6122,7 @@ TEST_F(ThreeWayTextureTest, IA4) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("IA4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
@@ -6131,11 +6135,15 @@ TEST_F(ThreeWayTextureTest, IA4) {
 // IA8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA8: high nibble=I, low nibble=A. Checkerboard 0xFF/0x80.
     std::vector<uint8_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x80 : 0xFF;
+
+    auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -6173,9 +6181,7 @@ TEST_F(ThreeWayTextureTest, IA8) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("IA8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
@@ -6188,11 +6194,15 @@ TEST_F(ThreeWayTextureTest, IA8) {
 // IA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA16) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA16: upper byte=I, lower byte=A. Checkerboard 0xFFFF/0x8080.
     std::vector<uint16_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x8080 : 0xFFFF;
+
+    auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -6230,9 +6240,7 @@ TEST_F(ThreeWayTextureTest, IA16) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("IA16", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
@@ -6245,6 +6253,7 @@ TEST_F(ThreeWayTextureTest, IA16) {
 // CI4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI4) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 CI4 checkerboard: indices alternate 0 and 1
@@ -6262,6 +6271,9 @@ TEST_F(ThreeWayTextureTest, CI4) {
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = red5551;
     palette[1] = green5551;
+
+    auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
 
@@ -6319,9 +6331,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("CI4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
@@ -6334,6 +6344,7 @@ TEST_F(ThreeWayTextureTest, CI4) {
 // CI8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
@@ -6344,6 +6355,9 @@ TEST_F(ThreeWayTextureTest, CI8) {
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = red5551;
     palette[1] = blue5551;
+
+    auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     static constexpr uint32_t TLUT_ADDR8 = prdp::TEX_ADDR + 0x1000;
 
@@ -6401,9 +6415,7 @@ TEST_F(ThreeWayTextureTest, CI8) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
-    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     RunThreeWay("CI8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);

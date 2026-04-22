@@ -18,6 +18,7 @@
 
 // Now safe to pull in LLGL (may transitively include X11/OpenGL headers).
 #include <LLGL/LLGL.h>
+#include <LLGL/Utils/VertexFormat.h>
 // Undo X11's True/False macros so the rest of this file uses C++ booleans.
 #ifdef True
 #  undef True
