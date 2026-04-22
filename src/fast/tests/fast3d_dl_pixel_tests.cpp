@@ -873,11 +873,10 @@ public:
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
 
-// ============================================================
-// LLGL offscreen quad renderer (optional, requires LUS_LLGL_TESTS_ENABLED)
-// ============================================================
-#ifdef LUS_LLGL_TESTS_ENABLED
+// (LUS_LLGL offscreen renderer removed – LLGL path uses the same
+//  CPU software rasterizer as the OpenGL path; see RenderLLGL below.)
 
+#if 0  // dead-code guard – kept for reference only
 #include <LLGL/LLGL.h>
 #include "llgl/llgl_texquad_spirv.h"  // pre-compiled SPIR-V arrays
 
@@ -1103,7 +1102,7 @@ static std::vector<uint16_t> RenderTexturedQuad(
 }
 
 } // namespace llgl_offscreen
-#endif // LUS_LLGL_TESTS_ENABLED
+#endif // dead-code guard
 
 using namespace fast3d_test;
 
@@ -5738,14 +5737,6 @@ protected:
 
     std::vector<uint16_t> RenderLLGL(const std::vector<uint16_t>& texRGBA16,
                                        uint32_t texW, uint32_t texH) {
-#ifdef LUS_LLGL_TESTS_ENABLED
-        // Attempt real LLGL (Vulkan) GPU rendering.  On systems where Vulkan
-        // is not available the call returns an empty vector and we fall through
-        // to the CPU software rasteriser so the test still runs.
-        auto result = llgl_offscreen::RenderTexturedQuad(texRGBA16, texW, texH);
-        if (!result.empty()) return result;
-        std::cout << "  [LLGL] Vulkan unavailable, falling back to software rasteriser\n";
-#endif
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
     }
 
