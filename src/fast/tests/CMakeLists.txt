@@ -33,4 +33,21 @@ if(LUS_BUILD_PRDP_TESTS)
     # reference images without having to create it at runtime.
     set(DOCS_IMAGES_DIR "${CMAKE_SOURCE_DIR}/docs/images")
     file(MAKE_DIRECTORY "${DOCS_IMAGES_DIR}")
+
+    # LLGL offscreen rendering for the four-way texture tests.
+    # LLGL is pulled in by the root CMakeLists together with PRDP.
+    if(TARGET LLGL OR LUS_BUILD_LLGL)
+        target_compile_definitions(lus_tests PRIVATE LUS_LLGL_TESTS_ENABLED=1)
+        target_link_libraries(lus_tests PRIVATE LLGL)
+        if(TARGET LLGL_OpenGL)
+            target_link_libraries(lus_tests PRIVATE LLGL_OpenGL)
+        endif()
+        if(TARGET LLGL_Vulkan)
+            target_link_libraries(lus_tests PRIVATE LLGL_Vulkan)
+        endif()
+        target_include_directories(lus_tests PRIVATE
+            $<TARGET_PROPERTY:LLGL,INTERFACE_INCLUDE_DIRECTORIES>
+            ${CMAKE_SOURCE_DIR}/src/fast/shaders
+        )
+    endif()
 endif()

@@ -41,3 +41,27 @@ endif()
 
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
+
+#=================== LLGL Backend ===================
+if(LUS_BUILD_LLGL OR TARGET LLGL)
+    target_sources(libultraship PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/backends/gfx_llgl.cpp
+    )
+    target_link_libraries(libultraship PRIVATE LLGL)
+    if(TARGET LLGL_OpenGL)
+        target_link_libraries(libultraship PRIVATE LLGL_OpenGL)
+    endif()
+    if(TARGET LLGL_Vulkan)
+        target_link_libraries(libultraship PRIVATE LLGL_Vulkan)
+    endif()
+    if(TARGET LLGL_Metal)
+        target_link_libraries(libultraship PRIVATE LLGL_Metal)
+    endif()
+    if(TARGET LLGL_Direct3D11)
+        target_link_libraries(libultraship PRIVATE LLGL_Direct3D11)
+    endif()
+    target_compile_definitions(libultraship PUBLIC ENABLE_LLGL=1)
+    target_include_directories(libultraship PRIVATE
+        $<TARGET_PROPERTY:LLGL,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()

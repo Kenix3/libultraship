@@ -68,6 +68,12 @@ endif()
 # =========== Sources =============
 add_subdirectory("src")
 
+# =========== LLGL =============
+option(LUS_BUILD_LLGL "Build with LLGL (Low Level Graphics Library) rendering backend" OFF)
+if(LUS_BUILD_LLGL)
+    include(cmake/dependencies/llgl.cmake)
+endif()
+
 # =========== Tests =============
 option(LUS_BUILD_TESTS "Build unit tests" OFF)
 option(LUS_BUILD_PRDP_TESTS "Build ParallelRDP comparison tests (requires Vulkan)" OFF)
@@ -76,6 +82,12 @@ if(LUS_BUILD_TESTS)
     if(LUS_BUILD_PRDP_TESTS)
         find_package(Threads REQUIRED)
         include(cmake/dependencies/parallel-rdp.cmake)
+        # LLGL is pulled in alongside PRDP when Vulkan is available
+        if(NOT LUS_BUILD_LLGL)
+            set(LLGL_BUILD_RENDERER_OPENGL  OFF CACHE BOOL "" FORCE)
+            set(LLGL_BUILD_RENDERER_VULKAN  ON  CACHE BOOL "" FORCE)
+            include(cmake/dependencies/llgl.cmake)
+        endif()
     endif()
     add_subdirectory("tests")
 endif()

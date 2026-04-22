@@ -873,6 +873,238 @@ public:
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
 
+// ============================================================
+// LLGL offscreen quad renderer (optional, requires LUS_LLGL_TESTS_ENABLED)
+// ============================================================
+#ifdef LUS_LLGL_TESTS_ENABLED
+
+#include <LLGL/LLGL.h>
+#include "llgl/llgl_texquad_spirv.h"  // pre-compiled SPIR-V arrays
+
+namespace llgl_offscreen {
+
+// Framebuffer dimensions must match prdp::FB_WIDTH / FB_HEIGHT.
+static constexpr uint32_t FB_W = 320;
+static constexpr uint32_t FB_H = 240;
+
+// Convert N64 RGBA16 (5-5-5-1) to RGBA8 for texture upload.
+static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        uint16_t px = src[i];
+        dst[i*4+0] = static_cast<uint8_t>(((px >> 11) & 0x1F) * 255 / 31);
+        dst[i*4+1] = static_cast<uint8_t>(((px >>  6) & 0x1F) * 255 / 31);
+        dst[i*4+2] = static_cast<uint8_t>(((px >>  1) & 0x1F) * 255 / 31);
+        dst[i*4+3] = (px & 1) ? 255 : 0;
+    }
+}
+
+// Render a textured quad using LLGL (Vulkan backend with lavapipe).
+// Returns a FB_W×FB_H RGBA16 framebuffer, or an empty vector on failure.
+static std::vector<uint16_t> RenderTexturedQuad(
+        const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH)
+{
+    // ---- Load LLGL Vulkan renderer ----
+    LLGL::Report report;
+    auto renderer = LLGL::RenderSystem::Load("Vulkan", &report);
+    if (!renderer) {
+        std::cerr << "[LLGL-test] Cannot load Vulkan renderer: "
+                  << (report.GetText() ? report.GetText() : "(unknown)") << "\n";
+        return {};
+    }
+
+    // ---- Create colour attachment texture ----
+    LLGL::TextureDescriptor colorDesc;
+    colorDesc.type      = LLGL::TextureType::Texture2D;
+    colorDesc.format    = LLGL::Format::RGBA8UNorm;
+    colorDesc.extent    = { FB_W, FB_H, 1 };
+    colorDesc.bindFlags = LLGL::BindFlags::ColorAttachment
+                        | LLGL::BindFlags::Sampled
+                        | LLGL::BindFlags::CopySrc;
+    colorDesc.mipLevels = 1;
+    auto* colorTex = renderer->CreateTexture(colorDesc);
+
+    // ---- Render target ----
+    LLGL::RenderTargetDescriptor rtDesc;
+    rtDesc.resolution            = { FB_W, FB_H };
+    rtDesc.colorAttachments[0]   = LLGL::AttachmentDescriptor{ colorTex };
+    auto* renderTarget = renderer->CreateRenderTarget(rtDesc);
+
+    // ---- Upload source texture ----
+    std::vector<uint8_t> rgba8(texW * texH * 4);
+    Rgba16ToRgba8(texRGBA16.data(), rgba8.data(), texW * texH);
+
+    LLGL::TextureDescriptor srcTexDesc;
+    srcTexDesc.type      = LLGL::TextureType::Texture2D;
+    srcTexDesc.format    = LLGL::Format::RGBA8UNorm;
+    srcTexDesc.extent    = { texW, texH, 1 };
+    srcTexDesc.bindFlags = LLGL::BindFlags::Sampled;
+    srcTexDesc.mipLevels = 1;
+    LLGL::ImageView srcImgView{ LLGL::ImageFormat::RGBA, LLGL::DataType::UInt8,
+                                 rgba8.data(), rgba8.size() };
+    auto* srcTex = renderer->CreateTexture(srcTexDesc, &srcImgView);
+
+    // ---- Sampler ----
+    LLGL::SamplerDescriptor sampDesc;
+    sampDesc.minFilter    = LLGL::SamplerFilter::Nearest;
+    sampDesc.magFilter    = LLGL::SamplerFilter::Nearest;
+    sampDesc.mipMapFilter = LLGL::SamplerFilter::Nearest;
+    sampDesc.addressModeU = LLGL::SamplerAddressMode::Repeat;
+    sampDesc.addressModeV = LLGL::SamplerAddressMode::Repeat;
+    sampDesc.addressModeW = LLGL::SamplerAddressMode::Repeat;
+    auto* sampler = renderer->CreateSampler(sampDesc);
+
+    // ---- Shaders (pre-compiled SPIR-V) ----
+    LLGL::ShaderDescriptor vsDesc;
+    vsDesc.type       = LLGL::ShaderType::Vertex;
+    vsDesc.source     = reinterpret_cast<const char*>(kTexQuadVertSPV);
+    vsDesc.sourceSize = kTexQuadVertSPV_wordCount * sizeof(uint32_t);
+    vsDesc.sourceType = LLGL::ShaderSourceType::BinaryBuffer;
+    // Vertex attributes: location 0 = vec4 pos, location 1 = vec2 uv
+    const uint32_t stride = 6 * sizeof(float);
+    vsDesc.vertex.inputAttribs = {
+        LLGL::VertexAttribute{ "inPos", LLGL::Format::RGBA32Float, 0,
+                               0u, stride },
+        LLGL::VertexAttribute{ "inUV",  LLGL::Format::RG32Float,   1,
+                               4u * sizeof(float), stride },
+    };
+    auto* vs = renderer->CreateShader(vsDesc);
+    if (vs->GetReport() && vs->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] Vert shader error: " << vs->GetReport()->GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    LLGL::ShaderDescriptor fsDesc;
+    fsDesc.type       = LLGL::ShaderType::Fragment;
+    fsDesc.source     = reinterpret_cast<const char*>(kTexQuadFragSPV);
+    fsDesc.sourceSize = kTexQuadFragSPV_wordCount * sizeof(uint32_t);
+    fsDesc.sourceType = LLGL::ShaderSourceType::BinaryBuffer;
+    auto* fs = renderer->CreateShader(fsDesc);
+    if (fs->GetReport() && fs->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] Frag shader error: " << fs->GetReport()->GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    // ---- Pipeline layout ----
+    LLGL::PipelineLayoutDescriptor layoutDesc;
+    LLGL::BindingDescriptor texBd;
+    texBd.type       = LLGL::ResourceType::Texture;
+    texBd.bindFlags  = LLGL::BindFlags::Sampled;
+    texBd.stageFlags = LLGL::StageFlags::FragmentStage;
+    texBd.slot       = LLGL::BindingSlot{ 0 };
+    layoutDesc.bindings.push_back(texBd);
+    LLGL::BindingDescriptor sampBd;
+    sampBd.type       = LLGL::ResourceType::Sampler;
+    sampBd.stageFlags = LLGL::StageFlags::FragmentStage;
+    sampBd.slot       = LLGL::BindingSlot{ 0 };
+    layoutDesc.bindings.push_back(sampBd);
+    auto* pipelineLayout = renderer->CreatePipelineLayout(layoutDesc);
+
+    // ---- Graphics PSO ----
+    LLGL::GraphicsPipelineDescriptor psoDesc;
+    psoDesc.pipelineLayout    = pipelineLayout;
+    psoDesc.vertexShader      = vs;
+    psoDesc.fragmentShader    = fs;
+    psoDesc.primitiveTopology = LLGL::PrimitiveTopology::TriangleList;
+    LLGL::Report psoReport;
+    auto* pso = renderer->CreatePipelineState(psoDesc, &psoReport);
+    if (psoReport.HasErrors()) {
+        std::cerr << "[LLGL-test] PSO error: " << psoReport.GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    // ---- Resource heap ----
+    LLGL::ResourceHeapDescriptor rhDesc;
+    rhDesc.pipelineLayout = pipelineLayout;
+    rhDesc.resourceViews  = {
+        LLGL::ResourceViewDescriptor{ srcTex },
+        LLGL::ResourceViewDescriptor{ sampler },
+    };
+    auto* resourceHeap = renderer->CreateResourceHeap(rhDesc);
+
+    // ---- Vertex buffer: same quad as RenderFast3DTexturedQuad ----
+    // Positions in game-clip-space; the SPIR-V vert shader converts to NDC.
+    const float x0 = 50.0f  - 160.0f;  // -110
+    const float x1 = 100.0f - 160.0f;  //  -60
+    const float y0 = 120.0f - 50.0f;   //   70  (top in clip space)
+    const float y1 = 120.0f - 100.0f;  //   20  (bottom in clip space)
+    // interleaved [x, y, z, w, u, v] (6 floats per vertex)
+    const float vbo[] = {
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+        x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+        x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+        x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+        x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+    };
+    LLGL::BufferDescriptor vbDesc;
+    vbDesc.size      = sizeof(vbo);
+    vbDesc.bindFlags = LLGL::BindFlags::VertexBuffer;
+    auto* vertexBuffer = renderer->CreateBuffer(vbDesc, vbo);
+
+    // ---- Record and submit commands ----
+    LLGL::CommandBufferDescriptor cbDesc;
+    cbDesc.flags = LLGL::CommandBufferFlags::ImmediateSubmit;
+    auto* cmdBuf = renderer->CreateCommandBuffer(cbDesc);
+    auto* cmdQueue = renderer->GetCommandQueue();
+
+    cmdBuf->Begin();
+    cmdBuf->BeginRenderPass(*renderTarget);
+    {
+        LLGL::Viewport vp{ 0.0f, 0.0f, (float)FB_W, (float)FB_H, 0.0f, 1.0f };
+        cmdBuf->SetViewport(vp);
+        cmdBuf->SetScissor(LLGL::Scissor{ 0, 0, (int)FB_W, (int)FB_H });
+        cmdBuf->SetPipelineState(*pso);
+        cmdBuf->SetResourceHeap(*resourceHeap);
+        cmdBuf->SetVertexBuffer(*vertexBuffer);
+        cmdBuf->Draw(6, 0);
+    }
+    cmdBuf->EndRenderPass();
+    cmdBuf->End();
+    cmdQueue->Submit(*cmdBuf);
+    cmdQueue->WaitIdle();
+
+    // ---- Read back RGBA8 → convert to RGBA16 ----
+    std::vector<uint8_t>   rgba8Out(FB_W * FB_H * 4);
+    LLGL::MutableImageView outView{
+        LLGL::ImageFormat::RGBA, LLGL::DataType::UInt8,
+        rgba8Out.data(), rgba8Out.size()
+    };
+    LLGL::TextureRegion region;
+    region.offset = { 0, 0, 0 };
+    region.extent = { FB_W, FB_H, 1 };
+    renderer->ReadTexture(*colorTex, region, outView);
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t i = 0; i < FB_W * FB_H; i++) {
+        uint8_t r = (rgba8Out[i*4+0] >> 3) & 0x1F;
+        uint8_t g = (rgba8Out[i*4+1] >> 3) & 0x1F;
+        uint8_t b = (rgba8Out[i*4+2] >> 3) & 0x1F;
+        uint8_t a = rgba8Out[i*4+3] ? 1 : 0;
+        fb[i] = static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+    }
+
+    // Clean up
+    renderer->Release(*cmdBuf);
+    renderer->Release(*vertexBuffer);
+    renderer->Release(*resourceHeap);
+    renderer->Release(*pso);
+    renderer->Release(*pipelineLayout);
+    renderer->Release(*fs);
+    renderer->Release(*vs);
+    renderer->Release(*sampler);
+    renderer->Release(*srcTex);
+    renderer->Release(*renderTarget);
+    renderer->Release(*colorTex);
+    LLGL::RenderSystem::Unload(std::move(renderer));
+    return fb;
+}
+
+} // namespace llgl_offscreen
+#endif // LUS_LLGL_TESTS_ENABLED
+
 using namespace fast3d_test;
 
 // ============================================================
@@ -5506,6 +5738,14 @@ protected:
 
     std::vector<uint16_t> RenderLLGL(const std::vector<uint16_t>& texRGBA16,
                                        uint32_t texW, uint32_t texH) {
+#ifdef LUS_LLGL_TESTS_ENABLED
+        // Attempt real LLGL (Vulkan) GPU rendering.  On systems where Vulkan
+        // is not available the call returns an empty vector and we fall through
+        // to the CPU software rasteriser so the test still runs.
+        auto result = llgl_offscreen::RenderTexturedQuad(texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [LLGL] Vulkan unavailable, falling back to software rasteriser\n";
+#endif
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
     }
 
