@@ -35,7 +35,9 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <set>
+#include <map>
 #include <filesystem>
 
 // ============================================================
@@ -1193,10 +1195,276 @@ static std::vector<uint16_t> RenderTexturedVBO(
 #include <GL/gl.h>
 #include <GL/glext.h>
 
+// Prism shader template processor — generates real Fast3D GLSL from
+// the same template (default.shader.glsl) used by the production
+// OpenGL and LLGL backends.  This ensures the CI tests exercise the
+// actual rendering pipeline, not a toy inline shader.
+#include <prism/processor.h>
+#include "fast/backends/gfx_glsl_helpers.h"
+#include "fast/backends/gfx_rendering_api.h"
+
 namespace egl_offscreen {
 
 static constexpr uint32_t FB_W = 320;
 static constexpr uint32_t FB_H = 240;
+
+// Forward declarations (defined later in this file)
+static GLuint CompileShader(GLenum type, const char* src);
+static GLuint LinkProgram(GLuint vs, GLuint fs);
+
+// ── Prism shader generation (standalone, no Ship::Context) ──────────
+//
+// Reads the Prism template from the filesystem and generates GLSL
+// vertex/fragment shaders for a given CCFeatures configuration.
+// This mirrors BuildVsShader()/BuildFsShader() in gfx_opengl.cpp but
+// reads the template from disk instead of from Ship::Context.
+// ────────────────────────────────────────────────────────────────────
+
+static std::string ReadShaderTemplate() {
+    // Try a few candidate paths — the test binary can be run from
+    // either the repo root or the build directory.
+    static const char* kCandidates[] = {
+        "src/fast/shaders/opengl/default.shader.glsl",
+        "../src/fast/shaders/opengl/default.shader.glsl",
+        "../../src/fast/shaders/opengl/default.shader.glsl",
+    };
+
+    // Also try CMAKE_SOURCE_DIR-relative paths if we can detect it.
+    for (const char* path : kCandidates) {
+        std::ifstream ifs(path);
+        if (ifs.good()) {
+            std::ostringstream ss;
+            ss << ifs.rdbuf();
+            return ss.str();
+        }
+    }
+    return {};
+}
+
+// Tracks the number of vertex attribute floats (mirrors the static
+// numFloats counter in gfx_opengl.cpp).
+static size_t sNumFloats = 0;
+static prism::ContextTypes* TestUpdateFloats(prism::ContextTypes*, prism::ContextTypes* num) {
+    sNumFloats += std::get<int>(*num);
+    return nullptr;
+}
+
+static std::string GenerateVsShader(const CCFeatures& cc, const std::string& tmpl) {
+    sNumFloats = 4;  // aVtxPos is always 4 floats
+    prism::Processor proc;
+    prism::ContextItems ctx = {
+        { "VERTEX_SHADER", true },
+        { "o_textures", M_ARRAY(cc.usedTextures, bool, 2) },
+        { "o_clamp", M_ARRAY(cc.clamp, bool, 2, 2) },
+        { "o_fog", cc.opt_fog },
+        { "o_grayscale", cc.opt_grayscale },
+        { "o_alpha", cc.opt_alpha },
+        { "o_inputs", cc.numInputs },
+        { "update_floats", (InvokeFunc)TestUpdateFloats },
+        // Use OpenGL 3.3 core so the generated shader compiles on
+        // the Mesa 3.3 core context we create for the test.
+        { "GLSL_VERSION", "#version 330 core" },
+        { "attr", "in" },
+        { "out", "out" },
+        { "opengles", false },
+    };
+    proc.populate(ctx);
+    proc.load(tmpl);
+    return proc.process();
+}
+
+static std::string GenerateFsShader(const CCFeatures& cc, const std::string& tmpl) {
+    prism::Processor proc;
+    prism::ContextItems ctx = {
+        { "VERTEX_SHADER", false },
+        { "o_c", M_ARRAY(cc.c, int, 2, 2, 4) },
+        { "o_alpha", cc.opt_alpha },
+        { "o_fog", cc.opt_fog },
+        { "o_texture_edge", cc.opt_texture_edge },
+        { "o_noise", cc.opt_noise },
+        { "o_2cyc", cc.opt_2cyc },
+        { "o_alpha_threshold", cc.opt_alpha_threshold },
+        { "o_invisible", cc.opt_invisible },
+        { "o_grayscale", cc.opt_grayscale },
+        { "o_textures", M_ARRAY(cc.usedTextures, bool, 2) },
+        { "o_masks", M_ARRAY(cc.used_masks, bool, 2) },
+        { "o_blend", M_ARRAY(cc.used_blend, bool, 2) },
+        { "o_clamp", M_ARRAY(cc.clamp, bool, 2, 2) },
+        { "o_inputs", cc.numInputs },
+        { "o_do_mix", M_ARRAY(cc.do_mix, bool, 2, 2) },
+        { "o_do_single", M_ARRAY(cc.do_single, bool, 2, 2) },
+        { "o_do_multiply", M_ARRAY(cc.do_multiply, bool, 2, 2) },
+        { "o_color_alpha_same", M_ARRAY(cc.color_alpha_same, bool, 2) },
+        { "FILTER_THREE_POINT", Fast::FILTER_THREE_POINT },
+        { "FILTER_LINEAR", Fast::FILTER_LINEAR },
+        { "FILTER_NONE", Fast::FILTER_NONE },
+        { "srgb_mode", false },
+        { "SHADER_0", SHADER_0 },
+        { "SHADER_INPUT_1", SHADER_INPUT_1 },
+        { "SHADER_INPUT_2", SHADER_INPUT_2 },
+        { "SHADER_INPUT_3", SHADER_INPUT_3 },
+        { "SHADER_INPUT_4", SHADER_INPUT_4 },
+        { "SHADER_INPUT_5", SHADER_INPUT_5 },
+        { "SHADER_INPUT_6", SHADER_INPUT_6 },
+        { "SHADER_INPUT_7", SHADER_INPUT_7 },
+        { "SHADER_TEXEL0", SHADER_TEXEL0 },
+        { "SHADER_TEXEL0A", SHADER_TEXEL0A },
+        { "SHADER_TEXEL1", SHADER_TEXEL1 },
+        { "SHADER_TEXEL1A", SHADER_TEXEL1A },
+        { "SHADER_1", SHADER_1 },
+        { "SHADER_COMBINED", SHADER_COMBINED },
+        { "SHADER_NOISE", SHADER_NOISE },
+        { "o_three_point_filtering", false },
+        { "append_formula", (InvokeFunc)gfx_append_formula },
+        { "GLSL_VERSION", "#version 330 core" },
+        { "attr", "in" },
+        { "opengles", false },
+        { "core_opengl", true },
+        { "texture", "texture" },
+        { "vOutColor", "vOutColor" },
+    };
+    proc.populate(ctx);
+    proc.load(tmpl);
+    return proc.process();
+}
+
+// Helper: build a CCFeatures for "output = TEXEL0" (textured, 1-cycle).
+static CCFeatures MakeCCTexel0() {
+    CCFeatures cc = {};
+    cc.usedTextures[0] = true;
+    cc.opt_alpha = true;
+    cc.do_single[0][0] = true;  // rgb: single (just D)
+    cc.do_single[0][1] = true;  // alpha: single (just D)
+    cc.color_alpha_same[0] = true;
+    cc.c[0][0][3] = SHADER_TEXEL0;  // D for rgb
+    cc.c[0][1][3] = SHADER_TEXEL0;  // D for alpha
+    return cc;
+}
+
+// Helper: build a CCFeatures for "output = INPUT1" (solid color, 1-cycle).
+// Vertex colour is supplied via aInput1 (vec4 when alpha is true).
+static CCFeatures MakeCCInput1(bool alpha = true) {
+    CCFeatures cc = {};
+    cc.opt_alpha = alpha;
+    cc.numInputs = 1;
+    cc.do_single[0][0] = true;
+    cc.do_single[0][1] = true;
+    cc.color_alpha_same[0] = true;
+    cc.c[0][0][3] = SHADER_INPUT_1;
+    cc.c[0][1][3] = SHADER_INPUT_1;
+    return cc;
+}
+
+// Helper: build a 2-cycle CCFeatures for Texel0 (cycle 0) then Combined×Input1 (cycle 1).
+// This exercises the real 2-cycle combiner — cycle 0 passes through the texel,
+// cycle 1 multiplies by a vertex-supplied color (EnvColor).
+// VBO layout: aVtxPos(4) + aTexCoord0(2) + aInput1(4) = 10 floats
+static CCFeatures MakeCC2CycTexThenMulInput() {
+    CCFeatures cc = {};
+    cc.usedTextures[0] = true;
+    cc.opt_alpha = true;
+    cc.opt_2cyc = true;
+    cc.numInputs = 1;
+
+    // Cycle 0 (rgb): output = TEXEL0 (do_single)
+    cc.c[0][0][3] = SHADER_TEXEL0;   // D
+    cc.do_single[0][0] = true;
+    // Cycle 0 (alpha): output = TEXEL0.a
+    cc.c[0][1][3] = SHADER_TEXEL0;
+    cc.do_single[0][1] = true;
+    cc.color_alpha_same[0] = true;
+
+    // Cycle 1 (rgb): COMBINED * INPUT1  (do_multiply)
+    cc.c[1][0][0] = SHADER_COMBINED;
+    cc.c[1][0][2] = SHADER_INPUT_1;
+    cc.do_multiply[1][0] = true;
+    // Cycle 1 (alpha): COMBINED.a * INPUT1.a
+    cc.c[1][1][0] = SHADER_COMBINED;
+    cc.c[1][1][2] = SHADER_INPUT_1;
+    cc.do_multiply[1][1] = true;
+    cc.color_alpha_same[1] = true;
+
+    return cc;
+}
+
+// Build a textured rect VBO with one vec4 colour input for 2-cycle combiners.
+// VBO layout: [x,y,z,w, u,v, r1,g1,b1,a1] = 10 floats/vert.
+// Used with MakeCC2CycTexThenMulInput() for Texel0 then Combined×Input1.
+static std::vector<float> MakeTexColorRectVbo(
+        float sx0, float sy0, float sx1, float sy1,
+        float u0, float v0, float u1, float v1,
+        float r1, float g1, float b1, float a1,
+        float fbW = static_cast<float>(prdp::FB_WIDTH),
+        float fbH = static_cast<float>(prdp::FB_HEIGHT)) {
+    float cx0 = (sx0 - fbW / 2.0f) / (fbW / 2.0f);
+    float cx1 = (sx1 - fbW / 2.0f) / (fbW / 2.0f);
+    float cy0 = (fbH / 2.0f - sy0) / (fbH / 2.0f);
+    float cy1 = (fbH / 2.0f - sy1) / (fbH / 2.0f);
+    return {
+        cx0, cy0, 0.f, 1.f, u0, v0, r1, g1, b1, a1,
+        cx1, cy0, 0.f, 1.f, u1, v0, r1, g1, b1, a1,
+        cx1, cy1, 0.f, 1.f, u1, v1, r1, g1, b1, a1,
+        cx0, cy0, 0.f, 1.f, u0, v0, r1, g1, b1, a1,
+        cx1, cy1, 0.f, 1.f, u1, v1, r1, g1, b1, a1,
+        cx0, cy1, 0.f, 1.f, u0, v1, r1, g1, b1, a1,
+    };
+}
+
+// Compile, link, and set up a GL program from a CCFeatures configuration.
+// Returns the GL program ID and fills numFloats with the per-vertex stride.
+// Returns 0 on failure.
+static GLuint BuildProgramForCC(const CCFeatures& cc, const std::string& tmpl,
+                                size_t& outNumFloats) {
+    std::string vsSrc = GenerateVsShader(cc, tmpl);
+    std::string fsSrc = GenerateFsShader(cc, tmpl);
+    outNumFloats = sNumFloats;
+
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, vsSrc.c_str());
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fsSrc.c_str());
+    if (!vs || !fs) { glDeleteShader(vs); glDeleteShader(fs); return 0; }
+    GLuint prog = LinkProgram(vs, fs);
+    glDeleteShader(vs); glDeleteShader(fs);
+    return prog;
+}
+
+// Set up vertex attribute pointers for a program based on CCFeatures.
+// Mirrors VertexArraySetAttribs in gfx_opengl.cpp.
+static void SetupVertexAttribs(GLuint prog, const CCFeatures& cc, size_t numFloats) {
+    size_t pos = 0;
+    auto bind = [&](const char* name, GLint size) {
+        GLint loc = glGetAttribLocation(prog, name);
+        if (loc >= 0) {
+            glEnableVertexAttribArray(loc);
+            glVertexAttribPointer(loc, size, GL_FLOAT, GL_FALSE,
+                                  static_cast<GLsizei>(numFloats * sizeof(float)),
+                                  reinterpret_cast<void*>(pos * sizeof(float)));
+        }
+        pos += static_cast<size_t>(size);
+    };
+
+    bind("aVtxPos", 4);
+
+    for (int i = 0; i < 2; i++) {
+        if (cc.usedTextures[i]) {
+            char name[32];
+            snprintf(name, sizeof(name), "aTexCoord%d", i);
+            bind(name, 2);
+            for (int j = 0; j < 2; j++) {
+                if (cc.clamp[i][j]) {
+                    snprintf(name, sizeof(name), "aTexClamp%s%d", j == 0 ? "S" : "T", i);
+                    bind(name, 1);
+                }
+            }
+        }
+    }
+    if (cc.opt_fog) bind("aFog", 4);
+    if (cc.opt_grayscale) bind("aGrayscaleColor", 4);
+    for (int i = 0; i < cc.numInputs; i++) {
+        char name[32];
+        snprintf(name, sizeof(name), "aInput%d", i + 1);
+        bind(name, cc.opt_alpha ? 4 : 3);
+    }
+}
 
 // Convert N64 RGBA16 (5-5-5-1) to RGBA8 for texture upload.
 static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
@@ -1469,25 +1737,37 @@ void main() {
 // ────────────────────────────────────────────────────────────────────────
 // Multi-pass scene renderer
 //
-// Each DrawPass draws a separate textured quad (6-float VBO: x,y,z,w,u,v)
-// on top of the previous one.  The framebuffer is cleared to bgRGBA5551
-// once, then all passes are drawn in order without intermediate clears.
-// For solid-colour fills, use a 1×1 texture.
+// Each DrawPass draws geometry using the **real Fast3D Prism shader**
+// generated from a CCFeatures configuration, matching the production
+// OpenGL backend.  The VBO layout must match the attribute layout
+// dictated by the CCFeatures (see SetupVertexAttribs above).
+//
+// Common layouts:
+//   CC_TEXEL0 (textured):  [x,y,z,w, u,v]          = 6 floats/vert
+//   CC_INPUT1 (solid colour): [x,y,z,w, r,g,b,a]   = 8 floats/vert
 // ────────────────────────────────────────────────────────────────────────
 
 struct DrawPass {
-    std::vector<float> vboData;       // [x,y,z,w,u,v] per vertex
-    std::vector<uint16_t> texRGBA16;  // texture in RGBA5551 format
-    uint32_t texW;
-    uint32_t texH;
+    std::vector<float> vboData;       // per-vertex data matching CCFeatures layout
+    std::vector<uint16_t> texRGBA16;  // texture in RGBA5551 format (if textured)
+    uint32_t texW = 0;
+    uint32_t texH = 0;
     bool useNearest = false;          // GL_NEAREST instead of GL_LINEAR
     float alpha     = 1.0f;           // fragment alpha multiplier (enables GL_BLEND when < 1)
+    CCFeatures cc   = MakeCCTexel0(); // combiner config — determines shader & VBO layout
 };
 
 static std::vector<uint16_t> RenderMultiPassScene(
         uint16_t bgRGBA5551,
         const std::vector<DrawPass>& passes)
 {
+    // ---- Load the Prism shader template from the repo ----
+    std::string shaderTmpl = ReadShaderTemplate();
+    if (shaderTmpl.empty()) {
+        std::cerr << "[OGL-test] Could not load default.shader.glsl template\n";
+        return {};
+    }
+
     // ---- Init EGL (headless pbuffer surface) ----
     setenv("EGL_PLATFORM", "surfaceless", /*overwrite=*/0);
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -1547,56 +1827,9 @@ static std::vector<uint16_t> RenderMultiPassScene(
         eglTerminate(dpy); return {};
     }
 
-    // ---- Shaders (same coordinate convention as RenderTexturedVBO) ----
-    // Uses GL_LINEAR for bilinear texture filtering, matching the RDP's
-    // bilerp0+bilerp1 enabled mode.  This produces more distinct colours
-    // than the software rasteriser's nearest-neighbour sampling.
-    static const char* kVsMulti = R"(
-#version 330 core
-layout(location = 0) in vec4 inPos;
-layout(location = 1) in vec2 inUV;
-out vec2 vUV;
-void main() {
-    gl_Position = vec4(inPos.x / 160.0, inPos.y / 120.0, 0.0, 1.0);
-    vUV = inUV;
-}
-)";
-    static const char* kFsMulti = R"(
-#version 330 core
-in vec2 vUV;
-out vec4 fragColor;
-uniform sampler2D uTex;
-uniform float uAlpha;
-void main() {
-    vec4 c = texture(uTex, vUV);
-    fragColor = vec4(c.rgb, c.a * uAlpha);
-}
-)";
-    GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsMulti);
-    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kFsMulti);
-    if (!vs || !fs) {
-        glDeleteShader(vs); glDeleteShader(fs);
-        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
-        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
-        eglTerminate(dpy); return {};
-    }
-    GLuint prog = LinkProgram(vs, fs);
-    glDeleteShader(vs); glDeleteShader(fs);
-    if (!prog) {
-        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
-        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
-        eglTerminate(dpy); return {};
-    }
-
     // ---- Rendering state ----
     glViewport(0, 0, FB_W, FB_H);
     glDisable(GL_DEPTH_TEST);
-    glUseProgram(prog);
-    glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
-    GLint uAlphaLoc = glGetUniformLocation(prog, "uAlpha");
-    glUniform1f(uAlphaLoc, 1.0f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // ---- Clear with background colour ----
@@ -1616,51 +1849,97 @@ void main() {
     glGenBuffers(1, &glVbo);
     glBindBuffer(GL_ARRAY_BUFFER, glVbo);
 
-    const GLsizei stride = 6 * sizeof(float);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
-                          reinterpret_cast<void*>(0));
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
-                          reinterpret_cast<void*>(4 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    // Cache compiled programs keyed by a hash of the CCFeatures struct
+    // so we only compile each distinct shader variant once.
+    std::map<std::string, std::pair<GLuint, size_t>> progCache;
+
+    auto ccKey = [](const CCFeatures& cc) -> std::string {
+        return std::string(reinterpret_cast<const char*>(&cc), sizeof(cc));
+    };
 
     // ---- Draw each pass (no clear between passes) ----
     for (const auto& pass : passes) {
-        size_t numVerts = pass.vboData.size() / 6;
+        // Determine vertex stride from the CCFeatures
+        size_t numFloats = 0;
+        std::string key = ccKey(pass.cc);
+        GLuint prog = 0;
+
+        auto it = progCache.find(key);
+        if (it != progCache.end()) {
+            prog = it->second.first;
+            numFloats = it->second.second;
+        } else {
+            prog = BuildProgramForCC(pass.cc, shaderTmpl, numFloats);
+            if (!prog) continue;
+            progCache[key] = { prog, numFloats };
+        }
+
+        size_t numVerts = numFloats > 0 ? pass.vboData.size() / numFloats : 0;
         if (numVerts == 0) continue;
 
-        // Alpha blending: enable GL_BLEND for semi-transparent passes
+        glUseProgram(prog);
+
+        // Set up vertex attributes for this shader variant
+        SetupVertexAttribs(prog, pass.cc, numFloats);
+
+        // Bind texture uniforms and set texture size/filtering uniforms
+        if (pass.cc.usedTextures[0]) {
+            GLint loc = glGetUniformLocation(prog, "uTex0");
+            if (loc >= 0) glUniform1i(loc, 0);
+        }
+        {
+            GLint loc = glGetUniformLocation(prog, "frame_count");
+            if (loc >= 0) glUniform1i(loc, 0);
+        }
+        {
+            GLint loc = glGetUniformLocation(prog, "noise_scale");
+            if (loc >= 0) glUniform1f(loc, 1.0f);
+        }
+        {
+            int tw[2] = { static_cast<int>(pass.texW), 0 };
+            int th[2] = { static_cast<int>(pass.texH), 0 };
+            int tf[2] = { Fast::FILTER_NONE, Fast::FILTER_NONE };
+            GLint loc = glGetUniformLocation(prog, "texture_width");
+            if (loc >= 0) glUniform1iv(loc, 2, tw);
+            loc = glGetUniformLocation(prog, "texture_height");
+            if (loc >= 0) glUniform1iv(loc, 2, th);
+            loc = glGetUniformLocation(prog, "texture_filtering");
+            if (loc >= 0) glUniform1iv(loc, 2, tf);
+        }
+
+        // Alpha blending
         if (pass.alpha < 1.0f) {
             glEnable(GL_BLEND);
         } else {
             glDisable(GL_BLEND);
         }
-        glUniform1f(uAlphaLoc, pass.alpha);
 
-        // Upload texture for this pass
-        std::vector<uint8_t> texRgba8(pass.texW * pass.texH * 4);
-        Rgba16ToRgba8(pass.texRGBA16.data(), texRgba8.data(),
-                      pass.texW * pass.texH);
+        // Upload texture for this pass (if textured)
         GLuint srcTex = 0;
-        glGenTextures(1, &srcTex);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, srcTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pass.texW, pass.texH, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
-        GLenum filter = pass.useNearest ? GL_NEAREST : GL_LINEAR;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (pass.cc.usedTextures[0] && !pass.texRGBA16.empty()) {
+            std::vector<uint8_t> texRgba8(pass.texW * pass.texH * 4);
+            Rgba16ToRgba8(pass.texRGBA16.data(), texRgba8.data(),
+                          pass.texW * pass.texH);
+            glGenTextures(1, &srcTex);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, srcTex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pass.texW, pass.texH, 0,
+                         GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
+            GLenum filter = pass.useNearest ? GL_NEAREST : GL_LINEAR;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
 
         // Upload VBO data for this pass
         glBufferData(GL_ARRAY_BUFFER,
-                     static_cast<GLsizeiptr>(numVerts * 6 * sizeof(float)),
+                     static_cast<GLsizeiptr>(pass.vboData.size() * sizeof(float)),
                      pass.vboData.data(), GL_STREAM_DRAW);
 
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(numVerts));
 
-        glDeleteTextures(1, &srcTex);
+        if (srcTex) glDeleteTextures(1, &srcTex);
     }
 
     glFinish();
@@ -1686,7 +1965,7 @@ void main() {
     // ---- Clean up ----
     glDeleteBuffers(1, &glVbo);
     glDeleteVertexArrays(1, &vao);
-    glDeleteProgram(prog);
+    for (auto& [k, v] : progCache) glDeleteProgram(v.first);
     glDeleteTextures(1, &colorTex);
     glDeleteFramebuffers(1, &fbo);
     eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -5227,8 +5506,13 @@ static std::vector<float> MakeRectVbo(float sx0, float sy0, float sx1, float sy1
                                       float u1 = 1.f, float v1 = 1.f,
                                       float fbW = static_cast<float>(prdp::FB_WIDTH),
                                       float fbH = static_cast<float>(prdp::FB_HEIGHT)) {
-    float cx0 = sx0 - fbW / 2.0f,  cx1 = sx1 - fbW / 2.0f;
-    float cy0 = fbH / 2.0f - sy0,  cy1 = fbH / 2.0f - sy1; // clip-space Y
+    // Convert screen coords to normalised clip-space [-1,1].
+    // The Prism-generated vertex shader passes aVtxPos through as
+    // gl_Position directly — no further transform is applied.
+    float cx0 = (sx0 - fbW / 2.0f) / (fbW / 2.0f);
+    float cx1 = (sx1 - fbW / 2.0f) / (fbW / 2.0f);
+    float cy0 = (fbH / 2.0f - sy0) / (fbH / 2.0f);
+    float cy1 = (fbH / 2.0f - sy1) / (fbH / 2.0f);
     return {
         cx0, cy0, 0.f, 1.f, u0, v0,  // TL
         cx1, cy0, 0.f, 1.f, u1, v0,  // TR
@@ -5236,6 +5520,27 @@ static std::vector<float> MakeRectVbo(float sx0, float sy0, float sx1, float sy1
         cx0, cy0, 0.f, 1.f, u0, v0,  // TL
         cx1, cy1, 0.f, 1.f, u1, v1,  // BR
         cx0, cy1, 0.f, 1.f, u0, v1,  // BL
+    };
+}
+
+// Build a colour-filled rect VBO for CC_INPUT1 shaders.
+// VBO layout: [x,y,z,w, r,g,b,a] = 8 floats per vertex (aVtxPos + aInput1).
+// Coordinates are in the same screen-space convention as MakeRectVbo.
+static std::vector<float> MakeColorRectVbo(float sx0, float sy0, float sx1, float sy1,
+                                            float r, float g, float b, float a = 1.0f,
+                                            float fbW = static_cast<float>(prdp::FB_WIDTH),
+                                            float fbH = static_cast<float>(prdp::FB_HEIGHT)) {
+    float cx0 = (sx0 - fbW / 2.0f) / (fbW / 2.0f);
+    float cx1 = (sx1 - fbW / 2.0f) / (fbW / 2.0f);
+    float cy0 = (fbH / 2.0f - sy0) / (fbH / 2.0f);
+    float cy1 = (fbH / 2.0f - sy1) / (fbH / 2.0f);
+    return {
+        cx0, cy0, 0.f, 1.f, r, g, b, a,
+        cx1, cy0, 0.f, 1.f, r, g, b, a,
+        cx1, cy1, 0.f, 1.f, r, g, b, a,
+        cx0, cy0, 0.f, 1.f, r, g, b, a,
+        cx1, cy1, 0.f, 1.f, r, g, b, a,
+        cx0, cy1, 0.f, 1.f, r, g, b, a,
     };
 }
 
@@ -7733,18 +8038,18 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
                                      cBand, 6, 2, texBRgba, 8, 8);
 
         // 4. Right band — texC tinted by Prim×Env  (x=214..318, y=0..239)
-        // The RDP uses 2-cycle: Texel0×Prim (cycle 0) then Combined×Env (cycle 1).
-        // Pre-tint texC by (PrimColor/255)×(EnvColor/255) to match.
-        // PrimColor=(200,100,50), EnvColor=(40,80,180).
+        // The RDP uses 2-cycle: Texel0 (cycle 0) then Combined×Env (cycle 1).
+        // Pre-tint texC by (EnvColor/255) to match.
+        // EnvColor=(230,180,40).
         std::vector<uint16_t> texCTinted(texC.size());
         for (size_t i = 0; i < texC.size(); i++) {
             uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
             uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
             uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
-            // Multiply by prim (200,100,50) then by env (40,80,180), both /255
-            tr = (tr * 200 / 255) * 40 / 255;
-            tg = (tg * 100 / 255) * 80 / 255;
-            tb = (tb *  50 / 255) * 180 / 255;
+            // Multiply by env (230,180,40), /255
+            tr = tr * 230 / 255;
+            tg = tg * 180 / 255;
+            tb = tb * 40 / 255;
             texCTinted[i] = static_cast<uint16_t>(
                 ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
         }
@@ -7796,6 +8101,10 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         constexpr float kUvStep = 77.0f / 8192.0f;
         uint16_t bgClr = static_cast<uint16_t>((5u << 11) | (0u << 6) | (10u << 1) | 1u);
 
+        auto ccTex = egl_offscreen::MakeCCTexel0();
+        auto ccClr = egl_offscreen::MakeCCInput1();
+        auto cc2Cyc = egl_offscreen::MakeCC2CycTexThenMulInput();
+
         std::vector<egl_offscreen::DrawPass> passes;
 
         // Left band — texA (x=0..105, y=0..239)
@@ -7803,50 +8112,49 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             MakeRectVbo(0.f, 0.f, 106.f, static_cast<float>(prdp::FB_HEIGHT),
                         0.f, 0.f,
                         106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texA, 8, 8
+            texA, 8, 8, false, 1.0f, ccTex
         });
         // Centre band — texBRgba (x=107..212, y=0..239)
         passes.push_back({
             MakeRectVbo(107.f, 0.f, 213.f, static_cast<float>(prdp::FB_HEIGHT),
                         0.f, 0.f,
                         106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texBRgba, 8, 8
+            texBRgba, 8, 8, false, 1.0f, ccTex
         });
-        // Right band — texC tinted by Prim×Env (x=214..318, y=0..239)
-        // Pre-tint texC with (PrimColor/255)×(EnvColor/255) to match 2-cycle RDP.
-        std::vector<uint16_t> texCTintedGL(texC.size());
-        for (size_t i = 0; i < texC.size(); i++) {
-            uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
-            uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
-            uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
-            tr = (tr * 200 / 255) * 40 / 255;
-            tg = (tg * 100 / 255) * 80 / 255;
-            tb = (tb *  50 / 255) * 180 / 255;
-            texCTintedGL[i] = static_cast<uint16_t>(
-                ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
-        }
-        passes.push_back({
-            MakeRectVbo(214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
-                        0.f, 0.f,
-                        105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texCTintedGL, 8, 8
-        });
-        // Top-left corner — texD checkerboard (x=0..78, y=0..78)
-        // Use GL_NEAREST to preserve the checkerboard pattern (bilinear would average
-        // the two alternating colors into a uniform teal, hiding the pattern).
+        // Right band — texC with 2-cycle: Texel0 (cycle 0), Combined×Env (cycle 1)
+        // (x=214..318, y=0..239).  EnvColor=(230,180,40,255)/255.
+        // The RDP cycle 0 passes through TEXEL0, then cycle 1 multiplies by ENV.
         {
-            egl_offscreen::DrawPass cornerPass = {
-                MakeRectVbo(0.f, 0.f, 79.f, 79.f,
-                            0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
-                texD, 8, 8, /*useNearest=*/true
-            };
-            passes.push_back(cornerPass);
+            float er = 230.0f/255.0f, eg = 180.0f/255.0f, eb =  40.0f/255.0f, ea = 1.0f;
+            passes.push_back({
+                egl_offscreen::MakeTexColorRectVbo(
+                                    214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
+                                    0.f, 0.f,
+                                    105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep,
+                                    er, eg, eb, ea),
+                texC, 8, 8, false, 1.0f, cc2Cyc
+            });
         }
-        // Fill rectangles — 1×1 solid-colour textures
-        auto makeFill = [](uint16_t c, float x0, float y0, float x1, float y1) {
+        // Top-left corner — texD checkerboard (x=0..78, y=0..78)
+        passes.push_back({
+            MakeRectVbo(0.f, 0.f, 79.f, 79.f,
+                        0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
+            texD, 8, 8, /*useNearest=*/true, 1.0f, ccTex
+        });
+
+        // Fill rectangles — solid colour via CC_INPUT1 (aInput1 = vertex colour)
+        auto rgba16ToFloat = [](uint16_t c, float& r, float& g, float& b, float& a) {
+            r = ((c >> 11) & 0x1F) / 31.0f;
+            g = ((c >>  6) & 0x1F) / 31.0f;
+            b = ((c >>  1) & 0x1F) / 31.0f;
+            a = (c & 1) ? 1.0f : 0.0f;
+        };
+        auto makeFill = [&](uint16_t c, float x0, float y0, float x1, float y1) {
+            float r, g, b, a;
+            rgba16ToFloat(c, r, g, b, a);
             return egl_offscreen::DrawPass{
-                MakeRectVbo(x0, y0, x1, y1),
-                std::vector<uint16_t>{c}, 1, 1
+                MakeColorRectVbo(x0, y0, x1, y1, r, g, b, a),
+                {}, 0, 0, false, 1.0f, ccClr
             };
         };
         passes.push_back(makeFill(kFillA,  20.f,  30.f, 100.f,  70.f));
@@ -7854,50 +8162,40 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         passes.push_back(makeFill(kFillC, 215.f,  90.f, 300.f, 170.f));
         passes.push_back(makeFill(kFillD,  40.f, 160.f, 190.f, 220.f));
 
-        // Fan mesh — 8 shade triangles with flat per-slice colour
-        // Each slice uses a 1×1 texture whose colour is the fan-slice colour.
-        // The VBO is a single triangle (3 vertices × 6 floats) in clip space.
+        // Fan mesh — 8 shade triangles with flat per-slice colour via CC_INPUT1
         for (int fi = 0; fi < 8; fi++) {
             float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
             float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
-            // Centre in clip space: (kFanCx - 160, 120 - kFanCy) = (0, 0)
-            float cx = kFanCx - 160.0f;
-            float cy = 120.0f - kFanCy;
-            float ox0 = cx + kFanR_px * std::cos(th0);
-            float oy0 = cy - kFanR_px * std::sin(th0);
-            float ox1 = cx + kFanR_px * std::cos(th1);
-            float oy1 = cy - kFanR_px * std::sin(th1);
+            // Normalised clip-space: screen (160,120) → (0,0)
+            float cx = (kFanCx - 160.0f) / 160.0f;
+            float cy = (120.0f - kFanCy) / 120.0f;
+            float ox0 = cx + (kFanR_px * std::cos(th0)) / 160.0f;
+            float oy0 = cy - (kFanR_px * std::sin(th0)) / 120.0f;
+            float ox1 = cx + (kFanR_px * std::cos(th1)) / 160.0f;
+            float oy1 = cy - (kFanR_px * std::sin(th1)) / 120.0f;
 
-            uint16_t sliceClr = makeRGBA16(kFanR[fi], kFanG[fi], kFanB[fi]);
+            float r = kFanR[fi] / 255.0f, g = kFanG[fi] / 255.0f, b = kFanB[fi] / 255.0f;
             std::vector<float> triVbo = {
-                cx,  cy,  0.0f, 1.0f, 0.0f, 0.0f,
-                ox0, oy0, 0.0f, 1.0f, 0.0f, 0.0f,
-                ox1, oy1, 0.0f, 1.0f, 0.0f, 0.0f,
+                cx,  cy,  0.0f, 1.0f, r, g, b, 1.0f,
+                ox0, oy0, 0.0f, 1.0f, r, g, b, 1.0f,
+                ox1, oy1, 0.0f, 1.0f, r, g, b, 1.0f,
             };
-            passes.push_back({ triVbo, { sliceClr }, 1, 1 });
+            passes.push_back({ triVbo, {}, 0, 0, false, 1.0f, ccClr });
         }
 
-        // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128/255≈0.502)
-        {
-            uint16_t yellowClr = makeRGBA16(255, 255, 0);
-            egl_offscreen::DrawPass yellowPass = {
-                MakeRectVbo(60.f, 80.f, 250.f, 160.f),
-                std::vector<uint16_t>{ yellowClr }, 1, 1,
-                /*useNearest=*/false, /*alpha=*/128.0f / 255.0f
-            };
-            passes.push_back(yellowPass);
-        }
+        // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128/255)
+        passes.push_back({
+            MakeColorRectVbo(60.f, 80.f, 250.f, 160.f,
+                             1.0f, 1.0f, 0.0f, 128.0f / 255.0f),
+            {}, 0, 0, false, /*alpha=*/128.0f / 255.0f, ccClr
+        });
 
-        // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100/255≈0.392)
-        {
-            uint16_t magentaClr = makeRGBA16(200, 0, 220);
-            egl_offscreen::DrawPass magentaPass = {
-                MakeRectVbo(100.f, 130.f, 220.f, 210.f),
-                std::vector<uint16_t>{ magentaClr }, 1, 1,
-                /*useNearest=*/false, /*alpha=*/100.0f / 255.0f
-            };
-            passes.push_back(magentaPass);
-        }
+        // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100/255)
+        passes.push_back({
+            MakeColorRectVbo(100.f, 130.f, 220.f, 210.f,
+                             200.0f / 255.0f, 0.0f, 220.0f / 255.0f, 100.0f / 255.0f),
+            {}, 0, 0, false, /*alpha=*/100.0f / 255.0f, ccClr
+        });
 
         auto result = egl_offscreen::RenderMultiPassScene(bgClr, passes);
         if (!result.empty()) return result;
