@@ -1480,6 +1480,8 @@ struct DrawPass {
     std::vector<uint16_t> texRGBA16;  // texture in RGBA5551 format
     uint32_t texW;
     uint32_t texH;
+    bool useNearest = false;          // GL_NEAREST instead of GL_LINEAR
+    float alpha     = 1.0f;           // fragment alpha multiplier (enables GL_BLEND when < 1)
 };
 
 static std::vector<uint16_t> RenderMultiPassScene(
@@ -1564,8 +1566,10 @@ void main() {
 in vec2 vUV;
 out vec4 fragColor;
 uniform sampler2D uTex;
+uniform float uAlpha;
 void main() {
-    fragColor = texture(uTex, vUV);
+    vec4 c = texture(uTex, vUV);
+    fragColor = vec4(c.rgb, c.a * uAlpha);
 }
 )";
     GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsMulti);
@@ -1591,6 +1595,9 @@ void main() {
     glDisable(GL_DEPTH_TEST);
     glUseProgram(prog);
     glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
+    GLint uAlphaLoc = glGetUniformLocation(prog, "uAlpha");
+    glUniform1f(uAlphaLoc, 1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // ---- Clear with background colour ----
     {
@@ -1622,6 +1629,14 @@ void main() {
         size_t numVerts = pass.vboData.size() / 6;
         if (numVerts == 0) continue;
 
+        // Alpha blending: enable GL_BLEND for semi-transparent passes
+        if (pass.alpha < 1.0f) {
+            glEnable(GL_BLEND);
+        } else {
+            glDisable(GL_BLEND);
+        }
+        glUniform1f(uAlphaLoc, pass.alpha);
+
         // Upload texture for this pass
         std::vector<uint8_t> texRgba8(pass.texW * pass.texH * 4);
         Rgba16ToRgba8(pass.texRGBA16.data(), texRgba8.data(),
@@ -1632,8 +1647,9 @@ void main() {
         glBindTexture(GL_TEXTURE_2D, srcTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pass.texW, pass.texH, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GLenum filter = pass.useNearest ? GL_NEAREST : GL_LINEAR;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -5259,6 +5275,31 @@ static void SoftwareAlphaBlendTri(std::vector<uint16_t>& fb,
     }
 }
 
+// Draw a solid-colour semi-transparent axis-aligned rectangle (screen-space coords)
+// over an existing RGBA16 framebuffer using the same integer arithmetic as the RDP blender.
+static void SoftwareAlphaBlendRect(std::vector<uint16_t>& fb,
+                                    uint32_t fbWidth, uint32_t fbHeight,
+                                    int rx0, int ry0, int rx1, int ry1,
+                                    uint8_t r, uint8_t g, uint8_t b, uint8_t alpha) {
+    int x0 = std::max(0, rx0);
+    int x1 = std::min(static_cast<int>(fbWidth), rx1);
+    int y0 = std::max(0, ry0);
+    int y1 = std::min(static_cast<int>(fbHeight), ry1);
+    uint32_t ia = 255u - alpha;
+    for (int py = y0; py < y1; py++) {
+        for (int px = x0; px < x1; px++) {
+            uint16_t existing = fb[py * fbWidth + px];
+            uint32_t fbR8 = ((existing >> 11) & 0x1Fu) << 3u;
+            uint32_t fbG8 = ((existing >>  6) & 0x1Fu) << 3u;
+            uint32_t fbB8 = ((existing >>  1) & 0x1Fu) << 3u;
+            uint16_t nr = (uint16_t)(((uint32_t)r * alpha + fbR8 * ia) / 256u) >> 3u;
+            uint16_t ng = (uint16_t)(((uint32_t)g * alpha + fbG8 * ia) / 256u) >> 3u;
+            uint16_t nb = (uint16_t)(((uint32_t)b * alpha + fbB8 * ia) / 256u) >> 3u;
+            fb[py * fbWidth + px] = (nr << 11) | (ng << 6) | (nb << 1) | 1u;
+        }
+    }
+}
+
 TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     if (!prdp_->IsAvailable()) {
         GTEST_SKIP() << "Vulkan not available";
@@ -7533,11 +7574,20 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 //                  Indigo   (x=40..189,  y=160..219)
 //                An 8-triangle shade fan (octagon) centred at (160,120),
 //                radius 60 px, using CC_SHADE_RGB — gradient coloured
+//   Transparency: Semi-transparent yellow overlay (x=60..250, y=80..160,
+//                 alpha=128) rendered with RDP alpha blending (IM_RD +
+//                 FORCE_BLEND + src-alpha compositing).
+//                 Semi-transparent magenta overlay (x=100..220, y=130..210,
+//                 alpha=100) for a second blending pass.
 //   Color regs:  SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
 //                SetPrimDepth — initialised for completeness
 //   Combiners:   Texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
+//                Right band: 2-cycle Texel0×Prim, Combined×Env
 //                Shade fan: CC_SHADE_RGB (vertex colours, 1-cycle)
-//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle
+//                Overlays: CC_PRIM_RGB (prim colour with alpha blending)
+//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle,
+//                2-cycle (right band)
+//   Blending:    Standard src-alpha compositing via IM_RD + FORCE_BLEND
 //   Syncs:       SyncPipe, SyncLoad, SyncTile, SyncFull
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RDPSceneStress) {
@@ -7682,13 +7732,28 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      cBand, 6, 2, texBRgba, 8, 8);
 
-        // 4. Right band — texC  (x=214..318, y=0..239)
+        // 4. Right band — texC tinted by Prim×Env  (x=214..318, y=0..239)
+        // The RDP uses 2-cycle: Texel0×Prim (cycle 0) then Combined×Env (cycle 1).
+        // Pre-tint texC by (PrimColor/255)×(EnvColor/255) to match.
+        // PrimColor=(200,100,50), EnvColor=(40,80,180).
+        std::vector<uint16_t> texCTinted(texC.size());
+        for (size_t i = 0; i < texC.size(); i++) {
+            uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
+            uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
+            uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
+            // Multiply by prim (200,100,50) then by env (40,80,180), both /255
+            tr = (tr * 200 / 255) * 40 / 255;
+            tg = (tg * 100 / 255) * 80 / 255;
+            tb = (tb *  50 / 255) * 180 / 255;
+            texCTinted[i] = static_cast<uint16_t>(
+                ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
+        }
         // HW scissor XL=(FB_WIDTH-1)*4=319*4 → x=214..318.
         auto rBand = MakeRectVbo(214.f, 0.f, 319.f, (float)prdp::FB_HEIGHT,
                                  0.f, 0.f,
                                  105.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                     rBand, 6, 2, texC, 8, 8);
+                                     rBand, 6, 2, texCTinted, 8, 8);
 
         // 5. Top-left corner — texD checkerboard (x=0..78, y=0..78)
         // HW: scissor XL=79*4, YL=79*4 → renders x=0..78, y=0..78.
@@ -7709,6 +7774,14 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         fillRect(kFillB, 110,  50, 200, 120);   // sky-blue: centre band
         fillRect(kFillC, 215,  90, 300, 170);   // crimson:  right band, centre
         fillRect(kFillD,  40, 160, 190, 220);   // indigo:   left+centre bands, lower
+
+        // 10. Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+        SoftwareAlphaBlendRect(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                               60, 80, 250, 160, 255, 255, 0, 128);
+
+        // 11. Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+        SoftwareAlphaBlendRect(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                               100, 130, 220, 210, 200, 0, 220, 100);
 
         return swFb;
     };
@@ -7739,19 +7812,36 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
                         106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
             texBRgba, 8, 8
         });
-        // Right band — texC (x=214..318, y=0..239)
+        // Right band — texC tinted by Prim×Env (x=214..318, y=0..239)
+        // Pre-tint texC with (PrimColor/255)×(EnvColor/255) to match 2-cycle RDP.
+        std::vector<uint16_t> texCTintedGL(texC.size());
+        for (size_t i = 0; i < texC.size(); i++) {
+            uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
+            uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
+            uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
+            tr = (tr * 200 / 255) * 40 / 255;
+            tg = (tg * 100 / 255) * 80 / 255;
+            tb = (tb *  50 / 255) * 180 / 255;
+            texCTintedGL[i] = static_cast<uint16_t>(
+                ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
+        }
         passes.push_back({
             MakeRectVbo(214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
                         0.f, 0.f,
                         105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texC, 8, 8
+            texCTintedGL, 8, 8
         });
         // Top-left corner — texD checkerboard (x=0..78, y=0..78)
-        passes.push_back({
-            MakeRectVbo(0.f, 0.f, 79.f, 79.f,
-                        0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
-            texD, 8, 8
-        });
+        // Use GL_NEAREST to preserve the checkerboard pattern (bilinear would average
+        // the two alternating colors into a uniform teal, hiding the pattern).
+        {
+            egl_offscreen::DrawPass cornerPass = {
+                MakeRectVbo(0.f, 0.f, 79.f, 79.f,
+                            0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
+                texD, 8, 8, /*useNearest=*/true
+            };
+            passes.push_back(cornerPass);
+        }
         // Fill rectangles — 1×1 solid-colour textures
         auto makeFill = [](uint16_t c, float x0, float y0, float x1, float y1) {
             return egl_offscreen::DrawPass{
@@ -7785,6 +7875,28 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
                 ox1, oy1, 0.0f, 1.0f, 0.0f, 0.0f,
             };
             passes.push_back({ triVbo, { sliceClr }, 1, 1 });
+        }
+
+        // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128/255≈0.502)
+        {
+            uint16_t yellowClr = makeRGBA16(255, 255, 0);
+            egl_offscreen::DrawPass yellowPass = {
+                MakeRectVbo(60.f, 80.f, 250.f, 160.f),
+                std::vector<uint16_t>{ yellowClr }, 1, 1,
+                /*useNearest=*/false, /*alpha=*/128.0f / 255.0f
+            };
+            passes.push_back(yellowPass);
+        }
+
+        // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100/255≈0.392)
+        {
+            uint16_t magentaClr = makeRGBA16(200, 0, 220);
+            egl_offscreen::DrawPass magentaPass = {
+                MakeRectVbo(100.f, 130.f, 220.f, 210.f),
+                std::vector<uint16_t>{ magentaClr }, 1, 1,
+                /*useNearest=*/false, /*alpha=*/100.0f / 255.0f
+            };
+            passes.push_back(magentaPass);
         }
 
         auto result = egl_offscreen::RenderMultiPassScene(bgClr, passes);
@@ -7918,14 +8030,18 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
             1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77) });
 
-        // 1f: Right band (x=214..318, y=0..239) — tile 2, 1-cycle, CC_TEXEL0
+        // 1f: Right band (x=214..318, y=0..239) — tile 2, 2-cycle, Texel0×Prim + Combined×Env
         {
+            // Cycle 0: (TEXEL0 - 0) × PRIM + 0 = TEXEL0 × PRIM
+            prdp::CombinerCycle c0 = { 1, 8, 10, 7,   1, 7, 3, 7 };
+            // Cycle 1: (COMBINED - 0) × ENV + 0 = COMBINED × ENV
+            prdp::CombinerCycle c1 = { 0, 8, 12, 7,   0, 7, 5, 7 };
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
             cmds.push_back(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
                                                  prdp::FB_HEIGHT * 4));
-            cmds.push_back(prdp::MakeOtherModes1Cycle());
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+            cmds.push_back(prdp::MakeOtherModes2Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(c0, c1));
             steps.push_back({ cmds, {} });
         }
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
@@ -7989,6 +8105,38 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
                       kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
                       kFanR[fi], kFanG[fi], kFanB[fi], 255) });
         }
+
+        // 1l: Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+        //     Uses 1-cycle mode with CC_PRIM_RGB and RDP alpha blending
+        //     (IM_RD + FORCE_BLEND + src-alpha compositing).
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(60 * 4, 80 * 4, 250 * 4, 160 * 4));
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_ALPHA_BLEND_LO));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 255, 255, 0, 128));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            0, 250 * 4, 160 * 4, 60 * 4, 80 * 4, 0, 0, 77, 77) });
+
+        // 1m: Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(100 * 4, 130 * 4, 220 * 4, 210 * 4));
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_ALPHA_BLEND_LO));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 200, 0, 220, 100));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            0, 220 * 4, 210 * 4, 100 * 4, 130 * 4, 0, 0, 77, 77) });
 
         // SyncFull
         steps.push_back({ { prdp::MakeSyncFull() }, {} });
@@ -8088,13 +8236,15 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77));
     }
 
-    // Right band — tile 2, 1-cycle, CC_TEXEL0  (x=214..318, y=0..239)
+    // Right band — tile 2, 2-cycle, Texel0×Prim + Combined×Env  (x=214..318, y=0..239)
     {
+        prdp::CombinerCycle c0 = { 1, 8, 10, 7,   1, 7, 3, 7 };
+        prdp::CombinerCycle c1 = { 0, 8, 12, 7,   0, 7, 5, 7 };
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
                                                    prdp::FB_HEIGHT * 4));
-        backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
-        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes2Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(c0, c1));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
             2, (prdp::FB_WIDTH - 1) * 4, prdp::FB_HEIGHT * 4, 214 * 4, 0, 0, 0, 77, 77));
     }
@@ -8142,6 +8292,28 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
             kFanR[fi], kFanG[fi], kFanB[fi], 255));
     }
+
+    // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(60 * 4, 80 * 4, 250 * 4, 160 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_ALPHA_BLEND_LO));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 255, 255, 0, 128));
+    backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+        0, 250 * 4, 160 * 4, 60 * 4, 80 * 4, 0, 0, 77, 77));
+
+    // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(100 * 4, 130 * 4, 220 * 4, 210 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_ALPHA_BLEND_LO));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 200, 0, 220, 100));
+    backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+        0, 220 * 4, 210 * 4, 100 * 4, 130 * 4, 0, 0, 77, 77));
 
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
