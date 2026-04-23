@@ -1178,6 +1178,527 @@ static std::vector<uint16_t> RenderTexturedVBO(
 } // namespace llgl_offscreen
 #endif // LUS_LLGL_TESTS_ENABLED
 
+// ============================================================
+// EGL offscreen VBO renderer (optional, requires LUS_OGL_TESTS_ENABLED)
+//
+// Accepts a Fast3D-format VBO (fpv=6: x,y,z,w,u,v in clip space) and an
+// RGBA16 texture, renders them to a 320×240 offscreen framebuffer via EGL
+// + OpenGL (Mesa llvmpipe/softpipe), and returns the result as RGBA16.
+// ============================================================
+#ifdef LUS_OGL_TESTS_ENABLED
+
+#include <cstdlib>  // setenv
+#define GL_GLEXT_PROTOTYPES 1
+#include <EGL/egl.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+namespace egl_offscreen {
+
+static constexpr uint32_t FB_W = 320;
+static constexpr uint32_t FB_H = 240;
+
+// Convert N64 RGBA16 (5-5-5-1) to RGBA8 for texture upload.
+static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        uint16_t px = src[i];
+        dst[i*4+0] = static_cast<uint8_t>(((px >> 11) & 0x1F) * 255 / 31);
+        dst[i*4+1] = static_cast<uint8_t>(((px >>  6) & 0x1F) * 255 / 31);
+        dst[i*4+2] = static_cast<uint8_t>(((px >>  1) & 0x1F) * 255 / 31);
+        dst[i*4+3] = (px & 1) ? 255 : 0;
+    }
+}
+
+static GLuint CompileShader(GLenum type, const char* src) {
+    GLuint s = glCreateShader(type);
+    glShaderSource(s, 1, &src, nullptr);
+    glCompileShader(s);
+    GLint ok = 0;
+    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+    if (!ok) {
+        char buf[512];
+        glGetShaderInfoLog(s, 512, nullptr, buf);
+        std::cerr << "[OGL-test] Shader compile error: " << buf << "\n";
+        glDeleteShader(s);
+        return 0;
+    }
+    return s;
+}
+
+static GLuint LinkProgram(GLuint vs, GLuint fs) {
+    GLuint p = glCreateProgram();
+    glAttachShader(p, vs);
+    glAttachShader(p, fs);
+    glLinkProgram(p);
+    GLint ok = 0;
+    glGetProgramiv(p, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char buf[512];
+        glGetProgramInfoLog(p, 512, nullptr, buf);
+        std::cerr << "[OGL-test] Program link error: " << buf << "\n";
+        glDeleteProgram(p);
+        return 0;
+    }
+    return p;
+}
+
+// Render a Fast3D VBO via EGL + OpenGL (Mesa headless).
+// vboData: interleaved [x, y, z, w, u, v] floats (fpv=6), clip-space positions.
+// numVerts: number of vertices (must be a multiple of 3).
+// Returns a FB_W×FB_H RGBA16 framebuffer, or an empty vector on failure.
+static std::vector<uint16_t> RenderTexturedVBO(
+        const float* vboData, size_t numVerts,
+        const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH)
+{
+    // ---- Init EGL (headless pbuffer surface) ----
+    // Prefer the Mesa surfaceless platform; fall back to the default display
+    // (which may be the X11 or Wayland display server, or another Mesa
+    // backend) if the environment variable is not already set.
+    setenv("EGL_PLATFORM", "surfaceless", /*overwrite=*/0);
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (dpy == EGL_NO_DISPLAY) {
+        std::cerr << "[OGL-test] eglGetDisplay failed\n";
+        return {};
+    }
+    EGLint major = 0, minor = 0;
+    if (!eglInitialize(dpy, &major, &minor)) {
+        std::cerr << "[OGL-test] eglInitialize failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        return {};
+    }
+    eglBindAPI(EGL_OPENGL_API);
+
+    static const EGLint cfgAttribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,
+        EGL_NONE
+    };
+    EGLConfig cfg = nullptr;
+    EGLint numCfg = 0;
+    eglChooseConfig(dpy, cfgAttribs, &cfg, 1, &numCfg);
+    if (numCfg == 0) {
+        std::cerr << "[OGL-test] eglChooseConfig found no suitable configs\n";
+        eglTerminate(dpy);
+        return {};
+    }
+
+    static const EGLint ctxAttribs[] = {
+        EGL_CONTEXT_MAJOR_VERSION,         3,
+        EGL_CONTEXT_MINOR_VERSION,         3,
+        EGL_CONTEXT_OPENGL_PROFILE_MASK,   EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
+        EGL_NONE
+    };
+    EGLContext ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, ctxAttribs);
+    if (ctx == EGL_NO_CONTEXT) {
+        std::cerr << "[OGL-test] eglCreateContext failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // Minimal 1×1 pbuffer — all rendering goes into the FBO below.
+    static const EGLint pbAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+    EGLSurface surf = eglCreatePbufferSurface(dpy, cfg, pbAttribs);
+    if (surf == EGL_NO_SURFACE) {
+        std::cerr << "[OGL-test] eglCreatePbufferSurface failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+    if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
+        std::cerr << "[OGL-test] eglMakeCurrent failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Offscreen FBO (FB_W × FB_H, RGBA8) ----
+    GLuint colorTex = 0;
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, FB_W, FB_H, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLuint fbo = 0;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, colorTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[OGL-test] FBO is not complete\n";
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Shaders ----
+    // Vertex layout: [x, y, z, w, u, v] — clip-space positions.
+    // Same coordinate convention as the LLGL SPIR-V shaders:
+    //   NDC_x =  x / 160   NDC_y = y / 120  (clip-space y already has N64 sign)
+    // Rows are read back from bottom-to-top by glReadPixels, so Y is flipped
+    // when building the result vector below — that flip converts GL's bottom-up
+    // to our top-down screen convention without needing a sign change here.
+    static const char* kVsSrc = R"(
+#version 330 core
+layout(location = 0) in vec4 inPos;
+layout(location = 1) in vec2 inUV;
+out vec2 vUV;
+void main() {
+    gl_Position = vec4(inPos.x / 160.0, inPos.y / 120.0, 0.0, 1.0);
+    vUV = inUV;
+}
+)";
+    static const char* kFsSrc = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 fragColor;
+uniform sampler2D uTex;
+void main() {
+    fragColor = texture(uTex, vUV);
+}
+)";
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsSrc);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kFsSrc);
+    if (!vs || !fs) {
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+    GLuint prog = LinkProgram(vs, fs);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    if (!prog) {
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Source texture ----
+    std::vector<uint8_t> texRgba8(texW * texH * 4);
+    Rgba16ToRgba8(texRGBA16.data(), texRgba8.data(), texW * texH);
+    GLuint srcTex = 0;
+    glGenTextures(1, &srcTex);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, srcTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texW, texH, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // ---- VAO + VBO ----
+    GLuint vao = 0, glVbo = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &glVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, glVbo);
+    glBufferData(GL_ARRAY_BUFFER,
+                 static_cast<GLsizeiptr>(numVerts * 6 * sizeof(float)),
+                 vboData, GL_STATIC_DRAW);
+    const GLsizei stride = 6 * sizeof(float);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(0));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(4 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // ---- Render ----
+    glViewport(0, 0, FB_W, FB_H);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(prog);
+    glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(numVerts));
+    glFinish();
+
+    // ---- Read back RGBA8, flip Y, convert to RGBA16 ----
+    // glReadPixels returns rows bottom-to-top; our FB array is top-to-bottom.
+    std::vector<uint8_t> rgba8Out(FB_W * FB_H * 4);
+    glReadPixels(0, 0, FB_W, FB_H, GL_RGBA, GL_UNSIGNED_BYTE, rgba8Out.data());
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t row = 0; row < FB_H; row++) {
+        const uint32_t srcRow = FB_H - 1 - row;
+        for (uint32_t x = 0; x < FB_W; x++) {
+            const size_t srcIdx = (srcRow * FB_W + x) * 4;
+            const uint8_t r = (rgba8Out[srcIdx+0] >> 3) & 0x1F;
+            const uint8_t g = (rgba8Out[srcIdx+1] >> 3) & 0x1F;
+            const uint8_t b = (rgba8Out[srcIdx+2] >> 3) & 0x1F;
+            const uint8_t a = rgba8Out[srcIdx+3] ? 1 : 0;
+            fb[row * FB_W + x] =
+                static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+        }
+    }
+
+    // ---- Clean up ----
+    glDeleteBuffers(1, &glVbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteTextures(1, &srcTex);
+    glDeleteProgram(prog);
+    glDeleteTextures(1, &colorTex);
+    glDeleteFramebuffers(1, &fbo);
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroySurface(dpy, surf);
+    eglDestroyContext(dpy, ctx);
+    eglTerminate(dpy);
+    return fb;
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Multi-pass scene renderer
+//
+// Each DrawPass draws a separate textured quad (6-float VBO: x,y,z,w,u,v)
+// on top of the previous one.  The framebuffer is cleared to bgRGBA5551
+// once, then all passes are drawn in order without intermediate clears.
+// For solid-colour fills, use a 1×1 texture.
+// ────────────────────────────────────────────────────────────────────────
+
+struct DrawPass {
+    std::vector<float> vboData;       // [x,y,z,w,u,v] per vertex
+    std::vector<uint16_t> texRGBA16;  // texture in RGBA5551 format
+    uint32_t texW;
+    uint32_t texH;
+    bool useNearest = false;          // GL_NEAREST instead of GL_LINEAR
+    float alpha     = 1.0f;           // fragment alpha multiplier (enables GL_BLEND when < 1)
+};
+
+static std::vector<uint16_t> RenderMultiPassScene(
+        uint16_t bgRGBA5551,
+        const std::vector<DrawPass>& passes)
+{
+    // ---- Init EGL (headless pbuffer surface) ----
+    setenv("EGL_PLATFORM", "surfaceless", /*overwrite=*/0);
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (dpy == EGL_NO_DISPLAY) return {};
+    EGLint major = 0, minor = 0;
+    if (!eglInitialize(dpy, &major, &minor)) return {};
+    eglBindAPI(EGL_OPENGL_API);
+
+    static const EGLint cfgAttribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,
+        EGL_NONE
+    };
+    EGLConfig cfg = nullptr;
+    EGLint numCfg = 0;
+    eglChooseConfig(dpy, cfgAttribs, &cfg, 1, &numCfg);
+    if (numCfg == 0) { eglTerminate(dpy); return {}; }
+
+    static const EGLint ctxAttribs[] = {
+        EGL_CONTEXT_MAJOR_VERSION,       3,
+        EGL_CONTEXT_MINOR_VERSION,       3,
+        EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
+        EGL_NONE
+    };
+    EGLContext ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, ctxAttribs);
+    if (ctx == EGL_NO_CONTEXT) { eglTerminate(dpy); return {}; }
+
+    static const EGLint pbAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+    EGLSurface surf = eglCreatePbufferSurface(dpy, cfg, pbAttribs);
+    if (surf == EGL_NO_SURFACE) {
+        eglDestroyContext(dpy, ctx); eglTerminate(dpy); return {};
+    }
+    if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Offscreen FBO (FB_W × FB_H, RGBA8) ----
+    GLuint colorTex = 0;
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, FB_W, FB_H, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLuint fbo = 0;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, colorTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Shaders (same coordinate convention as RenderTexturedVBO) ----
+    // Uses GL_LINEAR for bilinear texture filtering, matching the RDP's
+    // bilerp0+bilerp1 enabled mode.  This produces more distinct colours
+    // than the software rasteriser's nearest-neighbour sampling.
+    static const char* kVsMulti = R"(
+#version 330 core
+layout(location = 0) in vec4 inPos;
+layout(location = 1) in vec2 inUV;
+out vec2 vUV;
+void main() {
+    gl_Position = vec4(inPos.x / 160.0, inPos.y / 120.0, 0.0, 1.0);
+    vUV = inUV;
+}
+)";
+    static const char* kFsMulti = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 fragColor;
+uniform sampler2D uTex;
+uniform float uAlpha;
+void main() {
+    vec4 c = texture(uTex, vUV);
+    fragColor = vec4(c.rgb, c.a * uAlpha);
+}
+)";
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsMulti);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kFsMulti);
+    if (!vs || !fs) {
+        glDeleteShader(vs); glDeleteShader(fs);
+        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+    GLuint prog = LinkProgram(vs, fs);
+    glDeleteShader(vs); glDeleteShader(fs);
+    if (!prog) {
+        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Rendering state ----
+    glViewport(0, 0, FB_W, FB_H);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(prog);
+    glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
+    GLint uAlphaLoc = glGetUniformLocation(prog, "uAlpha");
+    glUniform1f(uAlphaLoc, 1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // ---- Clear with background colour ----
+    {
+        uint8_t bgR8 = static_cast<uint8_t>(((bgRGBA5551 >> 11) & 0x1F) * 255 / 31);
+        uint8_t bgG8 = static_cast<uint8_t>(((bgRGBA5551 >>  6) & 0x1F) * 255 / 31);
+        uint8_t bgB8 = static_cast<uint8_t>(((bgRGBA5551 >>  1) & 0x1F) * 255 / 31);
+        float bgA = (bgRGBA5551 & 1) ? 1.0f : 0.0f;
+        glClearColor(bgR8 / 255.0f, bgG8 / 255.0f, bgB8 / 255.0f, bgA);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    // ---- VAO + VBO (reused across passes) ----
+    GLuint vao = 0, glVbo = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &glVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, glVbo);
+
+    const GLsizei stride = 6 * sizeof(float);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(0));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(4 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // ---- Draw each pass (no clear between passes) ----
+    for (const auto& pass : passes) {
+        size_t numVerts = pass.vboData.size() / 6;
+        if (numVerts == 0) continue;
+
+        // Alpha blending: enable GL_BLEND for semi-transparent passes
+        if (pass.alpha < 1.0f) {
+            glEnable(GL_BLEND);
+        } else {
+            glDisable(GL_BLEND);
+        }
+        glUniform1f(uAlphaLoc, pass.alpha);
+
+        // Upload texture for this pass
+        std::vector<uint8_t> texRgba8(pass.texW * pass.texH * 4);
+        Rgba16ToRgba8(pass.texRGBA16.data(), texRgba8.data(),
+                      pass.texW * pass.texH);
+        GLuint srcTex = 0;
+        glGenTextures(1, &srcTex);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, srcTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pass.texW, pass.texH, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
+        GLenum filter = pass.useNearest ? GL_NEAREST : GL_LINEAR;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        // Upload VBO data for this pass
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(numVerts * 6 * sizeof(float)),
+                     pass.vboData.data(), GL_STREAM_DRAW);
+
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(numVerts));
+
+        glDeleteTextures(1, &srcTex);
+    }
+
+    glFinish();
+
+    // ---- Read back RGBA8, flip Y, convert to RGBA16 ----
+    std::vector<uint8_t> rgba8Out(FB_W * FB_H * 4);
+    glReadPixels(0, 0, FB_W, FB_H, GL_RGBA, GL_UNSIGNED_BYTE, rgba8Out.data());
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t row = 0; row < FB_H; row++) {
+        const uint32_t srcRow = FB_H - 1 - row;
+        for (uint32_t x = 0; x < FB_W; x++) {
+            const size_t srcIdx = (srcRow * FB_W + x) * 4;
+            const uint8_t r = (rgba8Out[srcIdx+0] >> 3) & 0x1F;
+            const uint8_t g = (rgba8Out[srcIdx+1] >> 3) & 0x1F;
+            const uint8_t b = (rgba8Out[srcIdx+2] >> 3) & 0x1F;
+            const uint8_t a = rgba8Out[srcIdx+3] ? 1 : 0;
+            fb[row * FB_W + x] =
+                static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+        }
+    }
+
+    // ---- Clean up ----
+    glDeleteBuffers(1, &glVbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(prog);
+    glDeleteTextures(1, &colorTex);
+    glDeleteFramebuffers(1, &fbo);
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroySurface(dpy, surf);
+    eglDestroyContext(dpy, ctx);
+    eglTerminate(dpy);
+    return fb;
+}
+
+} // namespace egl_offscreen
+#endif // LUS_OGL_TESTS_ENABLED
+
 using namespace fast3d_test;
 
 // ============================================================
@@ -4754,6 +5275,31 @@ static void SoftwareAlphaBlendTri(std::vector<uint16_t>& fb,
     }
 }
 
+// Draw a solid-colour semi-transparent axis-aligned rectangle (screen-space coords)
+// over an existing RGBA16 framebuffer using the same integer arithmetic as the RDP blender.
+static void SoftwareAlphaBlendRect(std::vector<uint16_t>& fb,
+                                    uint32_t fbWidth, uint32_t fbHeight,
+                                    int rx0, int ry0, int rx1, int ry1,
+                                    uint8_t r, uint8_t g, uint8_t b, uint8_t alpha) {
+    int x0 = std::max(0, rx0);
+    int x1 = std::min(static_cast<int>(fbWidth), rx1);
+    int y0 = std::max(0, ry0);
+    int y1 = std::min(static_cast<int>(fbHeight), ry1);
+    uint32_t ia = 255u - alpha;
+    for (int py = y0; py < y1; py++) {
+        for (int px = x0; px < x1; px++) {
+            uint16_t existing = fb[py * fbWidth + px];
+            uint32_t fbR8 = ((existing >> 11) & 0x1Fu) << 3u;
+            uint32_t fbG8 = ((existing >>  6) & 0x1Fu) << 3u;
+            uint32_t fbB8 = ((existing >>  1) & 0x1Fu) << 3u;
+            uint16_t nr = (uint16_t)(((uint32_t)r * alpha + fbR8 * ia) / 256u) >> 3u;
+            uint16_t ng = (uint16_t)(((uint32_t)g * alpha + fbG8 * ia) / 256u) >> 3u;
+            uint16_t nb = (uint16_t)(((uint32_t)b * alpha + fbB8 * ia) / 256u) >> 3u;
+            fb[py * fbWidth + px] = (nr << 11) | (ng << 6) | (nb << 1) | 1u;
+        }
+    }
+}
+
 TEST_F(ParallelRDPComparisonTest, MeshScreenshot_TexturedCheckerboard) {
     if (!prdp_->IsAvailable()) {
         GTEST_SKIP() << "Vulkan not available";
@@ -5872,16 +6418,47 @@ protected:
     }
 
     // ---- Fast3D OpenGL path rendering ----
-    // Produces a 50×50 software-rasterized textured quad using the already-decoded
-    // RGBA16 representation of the texture.
+    // Renders a 50×50 textured quad at (50,50)–(100,100) using EGL + OpenGL
+    // (Mesa llvmpipe / softpipe) when LUS_OGL_TESTS_ENABLED is defined, otherwise
+    // falls back to the CPU software rasterizer.
     std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16,
                                          uint32_t texW, uint32_t texH) {
+        // Build the same Fast3D VBO as RenderFast3DTexturedQuad.
+        // Screen (50,50)-(100,100) mapped to clip space with an identity matrix:
+        //   clip_x = screen_x - 160,  clip_y = 120 - screen_y
+        // Layout: [x, y, z, w, u, v] per vertex — the format Fast3D emits.
+        const float x0 = 50.0f  - 160.0f;  // -110
+        const float x1 = 100.0f - 160.0f;  //  -60
+        const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
+        const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
+        const float vboData[] = {
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+        };
+        static constexpr size_t kNumVerts = 6;
+#ifdef LUS_OGL_TESTS_ENABLED
+        auto result = egl_offscreen::RenderTexturedVBO(vboData, kNumVerts,
+                                                       texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [OGL] EGL/OpenGL unavailable, falling back to software rasteriser\n";
+#endif
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
     }
 
     std::vector<uint16_t> RenderOpenGLMesh(const std::vector<float>& vbo, size_t numTris,
                                             const std::vector<uint16_t>& texRGBA16,
                                             uint32_t texW, uint32_t texH) {
+#ifdef LUS_OGL_TESTS_ENABLED
+        size_t numVerts = numTris * 3;
+        auto result = egl_offscreen::RenderTexturedVBO(vbo.data(), numVerts,
+                                                       texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [OGL] EGL/OpenGL unavailable, falling back to software rasteriser\n";
+#endif
         std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
         SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 6, numTris,
                                      texRGBA16, texW, texH);
@@ -6982,8 +7559,8 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 // ──────────────────────────────────────────────────────────────────────────
 // RDPSceneStress
 //
-// A multi-element scene that exercises a range of RDP features using only
-// axis-aligned primitives, ensuring identical output across all four backends:
+// A multi-element scene that exercises a range of RDP features across all
+// four backends (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL):
 //
 //   Textures:    Four simultaneously-loaded tiles rendered as texture rects:
 //                  Tile 0 = RGBA16 hue-spectrum     (left band,   x=0..105)
@@ -6995,17 +7572,23 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 //                  Sky-blue (x=110..199, y=50..119)
 //                  Crimson  (x=215..299, y=90..169)
 //                  Indigo   (x=40..189,  y=160..219)
+//                An 8-triangle shade fan (octagon) centred at (160,120),
+//                radius 60 px, using CC_SHADE_RGB — gradient coloured
+//   Transparency: Semi-transparent yellow overlay (x=60..250, y=80..160,
+//                 alpha=128) rendered with RDP alpha blending (IM_RD +
+//                 FORCE_BLEND + src-alpha compositing).
+//                 Semi-transparent magenta overlay (x=100..220, y=130..210,
+//                 alpha=100) for a second blending pass.
 //   Color regs:  SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
 //                SetPrimDepth — initialised for completeness
-//   Combiners:   All texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
-//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle (×4: tex bands)
+//   Combiners:   Texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
+//                Right band: 2-cycle Texel0×Prim, Combined×Env
+//                Shade fan: CC_SHADE_RGB (vertex colours, 1-cycle)
+//                Overlays: CC_PRIM_RGB (prim colour with alpha blending)
+//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle,
+//                2-cycle (right band)
+//   Blending:    Standard src-alpha compositing via IM_RD + FORCE_BLEND
 //   Syncs:       SyncPipe, SyncLoad, SyncTile, SyncFull
-//
-// Design principle: no triangles, no alpha-blend, no bilinear-vs-nearest issues.
-//   • texB smooth ramp: adjacent I8 values differ by ≤ 8 → bilinear decoded diff ≤ 8.
-//   • FILL rects: RGBA5551 literals identical in HW and SW → decoded diff = 0.
-//   All four backends (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL)
-//   produce images where every pixel differs by ≤ 16 from every other.
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     // ── Textures ──────────────────────────────────────────────────────────
@@ -7088,6 +7671,26 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         texBRgba[i] = static_cast<uint16_t>((v << 11) | (v << 6) | (v << 1) | 1u);
     }
 
+    // ── Fan mesh: 8-triangle shade octagon, centre (160,120), radius 60 ──
+    // Colour table: gradient by angle (same approach as RDPFeatureGauntlet)
+    static const uint8_t kFanR[8] = { 255, 255, 200,   0,   0,   0, 100, 220 };
+    static const uint8_t kFanG[8] = {  50, 140, 220, 200, 200,  60,   0,   0 };
+    static const uint8_t kFanB[8] = {   0,   0,   0,  50, 220, 255, 255, 180 };
+    constexpr float kFanCx = 160.0f;          // screen-space centre
+    constexpr float kFanCy = 120.0f;
+    constexpr float kFanR_px = 60.0f;         // radius in pixels
+
+    // Build VBO for the GL/LLGL renderers: 8 tris × 3 verts × 6 floats
+    // Layout: [x, y, z, w, u, v] in clip space (x = sx-160, y = 120-sy)
+    // For shade triangles the UV channels carry the vertex colour (packed as
+    // float r,g,b in the first 3 components; the EGL renderer's shader will
+    // read fragColor = vec4(vUV.x, vUV.y, 0, 1) for a 2-component UV, but
+    // here we actually need vertex colours.  Since the multi-pass EGL shader
+    // only supports textured quads, we render the fan via a 1×1 texture whose
+    // colour is the fan slice colour — an acceptable approximation.
+    // The PRDP/VK paths use proper RDP shade triangles with per-vertex colour
+    // interpolation.
+
     // ── Multi-pass software renderer — used for GL and LLGL paths ─────────
     //
     // Renders exactly the same scene as the PRDP/VK path using axis-aligned
@@ -7129,13 +7732,28 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      cBand, 6, 2, texBRgba, 8, 8);
 
-        // 4. Right band — texC  (x=214..318, y=0..239)
+        // 4. Right band — texC tinted by Prim×Env  (x=214..318, y=0..239)
+        // The RDP uses 2-cycle: Texel0×Prim (cycle 0) then Combined×Env (cycle 1).
+        // Pre-tint texC by (PrimColor/255)×(EnvColor/255) to match.
+        // PrimColor=(200,100,50), EnvColor=(40,80,180).
+        std::vector<uint16_t> texCTinted(texC.size());
+        for (size_t i = 0; i < texC.size(); i++) {
+            uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
+            uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
+            uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
+            // Multiply by prim (200,100,50) then by env (40,80,180), both /255
+            tr = (tr * 200 / 255) * 40 / 255;
+            tg = (tg * 100 / 255) * 80 / 255;
+            tb = (tb *  50 / 255) * 180 / 255;
+            texCTinted[i] = static_cast<uint16_t>(
+                ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
+        }
         // HW scissor XL=(FB_WIDTH-1)*4=319*4 → x=214..318.
         auto rBand = MakeRectVbo(214.f, 0.f, 319.f, (float)prdp::FB_HEIGHT,
                                  0.f, 0.f,
                                  105.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                     rBand, 6, 2, texC, 8, 8);
+                                     rBand, 6, 2, texCTinted, 8, 8);
 
         // 5. Top-left corner — texD checkerboard (x=0..78, y=0..78)
         // HW: scissor XL=79*4, YL=79*4 → renders x=0..78, y=0..78.
@@ -7157,11 +7775,139 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         fillRect(kFillC, 215,  90, 300, 170);   // crimson:  right band, centre
         fillRect(kFillD,  40, 160, 190, 220);   // indigo:   left+centre bands, lower
 
+        // 10. Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+        SoftwareAlphaBlendRect(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                               60, 80, 250, 160, 255, 255, 0, 128);
+
+        // 11. Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+        SoftwareAlphaBlendRect(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                               100, 130, 220, 210, 200, 0, 220, 100);
+
         return swFb;
     };
 
-    // ── Software renderer runs before the ParallelRDP VkInstance is opened ─
-    auto llglFb = RenderStressSW();
+    // ── Multi-pass OpenGL renderer — used for GL and LLGL paths ───────────
+    //
+    // Builds the same VBOs as RenderStressSW but renders them through a real
+    // EGL+OpenGL context (Mesa llvmpipe) via egl_offscreen::RenderMultiPassScene.
+    // Falls back to RenderStressSW when EGL/OpenGL is unavailable.
+    auto RenderStressGL = [&]() -> std::vector<uint16_t> {
+#ifdef LUS_OGL_TESTS_ENABLED
+        constexpr float kUvStep = 77.0f / 8192.0f;
+        uint16_t bgClr = static_cast<uint16_t>((5u << 11) | (0u << 6) | (10u << 1) | 1u);
+
+        std::vector<egl_offscreen::DrawPass> passes;
+
+        // Left band — texA (x=0..105, y=0..239)
+        passes.push_back({
+            MakeRectVbo(0.f, 0.f, 106.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texA, 8, 8
+        });
+        // Centre band — texBRgba (x=107..212, y=0..239)
+        passes.push_back({
+            MakeRectVbo(107.f, 0.f, 213.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texBRgba, 8, 8
+        });
+        // Right band — texC tinted by Prim×Env (x=214..318, y=0..239)
+        // Pre-tint texC with (PrimColor/255)×(EnvColor/255) to match 2-cycle RDP.
+        std::vector<uint16_t> texCTintedGL(texC.size());
+        for (size_t i = 0; i < texC.size(); i++) {
+            uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
+            uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
+            uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
+            tr = (tr * 200 / 255) * 40 / 255;
+            tg = (tg * 100 / 255) * 80 / 255;
+            tb = (tb *  50 / 255) * 180 / 255;
+            texCTintedGL[i] = static_cast<uint16_t>(
+                ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
+        }
+        passes.push_back({
+            MakeRectVbo(214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texCTintedGL, 8, 8
+        });
+        // Top-left corner — texD checkerboard (x=0..78, y=0..78)
+        // Use GL_NEAREST to preserve the checkerboard pattern (bilinear would average
+        // the two alternating colors into a uniform teal, hiding the pattern).
+        {
+            egl_offscreen::DrawPass cornerPass = {
+                MakeRectVbo(0.f, 0.f, 79.f, 79.f,
+                            0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
+                texD, 8, 8, /*useNearest=*/true
+            };
+            passes.push_back(cornerPass);
+        }
+        // Fill rectangles — 1×1 solid-colour textures
+        auto makeFill = [](uint16_t c, float x0, float y0, float x1, float y1) {
+            return egl_offscreen::DrawPass{
+                MakeRectVbo(x0, y0, x1, y1),
+                std::vector<uint16_t>{c}, 1, 1
+            };
+        };
+        passes.push_back(makeFill(kFillA,  20.f,  30.f, 100.f,  70.f));
+        passes.push_back(makeFill(kFillB, 110.f,  50.f, 200.f, 120.f));
+        passes.push_back(makeFill(kFillC, 215.f,  90.f, 300.f, 170.f));
+        passes.push_back(makeFill(kFillD,  40.f, 160.f, 190.f, 220.f));
+
+        // Fan mesh — 8 shade triangles with flat per-slice colour
+        // Each slice uses a 1×1 texture whose colour is the fan-slice colour.
+        // The VBO is a single triangle (3 vertices × 6 floats) in clip space.
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            // Centre in clip space: (kFanCx - 160, 120 - kFanCy) = (0, 0)
+            float cx = kFanCx - 160.0f;
+            float cy = 120.0f - kFanCy;
+            float ox0 = cx + kFanR_px * std::cos(th0);
+            float oy0 = cy - kFanR_px * std::sin(th0);
+            float ox1 = cx + kFanR_px * std::cos(th1);
+            float oy1 = cy - kFanR_px * std::sin(th1);
+
+            uint16_t sliceClr = makeRGBA16(kFanR[fi], kFanG[fi], kFanB[fi]);
+            std::vector<float> triVbo = {
+                cx,  cy,  0.0f, 1.0f, 0.0f, 0.0f,
+                ox0, oy0, 0.0f, 1.0f, 0.0f, 0.0f,
+                ox1, oy1, 0.0f, 1.0f, 0.0f, 0.0f,
+            };
+            passes.push_back({ triVbo, { sliceClr }, 1, 1 });
+        }
+
+        // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128/255≈0.502)
+        {
+            uint16_t yellowClr = makeRGBA16(255, 255, 0);
+            egl_offscreen::DrawPass yellowPass = {
+                MakeRectVbo(60.f, 80.f, 250.f, 160.f),
+                std::vector<uint16_t>{ yellowClr }, 1, 1,
+                /*useNearest=*/false, /*alpha=*/128.0f / 255.0f
+            };
+            passes.push_back(yellowPass);
+        }
+
+        // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100/255≈0.392)
+        {
+            uint16_t magentaClr = makeRGBA16(200, 0, 220);
+            egl_offscreen::DrawPass magentaPass = {
+                MakeRectVbo(100.f, 130.f, 220.f, 210.f),
+                std::vector<uint16_t>{ magentaClr }, 1, 1,
+                /*useNearest=*/false, /*alpha=*/100.0f / 255.0f
+            };
+            passes.push_back(magentaPass);
+        }
+
+        auto result = egl_offscreen::RenderMultiPassScene(bgClr, passes);
+        if (!result.empty()) return result;
+        std::cout << "  [GL-multi] EGL/OpenGL unavailable, falling back to SW\n";
+#endif
+        return RenderStressSW();
+    };
+
+    // ── GL renderer runs before the ParallelRDP VkInstance is opened ─────
+    auto llglFb = RenderStressGL();
 
     prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
@@ -7284,14 +8030,18 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
             1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77) });
 
-        // 1f: Right band (x=214..318, y=0..239) — tile 2, 1-cycle, CC_TEXEL0
+        // 1f: Right band (x=214..318, y=0..239) — tile 2, 2-cycle, Texel0×Prim + Combined×Env
         {
+            // Cycle 0: (TEXEL0 - 0) × PRIM + 0 = TEXEL0 × PRIM
+            prdp::CombinerCycle c0 = { 1, 8, 10, 7,   1, 7, 3, 7 };
+            // Cycle 1: (COMBINED - 0) × ENV + 0 = COMBINED × ENV
+            prdp::CombinerCycle c1 = { 0, 8, 12, 7,   0, 7, 5, 7 };
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
             cmds.push_back(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
                                                  prdp::FB_HEIGHT * 4));
-            cmds.push_back(prdp::MakeOtherModes1Cycle());
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+            cmds.push_back(prdp::MakeOtherModes2Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(c0, c1));
             steps.push_back({ cmds, {} });
         }
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
@@ -7334,6 +8084,59 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             cmds.push_back(prdp::MakeFillRectangle(40 * 4, 160 * 4, 189 * 4, 219 * 4));
             steps.push_back({ cmds, {} });
         }
+
+        // 1k: Fan mesh — 8 shade triangles (0xCC), centred at (160,120), radius 60
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+            steps.push_back({ cmds, {} });
+        }
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            steps.push_back(
+                { {},
+                  prdp::MakeShadeTriangleArbitrary(
+                      kFanCx, kFanCy,
+                      kFanCx + kFanR_px * std::cos(th0), kFanCy + kFanR_px * std::sin(th0),
+                      kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
+                      kFanR[fi], kFanG[fi], kFanB[fi], 255) });
+        }
+
+        // 1l: Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+        //     Uses 1-cycle mode with CC_PRIM_RGB and RDP alpha blending
+        //     (IM_RD + FORCE_BLEND + src-alpha compositing).
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(60 * 4, 80 * 4, 250 * 4, 160 * 4));
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_ALPHA_BLEND_LO));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 255, 255, 0, 128));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            0, 250 * 4, 160 * 4, 60 * 4, 80 * 4, 0, 0, 77, 77) });
+
+        // 1m: Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(100 * 4, 130 * 4, 220 * 4, 210 * 4));
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_ALPHA_BLEND_LO));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 200, 0, 220, 100));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            0, 220 * 4, 210 * 4, 100 * 4, 130 * 4, 0, 0, 77, 77) });
 
         // SyncFull
         steps.push_back({ { prdp::MakeSyncFull() }, {} });
@@ -7433,13 +8236,15 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77));
     }
 
-    // Right band — tile 2, 1-cycle, CC_TEXEL0  (x=214..318, y=0..239)
+    // Right band — tile 2, 2-cycle, Texel0×Prim + Combined×Env  (x=214..318, y=0..239)
     {
+        prdp::CombinerCycle c0 = { 1, 8, 10, 7,   1, 7, 3, 7 };
+        prdp::CombinerCycle c1 = { 0, 8, 12, 7,   0, 7, 5, 7 };
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
                                                    prdp::FB_HEIGHT * 4));
-        backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
-        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes2Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(c0, c1));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
             2, (prdp::FB_WIDTH - 1) * 4, prdp::FB_HEIGHT * 4, 214 * 4, 0, 0, 0, 77, 77));
     }
@@ -7473,14 +8278,51 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillD << 16) | kFillD));
     backend_.EmitRDPCmd(prdp::MakeFillRectangle(40 * 4, 160 * 4, 189 * 4, 219 * 4));
 
+    // Fan mesh — 8 shade triangles (0xCC), centred at (160,120), radius 60
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    for (int fi = 0; fi < 8; fi++) {
+        float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+        backend_.EmitRawWords(prdp::MakeShadeTriangleArbitrary(
+            kFanCx, kFanCy,
+            kFanCx + kFanR_px * std::cos(th0), kFanCy + kFanR_px * std::sin(th0),
+            kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
+            kFanR[fi], kFanG[fi], kFanB[fi], 255));
+    }
+
+    // Semi-transparent yellow overlay (x=60..250, y=80..160, alpha=128)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(60 * 4, 80 * 4, 250 * 4, 160 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_ALPHA_BLEND_LO));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 255, 255, 0, 128));
+    backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+        0, 250 * 4, 160 * 4, 60 * 4, 80 * 4, 0, 0, 77, 77));
+
+    // Semi-transparent magenta overlay (x=100..220, y=130..210, alpha=100)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(100 * 4, 130 * 4, 220 * 4, 210 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_ALPHA_BLEND_LO));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 200, 0, 220, 100));
+    backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+        0, 220 * 4, 210 * 4, 100 * 4, 130 * 4, 0, 0, 77, 77));
+
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // ╔════════════════════════════════════════════════════════╗
-    // ║  3. Fast3D → OpenGL  (multi-pass software rasterizer) ║
+    // ║  3. Fast3D → OpenGL  (multi-pass EGL renderer)        ║
     // ╚════════════════════════════════════════════════════════╝
-    auto glFb = RenderStressSW();
+    auto glFb = RenderStressGL();
 
     RunThreeWay("RDPSceneStress", directFb, vkFb, glFb, llglFb);
 
