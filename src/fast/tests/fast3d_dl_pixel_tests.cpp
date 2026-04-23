@@ -1343,16 +1343,17 @@ static std::vector<uint16_t> RenderTexturedVBO(
     // ---- Shaders ----
     // Vertex layout: [x, y, z, w, u, v] — clip-space positions.
     // Same coordinate convention as the LLGL SPIR-V shaders:
-    //   NDC_x =  x / 160   NDC_y = -y / 120  (OpenGL: +y = up)
+    //   NDC_x =  x / 160   NDC_y = y / 120  (clip-space y already has N64 sign)
     // Rows are read back from bottom-to-top by glReadPixels, so Y is flipped
-    // when building the result vector below.
+    // when building the result vector below — that flip converts GL's bottom-up
+    // to our top-down screen convention without needing a sign change here.
     static const char* kVsSrc = R"(
 #version 330 core
 layout(location = 0) in vec4 inPos;
 layout(location = 1) in vec2 inUV;
 out vec2 vUV;
 void main() {
-    gl_Position = vec4(inPos.x / 160.0, -inPos.y / 120.0, 0.0, 1.0);
+    gl_Position = vec4(inPos.x / 160.0, inPos.y / 120.0, 0.0, 1.0);
     vUV = inUV;
 }
 )";
@@ -1554,7 +1555,7 @@ layout(location = 0) in vec4 inPos;
 layout(location = 1) in vec2 inUV;
 out vec2 vUV;
 void main() {
-    gl_Position = vec4(inPos.x / 160.0, -inPos.y / 120.0, 0.0, 1.0);
+    gl_Position = vec4(inPos.x / 160.0, inPos.y / 120.0, 0.0, 1.0);
     vUV = inUV;
 }
 )";
@@ -7517,8 +7518,8 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 // ──────────────────────────────────────────────────────────────────────────
 // RDPSceneStress
 //
-// A multi-element scene that exercises a range of RDP features using only
-// axis-aligned primitives, ensuring identical output across all four backends:
+// A multi-element scene that exercises a range of RDP features across all
+// four backends (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL):
 //
 //   Textures:    Four simultaneously-loaded tiles rendered as texture rects:
 //                  Tile 0 = RGBA16 hue-spectrum     (left band,   x=0..105)
@@ -7530,17 +7531,14 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 //                  Sky-blue (x=110..199, y=50..119)
 //                  Crimson  (x=215..299, y=90..169)
 //                  Indigo   (x=40..189,  y=160..219)
+//                An 8-triangle shade fan (octagon) centred at (160,120),
+//                radius 60 px, using CC_SHADE_RGB — gradient coloured
 //   Color regs:  SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
 //                SetPrimDepth — initialised for completeness
-//   Combiners:   All texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
-//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle (×4: tex bands)
+//   Combiners:   Texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
+//                Shade fan: CC_SHADE_RGB (vertex colours, 1-cycle)
+//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle
 //   Syncs:       SyncPipe, SyncLoad, SyncTile, SyncFull
-//
-// Design principle: no triangles, no alpha-blend, no bilinear-vs-nearest issues.
-//   • texB smooth ramp: adjacent I8 values differ by ≤ 8 → bilinear decoded diff ≤ 8.
-//   • FILL rects: RGBA5551 literals identical in HW and SW → decoded diff = 0.
-//   All four backends (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL)
-//   produce images where every pixel differs by ≤ 16 from every other.
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     // ── Textures ──────────────────────────────────────────────────────────
@@ -7622,6 +7620,26 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         uint16_t v = texB[i] >> 3;
         texBRgba[i] = static_cast<uint16_t>((v << 11) | (v << 6) | (v << 1) | 1u);
     }
+
+    // ── Fan mesh: 8-triangle shade octagon, centre (160,120), radius 60 ──
+    // Colour table: gradient by angle (same approach as RDPFeatureGauntlet)
+    static const uint8_t kFanR[8] = { 255, 255, 200,   0,   0,   0, 100, 220 };
+    static const uint8_t kFanG[8] = {  50, 140, 220, 200, 200,  60,   0,   0 };
+    static const uint8_t kFanB[8] = {   0,   0,   0,  50, 220, 255, 255, 180 };
+    constexpr float kFanCx = 160.0f;          // screen-space centre
+    constexpr float kFanCy = 120.0f;
+    constexpr float kFanR_px = 60.0f;         // radius in pixels
+
+    // Build VBO for the GL/LLGL renderers: 8 tris × 3 verts × 6 floats
+    // Layout: [x, y, z, w, u, v] in clip space (x = sx-160, y = 120-sy)
+    // For shade triangles the UV channels carry the vertex colour (packed as
+    // float r,g,b in the first 3 components; the EGL renderer's shader will
+    // read fragColor = vec4(vUV.x, vUV.y, 0, 1) for a 2-component UV, but
+    // here we actually need vertex colours.  Since the multi-pass EGL shader
+    // only supports textured quads, we render the fan via a 1×1 texture whose
+    // colour is the fan slice colour — an acceptable approximation.
+    // The PRDP/VK paths use proper RDP shade triangles with per-vertex colour
+    // interpolation.
 
     // ── Multi-pass software renderer — used for GL and LLGL paths ─────────
     //
@@ -7745,6 +7763,29 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         passes.push_back(makeFill(kFillB, 110.f,  50.f, 200.f, 120.f));
         passes.push_back(makeFill(kFillC, 215.f,  90.f, 300.f, 170.f));
         passes.push_back(makeFill(kFillD,  40.f, 160.f, 190.f, 220.f));
+
+        // Fan mesh — 8 shade triangles with flat per-slice colour
+        // Each slice uses a 1×1 texture whose colour is the fan-slice colour.
+        // The VBO is a single triangle (3 vertices × 6 floats) in clip space.
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            // Centre in clip space: (kFanCx - 160, 120 - kFanCy) = (0, 0)
+            float cx = kFanCx - 160.0f;
+            float cy = 120.0f - kFanCy;
+            float ox0 = cx + kFanR_px * std::cos(th0);
+            float oy0 = cy - kFanR_px * std::sin(th0);
+            float ox1 = cx + kFanR_px * std::cos(th1);
+            float oy1 = cy - kFanR_px * std::sin(th1);
+
+            uint16_t sliceClr = makeRGBA16(kFanR[fi], kFanG[fi], kFanB[fi]);
+            std::vector<float> triVbo = {
+                cx,  cy,  0.0f, 1.0f, 0.0f, 0.0f,
+                ox0, oy0, 0.0f, 1.0f, 0.0f, 0.0f,
+                ox1, oy1, 0.0f, 1.0f, 0.0f, 0.0f,
+            };
+            passes.push_back({ triVbo, { sliceClr }, 1, 1 });
+        }
 
         auto result = egl_offscreen::RenderMultiPassScene(bgClr, passes);
         if (!result.empty()) return result;
@@ -7928,6 +7969,27 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
 
+        // 1k: Fan mesh — 8 shade triangles (0xCC), centred at (160,120), radius 60
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+            steps.push_back({ cmds, {} });
+        }
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            steps.push_back(
+                { {},
+                  prdp::MakeShadeTriangleArbitrary(
+                      kFanCx, kFanCy,
+                      kFanCx + kFanR_px * std::cos(th0), kFanCy + kFanR_px * std::sin(th0),
+                      kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
+                      kFanR[fi], kFanG[fi], kFanB[fi], 255) });
+        }
+
         // SyncFull
         steps.push_back({ { prdp::MakeSyncFull() }, {} });
         ctx.SubmitSequence(steps);
@@ -8065,6 +8127,21 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
     backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillD << 16) | kFillD));
     backend_.EmitRDPCmd(prdp::MakeFillRectangle(40 * 4, 160 * 4, 189 * 4, 219 * 4));
+
+    // Fan mesh — 8 shade triangles (0xCC), centred at (160,120), radius 60
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    for (int fi = 0; fi < 8; fi++) {
+        float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+        backend_.EmitRawWords(prdp::MakeShadeTriangleArbitrary(
+            kFanCx, kFanCy,
+            kFanCx + kFanR_px * std::cos(th0), kFanCy + kFanR_px * std::sin(th0),
+            kFanCx + kFanR_px * std::cos(th1), kFanCy + kFanR_px * std::sin(th1),
+            kFanR[fi], kFanG[fi], kFanB[fi], 255));
+    }
 
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
