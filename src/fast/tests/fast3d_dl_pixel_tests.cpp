@@ -1465,6 +1465,220 @@ void main() {
     return fb;
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// Multi-pass scene renderer
+//
+// Each DrawPass draws a separate textured quad (6-float VBO: x,y,z,w,u,v)
+// on top of the previous one.  The framebuffer is cleared to bgRGBA5551
+// once, then all passes are drawn in order without intermediate clears.
+// For solid-colour fills, use a 1×1 texture.
+// ────────────────────────────────────────────────────────────────────────
+
+struct DrawPass {
+    std::vector<float> vboData;       // [x,y,z,w,u,v] per vertex
+    std::vector<uint16_t> texRGBA16;  // texture in RGBA5551 format
+    uint32_t texW;
+    uint32_t texH;
+};
+
+static std::vector<uint16_t> RenderMultiPassScene(
+        uint16_t bgRGBA5551,
+        const std::vector<DrawPass>& passes)
+{
+    // ---- Init EGL (headless pbuffer surface) ----
+    setenv("EGL_PLATFORM", "surfaceless", /*overwrite=*/0);
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (dpy == EGL_NO_DISPLAY) return {};
+    EGLint major = 0, minor = 0;
+    if (!eglInitialize(dpy, &major, &minor)) return {};
+    eglBindAPI(EGL_OPENGL_API);
+
+    static const EGLint cfgAttribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,
+        EGL_NONE
+    };
+    EGLConfig cfg = nullptr;
+    EGLint numCfg = 0;
+    eglChooseConfig(dpy, cfgAttribs, &cfg, 1, &numCfg);
+    if (numCfg == 0) { eglTerminate(dpy); return {}; }
+
+    static const EGLint ctxAttribs[] = {
+        EGL_CONTEXT_MAJOR_VERSION,       3,
+        EGL_CONTEXT_MINOR_VERSION,       3,
+        EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
+        EGL_NONE
+    };
+    EGLContext ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, ctxAttribs);
+    if (ctx == EGL_NO_CONTEXT) { eglTerminate(dpy); return {}; }
+
+    static const EGLint pbAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+    EGLSurface surf = eglCreatePbufferSurface(dpy, cfg, pbAttribs);
+    if (surf == EGL_NO_SURFACE) {
+        eglDestroyContext(dpy, ctx); eglTerminate(dpy); return {};
+    }
+    if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Offscreen FBO (FB_W × FB_H, RGBA8) ----
+    GLuint colorTex = 0;
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, FB_W, FB_H, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLuint fbo = 0;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, colorTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Shaders (same coordinate convention as RenderTexturedVBO) ----
+    // Uses GL_LINEAR for bilinear texture filtering, matching the RDP's
+    // bilerp0+bilerp1 enabled mode.  This produces more distinct colours
+    // than the software rasteriser's nearest-neighbour sampling.
+    static const char* kVsMulti = R"(
+#version 330 core
+layout(location = 0) in vec4 inPos;
+layout(location = 1) in vec2 inUV;
+out vec2 vUV;
+void main() {
+    gl_Position = vec4(inPos.x / 160.0, -inPos.y / 120.0, 0.0, 1.0);
+    vUV = inUV;
+}
+)";
+    static const char* kFsMulti = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 fragColor;
+uniform sampler2D uTex;
+void main() {
+    fragColor = texture(uTex, vUV);
+}
+)";
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsMulti);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kFsMulti);
+    if (!vs || !fs) {
+        glDeleteShader(vs); glDeleteShader(fs);
+        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+    GLuint prog = LinkProgram(vs, fs);
+    glDeleteShader(vs); glDeleteShader(fs);
+    if (!prog) {
+        glDeleteTextures(1, &colorTex); glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf); eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy); return {};
+    }
+
+    // ---- Rendering state ----
+    glViewport(0, 0, FB_W, FB_H);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(prog);
+    glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
+
+    // ---- Clear with background colour ----
+    {
+        uint8_t bgR8 = static_cast<uint8_t>(((bgRGBA5551 >> 11) & 0x1F) * 255 / 31);
+        uint8_t bgG8 = static_cast<uint8_t>(((bgRGBA5551 >>  6) & 0x1F) * 255 / 31);
+        uint8_t bgB8 = static_cast<uint8_t>(((bgRGBA5551 >>  1) & 0x1F) * 255 / 31);
+        float bgA = (bgRGBA5551 & 1) ? 1.0f : 0.0f;
+        glClearColor(bgR8 / 255.0f, bgG8 / 255.0f, bgB8 / 255.0f, bgA);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    // ---- VAO + VBO (reused across passes) ----
+    GLuint vao = 0, glVbo = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &glVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, glVbo);
+
+    const GLsizei stride = 6 * sizeof(float);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(0));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(4 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // ---- Draw each pass (no clear between passes) ----
+    for (const auto& pass : passes) {
+        size_t numVerts = pass.vboData.size() / 6;
+        if (numVerts == 0) continue;
+
+        // Upload texture for this pass
+        std::vector<uint8_t> texRgba8(pass.texW * pass.texH * 4);
+        Rgba16ToRgba8(pass.texRGBA16.data(), texRgba8.data(),
+                      pass.texW * pass.texH);
+        GLuint srcTex = 0;
+        glGenTextures(1, &srcTex);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, srcTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pass.texW, pass.texH, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        // Upload VBO data for this pass
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(numVerts * 6 * sizeof(float)),
+                     pass.vboData.data(), GL_STREAM_DRAW);
+
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(numVerts));
+
+        glDeleteTextures(1, &srcTex);
+    }
+
+    glFinish();
+
+    // ---- Read back RGBA8, flip Y, convert to RGBA16 ----
+    std::vector<uint8_t> rgba8Out(FB_W * FB_H * 4);
+    glReadPixels(0, 0, FB_W, FB_H, GL_RGBA, GL_UNSIGNED_BYTE, rgba8Out.data());
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t row = 0; row < FB_H; row++) {
+        const uint32_t srcRow = FB_H - 1 - row;
+        for (uint32_t x = 0; x < FB_W; x++) {
+            const size_t srcIdx = (srcRow * FB_W + x) * 4;
+            const uint8_t r = (rgba8Out[srcIdx+0] >> 3) & 0x1F;
+            const uint8_t g = (rgba8Out[srcIdx+1] >> 3) & 0x1F;
+            const uint8_t b = (rgba8Out[srcIdx+2] >> 3) & 0x1F;
+            const uint8_t a = rgba8Out[srcIdx+3] ? 1 : 0;
+            fb[row * FB_W + x] =
+                static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+        }
+    }
+
+    // ---- Clean up ----
+    glDeleteBuffers(1, &glVbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(prog);
+    glDeleteTextures(1, &colorTex);
+    glDeleteFramebuffers(1, &fbo);
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroySurface(dpy, surf);
+    eglDestroyContext(dpy, ctx);
+    eglTerminate(dpy);
+    return fb;
+}
+
 } // namespace egl_offscreen
 #endif // LUS_OGL_TESTS_ENABLED
 
@@ -7481,8 +7695,66 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         return swFb;
     };
 
-    // ── Software renderer runs before the ParallelRDP VkInstance is opened ─
-    auto llglFb = RenderStressSW();
+    // ── Multi-pass OpenGL renderer — used for GL and LLGL paths ───────────
+    //
+    // Builds the same VBOs as RenderStressSW but renders them through a real
+    // EGL+OpenGL context (Mesa llvmpipe) via egl_offscreen::RenderMultiPassScene.
+    // Falls back to RenderStressSW when EGL/OpenGL is unavailable.
+    auto RenderStressGL = [&]() -> std::vector<uint16_t> {
+#ifdef LUS_OGL_TESTS_ENABLED
+        constexpr float kUvStep = 77.0f / 8192.0f;
+        uint16_t bgClr = static_cast<uint16_t>((5u << 11) | (0u << 6) | (10u << 1) | 1u);
+
+        std::vector<egl_offscreen::DrawPass> passes;
+
+        // Left band — texA (x=0..105, y=0..239)
+        passes.push_back({
+            MakeRectVbo(0.f, 0.f, 106.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texA, 8, 8
+        });
+        // Centre band — texBRgba (x=107..212, y=0..239)
+        passes.push_back({
+            MakeRectVbo(107.f, 0.f, 213.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texBRgba, 8, 8
+        });
+        // Right band — texC (x=214..318, y=0..239)
+        passes.push_back({
+            MakeRectVbo(214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
+                        0.f, 0.f,
+                        105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
+            texC, 8, 8
+        });
+        // Top-left corner — texD checkerboard (x=0..78, y=0..78)
+        passes.push_back({
+            MakeRectVbo(0.f, 0.f, 79.f, 79.f,
+                        0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep),
+            texD, 8, 8
+        });
+        // Fill rectangles — 1×1 solid-colour textures
+        auto makeFill = [](uint16_t c, float x0, float y0, float x1, float y1) {
+            return egl_offscreen::DrawPass{
+                MakeRectVbo(x0, y0, x1, y1),
+                std::vector<uint16_t>{c}, 1, 1
+            };
+        };
+        passes.push_back(makeFill(kFillA,  20.f,  30.f, 100.f,  70.f));
+        passes.push_back(makeFill(kFillB, 110.f,  50.f, 200.f, 120.f));
+        passes.push_back(makeFill(kFillC, 215.f,  90.f, 300.f, 170.f));
+        passes.push_back(makeFill(kFillD,  40.f, 160.f, 190.f, 220.f));
+
+        auto result = egl_offscreen::RenderMultiPassScene(bgClr, passes);
+        if (!result.empty()) return result;
+        std::cout << "  [GL-multi] EGL/OpenGL unavailable, falling back to SW\n";
+#endif
+        return RenderStressSW();
+    };
+
+    // ── GL renderer runs before the ParallelRDP VkInstance is opened ─────
+    auto llglFb = RenderStressGL();
 
     prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
@@ -7799,9 +8071,9 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // ╔════════════════════════════════════════════════════════╗
-    // ║  3. Fast3D → OpenGL  (multi-pass software rasterizer) ║
+    // ║  3. Fast3D → OpenGL  (multi-pass EGL renderer)        ║
     // ╚════════════════════════════════════════════════════════╝
-    auto glFb = RenderStressSW();
+    auto glFb = RenderStressGL();
 
     RunThreeWay("RDPSceneStress", directFb, vkFb, glFb, llglFb);
 
