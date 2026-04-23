@@ -1178,6 +1178,296 @@ static std::vector<uint16_t> RenderTexturedVBO(
 } // namespace llgl_offscreen
 #endif // LUS_LLGL_TESTS_ENABLED
 
+// ============================================================
+// EGL offscreen VBO renderer (optional, requires LUS_OGL_TESTS_ENABLED)
+//
+// Accepts a Fast3D-format VBO (fpv=6: x,y,z,w,u,v in clip space) and an
+// RGBA16 texture, renders them to a 320×240 offscreen framebuffer via EGL
+// + OpenGL (Mesa llvmpipe/softpipe), and returns the result as RGBA16.
+// ============================================================
+#ifdef LUS_OGL_TESTS_ENABLED
+
+#include <cstdlib>  // setenv
+#define GL_GLEXT_PROTOTYPES 1
+#include <EGL/egl.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+namespace egl_offscreen {
+
+static constexpr uint32_t FB_W = 320;
+static constexpr uint32_t FB_H = 240;
+
+// Convert N64 RGBA16 (5-5-5-1) to RGBA8 for texture upload.
+static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        uint16_t px = src[i];
+        dst[i*4+0] = static_cast<uint8_t>(((px >> 11) & 0x1F) * 255 / 31);
+        dst[i*4+1] = static_cast<uint8_t>(((px >>  6) & 0x1F) * 255 / 31);
+        dst[i*4+2] = static_cast<uint8_t>(((px >>  1) & 0x1F) * 255 / 31);
+        dst[i*4+3] = (px & 1) ? 255 : 0;
+    }
+}
+
+static GLuint CompileShader(GLenum type, const char* src) {
+    GLuint s = glCreateShader(type);
+    glShaderSource(s, 1, &src, nullptr);
+    glCompileShader(s);
+    GLint ok = 0;
+    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+    if (!ok) {
+        char buf[512];
+        glGetShaderInfoLog(s, 512, nullptr, buf);
+        std::cerr << "[OGL-test] Shader compile error: " << buf << "\n";
+        glDeleteShader(s);
+        return 0;
+    }
+    return s;
+}
+
+static GLuint LinkProgram(GLuint vs, GLuint fs) {
+    GLuint p = glCreateProgram();
+    glAttachShader(p, vs);
+    glAttachShader(p, fs);
+    glLinkProgram(p);
+    GLint ok = 0;
+    glGetProgramiv(p, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        char buf[512];
+        glGetProgramInfoLog(p, 512, nullptr, buf);
+        std::cerr << "[OGL-test] Program link error: " << buf << "\n";
+        glDeleteProgram(p);
+        return 0;
+    }
+    return p;
+}
+
+// Render a Fast3D VBO via EGL + OpenGL (Mesa headless).
+// vboData: interleaved [x, y, z, w, u, v] floats (fpv=6), clip-space positions.
+// numVerts: number of vertices (must be a multiple of 3).
+// Returns a FB_W×FB_H RGBA16 framebuffer, or an empty vector on failure.
+static std::vector<uint16_t> RenderTexturedVBO(
+        const float* vboData, size_t numVerts,
+        const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH)
+{
+    // ---- Init EGL (headless pbuffer surface) ----
+    // Prefer the Mesa surfaceless platform; fall back to the default display
+    // (which may be the X11 or Wayland display server, or another Mesa
+    // backend) if the environment variable is not already set.
+    setenv("EGL_PLATFORM", "surfaceless", /*overwrite=*/0);
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (dpy == EGL_NO_DISPLAY) {
+        std::cerr << "[OGL-test] eglGetDisplay failed\n";
+        return {};
+    }
+    EGLint major = 0, minor = 0;
+    if (!eglInitialize(dpy, &major, &minor)) {
+        std::cerr << "[OGL-test] eglInitialize failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        return {};
+    }
+    eglBindAPI(EGL_OPENGL_API);
+
+    static const EGLint cfgAttribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,
+        EGL_NONE
+    };
+    EGLConfig cfg = nullptr;
+    EGLint numCfg = 0;
+    eglChooseConfig(dpy, cfgAttribs, &cfg, 1, &numCfg);
+    if (numCfg == 0) {
+        std::cerr << "[OGL-test] eglChooseConfig found no suitable configs\n";
+        eglTerminate(dpy);
+        return {};
+    }
+
+    static const EGLint ctxAttribs[] = {
+        EGL_CONTEXT_MAJOR_VERSION,         3,
+        EGL_CONTEXT_MINOR_VERSION,         3,
+        EGL_CONTEXT_OPENGL_PROFILE_MASK,   EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
+        EGL_NONE
+    };
+    EGLContext ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, ctxAttribs);
+    if (ctx == EGL_NO_CONTEXT) {
+        std::cerr << "[OGL-test] eglCreateContext failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // Minimal 1×1 pbuffer — all rendering goes into the FBO below.
+    static const EGLint pbAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+    EGLSurface surf = eglCreatePbufferSurface(dpy, cfg, pbAttribs);
+    if (surf == EGL_NO_SURFACE) {
+        std::cerr << "[OGL-test] eglCreatePbufferSurface failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+    if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
+        std::cerr << "[OGL-test] eglMakeCurrent failed (error 0x"
+                  << std::hex << eglGetError() << std::dec << ")\n";
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Offscreen FBO (FB_W × FB_H, RGBA8) ----
+    GLuint colorTex = 0;
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, FB_W, FB_H, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLuint fbo = 0;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, colorTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[OGL-test] FBO is not complete\n";
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Shaders ----
+    // Vertex layout: [x, y, z, w, u, v] — clip-space positions.
+    // Same coordinate convention as the LLGL SPIR-V shaders:
+    //   NDC_x =  x / 160   NDC_y = -y / 120  (OpenGL: +y = up)
+    // Rows are read back from bottom-to-top by glReadPixels, so Y is flipped
+    // when building the result vector below.
+    static const char* kVsSrc = R"(
+#version 330 core
+layout(location = 0) in vec4 inPos;
+layout(location = 1) in vec2 inUV;
+out vec2 vUV;
+void main() {
+    gl_Position = vec4(inPos.x / 160.0, -inPos.y / 120.0, 0.0, 1.0);
+    vUV = inUV;
+}
+)";
+    static const char* kFsSrc = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 fragColor;
+uniform sampler2D uTex;
+void main() {
+    fragColor = texture(uTex, vUV);
+}
+)";
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, kVsSrc);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, kFsSrc);
+    if (!vs || !fs) {
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+    GLuint prog = LinkProgram(vs, fs);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    if (!prog) {
+        glDeleteTextures(1, &colorTex);
+        glDeleteFramebuffers(1, &fbo);
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(dpy, surf);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        return {};
+    }
+
+    // ---- Source texture ----
+    std::vector<uint8_t> texRgba8(texW * texH * 4);
+    Rgba16ToRgba8(texRGBA16.data(), texRgba8.data(), texW * texH);
+    GLuint srcTex = 0;
+    glGenTextures(1, &srcTex);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, srcTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texW, texH, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, texRgba8.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // ---- VAO + VBO ----
+    GLuint vao = 0, glVbo = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &glVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, glVbo);
+    glBufferData(GL_ARRAY_BUFFER,
+                 static_cast<GLsizeiptr>(numVerts * 6 * sizeof(float)),
+                 vboData, GL_STATIC_DRAW);
+    const GLsizei stride = 6 * sizeof(float);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(0));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void*>(4 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // ---- Render ----
+    glViewport(0, 0, FB_W, FB_H);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(prog);
+    glUniform1i(glGetUniformLocation(prog, "uTex"), 0);
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(numVerts));
+    glFinish();
+
+    // ---- Read back RGBA8, flip Y, convert to RGBA16 ----
+    // glReadPixels returns rows bottom-to-top; our FB array is top-to-bottom.
+    std::vector<uint8_t> rgba8Out(FB_W * FB_H * 4);
+    glReadPixels(0, 0, FB_W, FB_H, GL_RGBA, GL_UNSIGNED_BYTE, rgba8Out.data());
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t row = 0; row < FB_H; row++) {
+        const uint32_t srcRow = FB_H - 1 - row;
+        for (uint32_t x = 0; x < FB_W; x++) {
+            const size_t srcIdx = (srcRow * FB_W + x) * 4;
+            const uint8_t r = (rgba8Out[srcIdx+0] >> 3) & 0x1F;
+            const uint8_t g = (rgba8Out[srcIdx+1] >> 3) & 0x1F;
+            const uint8_t b = (rgba8Out[srcIdx+2] >> 3) & 0x1F;
+            const uint8_t a = rgba8Out[srcIdx+3] ? 1 : 0;
+            fb[row * FB_W + x] =
+                static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+        }
+    }
+
+    // ---- Clean up ----
+    glDeleteBuffers(1, &glVbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteTextures(1, &srcTex);
+    glDeleteProgram(prog);
+    glDeleteTextures(1, &colorTex);
+    glDeleteFramebuffers(1, &fbo);
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroySurface(dpy, surf);
+    eglDestroyContext(dpy, ctx);
+    eglTerminate(dpy);
+    return fb;
+}
+
+} // namespace egl_offscreen
+#endif // LUS_OGL_TESTS_ENABLED
+
 using namespace fast3d_test;
 
 // ============================================================
@@ -5872,16 +6162,47 @@ protected:
     }
 
     // ---- Fast3D OpenGL path rendering ----
-    // Produces a 50×50 software-rasterized textured quad using the already-decoded
-    // RGBA16 representation of the texture.
+    // Renders a 50×50 textured quad at (50,50)–(100,100) using EGL + OpenGL
+    // (Mesa llvmpipe / softpipe) when LUS_OGL_TESTS_ENABLED is defined, otherwise
+    // falls back to the CPU software rasterizer.
     std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16,
                                          uint32_t texW, uint32_t texH) {
+        // Build the same Fast3D VBO as RenderFast3DTexturedQuad.
+        // Screen (50,50)-(100,100) mapped to clip space with an identity matrix:
+        //   clip_x = screen_x - 160,  clip_y = 120 - screen_y
+        // Layout: [x, y, z, w, u, v] per vertex — the format Fast3D emits.
+        const float x0 = 50.0f  - 160.0f;  // -110
+        const float x1 = 100.0f - 160.0f;  //  -60
+        const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
+        const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
+        const float vboData[] = {
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+        };
+        static constexpr size_t kNumVerts = 6;
+#ifdef LUS_OGL_TESTS_ENABLED
+        auto result = egl_offscreen::RenderTexturedVBO(vboData, kNumVerts,
+                                                       texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [OGL] EGL/OpenGL unavailable, falling back to software rasteriser\n";
+#endif
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
     }
 
     std::vector<uint16_t> RenderOpenGLMesh(const std::vector<float>& vbo, size_t numTris,
                                             const std::vector<uint16_t>& texRGBA16,
                                             uint32_t texW, uint32_t texH) {
+#ifdef LUS_OGL_TESTS_ENABLED
+        size_t numVerts = numTris * 3;
+        auto result = egl_offscreen::RenderTexturedVBO(vbo.data(), numVerts,
+                                                       texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [OGL] EGL/OpenGL unavailable, falling back to software rasteriser\n";
+#endif
         std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
         SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 6, numTris,
                                      texRGBA16, texW, texH);

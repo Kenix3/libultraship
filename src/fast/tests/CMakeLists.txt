@@ -29,6 +29,15 @@ if(LUS_BUILD_PRDP_TESTS)
     find_package(PNG REQUIRED)
     target_link_libraries(lus_tests PRIVATE PNG::PNG)
 
+    # OpenGL + EGL offscreen renderer for ThreeWayTextureTest GL path.
+    # Uses Mesa llvmpipe / softpipe via EGL pbuffer — no display needed.
+    find_package(OpenGL QUIET)
+    find_library(EGL_LIB EGL)
+    if(OpenGL_FOUND AND EGL_LIB)
+        target_compile_definitions(lus_tests PRIVATE LUS_OGL_TESTS_ENABLED=1)
+        target_link_libraries(lus_tests PRIVATE OpenGL::GL ${EGL_LIB})
+    endif()
+
     # Ensure the docs/images directory exists at build time so tests can write
     # reference images without having to create it at runtime.
     set(DOCS_IMAGES_DIR "${CMAKE_SOURCE_DIR}/docs/images")
