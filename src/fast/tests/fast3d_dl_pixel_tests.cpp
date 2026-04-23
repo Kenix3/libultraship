@@ -7115,30 +7115,38 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         // tile the texture at exactly the same rate as the RDP hardware does.
         constexpr float kUvStep = 77.0f / 8192.0f;  // texels per pixel / texSize (8)
 
-        // 2. Left band — texA  (x=0..106, y=0..239)
-        auto lBand = MakeRectVbo(0.f, 0.f, 107.f, (float)prdp::FB_HEIGHT,
-                                 0.f, 0.f,
-                                 107.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
-        SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                     lBand, 6, 2, texA, 8, 8);
-
-        // 3. Centre band — texB greyscale  (x=107..213, y=0..239)
-        auto cBand = MakeRectVbo(107.f, 0.f, 214.f, (float)prdp::FB_HEIGHT,
-                                 0.f, 0.f,
-                                 107.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
-        SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                                     cBand, 6, 2, texBRgba, 8, 8);
-
-        // 4. Right band — texC  (x=214..319, y=0..239)
-        auto rBand = MakeRectVbo(214.f, 0.f, (float)prdp::FB_WIDTH, (float)prdp::FB_HEIGHT,
+        // 2. Left band — texA  (x=0..105, y=0..239)
+        // HW scissor XL=106*4 → pixels x<106 → x=0..105 (exclusive right edge).
+        // SW rect right vertex at sx1=106 puts pixel 105's centre (105.5) inside the
+        // triangle but pixel 106's centre (106.5) outside, matching the HW behaviour.
+        auto lBand = MakeRectVbo(0.f, 0.f, 106.f, (float)prdp::FB_HEIGHT,
                                  0.f, 0.f,
                                  106.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                     lBand, 6, 2, texA, 8, 8);
+
+        // 3. Centre band — texB greyscale  (x=107..212, y=0..239)
+        // HW scissor XL=213*4 → x=107..212.
+        auto cBand = MakeRectVbo(107.f, 0.f, 213.f, (float)prdp::FB_HEIGHT,
+                                 0.f, 0.f,
+                                 106.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
+        SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                     cBand, 6, 2, texBRgba, 8, 8);
+
+        // 4. Right band — texC  (x=214..318, y=0..239)
+        // HW scissor XL=(FB_WIDTH-1)*4=319*4 → x=214..318.
+        auto rBand = MakeRectVbo(214.f, 0.f, 319.f, (float)prdp::FB_HEIGHT,
+                                 0.f, 0.f,
+                                 105.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
+        SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      rBand, 6, 2, texC, 8, 8);
 
-        // 5. Top-left corner — texD checkerboard (x=0..79, y=0..79)
-        auto corner = MakeRectVbo(0.f, 0.f, 80.f, 80.f,
-                                  0.f, 0.f, 80.f * kUvStep, 80.f * kUvStep);
+        // 5. Top-left corner — texD checkerboard (x=0..79, y=0..78)
+        // HW texD rect YL=79*4 → renders y=0..78 (exclusive y=79); XL=79*4 → x=0..79.
+        // SW: sy1=80 keeps x boundary correct (pixel 79 inside), sy1=79 makes y boundary
+        // exclusive so pixel centre 79.5 falls outside the triangle.
+        auto corner = MakeRectVbo(0.f, 0.f, 80.f, 79.f,
+                                  0.f, 0.f, 80.f * kUvStep, 79.f * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      corner, 6, 2, texD, 8, 8);
 
