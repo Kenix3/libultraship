@@ -88,8 +88,20 @@ static constexpr uint32_t RDP_CYCLE_COPY  = (2u << 20);
 // Other mode bits for depth testing and blending
 static constexpr uint32_t RDP_Z_CMP       = 0x10;
 static constexpr uint32_t RDP_Z_UPD       = 0x20;
+static constexpr uint32_t RDP_IM_RD       = (1u << 6);  // image-read enable: blender reads framebuffer
 static constexpr uint32_t RDP_FORCE_BLEND = (1u << 14);
 static constexpr uint32_t RDP_CVG_X_ALPHA = (1u << 12);
+
+// Blender equation bits for standard src-alpha compositing over the framebuffer:
+//   result = src_color × src_alpha  +  fb_color × (1 − src_alpha)
+//   P=CLR_IN(0), A=A_IN(0), M=CLR_MEM(1), B=1MA(2)  — same values for both cycles.
+//   Layout: [31:30]=P0 [29:28]=P1 [27:26]=A0 [25:24]=A1
+//           [23:22]=M0 [21:20]=M1 [19:18]=B0 [17:16]=B1
+// Requires RDP_IM_RD | RDP_FORCE_BLEND in the same lo-word.
+static constexpr uint32_t RDP_BLEND_SRC_ALPHA = 0x00500A00u;  // M=CLR_MEM both cycles
+// Full alpha-blend lo-word (image-read + force-blend + src-alpha equation):
+static constexpr uint32_t RDP_ALPHA_BLEND_LO  =
+    RDP_BLEND_SRC_ALPHA | RDP_IM_RD | RDP_FORCE_BLEND;
 
 // Other mode hi-word bits (w0 bits 23-0 of SET_OTHER_MODES)
 // Bit 11 = bi_lerp_0: enable bilinear filtering in cycle 0 (and skip YUV conversion).
@@ -315,6 +327,75 @@ static std::vector<uint32_t> MakeFillTriangleWords(
     uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
     std::vector<uint32_t> words(8, 0);
     PackEdgeCoeffs(words.data(), RDP_CMD_TRI_FILL, x0, y0, x1, y1);
+    return words;
+}
+
+// Pack edge coefficients for an arbitrary triangle into words[0..7].
+// Vertices (ax,ay), (bx,by), (cx,cy) are in screen-pixel coordinates.
+static void PackEdgeCoeffsArbitrary(uint32_t* words, uint32_t cmdId, float ax, float ay, float bx,
+                                    float by, float cx, float cy, uint32_t tile = 0) {
+    float vx[3] = { ax, bx, cx };
+    float vy[3] = { ay, by, cy };
+    for (int i = 0; i < 2; i++) {
+        for (int j = i + 1; j < 3; j++) {
+            if (vy[j] < vy[i]) {
+                float tmp = vx[i];
+                vx[i] = vx[j];
+                vx[j] = tmp;
+                tmp = vy[i];
+                vy[i] = vy[j];
+                vy[j] = tmp;
+            }
+        }
+    }
+
+    float dxH = 0.0f, dxM = 0.0f, dxL = 0.0f;
+    if (vy[2] - vy[0] > 0.001f) dxH = (vx[2] - vx[0]) / (vy[2] - vy[0]);
+    if (vy[1] - vy[0] > 0.001f) dxM = (vx[1] - vx[0]) / (vy[1] - vy[0]);
+    if (vy[2] - vy[1] > 0.001f) dxL = (vx[2] - vx[1]) / (vy[2] - vy[1]);
+
+    float xH_at_YM = vx[0] + dxH * (vy[1] - vy[0]);
+    uint32_t lft = (xH_at_YM <= vx[1]) ? 1u : 0u;
+
+    int32_t yh_fp = (int32_t)(vy[0] * 4.0f);
+    int32_t ym_fp = (int32_t)(vy[1] * 4.0f);
+    int32_t yl_fp = (int32_t)(vy[2] * 4.0f);
+    int32_t xH_fp = (int32_t)(vx[0] * 65536.0f);
+    int32_t xM_fp = (int32_t)(vx[0] * 65536.0f);
+    int32_t xL_fp = (int32_t)(vx[1] * 65536.0f);
+    int32_t dxHdy_fp = (int32_t)(dxH * 65536.0f);
+    int32_t dxMdy_fp = (int32_t)(dxM * 65536.0f);
+    int32_t dxLdy_fp = (int32_t)(dxL * 65536.0f);
+
+    words[0] = (cmdId << 24) | (lft << 23) | ((tile & 0x3F) << 16) | (yl_fp & 0x3FFF);
+    words[1] = ((ym_fp & 0x3FFF) << 16) | (yh_fp & 0x3FFF);
+    words[2] = (uint32_t)xL_fp;
+    words[3] = (uint32_t)dxLdy_fp;
+    words[4] = (uint32_t)xH_fp;
+    words[5] = (uint32_t)dxHdy_fp;
+    words[6] = (uint32_t)xM_fp;
+    words[7] = (uint32_t)dxMdy_fp;
+}
+
+// Build a shade triangle (0xCC) from three arbitrary screen-pixel vertices.
+static std::vector<uint32_t> MakeShadeTriangleArbitrary(float ax, float ay, float bx, float by,
+                                                         float cx, float cy, uint8_t r, uint8_t g,
+                                                         uint8_t b, uint8_t a) {
+    std::vector<uint32_t> words(24, 0);
+    PackEdgeCoeffsArbitrary(words.data(), RDP_CMD_TRI_SHADE, ax, ay, bx, by, cx, cy);
+    PackShadeCoeffs(words.data() + 8, r, g, b, a);
+    return words;
+}
+
+// Build a shade+zbuff triangle (0xCD) from three arbitrary screen-pixel vertices.
+static std::vector<uint32_t> MakeShadeZbuffTriangleArbitrary(float ax, float ay, float bx,
+                                                              float by, float cx, float cy,
+                                                              uint8_t r, uint8_t g, uint8_t b,
+                                                              uint8_t a, uint32_t z_s1516) {
+    std::vector<uint32_t> words(28, 0);
+    PackEdgeCoeffsArbitrary(words.data(), RDP_CMD_TRI_SHADE_ZBUFF, ax, ay, bx, by, cx, cy);
+    PackShadeCoeffs(words.data() + 8, r, g, b, a);
+    PackZCoeffs(words.data() + 24, z_s1516);
     return words;
 }
 
@@ -872,6 +953,230 @@ public:
 
 } // namespace prdp
 #endif // LUS_PRDP_TESTS_ENABLED
+
+// ============================================================
+// LLGL offscreen VBO renderer (optional, requires LUS_LLGL_TESTS_ENABLED)
+//
+// Accepts a Fast3D-format VBO (fpv=6: x,y,z,w,u,v in clip space) and an
+// RGBA16 texture, renders them to a 320×240 offscreen framebuffer via LLGL
+// (Vulkan backend), and returns the result as RGBA16.
+// ============================================================
+#ifdef LUS_LLGL_TESTS_ENABLED
+
+#include <LLGL/LLGL.h>
+#include "llgl/llgl_texquad_spirv.h"  // pre-compiled SPIR-V arrays
+
+namespace llgl_offscreen {
+
+// Framebuffer dimensions must match prdp::FB_WIDTH / FB_HEIGHT.
+static constexpr uint32_t FB_W = 320;
+static constexpr uint32_t FB_H = 240;
+
+// Convert N64 RGBA16 (5-5-5-1) to RGBA8 for texture upload.
+static void Rgba16ToRgba8(const uint16_t* src, uint8_t* dst, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        uint16_t px = src[i];
+        dst[i*4+0] = static_cast<uint8_t>(((px >> 11) & 0x1F) * 255 / 31);
+        dst[i*4+1] = static_cast<uint8_t>(((px >>  6) & 0x1F) * 255 / 31);
+        dst[i*4+2] = static_cast<uint8_t>(((px >>  1) & 0x1F) * 255 / 31);
+        dst[i*4+3] = (px & 1) ? 255 : 0;
+    }
+}
+
+// Render a Fast3D VBO via LLGL (Vulkan backend with lavapipe).
+// vboData: interleaved [x, y, z, w, u, v] floats (fpv=6), clip-space positions.
+// numVerts: number of vertices in vboData (must be a multiple of 3).
+// Returns a FB_W×FB_H RGBA16 framebuffer, or an empty vector on failure.
+static std::vector<uint16_t> RenderTexturedVBO(
+        const float* vboData, size_t numVerts,
+        const std::vector<uint16_t>& texRGBA16, uint32_t texW, uint32_t texH)
+{
+    // ---- Load LLGL Vulkan renderer ----
+    LLGL::Report report;
+    auto renderer = LLGL::RenderSystem::Load("Vulkan", &report);
+    if (!renderer) {
+        std::cerr << "[LLGL-test] Cannot load Vulkan renderer: "
+                  << (report.GetText() ? report.GetText() : "(unknown)") << "\n";
+        return {};
+    }
+
+    // ---- Create colour attachment texture ----
+    LLGL::TextureDescriptor colorDesc;
+    colorDesc.type      = LLGL::TextureType::Texture2D;
+    colorDesc.format    = LLGL::Format::RGBA8UNorm;
+    colorDesc.extent    = { FB_W, FB_H, 1 };
+    colorDesc.bindFlags = LLGL::BindFlags::ColorAttachment
+                        | LLGL::BindFlags::Sampled
+                        | LLGL::BindFlags::CopySrc;
+    colorDesc.mipLevels = 1;
+    auto* colorTex = renderer->CreateTexture(colorDesc);
+
+    // ---- Render target ----
+    LLGL::RenderTargetDescriptor rtDesc;
+    rtDesc.resolution            = { FB_W, FB_H };
+    rtDesc.colorAttachments[0]   = LLGL::AttachmentDescriptor{ colorTex };
+    auto* renderTarget = renderer->CreateRenderTarget(rtDesc);
+
+    // ---- Upload source texture ----
+    std::vector<uint8_t> rgba8(texW * texH * 4);
+    Rgba16ToRgba8(texRGBA16.data(), rgba8.data(), texW * texH);
+
+    LLGL::TextureDescriptor srcTexDesc;
+    srcTexDesc.type      = LLGL::TextureType::Texture2D;
+    srcTexDesc.format    = LLGL::Format::RGBA8UNorm;
+    srcTexDesc.extent    = { texW, texH, 1 };
+    srcTexDesc.bindFlags = LLGL::BindFlags::Sampled;
+    srcTexDesc.mipLevels = 1;
+    LLGL::ImageView srcImgView{ LLGL::ImageFormat::RGBA, LLGL::DataType::UInt8,
+                                 rgba8.data(), rgba8.size() };
+    auto* srcTex = renderer->CreateTexture(srcTexDesc, &srcImgView);
+
+    // ---- Sampler ----
+    LLGL::SamplerDescriptor sampDesc;
+    sampDesc.minFilter    = LLGL::SamplerFilter::Nearest;
+    sampDesc.magFilter    = LLGL::SamplerFilter::Nearest;
+    sampDesc.mipMapFilter = LLGL::SamplerFilter::Nearest;
+    sampDesc.addressModeU = LLGL::SamplerAddressMode::Repeat;
+    sampDesc.addressModeV = LLGL::SamplerAddressMode::Repeat;
+    sampDesc.addressModeW = LLGL::SamplerAddressMode::Repeat;
+    auto* sampler = renderer->CreateSampler(sampDesc);
+
+    // ---- Shaders (pre-compiled SPIR-V) ----
+    LLGL::ShaderDescriptor vsDesc;
+    vsDesc.type       = LLGL::ShaderType::Vertex;
+    vsDesc.source     = reinterpret_cast<const char*>(kTexQuadVertSPV);
+    vsDesc.sourceSize = kTexQuadVertSPV_wordCount * sizeof(uint32_t);
+    vsDesc.sourceType = LLGL::ShaderSourceType::BinaryBuffer;
+    // Vertex attributes: location 0 = vec4 pos, location 1 = vec2 uv
+    const uint32_t stride = 6 * sizeof(float);
+    vsDesc.vertex.inputAttribs = {
+        LLGL::VertexAttribute{ "inPos", LLGL::Format::RGBA32Float, 0,
+                               0u, stride },
+        LLGL::VertexAttribute{ "inUV",  LLGL::Format::RG32Float,   1,
+                               4u * sizeof(float), stride },
+    };
+    auto* vs = renderer->CreateShader(vsDesc);
+    if (vs->GetReport() && vs->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] Vert shader error: " << vs->GetReport()->GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    LLGL::ShaderDescriptor fsDesc;
+    fsDesc.type       = LLGL::ShaderType::Fragment;
+    fsDesc.source     = reinterpret_cast<const char*>(kTexQuadFragSPV);
+    fsDesc.sourceSize = kTexQuadFragSPV_wordCount * sizeof(uint32_t);
+    fsDesc.sourceType = LLGL::ShaderSourceType::BinaryBuffer;
+    auto* fs = renderer->CreateShader(fsDesc);
+    if (fs->GetReport() && fs->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] Frag shader error: " << fs->GetReport()->GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    // ---- Pipeline layout ----
+    LLGL::PipelineLayoutDescriptor layoutDesc;
+    LLGL::BindingDescriptor texBd;
+    texBd.type       = LLGL::ResourceType::Texture;
+    texBd.bindFlags  = LLGL::BindFlags::Sampled;
+    texBd.stageFlags = LLGL::StageFlags::FragmentStage;
+    texBd.slot       = LLGL::BindingSlot{ 0 };
+    layoutDesc.bindings.push_back(texBd);
+    LLGL::BindingDescriptor sampBd;
+    sampBd.type       = LLGL::ResourceType::Sampler;
+    sampBd.stageFlags = LLGL::StageFlags::FragmentStage;
+    sampBd.slot       = LLGL::BindingSlot{ 0 };
+    layoutDesc.bindings.push_back(sampBd);
+    auto* pipelineLayout = renderer->CreatePipelineLayout(layoutDesc);
+
+    // ---- Graphics PSO ----
+    LLGL::GraphicsPipelineDescriptor psoDesc;
+    psoDesc.pipelineLayout    = pipelineLayout;
+    psoDesc.vertexShader      = vs;
+    psoDesc.fragmentShader    = fs;
+    psoDesc.primitiveTopology = LLGL::PrimitiveTopology::TriangleList;
+    auto* pso = renderer->CreatePipelineState(psoDesc);
+    if (pso->GetReport() && pso->GetReport()->HasErrors()) {
+        std::cerr << "[LLGL-test] PSO error: " << pso->GetReport()->GetText() << "\n";
+        LLGL::RenderSystem::Unload(std::move(renderer));
+        return {};
+    }
+
+    // ---- Resource heap ----
+    LLGL::ResourceHeapDescriptor rhDesc;
+    rhDesc.pipelineLayout = pipelineLayout;
+    auto* resourceHeap = renderer->CreateResourceHeap(rhDesc,
+        { LLGL::ResourceViewDescriptor{ srcTex },
+          LLGL::ResourceViewDescriptor{ sampler } });
+
+    // ---- Vertex buffer: Fast3D-format VBO passed in by the caller ----
+    // [x, y, z, w, u, v] per vertex in clip-space; the SPIR-V vert shader
+    // maps positions to Vulkan NDC (x/160, -y/120).
+    LLGL::BufferDescriptor vbDesc;
+    vbDesc.size      = numVerts * 6 * sizeof(float);
+    vbDesc.bindFlags = LLGL::BindFlags::VertexBuffer;
+    auto* vertexBuffer = renderer->CreateBuffer(vbDesc, vboData);
+
+    // ---- Record and submit commands ----
+    LLGL::CommandBufferDescriptor cbDesc;
+    cbDesc.flags = LLGL::CommandBufferFlags::ImmediateSubmit;
+    auto* cmdBuf = renderer->CreateCommandBuffer(cbDesc);
+    auto* cmdQueue = renderer->GetCommandQueue();
+
+    cmdBuf->Begin();
+    cmdBuf->BeginRenderPass(*renderTarget);
+    {
+        LLGL::Viewport vp{ 0.0f, 0.0f, (float)FB_W, (float)FB_H, 0.0f, 1.0f };
+        cmdBuf->SetViewport(vp);
+        cmdBuf->SetScissor(LLGL::Scissor{ 0, 0, (int)FB_W, (int)FB_H });
+        cmdBuf->SetPipelineState(*pso);
+        cmdBuf->SetResourceHeap(*resourceHeap);
+        cmdBuf->SetVertexBuffer(*vertexBuffer);
+        cmdBuf->Draw(static_cast<uint32_t>(numVerts), 0);
+    }
+    cmdBuf->EndRenderPass();
+    cmdBuf->End();
+    cmdQueue->Submit(*cmdBuf);
+    cmdQueue->WaitIdle();
+
+    // ---- Read back RGBA8 → convert to RGBA16 ----
+    std::vector<uint8_t>   rgba8Out(FB_W * FB_H * 4);
+    LLGL::MutableImageView outView{
+        LLGL::ImageFormat::RGBA, LLGL::DataType::UInt8,
+        rgba8Out.data(), rgba8Out.size()
+    };
+    LLGL::TextureRegion region;
+    region.offset = { 0, 0, 0 };
+    region.extent = { FB_W, FB_H, 1 };
+    renderer->ReadTexture(*colorTex, region, outView);
+
+    std::vector<uint16_t> fb(FB_W * FB_H, 0);
+    for (uint32_t i = 0; i < FB_W * FB_H; i++) {
+        uint8_t r = (rgba8Out[i*4+0] >> 3) & 0x1F;
+        uint8_t g = (rgba8Out[i*4+1] >> 3) & 0x1F;
+        uint8_t b = (rgba8Out[i*4+2] >> 3) & 0x1F;
+        uint8_t a = rgba8Out[i*4+3] ? 1 : 0;
+        fb[i] = static_cast<uint16_t>((r << 11) | (g << 6) | (b << 1) | a);
+    }
+
+    // Clean up
+    renderer->Release(*cmdBuf);
+    renderer->Release(*vertexBuffer);
+    renderer->Release(*resourceHeap);
+    renderer->Release(*pso);
+    renderer->Release(*pipelineLayout);
+    renderer->Release(*fs);
+    renderer->Release(*vs);
+    renderer->Release(*sampler);
+    renderer->Release(*srcTex);
+    renderer->Release(*renderTarget);
+    renderer->Release(*colorTex);
+    LLGL::RenderSystem::Unload(std::move(renderer));
+    return fb;
+}
+
+} // namespace llgl_offscreen
+#endif // LUS_LLGL_TESTS_ENABLED
 
 using namespace fast3d_test;
 
@@ -5250,8 +5555,9 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 //   2. Fast3D → Vulkan — Fast3D interpreter with BatchingPRDPBackend
 //      forwarding every RDP emission to ParallelRDP
 //   3. Fast3D → OpenGL — Fast3D VBO capture + software rasterizer
+//   4. Fast3D → LLGL   — Fast3D VBO capture + LLGL software rasterizer
 //
-// All three framebuffers are written to docs/images/ as both PPM and
+// All four framebuffers are written to docs/images/ as both PPM and
 // PNG files. A comparison table is printed showing non-black pixel counts
 // and distinct-color counts for each renderer.
 //
@@ -5261,7 +5567,11 @@ TEST_F(ParallelRDPComparisonTest, TexturedMeshImage_CI8) {
 class ThreeWayTextureTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        prdp_ = &prdp::GetPRDPContext();
+        // prdp_ is initialized lazily in each test body, after RenderLLGL has run.
+        // Reason: lavapipe (software Vulkan) crashes when two VkInstances exist in
+        // the same process simultaneously.  LLGL creates and destroys its own
+        // VkInstance, so it must run before ParallelRDP opens its Vulkan device.
+        prdp_ = nullptr;
 
         // Interpreter for Fast3D → Vulkan path (uses BatchingPRDPBackend)
         interpVk_ = MakeInterp();
@@ -5324,25 +5634,20 @@ protected:
         backend_.Clear();
     }
 
-    // ---- Common RDP state setup (emitted via Fast3D interpreter) ----
-    // Returns interpreter with state set; also pushes those commands to backend.
-    void SetupCommonState(Fast::Interpreter& interp, bool en1Cycle = true) {
-        // Use fake pointers whose low 26 bits match FB_ADDR / ZBUF_ADDR so
-        // ParallelRDP reads/writes from the correct RDRAM locations.
-        interp.GfxDpSetColorImage(0 /*RGBA*/, 1 /*16b*/, prdp::FB_WIDTH,
-                                   reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-        interp.GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-        interp.GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-
-        uint32_t cycBits = en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC;
-        interp.GfxDpSetOtherMode(cycBits | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                                  prdp::RDP_FORCE_BLEND);
-
-        // TEXEL0 combiner: output = texel colour directly
-        // SET_COMBINE encoding: A=0, B=0, C=0, D=TEXEL0(1)
-        constexpr uint32_t texel0D = 1;
-        uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-        interp.GfxDpSetCombineMode(rgb, 0, 0, 0);
+    // ---- Common RDP state setup (injected directly to backend) ----
+    // Emits the same RDP header sequence as the Direct PRDP tests so that
+    // PRDP receives correctly-encoded commands regardless of interpreter
+    // encoding idiosyncrasies (e.g. alpha combine mode encoding).
+    void SetupCommonState(bool en1Cycle = true, bool enableTLUT = false) {
+        backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH, prdp::FB_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        uint32_t hiFlags = (en1Cycle ? prdp::RDP_CYCLE_1CYC : prdp::RDP_CYCLE_2CYC)
+                           | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1
+                           | (enableTLUT ? (1u << 15) : 0u);
+        backend_.EmitRDPCmd(prdp::MakeSetOtherModes(hiFlags, prdp::RDP_FORCE_BLEND));
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     }
 
     // ---- Texture loading helpers for the Vulkan path ----
@@ -5489,21 +5794,83 @@ protected:
         backend_.EmitRDPCmd(prdp::MakeSyncTile());
     }
 
-    // ---- Texture rectangle emission via Fast3D interpreter ----
-    // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport.
-    void EmitTextureRectVk(Fast::Interpreter& interp) {
-        // Screen (50,50)–(100,100); UVs 0→4 texels (mask=2 → wraps at 4).
-        // Coordinates are U10.2 (pixel*4).  dsdx/dtdy are S5.10 (texel/pixel * 1024).
-        interp.GfxDpTextureRectangle(50 * 4, 50 * 4, 100 * 4, 100 * 4,
-                                      0 /*tile*/, 0, 0, 1 << 10, 1 << 10, false);
+    // ---- Texture rectangle emission ----
+    // Renders a 50×50 px quad at (50,50)–(100,100) in the viewport, using tile 0.
+    // dsdx/dtdy: scale texW/texH texels over 50 pixels (S5.10 format = texels * 1024 / 50).
+    void EmitTextureRectVk(uint32_t texW = 8, uint32_t texH = 8) {
+        auto words = prdp::MakeTextureRectangleWords(0, 100*4, 100*4, 50*4, 50*4,
+                                                      0, 0,
+                                                      (int16_t)((texW * 1024) / 50),
+                                                      (int16_t)((texH * 1024) / 50));
+        backend_.EmitRawWords(words);
     }
 
     // ---- Fast3D OpenGL path rendering ----
     // Produces a 50×50 software-rasterized textured quad using the already-decoded
     // RGBA16 representation of the texture.
     std::vector<uint16_t> RenderOpenGL(const std::vector<uint16_t>& texRGBA16,
-                                        uint32_t texW, uint32_t texH) {
+                                         uint32_t texW, uint32_t texH) {
         return RenderFast3DTexturedQuad(texRGBA16, texW, texH);
+    }
+
+    std::vector<uint16_t> RenderOpenGLMesh(const std::vector<float>& vbo, size_t numTris,
+                                            const std::vector<uint16_t>& texRGBA16,
+                                            uint32_t texW, uint32_t texH) {
+        std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 6, numTris,
+                                     texRGBA16, texW, texH);
+        return fb;
+    }
+
+    std::vector<uint16_t> RenderLLGLMesh(const std::vector<float>& vbo, size_t numTris,
+                                          const std::vector<uint16_t>& texRGBA16, uint32_t texW,
+                                          uint32_t texH) {
+#ifdef LUS_LLGL_TESTS_ENABLED
+        size_t numVerts = numTris * 3;
+        auto result = llgl_offscreen::RenderTexturedVBO(vbo.data(), numVerts, texRGBA16, texW,
+                                                         texH);
+        if (!result.empty()) return result;
+        std::cout << "  [LLGL] Vulkan unavailable, falling back to software rasteriser\n";
+#endif
+        std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 6, numTris,
+                                     texRGBA16, texW, texH);
+        return fb;
+    }
+
+    std::vector<uint16_t> RenderLLGL(const std::vector<uint16_t>& texRGBA16,
+                                       uint32_t texW, uint32_t texH) {
+        // Build the same Fast3D VBO as RenderFast3DTexturedQuad.
+        // Screen (50,50)-(100,100) mapped to clip space with an identity matrix:
+        //   clip_x = screen_x - 160,  clip_y = 120 - screen_y
+        // Layout: [x, y, z, w, u, v] per vertex — the format Fast3D emits.
+        const float x0 = 50.0f  - 160.0f;  // -110
+        const float x1 = 100.0f - 160.0f;  //  -60
+        const float y0 = 120.0f - 50.0f;   //   70  (top edge in clip space)
+        const float y1 = 120.0f - 100.0f;  //   20  (bottom edge in clip space)
+        const float vboData[] = {
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y0, 0.0f, 1.0f, 1.0f, 0.0f,  // TR
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y0, 0.0f, 1.0f, 0.0f, 0.0f,  // TL
+            x1, y1, 0.0f, 1.0f, 1.0f, 1.0f,  // BR
+            x0, y1, 0.0f, 1.0f, 0.0f, 1.0f,  // BL
+        };
+        static constexpr size_t kNumVerts = 6;
+#ifdef LUS_LLGL_TESTS_ENABLED
+        // Use LLGL (Vulkan) to render the Fast3D VBO on the GPU.
+        // Falls back to the CPU software rasterizer when Vulkan is unavailable.
+        auto result = llgl_offscreen::RenderTexturedVBO(vboData, kNumVerts,
+                                                         texRGBA16, texW, texH);
+        if (!result.empty()) return result;
+        std::cout << "  [LLGL] Vulkan unavailable, falling back to software rasteriser\n";
+#endif
+        // CPU fallback: same VBO + software rasterizer (identical to RenderOpenGL).
+        std::vector<uint16_t> fb(prdp::FB_WIDTH * prdp::FB_HEIGHT, 0);
+        SoftwareRasterizeTexturedVBO(fb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
+                                     std::vector<float>(vboData, vboData + kNumVerts * 6),
+                                     6, kNumVerts / 3, texRGBA16, texW, texH);
+        return fb;
     }
 
     // ---- Print comparison table row ----
@@ -5518,10 +5885,12 @@ protected:
     void RunThreeWay(const char* texTypeName,
                      const std::vector<uint16_t>& directPRDPFb,
                      const std::vector<uint16_t>& vkFb,
-                     const std::vector<uint16_t>& glFb) {
+                     const std::vector<uint16_t>& glFb,
+                     const std::vector<uint16_t>& llglFb) {
         auto statsD = ComputeStats(directPRDPFb);
         auto statsV = ComputeStats(vkFb);
         auto statsG = ComputeStats(glFb);
+        auto statsL = ComputeStats(llglFb);
 
         std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
         std::cout << "║  Three-Way Texture Comparison: " << std::left << std::setw(22) << texTypeName << "║\n";
@@ -5531,6 +5900,7 @@ protected:
         PrintRow("Direct PRDP",      statsD);
         PrintRow("Fast3D→Vulkan",    statsV);
         PrintRow("Fast3D→OpenGL",    statsG);
+        PrintRow("Fast3D→LLGL",      statsL);
         std::cout << "╚════════════════════════════════════════════════════════╝\n";
 
         // Save PPM + PNG for each renderer
@@ -5540,6 +5910,7 @@ protected:
         SaveFramebufferBoth(RepoImagePath("three_way_prdp_"   + nameStr + ".ppm"), directPRDPFb, prdp::FB_WIDTH, prdp::FB_HEIGHT);
         SaveFramebufferBoth(RepoImagePath("three_way_f3dvk_"  + nameStr + ".ppm"), vkFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
         SaveFramebufferBoth(RepoImagePath("three_way_f3dgl_"  + nameStr + ".ppm"), glFb,         prdp::FB_WIDTH, prdp::FB_HEIGHT);
+        SaveFramebufferBoth(RepoImagePath("three_way_f3dllgl_"+ nameStr + ".ppm"), llglFb,       prdp::FB_WIDTH, prdp::FB_HEIGHT);
     }
 
     prdp::ParallelRDPContext*   prdp_     { nullptr };
@@ -5574,11 +5945,16 @@ static std::vector<uint16_t> RenderDirectPRDP_RGBA16(const std::vector<uint16_t>
 // RGBA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA16) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     uint16_t red5551  = (31u << 11) | (0u << 6) | (0u << 1) | 1;
     uint16_t cyan5551 = (0u << 11) | (31u << 6) | (31u << 1) | 1;
     auto tex = GenerateCheckerboard8x8(red5551, cyan5551);
+
+    // LLGL must run before PRDP initializes Vulkan (lavapipe can't have two
+    // concurrent VkInstances in the same process).
+    auto llglFb = RenderLLGL(tex, 8, 8);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP
     auto directFb = RenderDirectPRDP_RGBA16(tex, 8, 8);
@@ -5587,34 +5963,41 @@ TEST_F(ThreeWayTextureTest, RGBA16) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitRGBA16TextureSetup(8, 8);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(8, 8);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
     auto glFb = RenderOpenGL(tex, 8, 8);
+    // (llglFb computed before PRDP above)
 
-    RunThreeWay("RGBA16", directFb, vkFb, glFb);
+    RunThreeWay("RGBA16", directFb, vkFb, glFb, llglFb);
 
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u) << "Direct PRDP should render pixels";
     EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u) << "Fast3D→Vulkan should render pixels";
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u) << "Fast3D→OpenGL should render pixels";
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u) << "Fast3D→LLGL should render pixels";
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // RGBA32
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RGBA32) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     // 4×4 checkerboard: cyan (0x00FFFFFF) / magenta (0xFF00FFFF)
     std::vector<uint32_t> tex32(4 * 4);
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
             tex32[y * 4 + x] = ((x + y) & 1) ? 0xFF00FFFFu : 0x00FFFFFFu;
+
+    // LLGL before PRDP Vulkan init.
+    auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP — write raw 32-bit data, use existing CI test infrastructure
     {
@@ -5647,30 +6030,29 @@ TEST_F(ThreeWayTextureTest, RGBA32) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAM(prdp::TEX_ADDR, tex32.data(), tex32.size() * 4);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitRGBA32TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL (decode RGBA32→RGBA16 for the software rasterizer)
-    auto texRGBA16 = ConvertRGBA32ToRGBA16(tex32);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
+    // (llglFb computed before PRDP above)
 
-    RunThreeWay("RGBA32", directFb, vkFb, glFb);
+    RunThreeWay("RGBA32", directFb, vkFb, glFb, llglFb);
 
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
     EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // I4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I4) {
-    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
-
     // 4×4 I4 checkerboard: max intensity (0xF) / mid intensity (0x8)
     std::vector<uint8_t> tex(8); // 4x4 at 4bpp = 8 bytes
     for (int y = 0; y < 4; y++)
@@ -5679,6 +6061,12 @@ TEST_F(ThreeWayTextureTest, I4) {
             uint8_t lo = ((x + 1 + y) & 1) ? 0x8 : 0xF;
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
+
+    auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 1. Direct PRDP
     {
@@ -5708,30 +6096,35 @@ TEST_F(ThreeWayTextureTest, I4) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitI4TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertI4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("I4", directFb, vkFb, glFb);
+    RunThreeWay("I4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // I8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, I8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = ((i & 1) ? 0x80 : 0xFF);
+
+    auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -5761,26 +6154,28 @@ TEST_F(ThreeWayTextureTest, I8) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitI8TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertI8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("I8", directFb, vkFb, glFb);
+    RunThreeWay("I8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA4) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA4: (I=7,A=1)=0xF / (I=4,A=1)=0x9 checkerboard
@@ -5791,6 +6186,9 @@ TEST_F(ThreeWayTextureTest, IA4) {
             uint8_t lo = ((x + 1 + y) & 1) ? 0x9 : 0xF;
             tex[y * 2 + x / 2] = (hi << 4) | lo;
         }
+
+    auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -5820,31 +6218,36 @@ TEST_F(ThreeWayTextureTest, IA4) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA4TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA4ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA4", directFb, vkFb, glFb);
+    RunThreeWay("IA4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA8: high nibble=I, low nibble=A. Checkerboard 0xFF/0x80.
     std::vector<uint8_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x80 : 0xFF;
+
+    auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -5874,31 +6277,36 @@ TEST_F(ThreeWayTextureTest, IA8) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA8TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA8ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA8", directFb, vkFb, glFb);
+    RunThreeWay("IA8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // IA16
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, IA16) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 IA16: upper byte=I, lower byte=A. Checkerboard 0xFFFF/0x8080.
     std::vector<uint16_t> tex(4 * 4);
     for (int i = 0; i < 16; i++) tex[i] = (i & 1) ? 0x8080 : 0xFFFF;
+
+    auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     // 1. Direct PRDP
     {
@@ -5928,26 +6336,28 @@ TEST_F(ThreeWayTextureTest, IA16) {
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, tex);
     backend_.Clear();
-    SetupCommonState(*interpVk_);
+    SetupCommonState();
     EmitIA16TextureSetup(4, 4);
-    EmitTextureRectVk(*interpVk_);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertIA16ToRGBA16(tex, 4, 4);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("IA16", directFb, vkFb, glFb);
+    RunThreeWay("IA16", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // CI4
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI4) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     // 4×4 CI4 checkerboard: indices alternate 0 and 1
@@ -5965,6 +6375,9 @@ TEST_F(ThreeWayTextureTest, CI4) {
     std::vector<uint16_t> palette(16, 0x0001);
     palette[0] = red5551;
     palette[1] = green5551;
+
+    auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     static constexpr uint32_t TLUT_ADDR = prdp::TEX_ADDR + 0x1000;
 
@@ -5999,22 +6412,13 @@ TEST_F(ThreeWayTextureTest, CI4) {
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
-    // 2. Fast3D → Vulkan  (state via interpreter, textures directly to backend)
+    // 2. Fast3D → Vulkan  (state via direct injection, textures directly to backend)
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture4(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR, palette);
     backend_.Clear();
-    // State commands through interpreter (accumulate in backend via RdpCommandBackend)
-    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-    // Enable TLUT (bit 15 = G_TT_RGBA16) in other_mode_h for CI texture lookup
-    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-                                   prdp::RDP_FORCE_BLEND);
-    constexpr uint32_t texel0D = 1;
-    uint32_t rgb = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-    interpVk_->GfxDpSetCombineMode(rgb, 0, 0, 0);
-    // CI4 texture setup directly to backend with the correct TLUT_ADDR
+    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    // CI4 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     backend_.EmitRDPCmd(prdp::MakeSyncLoad());
@@ -6025,25 +6429,26 @@ TEST_F(ThreeWayTextureTest, CI4) {
     backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
-    // Texture rectangle via interpreter (emits the 4-word command to backend)
-    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertCI4ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("CI4", directFb, vkFb, glFb);
+    RunThreeWay("CI4", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // CI8
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, CI8) {
+    prdp_ = &prdp::GetPRDPContext();
     if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
 
     std::vector<uint8_t> tex(4 * 4);
@@ -6054,6 +6459,9 @@ TEST_F(ThreeWayTextureTest, CI8) {
     std::vector<uint16_t> palette(256, 0x0001);
     palette[0] = red5551;
     palette[1] = blue5551;
+
+    auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
+    auto llglFb = RenderLLGL(texRGBA16, 4, 4);
 
     static constexpr uint32_t TLUT_ADDR8 = prdp::TEX_ADDR + 0x1000;
 
@@ -6088,22 +6496,13 @@ TEST_F(ThreeWayTextureTest, CI8) {
     }
     auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
-    // 2. Fast3D → Vulkan (state via interpreter, textures directly to backend)
+    // 2. Fast3D → Vulkan (state via direct injection, textures directly to backend)
     prdp_->ClearRDRAM();
     prdp_->WriteRDRAMTexture8(prdp::TEX_ADDR, tex.data(), tex.size());
     prdp_->WriteRDRAMPalette(TLUT_ADDR8, palette);
     backend_.Clear();
-    interpVk_->GfxDpSetColorImage(0, 1, prdp::FB_WIDTH, reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::FB_ADDR)));
-    interpVk_->GfxDpSetZImage(reinterpret_cast<void*>(static_cast<uintptr_t>(prdp::ZBUF_ADDR)));
-    interpVk_->GfxDpSetScissor(0, 0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4);
-    interpVk_->GfxDpSetOtherMode(prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1 | (1u << 15),
-                                   prdp::RDP_FORCE_BLEND);
-    {
-        constexpr uint32_t texel0D = 1;
-        uint32_t rgb2 = (0 & 0xf) | ((0 & 0xf) << 4) | ((0 & 0x1f) << 8) | ((texel0D & 7) << 13);
-        interpVk_->GfxDpSetCombineMode(rgb2, 0, 0, 0);
-    }
-    // CI8 texture setup directly to backend (state commands already in backend from above)
+    SetupCommonState(true, true);  // enableTLUT = true for CI textures
+    // CI8 texture + palette setup
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 1, TLUT_ADDR8));
     backend_.EmitRDPCmd(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_4b, 0, 0x100, 7, 0, 0, 0, 0, 0, 0, 0));
     backend_.EmitRDPCmd(prdp::MakeSyncLoad());
@@ -6114,18 +6513,883 @@ TEST_F(ThreeWayTextureTest, CI8) {
     backend_.EmitRDPCmd(prdp::MakeLoadTile(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(0, 0, 0, 3 * 4, 3 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
-    interpVk_->GfxDpTextureRectangle(50*4, 50*4, 100*4, 100*4, 0, 0, 0, 1<<10, 1<<10, false);
+    EmitTextureRectVk(4, 4);
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
     auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
 
     // 3. Fast3D → OpenGL
-    auto texRGBA16 = ConvertCI8ToRGBA16(tex, 4, 4, palette);
     auto glFb = RenderOpenGL(texRGBA16, 4, 4);
 
-    RunThreeWay("CI8", directFb, vkFb, glFb);
+    RunThreeWay("CI8", directFb, vkFb, glFb, llglFb);
     EXPECT_GT(ComputeStats(directFb).nonBlack, 0u);
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u);
     EXPECT_GT(ComputeStats(glFb).nonBlack,     0u);
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RDPFeatureGauntlet
+//
+// A single display list that exercises many distinct RDP features across all
+// four renderers (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL):
+//
+//   Cycle modes:   Fill (×2: FB clear + Z clear), 1-cycle (×2 combiners),
+//                  2-cycle (combined × env)
+//   Draw commands: FillRectangle, TextureRectangle (×3),
+//                  8 fan shade triangles (0xCC), Shade+Z triangle (0xCD)
+//   Color regs:    SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
+//                  SetPrimDepth
+//   Mesh:          8-triangle fan (octagon) in screen space, centre (160,120),
+//                  radius 80 px — applied to all four renderers
+//   Textures:      Two simultaneously loaded tiles (tile 0 = RGBA16 spectrum,
+//                  tile 1 = I8 Bayer matrix)
+//   Syncs:         SyncPipe, SyncLoad, SyncTile, SyncFull
+//
+// Public-domain textures
+//   Texture A: 8×8 RGBA16 hue×brightness spectrum (CC0 original)
+//   Texture B: 8×8 I8 Bayer ordered-dither matrix (public domain mathematics)
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
+    // ── Texture A: 8×8 RGBA16 hue×brightness spectrum, CC0 ────────────────
+    auto makeRGBA16 = [](uint8_t r, uint8_t g, uint8_t b) -> uint16_t {
+        return static_cast<uint16_t>(((r >> 3) << 11) | ((g >> 3) << 6) | ((b >> 3) << 1) | 1u);
+    };
+    constexpr uint8_t kHueR[8] = { 255, 255, 220, 50, 0, 0, 30, 180 };
+    constexpr uint8_t kHueG[8] = { 0, 150, 255, 220, 220, 200, 80, 0 };
+    constexpr uint8_t kHueB[8] = { 0, 0, 0, 0, 0, 255, 255, 220 };
+    std::vector<uint16_t> texA(64);
+    for (int row = 0; row < 8; row++) {
+        float bright = 1.0f - static_cast<float>(row) * 0.875f / 7.0f;
+        for (int col = 0; col < 8; col++) {
+            texA[row * 8 + col] =
+                makeRGBA16(static_cast<uint8_t>(kHueR[col] * bright),
+                           static_cast<uint8_t>(kHueG[col] * bright),
+                           static_cast<uint8_t>(kHueB[col] * bright));
+        }
+    }
+
+    // ── Texture B: 8×8 I8 Bayer ordered-dither threshold matrix ───────────
+    static const uint8_t kBayer8x8[64] = {
+        0,   192, 48,  240, 12,  204, 60,  252, 128, 64,  176, 112, 140, 76,  188, 124,
+        32,  224, 16,  208, 44,  236, 28,  220, 160, 96,  144, 80,  172, 108, 156, 92,
+        8,   200, 56,  248, 4,   196, 52,  244, 136, 72,  184, 120, 132, 68,  180, 116,
+        40,  232, 24,  216, 36,  228, 20,  212, 168, 104, 152, 88,  164, 100, 148, 84,
+    };
+    std::vector<uint8_t> texB(kBayer8x8, kBayer8x8 + 64);
+
+    // ── Fan mesh colour table (gradient by angle) ─────────────────────────
+    static const uint8_t kFanR[8] = { 255, 255, 200, 0, 0, 0, 100, 220 };
+    static const uint8_t kFanG[8] = { 50, 140, 220, 200, 200, 60, 0, 0 };
+    static const uint8_t kFanB[8] = { 0, 0, 0, 50, 220, 255, 255, 180 };
+
+    // ── Build 8-triangle fan VBO for OpenGL / LLGL ────────────────────────
+    // 8 triangles × 3 vertices × 6 floats = 144 floats
+    // Layout: [x, y, z, w, u, v] in clip space (clip_x = sx-160, clip_y = 120-sy)
+    std::vector<float> fanVbo;
+    fanVbo.reserve(8 * 3 * 6);
+    for (int i = 0; i < 8; i++) {
+        float th0 = static_cast<float>(i) * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(i + 1) * static_cast<float>(M_PI) / 4.0f;
+        float ox0c = 80.0f * std::cos(th0);
+        float oy0c = -(80.0f * std::sin(th0));
+        float ou0 = 0.5f + 0.5f * std::cos(th0);
+        float ov0 = 0.5f + 0.5f * std::sin(th0);
+        float ox1c = 80.0f * std::cos(th1);
+        float oy1c = -(80.0f * std::sin(th1));
+        float ou1 = 0.5f + 0.5f * std::cos(th1);
+        float ov1 = 0.5f + 0.5f * std::sin(th1);
+        // centre
+        fanVbo.push_back(0.0f);
+        fanVbo.push_back(0.0f);
+        fanVbo.push_back(0.0f);
+        fanVbo.push_back(1.0f);
+        fanVbo.push_back(0.5f);
+        fanVbo.push_back(0.5f);
+        // outer[i]
+        fanVbo.push_back(ox0c);
+        fanVbo.push_back(oy0c);
+        fanVbo.push_back(0.0f);
+        fanVbo.push_back(1.0f);
+        fanVbo.push_back(ou0);
+        fanVbo.push_back(ov0);
+        // outer[i+1]
+        fanVbo.push_back(ox1c);
+        fanVbo.push_back(oy1c);
+        fanVbo.push_back(0.0f);
+        fanVbo.push_back(1.0f);
+        fanVbo.push_back(ou1);
+        fanVbo.push_back(ov1);
+    }
+
+    // LLGL must run before the ParallelRDP Vulkan device is opened.
+    auto llglFb = RenderLLGLMesh(fanVbo, 8, texA, 8, 8);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    static constexpr uint32_t TEX_B_ADDR = prdp::TEX_ADDR + 0x200;
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  1. Direct PRDP — full RDP feature gauntlet            ║
+    // ╚════════════════════════════════════════════════════════╝
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture16(prdp::TEX_ADDR, texA);
+        ctx.WriteRDRAMTexture8(TEX_B_ADDR, texB.data(), texB.size());
+
+        std::vector<prdp::ParallelRDPContext::CommandStep> steps;
+
+        // 1a: FILL-mode FB clear
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(
+                prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH,
+                                        prdp::FB_ADDR));
+            cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+            uint16_t bgClr =
+                static_cast<uint16_t>((0u << 11) | (0u << 6) | (8u << 1) | 1u); // dark navy
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)bgClr << 16) | bgClr));
+            cmds.push_back(prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                    (prdp::FB_HEIGHT - 1) * 4));
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1b: FILL-mode Z-buffer clear
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(
+                prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH,
+                                        prdp::ZBUF_ADDR));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetFillColor(0xFFFEFFFEu));
+            cmds.push_back(prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                    (prdp::FB_HEIGHT - 1) * 4));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(
+                prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, prdp::FB_WIDTH,
+                                        prdp::FB_ADDR));
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1c: Color registers + load texA→tile0, texB→tile1
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 80, 130, 230, 200));
+            cmds.push_back(prdp::MakeSetEnvColor(230, 180, 40, 255));
+            cmds.push_back(prdp::MakeSetFogColor(30, 30, 90, 0));
+            cmds.push_back(prdp::MakeSetBlendColor(128, 192, 255, 128));
+            cmds.push_back(prdp::MakeSetPrimDepth(0x8000, 0x0200));
+            cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 8,
+                                                      prdp::TEX_ADDR));
+            cmds.push_back(
+                prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 2, 0, 0, 0, 0, 3, 3, 0,
+                                   0, 0));
+            cmds.push_back(prdp::MakeSyncLoad());
+            cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSyncTile());
+            cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 8,
+                                                      TEX_B_ADDR));
+            cmds.push_back(
+                prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 16, 1, 0, 0, 3, 3, 0, 0,
+                                   0));
+            cmds.push_back(prdp::MakeSyncLoad());
+            cmds.push_back(prdp::MakeLoadTile(1, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSetTileSize(1, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSyncTile());
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1d: Left third — 1-cycle, CC_TEXEL0
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {},
+                          prdp::MakeTextureRectangleWords(0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4,
+                                                          0, 0, 0, 0, 77, 77) });
+
+        // 1e: Centre third — 1-cycle, Texel0 × Prim
+        {
+            prdp::CombinerCycle texTimesPrim = { 1, 8, 10, 7, 1, 7, 3, 7 };
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(texTimesPrim, texTimesPrim));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {},
+                          prdp::MakeTextureRectangleWords(0, 213 * 4, (prdp::FB_HEIGHT - 1) * 4,
+                                                          107 * 4, 0, 0, 0, 77, 77) });
+
+        // 1f: Right third — 2-cycle, Combined × Env
+        {
+            prdp::CombinerCycle c0 = prdp::CC_TEXEL0;
+            prdp::CombinerCycle c1 = { 0, 8, 12, 7, 0, 7, 5, 7 };
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                 prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes2Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(c0, c1));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {},
+                          prdp::MakeTextureRectangleWords(0, (prdp::FB_WIDTH - 1) * 4,
+                                                          (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0,
+                                                          0, 0, 77, 77) });
+
+        // 1g: Fan mesh — 8 shade triangles (0xCC), no Z write
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+            steps.push_back({ cmds, {} });
+        }
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            steps.push_back(
+                { {},
+                  prdp::MakeShadeTriangleArbitrary(160.0f, 120.0f, 160.0f + 80.0f * std::cos(th0),
+                                                   120.0f + 80.0f * std::sin(th0),
+                                                   160.0f + 80.0f * std::cos(th1),
+                                                   120.0f + 80.0f * std::sin(th1), kFanR[fi],
+                                                   kFanG[fi], kFanB[fi], 255) });
+        }
+
+        // 1h: Shade+Z triangle (0xCD) — inner, with Z test
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {},
+                          prdp::MakeShadeZbuffTriangleWords(100, 60, 220, 180, 20, 210, 220, 255,
+                                                            0x40000000u) });
+
+        // 1i: SyncFull
+        steps.push_back({ { prdp::MakeSyncFull() }, {} });
+        ctx.SubmitSequence(steps);
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  2. Fast3D → Vulkan  (BatchingPRDPBackend)             ║
+    // ╚════════════════════════════════════════════════════════╝
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, texA);
+    prdp_->WriteRDRAMTexture8(TEX_B_ADDR, texB.data(), texB.size());
+    backend_.Clear();
+
+    // SetColorImage + SetMaskImage + full scissor (matches Direct PRDP header).
+    SetupCommonState();
+
+    // ── FILL-mode FB clear (dark navy, matching Direct PRDP step 1a) ──────
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+    {
+        uint16_t bgClr = static_cast<uint16_t>((0u << 11) | (0u << 6) | (8u << 1) | 1u);
+        backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)bgClr << 16) | bgClr));
+    }
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+
+    // ── FILL-mode Z-buffer clear (0xFFFE, matching Direct PRDP step 1b) ──
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::ZBUF_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(0xFFFEFFFEu));
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::FB_ADDR));
+
+    // ── Color registers + texture load (matching Direct PRDP step 1c) ────
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 80, 130, 230, 200));
+    backend_.EmitRDPCmd(prdp::MakeSetEnvColor(230, 180, 40, 255));
+    backend_.EmitRDPCmd(prdp::MakeSetFogColor(30, 30, 90, 0));
+    backend_.EmitRDPCmd(prdp::MakeSetBlendColor(128, 192, 255, 128));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimDepth(0x8000, 0x0200));
+    // texA (RGBA16) → tile 0
+    EmitRGBA16TextureSetup(8, 8);
+    // texB (I8 Bayer) → tile 1
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 8, TEX_B_ADDR));
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 16, 1, 0, 0, 3, 3, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+
+    // ── Left third (x=0..106): 1-cycle, CC_TEXEL0 ────────────────────────
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    backend_.EmitRawWords(
+        prdp::MakeTextureRectangleWords(0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77,
+                                        77));
+
+    // ── Centre third (x=107..213): 1-cycle, Texel0×Prim ─────────────────
+    {
+        prdp::CombinerCycle texTimesPrim = { 1, 8, 10, 7, 1, 7, 3, 7 };
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(texTimesPrim, texTimesPrim));
+        backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+            0, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77));
+    }
+
+    // ── Right third (x=214..319): 2-cycle, Combined×Env ──────────────────
+    {
+        prdp::CombinerCycle c0 = prdp::CC_TEXEL0;
+        prdp::CombinerCycle c1 = { 0, 8, 12, 7, 0, 7, 5, 7 };
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                   prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes2Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(c0, c1));
+        backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+            0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0, 0, 0, 77, 77));
+    }
+
+    // Fan mesh — 8 shade triangles (0xCC), no Z write
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    for (int fi = 0; fi < 8; fi++) {
+        float th0 = static_cast<float>(fi) * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+        backend_.EmitRawWords(prdp::MakeShadeTriangleArbitrary(
+            160.0f, 120.0f, 160.0f + 80.0f * std::cos(th0), 120.0f + 80.0f * std::sin(th0),
+            160.0f + 80.0f * std::cos(th1), 120.0f + 80.0f * std::sin(th1), kFanR[fi], kFanG[fi],
+            kFanB[fi], 255));
+    }
+
+    // Shade+Z triangle (0xCD)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+    backend_.EmitRawWords(
+        prdp::MakeShadeZbuffTriangleWords(100, 60, 220, 180, 20, 210, 220, 255, 0x40000000u));
+
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  3. Fast3D → OpenGL  (software rasterizer)             ║
+    // ╚════════════════════════════════════════════════════════╝
+    auto glFb = RenderOpenGLMesh(fanVbo, 8, texA, 8, 8);
+
+    RunThreeWay("RDPFeatureGauntlet", directFb, vkFb, glFb, llglFb);
+
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u) << "Direct PRDP should render pixels";
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u) << "Fast3D→Vulkan should render pixels";
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u) << "Fast3D→OpenGL should render pixels";
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u) << "Fast3D→LLGL should render pixels";
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RDPSceneStress
+//
+// A complex multi-object scene that exercises advanced RDP features beyond
+// what RDPFeatureGauntlet covers:
+//
+//   Geometry:    Back octagon fan (0xCD shade+Z, radius=100, Z=0x70000000)
+//                overlapped by a front octagon fan (0xCD shade+Z, radius=50,
+//                Z=0x30000000) — front pixels win the Z-test in the overlap.
+//   Textures:    Three simultaneously-loaded tiles:
+//                  Tile 0 = RGBA16 hue-spectrum (same as RDPFeatureGauntlet)
+//                  Tile 1 = I8 Bayer-matrix (TMEM offset 16)
+//                  Tile 2 = RGBA16 warm-gradient (TMEM offset 24)
+//                drawn as full-height texture rectangles in three screen bands.
+//   Transparency: Framebuffer-read alpha-blend (IM_RD | FORCE_BLEND +
+//                src-alpha blender equation) — a hot-pink triangle is
+//                composited over all previously rendered pixels.
+//                This is the key new feature vs. RDPFeatureGauntlet.
+//   Color regs:  SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
+//                SetPrimDepth
+//   Combiners:   Back fan 1-cyc: (Shade−Prim)×Shade+Prim
+//                Front fan 2-cyc: c0=CC_SHADE_RGB, c1=(Combined−Prim)×Shade+Prim
+//                Overlay 1-cyc IM_RD: CC_PRIM_RGB (solid prim over FB)
+//                Texture bands: CC_TEXEL0, Texel0×Prim, 2-cyc Combined×Env
+//   Cycle modes: Fill (×2: FB + Z clear), 1-cycle (×4), 2-cycle (×2)
+//   Syncs:       SyncPipe, SyncLoad, SyncTile, SyncFull
+//
+// GL/LLGL paths: render the back fan mesh via the software rasteriser.
+// ──────────────────────────────────────────────────────────────────────────
+TEST_F(ThreeWayTextureTest, RDPSceneStress) {
+    // ── Textures ──────────────────────────────────────────────────────────
+
+    // texA: 8×8 RGBA16 hue×brightness spectrum (same as RDPFeatureGauntlet)
+    auto makeRGBA16 = [](uint8_t r, uint8_t g, uint8_t b) -> uint16_t {
+        return static_cast<uint16_t>(((r >> 3) << 11) | ((g >> 3) << 6) | ((b >> 3) << 1) | 1u);
+    };
+    constexpr uint8_t kHueR[8] = { 255, 255, 220,  50,   0,   0,  30, 180 };
+    constexpr uint8_t kHueG[8] = {   0, 150, 255, 220, 220, 200,  80,   0 };
+    constexpr uint8_t kHueB[8] = {   0,   0,   0,   0,   0, 255, 255, 220 };
+    std::vector<uint16_t> texA(64);
+    for (int row = 0; row < 8; row++) {
+        float bright = 1.0f - static_cast<float>(row) * 0.875f / 7.0f;
+        for (int col = 0; col < 8; col++) {
+            texA[row * 8 + col] =
+                makeRGBA16(static_cast<uint8_t>(kHueR[col] * bright),
+                           static_cast<uint8_t>(kHueG[col] * bright),
+                           static_cast<uint8_t>(kHueB[col] * bright));
+        }
+    }
+
+    // texB: 8×8 I8 Bayer ordered-dither matrix (same as RDPFeatureGauntlet)
+    static const uint8_t kBayer8x8[64] = {
+        0,   192, 48,  240, 12,  204, 60,  252, 128, 64,  176, 112, 140, 76,  188, 124,
+        32,  224, 16,  208, 44,  236, 28,  220, 160, 96,  144, 80,  172, 108, 156, 92,
+        8,   200, 56,  248, 4,   196, 52,  244, 136, 72,  184, 120, 132, 68,  180, 116,
+        40,  232, 24,  216, 36,  228, 20,  212, 168, 104, 152, 88,  164, 100, 148, 84,
+    };
+    std::vector<uint8_t> texB(kBayer8x8, kBayer8x8 + 64);
+
+    // texC: 8×8 RGBA16 warm gradient (orange-to-purple, row × col sweep)
+    std::vector<uint16_t> texC(64);
+    for (int row = 0; row < 8; row++) {
+        float t = static_cast<float>(row) / 7.0f;
+        for (int col = 0; col < 8; col++) {
+            float s = static_cast<float>(col) / 7.0f;
+            texC[row * 8 + col] = makeRGBA16(
+                static_cast<uint8_t>(200 + 55 * s),
+                static_cast<uint8_t>(100 - 80 * t),
+                static_cast<uint8_t>(30  + 200 * t));
+        }
+    }
+
+    // ── RDRAM addresses ───────────────────────────────────────────────────
+    static constexpr uint32_t TEX_B_ADDR = prdp::TEX_ADDR + 0x200;
+    static constexpr uint32_t TEX_C_ADDR = prdp::TEX_ADDR + 0x400;
+
+    // ── Per-mesh combiner cycles ──────────────────────────────────────────
+    //
+    // Back fan (1-cycle): (Shade − Prim) × Shade + Prim
+    //   rgb: A=Shade(4), B=Prim(3), C=Shade(4), D=Prim(3)
+    //   alpha: pass-through shade_alpha
+    static constexpr prdp::CombinerCycle kShadePrimBlend = { 4, 3, 4, 3,  0, 0, 0, 4 };
+    //
+    // Front fan cycle 1 (2-cycle pass):
+    //   (Combined − Prim) × Shade + Prim
+    //   rgb: A=Combined(0), B=Prim(3), C=Shade(4), D=Prim(3)
+    //   Same formula but Combined comes from c0 = CC_SHADE_RGB above.
+    static constexpr prdp::CombinerCycle kCombPrimBlend  = { 0, 3, 4, 3,  0, 0, 0, 4 };
+
+    // ── Fan colors ────────────────────────────────────────────────────────
+    // Back fan (radius=100): warm sunset palette
+    static const uint8_t kBackR[8]  = { 230, 200, 140,  60,  20,  40, 110, 200 };
+    static const uint8_t kBackG[8]  = {  60, 120, 200, 170,  80,  30,  20,  40 };
+    static const uint8_t kBackB[8]  = {  20,  20,  30,  80, 170, 210, 190,  90 };
+    // Front fan (radius=50): cool ice palette — drawn over back fan, lower Z wins
+    static const uint8_t kFrontR[8] = { 160, 140, 100,  60,  30,  50,  90, 140 };
+    static const uint8_t kFrontG[8] = { 210, 205, 200, 185, 170, 185, 200, 210 };
+    static const uint8_t kFrontB[8] = { 255, 245, 225, 205, 225, 245, 255, 250 };
+
+    // ── Fan VBO for GL / LLGL paths (radius=80, reuses texA as texture) ──
+    std::vector<float> fanVbo;
+    fanVbo.reserve(8 * 3 * 6);
+    for (int i = 0; i < 8; i++) {
+        float th0 = static_cast<float>(i)     * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(i + 1) * static_cast<float>(M_PI) / 4.0f;
+        // centre
+        fanVbo.insert(fanVbo.end(), { 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.5f });
+        float ox0 = 80.0f * std::cos(th0), oy0 = -(80.0f * std::sin(th0));
+        fanVbo.insert(fanVbo.end(),
+            { ox0, oy0, 0.0f, 1.0f,
+              0.5f + 0.5f * std::cos(th0), 0.5f + 0.5f * std::sin(th0) });
+        float ox1 = 80.0f * std::cos(th1), oy1 = -(80.0f * std::sin(th1));
+        fanVbo.insert(fanVbo.end(),
+            { ox1, oy1, 0.0f, 1.0f,
+              0.5f + 0.5f * std::cos(th1), 0.5f + 0.5f * std::sin(th1) });
+    }
+
+    // ── LLGL must run before the ParallelRDP VkInstance is opened ─────────
+    auto llglFb = RenderLLGLMesh(fanVbo, 8, texA, 8, 8);
+
+    prdp_ = &prdp::GetPRDPContext();
+    if (!prdp_->IsAvailable()) GTEST_SKIP() << "Vulkan not available";
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  1. Direct PRDP — full scene                          ║
+    // ╚════════════════════════════════════════════════════════╝
+    {
+        auto& ctx = prdp::GetPRDPContext();
+        ctx.ClearRDRAM();
+        ctx.WriteRDRAMTexture16(prdp::TEX_ADDR, texA);
+        ctx.WriteRDRAMTexture8(TEX_B_ADDR, texB.data(), texB.size());
+        ctx.WriteRDRAMTexture16(TEX_C_ADDR, texC);
+
+        std::vector<prdp::ParallelRDPContext::CommandStep> steps;
+
+        // 1a: FILL-mode FB clear (dark purple background)
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                    prdp::FB_WIDTH, prdp::FB_ADDR));
+            cmds.push_back(prdp::MakeSetMaskImage(prdp::ZBUF_ADDR));
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+            uint16_t bgClr = static_cast<uint16_t>((5u << 11) | (0u << 6) | (10u << 1) | 1u);
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)bgClr << 16) | bgClr));
+            cmds.push_back(prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                    (prdp::FB_HEIGHT - 1) * 4));
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1b: FILL-mode Z-buffer clear
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                    prdp::FB_WIDTH, prdp::ZBUF_ADDR));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetFillColor(0xFFFEFFFEu));
+            cmds.push_back(prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                    (prdp::FB_HEIGHT - 1) * 4));
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                    prdp::FB_WIDTH, prdp::FB_ADDR));
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1c: Color registers + load 3 tiles into TMEM
+        //   Tile 0: texA RGBA16 at tmem=0,  line=2
+        //   Tile 1: texB I8    at tmem=16, line=1
+        //   Tile 2: texC RGBA16 at tmem=24, line=2
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetPrimColor(0, 0, 200, 100,  50, 220));
+            cmds.push_back(prdp::MakeSetEnvColor(40,  80, 180, 255));
+            cmds.push_back(prdp::MakeSetFogColor(160, 180, 200, 200));
+            cmds.push_back(prdp::MakeSetBlendColor(100, 220, 150, 128));
+            cmds.push_back(prdp::MakeSetPrimDepth(0x8000, 0x0200));
+            // Tile 0: texA (RGBA16, 8×8)
+            cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                      8, prdp::TEX_ADDR));
+            cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              2, 0, 0, 0, 0, 3, 3, 0, 0, 0));
+            cmds.push_back(prdp::MakeSyncLoad());
+            cmds.push_back(prdp::MakeLoadTile(0, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSetTileSize(0, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSyncTile());
+            // Tile 1: texB (I8, 8×8)
+            cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
+                                                      8, TEX_B_ADDR));
+            cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
+                                              1, 16, 1, 0, 0, 3, 3, 0, 0, 0));
+            cmds.push_back(prdp::MakeSyncLoad());
+            cmds.push_back(prdp::MakeLoadTile(1, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSetTileSize(1, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSyncTile());
+            // Tile 2: texC (RGBA16, 8×8)
+            cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                      8, TEX_C_ADDR));
+            cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                              2, 24, 2, 0, 0, 3, 3, 0, 0, 0));
+            cmds.push_back(prdp::MakeSyncLoad());
+            cmds.push_back(prdp::MakeLoadTile(2, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSetTileSize(2, 0, 0, 7 * 4, 7 * 4));
+            cmds.push_back(prdp::MakeSyncTile());
+            steps.push_back({ cmds, {} });
+        }
+
+        // 1d: Left third (x=0..106) — tile 0, 1-cycle, CC_TEXEL0
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77, 77) });
+
+        // 1e: Centre third (x=107..213) — tile 1, 1-cycle, Texel0×Prim
+        {
+            prdp::CombinerCycle texTimesPrim = { 1, 8, 10, 7, 1, 7, 3, 7 };
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes1Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(texTimesPrim, texTimesPrim));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            1, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77) });
+
+        // 1f: Right third (x=214..319) — tile 2, 2-cycle, Combined×Env
+        {
+            prdp::CombinerCycle c0 = prdp::CC_TEXEL0;
+            prdp::CombinerCycle c1 = { 0, 8, 12, 7, 0, 7, 5, 7 };
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                 prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeOtherModes2Cycle());
+            cmds.push_back(prdp::MakeSetCombineMode(c0, c1));
+            steps.push_back({ cmds, {} });
+        }
+        steps.push_back({ {}, prdp::MakeTextureRectangleWords(
+            2, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0, 0, 0, 77, 77) });
+
+        // 1g: Back octagon fan (0xCD, radius=100, Z=0x70000000 = far)
+        //     1-cycle: (Shade − Prim) × Shade + Prim — nonlinear warm blend.
+        //     Z_CMP + Z_UPD establishes depth for subsequent passes.
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+            cmds.push_back(prdp::MakeSetCombineMode(kShadePrimBlend, kShadePrimBlend));
+            steps.push_back({ cmds, {} });
+        }
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
+                160.0f, 120.0f,
+                160.0f + 100.0f * std::cos(th0), 120.0f + 100.0f * std::sin(th0),
+                160.0f + 100.0f * std::cos(th1), 120.0f + 100.0f * std::sin(th1),
+                kBackR[fi], kBackG[fi], kBackB[fi], 255, 0x70000000u) });
+        }
+
+        // 1h: Front octagon fan (0xCD, radius=50, Z=0x30000000 = closer)
+        //     2-cycle: c0=CC_SHADE_RGB, c1=(Combined−Prim)×Shade+Prim.
+        //     Pixels drawn over the back fan where 0x30000000 < stored Z.
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_2CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, kCombPrimBlend));
+            steps.push_back({ cmds, {} });
+        }
+        for (int fi = 0; fi < 8; fi++) {
+            float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
+            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+            steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
+                160.0f, 120.0f,
+                160.0f + 50.0f * std::cos(th0), 120.0f + 50.0f * std::sin(th0),
+                160.0f + 50.0f * std::cos(th1), 120.0f + 50.0f * std::sin(th1),
+                kFrontR[fi], kFrontG[fi], kFrontB[fi], 255, 0x30000000u) });
+        }
+
+        // 1i: Framebuffer-read alpha-blend overlay (hot-pink triangle)
+        //     IM_RD enables the blender to read the current FB pixel as M=CLR_MEM,
+        //     producing: result = src×alpha + fb×(1−alpha).
+        //     1-cycle CC_PRIM_RGB: solid prim color (200,100,50) is the src.
+        //     Z_CMP (no Z_UPD) so the overlay respects depth but does not disturb it.
+        {
+            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSyncPipe());
+            cmds.push_back(prdp::MakeSetOtherModes(
+                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+                prdp::RDP_ALPHA_BLEND_LO | prdp::RDP_Z_CMP));
+            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+            steps.push_back({ cmds, {} });
+        }
+        // Large triangle covering the upper-left quadrant; alpha=180 (~70 % opaque)
+        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
+            20.0f,  20.0f,
+            200.0f, 20.0f,
+            110.0f, 170.0f,
+            240, 80, 200, 180, 0x10000000u) });
+
+        // 1j: SyncFull
+        steps.push_back({ { prdp::MakeSyncFull() }, {} });
+        ctx.SubmitSequence(steps);
+    }
+    auto directFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  2. Fast3D → Vulkan  (BatchingPRDPBackend)            ║
+    // ╚════════════════════════════════════════════════════════╝
+    prdp_->ClearRDRAM();
+    prdp_->WriteRDRAMTexture16(prdp::TEX_ADDR, texA);
+    prdp_->WriteRDRAMTexture8(TEX_B_ADDR, texB.data(), texB.size());
+    prdp_->WriteRDRAMTexture16(TEX_C_ADDR, texC);
+    backend_.Clear();
+
+    // Header: SetColorImage + SetMaskImage + full scissor (via SetupCommonState)
+    SetupCommonState();
+
+    // FILL-mode FB clear (dark purple)
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+    {
+        uint16_t bgClr = static_cast<uint16_t>((5u << 11) | (0u << 6) | (10u << 1) | 1u);
+        backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)bgClr << 16) | bgClr));
+    }
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+
+    // FILL-mode Z-buffer clear
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::ZBUF_ADDR));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(0xFFFEFFFEu));
+    backend_.EmitRDPCmd(
+        prdp::MakeFillRectangle(0, 0, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetColorImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                  prdp::FB_WIDTH, prdp::FB_ADDR));
+
+    // Color registers
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetPrimColor(0, 0, 200, 100,  50, 220));
+    backend_.EmitRDPCmd(prdp::MakeSetEnvColor(40,  80, 180, 255));
+    backend_.EmitRDPCmd(prdp::MakeSetFogColor(160, 180, 200, 200));
+    backend_.EmitRDPCmd(prdp::MakeSetBlendColor(100, 220, 150, 128));
+    backend_.EmitRDPCmd(prdp::MakeSetPrimDepth(0x8000, 0x0200));
+
+    // Tile 0: texA RGBA16 (uses EmitRGBA16TextureSetup → tile=0, tmem=0, line=2)
+    EmitRGBA16TextureSetup(8, 8);
+
+    // Tile 1: texB I8 at tmem=16
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b,
+                                                    8, TEX_B_ADDR));
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTile(prdp::RDP_FMT_I, prdp::RDP_SIZ_8b, 1, 16, 1, 0, 0, 3, 3, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(1, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+
+    // Tile 2: texC RGBA16 at tmem=24
+    backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
+                                                    8, TEX_C_ADDR));
+    backend_.EmitRDPCmd(
+        prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 2, 24, 2, 0, 0, 3, 3, 0, 0, 0));
+    backend_.EmitRDPCmd(prdp::MakeSyncLoad());
+    backend_.EmitRDPCmd(prdp::MakeLoadTile(2, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetTileSize(2, 0, 0, 7 * 4, 7 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSyncTile());
+
+    // Left third — tile 0, 1-cycle, CC_TEXEL0
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
+    backend_.EmitRawWords(
+        prdp::MakeTextureRectangleWords(0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77, 77));
+
+    // Centre third — tile 1, 1-cycle, Texel0×Prim
+    {
+        prdp::CombinerCycle texTimesPrim = { 1, 8, 10, 7, 1, 7, 3, 7 };
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(texTimesPrim, texTimesPrim));
+        backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+            1, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77));
+    }
+
+    // Right third — tile 2, 2-cycle, Combined×Env
+    {
+        prdp::CombinerCycle c0 = prdp::CC_TEXEL0;
+        prdp::CombinerCycle c1 = { 0, 8, 12, 7, 0, 7, 5, 7 };
+        backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+        backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
+                                                   prdp::FB_HEIGHT * 4));
+        backend_.EmitRDPCmd(prdp::MakeOtherModes2Cycle());
+        backend_.EmitRDPCmd(prdp::MakeSetCombineMode(c0, c1));
+        backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
+            2, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0, 0, 0, 77, 77));
+    }
+
+    // Back octagon fan (0xCD, radius=100, Z=0x70000000)
+    // 1-cycle: (Shade − Prim) × Shade + Prim
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(kShadePrimBlend, kShadePrimBlend));
+    for (int fi = 0; fi < 8; fi++) {
+        float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+        backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
+            160.0f, 120.0f,
+            160.0f + 100.0f * std::cos(th0), 120.0f + 100.0f * std::sin(th0),
+            160.0f + 100.0f * std::cos(th1), 120.0f + 100.0f * std::sin(th1),
+            kBackR[fi], kBackG[fi], kBackB[fi], 255, 0x70000000u));
+    }
+
+    // Front octagon fan (0xCD, radius=50, Z=0x30000000)
+    // 2-cycle: c0=CC_SHADE_RGB, c1=(Combined−Prim)×Shade+Prim
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_2CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, kCombPrimBlend));
+    for (int fi = 0; fi < 8; fi++) {
+        float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
+        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
+        backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
+            160.0f, 120.0f,
+            160.0f + 50.0f * std::cos(th0), 120.0f + 50.0f * std::sin(th0),
+            160.0f + 50.0f * std::cos(th1), 120.0f + 50.0f * std::sin(th1),
+            kFrontR[fi], kFrontG[fi], kFrontB[fi], 255, 0x30000000u));
+    }
+
+    // Framebuffer-read alpha-blend overlay (hot-pink, alpha=180)
+    // 1-cycle CC_PRIM_RGB: solid prim color (200,100,50) composited over FB via IM_RD.
+    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
+        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
+        prdp::RDP_ALPHA_BLEND_LO | prdp::RDP_Z_CMP));
+    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_PRIM_RGB, prdp::CC_PRIM_RGB));
+    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
+        20.0f,  20.0f,
+        200.0f, 20.0f,
+        110.0f, 170.0f,
+        240, 80, 200, 180, 0x10000000u));
+
+    backend_.EmitRDPCmd(prdp::MakeSyncFull());
+    backend_.FlushTo(*prdp_);
+    auto vkFb = prdp_->ReadFramebuffer(prdp::FB_ADDR, prdp::FB_WIDTH, prdp::FB_HEIGHT);
+
+    // ╔════════════════════════════════════════════════════════╗
+    // ║  3. Fast3D → OpenGL  (software rasterizer)            ║
+    // ╚════════════════════════════════════════════════════════╝
+    auto glFb = RenderOpenGLMesh(fanVbo, 8, texA, 8, 8);
+
+    RunThreeWay("RDPSceneStress", directFb, vkFb, glFb, llglFb);
+
+    EXPECT_GT(ComputeStats(directFb).nonBlack, 0u) << "Direct PRDP should render pixels";
+    EXPECT_GT(ComputeStats(vkFb).nonBlack,     0u) << "Fast3D→Vulkan should render pixels";
+    EXPECT_GT(ComputeStats(glFb).nonBlack,     0u) << "Fast3D→OpenGL should render pixels";
+    EXPECT_GT(ComputeStats(llglFb).nonBlack,   0u) << "Fast3D→LLGL should render pixels";
 }
 
 #endif // LUS_PRDP_TESTS_ENABLED
