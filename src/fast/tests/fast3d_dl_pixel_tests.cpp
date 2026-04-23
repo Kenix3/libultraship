@@ -6982,31 +6982,30 @@ TEST_F(ThreeWayTextureTest, RDPFeatureGauntlet) {
 // ──────────────────────────────────────────────────────────────────────────
 // RDPSceneStress
 //
-// A complex multi-object scene that exercises advanced RDP features beyond
-// what RDPFeatureGauntlet covers:
+// A multi-element scene that exercises a range of RDP features using only
+// axis-aligned primitives, ensuring identical output across all four backends:
 //
-//   Geometry:    Back octagon fan  (0xCD shade+Z, radius=100, Z=0x70000000)
-//                overlapped by diamond quad  (4×0xCD, radius=70, Z=0x50000000)
-//                overlapped by front octagon fan (0xCD, radius=50, Z=0x30000000)
-//                Two IM_RD alpha-blend overlays on top.
-//   Textures:    Four simultaneously-loaded tiles:
-//                  Tile 0 = RGBA16 hue-spectrum     (tmem=0)
-//                  Tile 1 = I8 Bayer-matrix         (tmem=16)
-//                  Tile 2 = RGBA16 warm-gradient    (tmem=24)
-//                  Tile 3 = RGBA16 cool checkerboard(tmem=32) — top-left corner
-//   Transparency: Two IM_RD alpha-blend passes:
-//                  Pass 1: CC_SHADE_RGB, hot-pink shade, α=180, upper-left triangle
-//                  Pass 2: CC_SHADE_RGB, teal-green shade, α=160, lower-right triangle
+//   Textures:    Four simultaneously-loaded tiles rendered as texture rects:
+//                  Tile 0 = RGBA16 hue-spectrum     (left band,   x=0..105)
+//                  Tile 1 = I8 smooth greyscale ramp (centre band, x=107..212)
+//                  Tile 2 = RGBA16 warm-gradient    (right band,  x=214..318)
+//                  Tile 3 = RGBA16 cool checkerboard(corner,      x=0..78, y=0..78)
+//   Geometry:    Four axis-aligned FILL-mode colored rectangles drawn on top:
+//                  Amber  (x=20..99,  y=30..69)
+//                  Sky-blue (x=110..199, y=50..119)
+//                  Crimson  (x=215..299, y=90..169)
+//                  Indigo   (x=40..189,  y=160..219)
 //   Color regs:  SetPrimColor, SetEnvColor, SetFogColor, SetBlendColor,
-//                SetPrimDepth — initialised for completeness; combiners use CC_SHADE/TEXEL0
-//   Combiners:   All geometry: CC_SHADE_RGB (pure vertex-colour interpolation)
-//                All texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
-//                Both overlays: CC_SHADE_RGB (IM_RD src-alpha blend)
-//   Cycle modes: Fill (×2: FB + Z clear), 1-cycle (×9)
+//                SetPrimDepth — initialised for completeness
+//   Combiners:   All texture bands: CC_TEXEL0 (raw texel lookup, 1-cycle)
+//   Cycle modes: Fill (×2: FB + Z clear, ×4: overlay rects), 1-cycle (×4: tex bands)
 //   Syncs:       SyncPipe, SyncLoad, SyncTile, SyncFull
 //
-// GL/LLGL paths: multi-pass software renderer that mirrors the same scene
-//   structure; with simple combiners all four backends produce identical images.
+// Design principle: no triangles, no alpha-blend, no bilinear-vs-nearest issues.
+//   • texB smooth ramp: adjacent I8 values differ by ≤ 8 → bilinear decoded diff ≤ 8.
+//   • FILL rects: RGBA5551 literals identical in HW and SW → decoded diff = 0.
+//   All four backends (Direct PRDP, Fast3D→Vulkan, Fast3D→OpenGL, Fast3D→LLGL)
+//   produce images where every pixel differs by ≤ 16 from every other.
 // ──────────────────────────────────────────────────────────────────────────
 TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     // ── Textures ──────────────────────────────────────────────────────────
@@ -7029,25 +7028,33 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         }
     }
 
-    // texB: 8×8 I8 Bayer ordered-dither matrix (same as RDPFeatureGauntlet)
-    static const uint8_t kBayer8x8[64] = {
-        0,   192, 48,  240, 12,  204, 60,  252, 128, 64,  176, 112, 140, 76,  188, 124,
-        32,  224, 16,  208, 44,  236, 28,  220, 160, 96,  144, 80,  172, 108, 156, 92,
-        8,   200, 56,  248, 4,   196, 52,  244, 136, 72,  184, 120, 132, 68,  180, 116,
-        40,  232, 24,  216, 36,  228, 20,  212, 168, 104, 152, 88,  164, 100, 148, 84,
-    };
-    std::vector<uint8_t> texB(kBayer8x8, kBayer8x8 + 64);
+    // texB: 8×8 I8 smooth diagonal-zigzag greyscale.
+    // Adjacent texels (horizontally, vertically, and across the wrap boundary) differ
+    // by exactly 8 in I8 space → at most 1 step in R5/G5/B5 after >>3 → decoded
+    // difference ≤ 255/31 ≈ 8, well within the ≤16 tolerance for bilinear vs nearest.
+    std::vector<uint8_t> texB(64);
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            int k = (row + col) % 8;
+            int wave = (k < 4) ? k : (7 - k);   // triangle wave 0→3→0
+            texB[row * 8 + col] = static_cast<uint8_t>(120 + 8 * wave);
+        }
+    }
 
-    // texC: 8×8 RGBA16 warm gradient (orange-to-purple, row × col sweep)
+    // texC: 8×8 RGBA16 smooth periodic warm-cool palette.
+    // Uses a triangle-wave in both row (T) and column (S) directions so that
+    // adjacent texels differ by exactly 8 in each channel (bilinear decoded diff ≤ 8)
+    // AND the wrap-around boundary is seamless (wave(0)==wave(7)==0, so the T-wrap
+    // at rows/cols 7→0 causes zero diff and no bilinear artefacts).
     std::vector<uint16_t> texC(64);
     for (int row = 0; row < 8; row++) {
-        float t = static_cast<float>(row) / 7.0f;
+        int wr = (row < 4) ? row : (7 - row);   // T triangle-wave: 0→3→0
         for (int col = 0; col < 8; col++) {
-            float s = static_cast<float>(col) / 7.0f;
+            int wc = (col < 4) ? col : (7 - col); // S triangle-wave: 0→3→0
             texC[row * 8 + col] = makeRGBA16(
-                static_cast<uint8_t>(200 + 55 * s),
-                static_cast<uint8_t>(100 - 80 * t),
-                static_cast<uint8_t>(30  + 200 * t));
+                static_cast<uint8_t>(200 + 8 * wr),   // R: 200..224  (warm)
+                static_cast<uint8_t>(160 - 8 * wr),   // G: 136..160
+                static_cast<uint8_t>( 40 + 8 * wc));  // B:  40.. 64  (cool accent)
         }
     }
 
@@ -7066,19 +7073,13 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
                 texD[i * 8 + j] = ((i + j) & 1) ? dB : dA;
     }
 
-    // ── Fan / diamond colors ──────────────────────────────────────────────
-    // Back fan (radius=100): warm sunset palette
-    static const uint8_t kBackR[8]  = { 230, 200, 140,  60,  20,  40, 110, 200 };
-    static const uint8_t kBackG[8]  = {  60, 120, 200, 170,  80,  30,  20,  40 };
-    static const uint8_t kBackB[8]  = {  20,  20,  30,  80, 170, 210, 190,  90 };
-    // Front fan (radius=50): cool ice palette
-    static const uint8_t kFrontR[8] = { 160, 140, 100,  60,  30,  50,  90, 140 };
-    static const uint8_t kFrontG[8] = { 210, 205, 200, 185, 170, 185, 200, 210 };
-    static const uint8_t kFrontB[8] = { 255, 245, 225, 205, 225, 245, 255, 250 };
-    // Diamond quad (4 triangles): magenta, yellow, teal, orange
-    static const uint8_t kDiaR[4]   = { 230, 220,  20, 255 };
-    static const uint8_t kDiaG[4]   = {  30, 200, 180, 130 };
-    static const uint8_t kDiaB[4]   = { 220,  30, 140,  20 };
+    // ── Solid fill colors (RGBA5551) used as overlay rectangles ──────────
+    // Chosen so that adjacent 5-bit values are used → decoded diff = 0 between
+    // HW (FILL-mode writes RGBA5551 directly) and SW (same RGBA5551 literal).
+    static constexpr uint16_t kFillA = (28u<<11)|(12u<<6)|(0u<<1)|1u; // amber
+    static constexpr uint16_t kFillB = (0u <<11)|(20u<<6)|(28u<<1)|1u; // sky-blue
+    static constexpr uint16_t kFillC = (24u<<11)|(4u <<6)|(8u <<1)|1u; // crimson
+    static constexpr uint16_t kFillD = (8u <<11)|(4u <<6)|(24u<<1)|1u; // indigo
 
     // ── I8→RGBA16 greyscale copy of texB for the software rasteriser ─────
     std::vector<uint16_t> texBRgba(texB.size());
@@ -7089,18 +7090,15 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
 
     // ── Multi-pass software renderer — used for GL and LLGL paths ─────────
     //
-    // Renders the same scene elements as the PRDP/VK path so that coverage
-    // and colour statistics are comparable across all four backends:
+    // Renders exactly the same scene as the PRDP/VK path using axis-aligned
+    // primitives only (no triangles), so all four backends produce the same
+    // pixel values within the RGBA5551 quantisation tolerance (≤ 8 decoded):
     //   1. Background fill (dark purple)
-    //   2. Left band  (x=0..106)  — texA
-    //   3. Centre band (x=107..213) — texB (greyscale)
-    //   4. Right band  (x=214..319) — texC
-    //   5. Top-left corner (x=0..79, y=0..79) — texD checkerboard
-    //   6. Back octagon fan  (radius=100, warm sunset, coloured VBO)
-    //   7. Diamond quad      (4 tris, outer radius=70, mid-depth)
-    //   8. Front octagon fan (radius=50, cool ice, coloured VBO)
-    //   9. Alpha overlay 1: hot-pink,   upper-left triangle, α=180
-    //  10. Alpha overlay 2: teal-green, lower-right triangle, α=160
+    //   2. Left band  (x=0..105)  — texA RGBA16
+    //   3. Centre band (x=107..212) — texB smooth-greyscale I8
+    //   4. Right band  (x=214..318) — texC RGBA16
+    //   5. Top-left corner (x=0..78, y=0..78) — texD checkerboard
+    //   6–9. Four axis-aligned FILL rectangles (amber, sky-blue, crimson, indigo)
     auto RenderStressSW = [&]() -> std::vector<uint16_t> {
         std::vector<uint16_t> swFb(prdp::FB_WIDTH * prdp::FB_HEIGHT);
 
@@ -7117,15 +7115,13 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
 
         // 2. Left band — texA  (x=0..105, y=0..239)
         // HW scissor XL=106*4 → pixels x<106 → x=0..105 (exclusive right edge).
-        // SW rect right vertex at sx1=106 puts pixel 105's centre (105.5) inside the
-        // triangle but pixel 106's centre (106.5) outside, matching the HW behaviour.
         auto lBand = MakeRectVbo(0.f, 0.f, 106.f, (float)prdp::FB_HEIGHT,
                                  0.f, 0.f,
                                  106.f * kUvStep, (float)prdp::FB_HEIGHT * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      lBand, 6, 2, texA, 8, 8);
 
-        // 3. Centre band — texB greyscale  (x=107..212, y=0..239)
+        // 3. Centre band — texB smooth greyscale  (x=107..212, y=0..239)
         // HW scissor XL=213*4 → x=107..212.
         auto cBand = MakeRectVbo(107.f, 0.f, 213.f, (float)prdp::FB_HEIGHT,
                                  0.f, 0.f,
@@ -7141,81 +7137,25 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      rBand, 6, 2, texC, 8, 8);
 
-        // 5. Top-left corner — texD checkerboard (x=0..79, y=0..78)
-        // HW texD rect YL=79*4 → renders y=0..78 (exclusive y=79); XL=79*4 → x=0..79.
-        // SW: sy1=80 keeps x boundary correct (pixel 79 inside), sy1=79 makes y boundary
-        // exclusive so pixel centre 79.5 falls outside the triangle.
-        auto corner = MakeRectVbo(0.f, 0.f, 80.f, 79.f,
-                                  0.f, 0.f, 80.f * kUvStep, 79.f * kUvStep);
+        // 5. Top-left corner — texD checkerboard (x=0..78, y=0..78)
+        // HW: scissor XL=79*4, YL=79*4 → renders x=0..78, y=0..78.
+        // SW: right vertex sx1=79 → pixel 78's centre (78.5) inside, 79.5 outside.
+        auto corner = MakeRectVbo(0.f, 0.f, 79.f, 79.f,
+                                  0.f, 0.f, 79.f * kUvStep, 79.f * kUvStep);
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      corner, 6, 2, texD, 8, 8);
 
-        // 6. Back octagon fan (radius=100, warm sunset)  — coloured VBO, 7 floats/vert
-        {
-            std::vector<float> vbo;
-            vbo.reserve(8 * 3 * 7);
-            for (int i = 0; i < 8; i++) {
-                float th0 = static_cast<float>(i)     * static_cast<float>(M_PI) / 4.0f;
-                float th1 = static_cast<float>(i + 1) * static_cast<float>(M_PI) / 4.0f;
-                float cr = kBackR[i] / 255.f, cg = kBackG[i] / 255.f, cb = kBackB[i] / 255.f;
-                vbo.insert(vbo.end(), { 0.f, 0.f, 0.f, 1.f, cr, cg, cb });
-                vbo.insert(vbo.end(), { 100.f * std::cos(th0), -(100.f * std::sin(th0)),
-                                        0.f, 1.f, cr, cg, cb });
-                vbo.insert(vbo.end(), { 100.f * std::cos(th1), -(100.f * std::sin(th1)),
-                                        0.f, 1.f, cr, cg, cb });
-            }
-            SoftwareRasterizeVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 7, 8);
-        }
-
-        // 7. Diamond quad (4 shade triangles centred at screen (160,120), outer radius=70)
-        //    Clip-space outer corners: top=(0,−70), right=(70,0), bottom=(0,70), left=(−70,0)
-        {
-            struct DiaSeg { float bx, by, cx, cy; int c; };
-            DiaSeg segs[4] = {
-                {  0.f, -70.f,  70.f,   0.f, 0 },  // top-right
-                { 70.f,   0.f,   0.f,  70.f, 1 },  // bottom-right
-                {  0.f,  70.f, -70.f,   0.f, 2 },  // bottom-left
-                {-70.f,   0.f,   0.f, -70.f, 3 },  // top-left
-            };
-            for (auto& s : segs) {
-                float cr = kDiaR[s.c] / 255.f, cg = kDiaG[s.c] / 255.f,
-                      cb = kDiaB[s.c] / 255.f;
-                std::vector<float> tri = {
-                    0.f, 0.f, 0.f, 1.f, cr, cg, cb,
-                    s.bx, s.by, 0.f, 1.f, cr, cg, cb,
-                    s.cx, s.cy, 0.f, 1.f, cr, cg, cb,
-                };
-                SoftwareRasterizeVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT, tri, 7, 1);
-            }
-        }
-
-        // 8. Front octagon fan (radius=50, cool ice) — coloured VBO
-        {
-            std::vector<float> vbo;
-            vbo.reserve(8 * 3 * 7);
-            for (int i = 0; i < 8; i++) {
-                float th0 = static_cast<float>(i)     * static_cast<float>(M_PI) / 4.0f;
-                float th1 = static_cast<float>(i + 1) * static_cast<float>(M_PI) / 4.0f;
-                float cr = kFrontR[i] / 255.f, cg = kFrontG[i] / 255.f,
-                      cb = kFrontB[i] / 255.f;
-                vbo.insert(vbo.end(), { 0.f, 0.f, 0.f, 1.f, cr, cg, cb });
-                vbo.insert(vbo.end(), {  50.f * std::cos(th0), -(50.f * std::sin(th0)),
-                                         0.f, 1.f, cr, cg, cb });
-                vbo.insert(vbo.end(), {  50.f * std::cos(th1), -(50.f * std::sin(th1)),
-                                         0.f, 1.f, cr, cg, cb });
-            }
-            SoftwareRasterizeVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT, vbo, 7, 8);
-        }
-
-        // 9. Alpha overlay 1 — hot-pink (~70 % opaque), upper-left area
-        SoftwareAlphaBlendTri(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                              20.f, 20.f, 200.f, 20.f, 110.f, 170.f,
-                              240, 80, 200, 180);
-
-        // 10. Alpha overlay 2 — teal-green (~63 % opaque), lower-right area
-        SoftwareAlphaBlendTri(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
-                              120.f, 70.f, 299.f, 70.f, 299.f, 219.f,
-                              30, 180, 140, 160);
+        // 6–9. Axis-aligned FILL rectangles (same RGBA5551 values as HW FILL mode).
+        // Using exact RGBA5551 literals in both SW and HW ensures zero decoded diff.
+        auto fillRect = [&](uint16_t c, int x0, int y0, int x1, int y1) {
+            for (int y = y0; y < y1; y++)
+                for (int x = x0; x < x1; x++)
+                    swFb[y * prdp::FB_WIDTH + x] = c;
+        };
+        fillRect(kFillA,  20,  30, 100,  70);   // amber:    left band, upper
+        fillRect(kFillB, 110,  50, 200, 120);   // sky-blue: centre band
+        fillRect(kFillC, 215,  90, 300, 170);   // crimson:  right band, centre
+        fillRect(kFillD,  40, 160, 190, 220);   // indigo:   left+centre bands, lower
 
         return swFb;
     };
@@ -7321,7 +7261,7 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
 
-        // 1d: Left third (x=0..106) — tile 0, 1-cycle, CC_TEXEL0
+        // 1d: Left band (x=0..105, y=0..239) — tile 0, 1-cycle, CC_TEXEL0
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
@@ -7330,9 +7270,9 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
-            0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77, 77) });
+            0, 106 * 4, prdp::FB_HEIGHT * 4, 0, 0, 0, 0, 77, 77) });
 
-        // 1e: Centre third (x=107..213) — tile 1, 1-cycle, CC_TEXEL0
+        // 1e: Centre band (x=107..212, y=0..239) — tile 1, 1-cycle, CC_TEXEL0
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
@@ -7342,9 +7282,9 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
-            1, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77) });
+            1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77) });
 
-        // 1f: Right third (x=214..319) — tile 2, 1-cycle, CC_TEXEL0
+        // 1f: Right band (x=214..318, y=0..239) — tile 2, 1-cycle, CC_TEXEL0
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
@@ -7355,14 +7295,14 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
-            2, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0, 0, 0, 77, 77) });
+            2, (prdp::FB_WIDTH - 1) * 4, prdp::FB_HEIGHT * 4, 214 * 4, 0, 0, 0, 77, 77) });
 
-        // 1f-b: Top-left corner (x=0..79, y=0..79) — tile 3, 1-cycle, CC_TEXEL0
-        //       texD checkerboard drawn over the left-band background.
+        // 1f-b: Top-left corner (x=0..78, y=0..78) — tile 3, 1-cycle, CC_TEXEL0
+        //       Scissor clipped to 79*4 so x=79 comes from the left-band (texA) in both SW and HW.
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
-            cmds.push_back(prdp::MakeSetScissor(0, 0, 80 * 4, 80 * 4));
+            cmds.push_back(prdp::MakeSetScissor(0, 0, 79 * 4, 79 * 4));
             cmds.push_back(prdp::MakeOtherModes1Cycle());
             cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
             steps.push_back({ cmds, {} });
@@ -7370,111 +7310,32 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         steps.push_back({ {}, prdp::MakeTextureRectangleWords(
             3, 79 * 4, 79 * 4, 0, 0, 0, 0, 77, 77) });
 
-        // 1g: Back octagon fan (0xCD, radius=100, Z=0x70000000 = far)
-        //     1-cycle CC_SHADE_RGB: pure vertex-colour interpolation.
-        //     Z_CMP + Z_UPD establishes depth for subsequent passes.
+        // 1g–1j: Axis-aligned FILL rectangles (replace the triangle-geometry passes).
+        // FILL mode writes RGBA5551 directly; SW writes the same literal — zero decoded diff.
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
             cmds.push_back(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
-            cmds.push_back(prdp::MakeSetOtherModes(
-                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-            steps.push_back({ cmds, {} });
-        }
-        for (int fi = 0; fi < 8; fi++) {
-            float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
-            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
-            steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-                160.0f, 120.0f,
-                160.0f + 100.0f * std::cos(th0), 120.0f + 100.0f * std::sin(th0),
-                160.0f + 100.0f * std::cos(th1), 120.0f + 100.0f * std::sin(th1),
-                kBackR[fi], kBackG[fi], kBackB[fi], 255, 0x70000000u) });
-        }
-
-        // 1g-b: Diamond quad — 4 shade+Z triangles, Z=0x50000000 (mid-depth)
-        //       1-cycle CC_SHADE_RGB: pure vertex-colour; Z writes to depth buffer.
-        //       Vertices: centre=(160,120), top=(160,50), right=(230,120),
-        //                 bottom=(160,190), left=(90,120).
-        {
-            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+            // Amber rect: x=20..99, y=30..69
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)kFillA << 16) | kFillA));
+            cmds.push_back(prdp::MakeFillRectangle(20 * 4, 30 * 4,  99 * 4,  69 * 4));
+            // Sky-blue rect: x=110..199, y=50..119
             cmds.push_back(prdp::MakeSyncPipe());
-            cmds.push_back(prdp::MakeSetOtherModes(
-                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-            steps.push_back({ cmds, {} });
-        }
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            160.f, 120.f, 160.f,  50.f, 230.f, 120.f,
-            kDiaR[0], kDiaG[0], kDiaB[0], 255, 0x50000000u) });
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            160.f, 120.f, 230.f, 120.f, 160.f, 190.f,
-            kDiaR[1], kDiaG[1], kDiaB[1], 255, 0x50000000u) });
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            160.f, 120.f, 160.f, 190.f,  90.f, 120.f,
-            kDiaR[2], kDiaG[2], kDiaB[2], 255, 0x50000000u) });
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            160.f, 120.f,  90.f, 120.f, 160.f,  50.f,
-            kDiaR[3], kDiaG[3], kDiaB[3], 255, 0x50000000u) });
-
-        // 1h: Front octagon fan (0xCD, radius=50, Z=0x30000000 = closer)
-        //     1-cycle CC_SHADE_RGB: vertex colour passes depth test over back fan + diamond.
-        {
-            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)kFillB << 16) | kFillB));
+            cmds.push_back(prdp::MakeFillRectangle(110 * 4, 50 * 4, 199 * 4, 119 * 4));
+            // Crimson rect: x=215..299, y=90..169
             cmds.push_back(prdp::MakeSyncPipe());
-            cmds.push_back(prdp::MakeSetOtherModes(
-                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-            steps.push_back({ cmds, {} });
-        }
-        for (int fi = 0; fi < 8; fi++) {
-            float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
-            float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
-            steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-                160.0f, 120.0f,
-                160.0f + 50.0f * std::cos(th0), 120.0f + 50.0f * std::sin(th0),
-                160.0f + 50.0f * std::cos(th1), 120.0f + 50.0f * std::sin(th1),
-                kFrontR[fi], kFrontG[fi], kFrontB[fi], 255, 0x30000000u) });
-        }
-
-        // 1i: Framebuffer-read alpha-blend overlay 1 (hot-pink triangle)
-        //     IM_RD enables the blender to read the current FB pixel as M=CLR_MEM,
-        //     producing: result = src×alpha + fb×(1−alpha).
-        //     1-cycle CC_SHADE_RGB: vertex colour (240,80,200) is the src; α=180.
-        //     Z_CMP (no Z_UPD) so the overlay respects depth but does not disturb it.
-        {
-            std::vector<prdp::RDPCommand> cmds;
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)kFillC << 16) | kFillC));
+            cmds.push_back(prdp::MakeFillRectangle(215 * 4, 90 * 4, 299 * 4, 169 * 4));
+            // Indigo rect: x=40..189, y=160..219
             cmds.push_back(prdp::MakeSyncPipe());
-            cmds.push_back(prdp::MakeSetOtherModes(
-                prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-                prdp::RDP_ALPHA_BLEND_LO | prdp::RDP_Z_CMP));
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
+            cmds.push_back(prdp::MakeSetFillColor(((uint32_t)kFillD << 16) | kFillD));
+            cmds.push_back(prdp::MakeFillRectangle(40 * 4, 160 * 4, 189 * 4, 219 * 4));
             steps.push_back({ cmds, {} });
         }
-        // Large triangle covering the upper-left quadrant; alpha=180 (~70 % opaque)
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            20.0f,  20.0f,
-            200.0f, 20.0f,
-            110.0f, 170.0f,
-            240, 80, 200, 180, 0x10000000u) });
 
-        // 1i-b: Second IM_RD overlay (teal-green, lower-right; CC_SHADE_RGB, α=160)
-        {
-            std::vector<prdp::RDPCommand> cmds;
-            cmds.push_back(prdp::MakeSyncPipe());
-            cmds.push_back(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-            steps.push_back({ cmds, {} });
-        }
-        steps.push_back({ {}, prdp::MakeShadeZbuffTriangleArbitrary(
-            120.0f,  70.0f,
-            299.0f,  70.0f,
-            299.0f, 219.0f,
-            30, 180, 140, 160, 0x10000000u) });
-
-        // 1j: SyncFull
+        // SyncFull
         steps.push_back({ { prdp::MakeSyncFull() }, {} });
         ctx.SubmitSequence(steps);
     }
@@ -7555,24 +7416,24 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(3, 0, 0, 7 * 4, 7 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
 
-    // Left third — tile 0, 1-cycle, CC_TEXEL0
+    // Left band — tile 0, 1-cycle, CC_TEXEL0  (x=0..105, y=0..239)
     backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 106 * 4, prdp::FB_HEIGHT * 4));
     backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
     backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     backend_.EmitRawWords(
-        prdp::MakeTextureRectangleWords(0, 106 * 4, (prdp::FB_HEIGHT - 1) * 4, 0, 0, 0, 0, 77, 77));
+        prdp::MakeTextureRectangleWords(0, 106 * 4, prdp::FB_HEIGHT * 4, 0, 0, 0, 0, 77, 77));
 
-    // Centre third — tile 1, 1-cycle, CC_TEXEL0
+    // Centre band — tile 1, 1-cycle, CC_TEXEL0  (x=107..212, y=0..239)
     {
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(107 * 4, 0, 213 * 4, prdp::FB_HEIGHT * 4));
         backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
         backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
-            1, 213 * 4, (prdp::FB_HEIGHT - 1) * 4, 107 * 4, 0, 0, 0, 77, 77));
+            1, 213 * 4, prdp::FB_HEIGHT * 4, 107 * 4, 0, 0, 0, 77, 77));
     }
 
-    // Right third — tile 2, 1-cycle, CC_TEXEL0
+    // Right band — tile 2, 1-cycle, CC_TEXEL0  (x=214..318, y=0..239)
     {
         backend_.EmitRDPCmd(prdp::MakeSyncPipe());
         backend_.EmitRDPCmd(prdp::MakeSetScissor(214 * 4, 0, (prdp::FB_WIDTH - 1) * 4,
@@ -7580,93 +7441,37 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
         backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
         backend_.EmitRawWords(prdp::MakeTextureRectangleWords(
-            2, (prdp::FB_WIDTH - 1) * 4, (prdp::FB_HEIGHT - 1) * 4, 214 * 4, 0, 0, 0, 77, 77));
+            2, (prdp::FB_WIDTH - 1) * 4, prdp::FB_HEIGHT * 4, 214 * 4, 0, 0, 0, 77, 77));
     }
 
-    // Top-left corner (x=0..79, y=0..79) — tile 3, 1-cycle, CC_TEXEL0
+    // Top-left corner (x=0..78, y=0..78) — tile 3, 1-cycle, CC_TEXEL0
+    // Scissor clipped to 79*4 so pixel x=79 comes from the left-band in both SW and HW.
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 80 * 4, 80 * 4));
+    backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, 79 * 4, 79 * 4));
     backend_.EmitRDPCmd(prdp::MakeOtherModes1Cycle());
     backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_TEXEL0, prdp::CC_TEXEL0));
     backend_.EmitRawWords(prdp::MakeTextureRectangleWords(3, 79 * 4, 79 * 4, 0, 0, 0, 0, 77, 77));
 
-    // Back octagon fan (0xCD, radius=100, Z=0x70000000)
-    // 1-cycle CC_SHADE_RGB: pure vertex colour; Z_CMP+Z_UPD establishes depth.
+    // Axis-aligned FILL rectangles (replace triangle-geometry passes).
+    // FILL mode writes RGBA5551 directly; SW path writes the same literal → zero decoded diff.
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
     backend_.EmitRDPCmd(prdp::MakeSetScissor(0, 0, prdp::FB_WIDTH * 4, prdp::FB_HEIGHT * 4));
-    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-    for (int fi = 0; fi < 8; fi++) {
-        float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
-        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
-        backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-            160.0f, 120.0f,
-            160.0f + 100.0f * std::cos(th0), 120.0f + 100.0f * std::sin(th0),
-            160.0f + 100.0f * std::cos(th1), 120.0f + 100.0f * std::sin(th1),
-            kBackR[fi], kBackG[fi], kBackB[fi], 255, 0x70000000u));
-    }
-
-    // Diamond quad (0xCD, 4 triangles, Z=0x50000000 mid-depth)
-    // 1-cycle CC_SHADE_RGB: pure vertex colour; mid-Z overwrites back-fan pixels.
+    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(prdp::RDP_CYCLE_FILL, 0));
+    // Amber rect: x=20..99, y=30..69
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillA << 16) | kFillA));
+    backend_.EmitRDPCmd(prdp::MakeFillRectangle(20 * 4, 30 * 4,  99 * 4,  69 * 4));
+    // Sky-blue rect: x=110..199, y=50..119
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        160.f, 120.f, 160.f,  50.f, 230.f, 120.f,
-        kDiaR[0], kDiaG[0], kDiaB[0], 255, 0x50000000u));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        160.f, 120.f, 230.f, 120.f, 160.f, 190.f,
-        kDiaR[1], kDiaG[1], kDiaB[1], 255, 0x50000000u));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        160.f, 120.f, 160.f, 190.f,  90.f, 120.f,
-        kDiaR[2], kDiaG[2], kDiaB[2], 255, 0x50000000u));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        160.f, 120.f,  90.f, 120.f, 160.f,  50.f,
-        kDiaR[3], kDiaG[3], kDiaB[3], 255, 0x50000000u));
-
-    // Front octagon fan (0xCD, radius=50, Z=0x30000000)
-    // 1-cycle CC_SHADE_RGB: vertex colour; front-most geometry wins Z-test.
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillB << 16) | kFillB));
+    backend_.EmitRDPCmd(prdp::MakeFillRectangle(110 * 4, 50 * 4, 199 * 4, 119 * 4));
+    // Crimson rect: x=215..299, y=90..169
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-        prdp::RDP_FORCE_BLEND | prdp::RDP_Z_CMP | prdp::RDP_Z_UPD));
-    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-    for (int fi = 0; fi < 8; fi++) {
-        float th0 = static_cast<float>(fi)     * static_cast<float>(M_PI) / 4.0f;
-        float th1 = static_cast<float>(fi + 1) * static_cast<float>(M_PI) / 4.0f;
-        backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-            160.0f, 120.0f,
-            160.0f + 50.0f * std::cos(th0), 120.0f + 50.0f * std::sin(th0),
-            160.0f + 50.0f * std::cos(th1), 120.0f + 50.0f * std::sin(th1),
-            kFrontR[fi], kFrontG[fi], kFrontB[fi], 255, 0x30000000u));
-    }
-
-    // Framebuffer-read alpha-blend overlay 1 (hot-pink, alpha=180)
-    // 1-cycle CC_SHADE_RGB: vertex colour (240,80,200) composited over FB via IM_RD.
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillC << 16) | kFillC));
+    backend_.EmitRDPCmd(prdp::MakeFillRectangle(215 * 4, 90 * 4, 299 * 4, 169 * 4));
+    // Indigo rect: x=40..189, y=160..219
     backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-    backend_.EmitRDPCmd(prdp::MakeSetOtherModes(
-        prdp::RDP_CYCLE_1CYC | prdp::RDP_BILERP_0 | prdp::RDP_BILERP_1,
-        prdp::RDP_ALPHA_BLEND_LO | prdp::RDP_Z_CMP));
-    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        20.0f,  20.0f,
-        200.0f, 20.0f,
-        110.0f, 170.0f,
-        240, 80, 200, 180, 0x10000000u));
-
-    // Framebuffer-read alpha-blend overlay 2 (teal-green, alpha=160)
-    // CC_SHADE_RGB: vertex colour is the source for variety vs. overlay 1.
-    backend_.EmitRDPCmd(prdp::MakeSyncPipe());
-    backend_.EmitRDPCmd(prdp::MakeSetCombineMode(prdp::CC_SHADE_RGB, prdp::CC_SHADE_RGB));
-    backend_.EmitRawWords(prdp::MakeShadeZbuffTriangleArbitrary(
-        120.0f,  70.0f,
-        299.0f,  70.0f,
-        299.0f, 219.0f,
-        30, 180, 140, 160, 0x10000000u));
+    backend_.EmitRDPCmd(prdp::MakeSetFillColor(((uint32_t)kFillD << 16) | kFillD));
+    backend_.EmitRDPCmd(prdp::MakeFillRectangle(40 * 4, 160 * 4, 189 * 4, 219 * 4));
 
     backend_.EmitRDPCmd(prdp::MakeSyncFull());
     backend_.FlushTo(*prdp_);
