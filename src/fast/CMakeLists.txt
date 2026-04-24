@@ -25,6 +25,10 @@ target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Re
 
 file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "backends/*.cpp")
 
+# Exclude backends that are conditionally compiled
+list(FILTER Source_Files__Graphic EXCLUDE REGEX "backends/gfx_llgl.*")
+list(FILTER Source_Files__Graphic EXCLUDE REGEX "backends/gfx_vulkan.*")
+
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_dxgi*")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_direct3d*")
@@ -80,4 +84,13 @@ if(LUS_BUILD_LLGL OR TARGET LLGL)
         ${glslang_SOURCE_DIR}
         ${spirv_cross_SOURCE_DIR}
     )
+endif()
+
+#=================== Vulkan / ParallelRDP Backend ===================
+if(TARGET parallel-rdp)
+    target_sources(libultraship PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/backends/gfx_vulkan.cpp
+    )
+    target_link_libraries(libultraship PRIVATE parallel-rdp)
+    target_compile_definitions(libultraship PUBLIC ENABLE_VULKAN_PRDP=1)
 endif()

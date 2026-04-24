@@ -12,6 +12,12 @@
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
+#ifdef ENABLE_LLGL
+#include "fast/backends/gfx_llgl.h"
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+#include "fast/backends/gfx_vulkan.h"
+#endif
 
 #include <fstream>
 
@@ -35,6 +41,12 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
     }
 #endif
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+#ifdef ENABLE_LLGL
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_LLGL);
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_VULKAN);
+#endif
 }
 
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
@@ -148,6 +160,24 @@ void Fast3dWindow::InitWindowManager() {
             mRenderingApi = new GfxRenderingAPIMetal();
             mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
+#endif
+#ifdef ENABLE_LLGL
+        case Ship::WindowBackend::FAST3D_SDL_LLGL:
+            mRenderingApi = new GfxRenderingAPILLGL();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
+            break;
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+        case Ship::WindowBackend::FAST3D_SDL_VULKAN: {
+            auto* vkApi = new GfxRenderingAPIVulkan();
+            mRenderingApi = vkApi;
+            mWindowManagerApi = new GfxWindowBackendSDL2();
+            // Attach the Vulkan backend as the RDP command receiver so
+            // that RDP commands emitted by the interpreter are forwarded
+            // directly to ParallelRDP.
+            mInterpreter->SetRdpCommandBackend(vkApi);
+            break;
+        }
 #endif
         default:
             SPDLOG_ERROR("Could not load the correct rendering backend");
