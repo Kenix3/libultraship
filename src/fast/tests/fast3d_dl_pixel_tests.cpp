@@ -7970,10 +7970,19 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     static constexpr uint16_t kFillD = (8u <<11)|(4u <<6)|(24u<<1)|1u; // indigo
 
     // ── I8→RGBA16 greyscale copy of texB for the software rasteriser ─────
+    // The N64 RDP's TMEM stores I8 (1-byte-per-texel) data with byte interleaving
+    // across its two 32-bit banks.  Within each 64-bit TMEM word the bytes are
+    // fetched with the S coordinate XOR'd by 2 (i.e. bytes at positions 0,1 swap
+    // with 2,3 and 4,5 swap with 6,7).  When the GL/SW path reads texBRgba
+    // linearly it must see the same texels the RDP fetches, so we pre-permute
+    // columns: output col C holds the texel from source col (C ^ 2).
     std::vector<uint16_t> texBRgba(texB.size());
-    for (size_t i = 0; i < texB.size(); i++) {
-        uint16_t v = texB[i] >> 3;
-        texBRgba[i] = static_cast<uint16_t>((v << 11) | (v << 6) | (v << 1) | 1u);
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            uint16_t v = texB[row * 8 + (col ^ 2)] >> 3;
+            texBRgba[row * 8 + col] =
+                static_cast<uint16_t>((v << 11) | (v << 6) | (v << 1) | 1u);
+        }
     }
 
     // ── Fan mesh: 8-triangle shade octagon, centre (160,120), radius 60 ──
