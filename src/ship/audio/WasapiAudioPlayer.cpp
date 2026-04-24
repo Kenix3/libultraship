@@ -150,9 +150,7 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
             mStarted = true;
             ThrowIfFailed(mClient->Start());
         }
-    } catch (const HResultException& e) {
-        SPDLOG_ERROR("WasapiAudioPlayer::DoPlay failed: {}", e.what());
-    }
+    } catch (const HResultException& e) { SPDLOG_ERROR("WasapiAudioPlayer::DoPlay failed: {}", e.what()); }
 }
 
 HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) {

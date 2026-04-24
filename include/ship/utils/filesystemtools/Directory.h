@@ -37,9 +37,7 @@ class Directory {
     static void CreateDirectory(const std::string& path) {
         try {
             fs::create_directories(path);
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR("Failed to create directory {}: {}", path, e.what());
-        }
+        } catch (const std::exception& e) { SPDLOG_ERROR("Failed to create directory {}: {}", path, e.what()); }
     }
 
     static std::vector<std::string> ListFiles(const std::string& dir) {
