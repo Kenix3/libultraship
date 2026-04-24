@@ -2,6 +2,7 @@
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #include "gfx_rendering_api.h"
+#include "ship/utils/HResultException.h"
 
 #include <functional>
 

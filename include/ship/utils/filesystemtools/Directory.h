@@ -12,6 +12,8 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
+#include <spdlog/spdlog.h>
+
 #undef GetCurrentDirectory
 #undef CreateDirectory
 
@@ -35,7 +37,7 @@ class Directory {
     static void CreateDirectory(const std::string& path) {
         try {
             fs::create_directories(path);
-        } catch (...) {}
+        } catch (const std::exception& e) { SPDLOG_ERROR("Failed to create directory {}: {}", path, e.what()); }
     }
 
     static std::vector<std::string> ListFiles(const std::string& dir) {
