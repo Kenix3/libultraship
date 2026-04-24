@@ -11,7 +11,8 @@ namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
-                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames) {
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
+    : Component("ControlDeck") {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
@@ -73,8 +74,9 @@ bool ControlDeck::AllGameInputBlocked() {
 bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
     return AllGameInputBlocked() ||
-           Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible() &&
-               Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
+           Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMenuOrMenubarVisible() &&
+               Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                   CVAR_IMGUI_CONTROLLER_NAV, 0);
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {
@@ -82,7 +84,8 @@ bool ControlDeck::KeyboardGameInputBlocked() {
     ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
     return AllGameInputBlocked() ||
            (activeIDWindow != NULL &&
-            activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
+            activeIDWindow->ID !=
+                Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMainGameWindowID()) ||
            ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
 }
 
@@ -93,7 +96,7 @@ bool ControlDeck::MouseGameInputBlocked() {
         return true;
     }
     return AllGameInputBlocked() ||
-           (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
+           (window->ID != Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetMainGameWindowID());
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {

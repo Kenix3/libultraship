@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "ship/events/EventTypes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -54,8 +55,10 @@ struct EventRegistration {
  * CALL_EVENT(MyEvent, payload);
  * @endcode
  */
-class EventSystem {
+class EventSystem : public Component {
   public:
+    EventSystem() : Component("EventSystem") {
+    }
     /**
      * @brief Allocates a new unique EventID and optionally assigns it a debug name.
      * @param name Optional human-readable name for diagnostics (may be nullptr).

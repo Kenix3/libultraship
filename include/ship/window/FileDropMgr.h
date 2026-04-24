@@ -1,20 +1,62 @@
 #pragma once
 #include <vector>
+#include "ship/Component.h"
 
+/**
+ * @brief Callback type for file-drop event handlers.
+ *
+ * A handler receives the path of the dropped file and returns true if it
+ * consumed the event, or false to let other handlers process it.
+ */
 typedef bool (*FileDroppedFunc)(char*);
 
 namespace Ship {
 
-class FileDropMgr {
+/**
+ * @brief Handles drag-and-drop file events for the application window.
+ *
+ * FileDropMgr stores the path of the most recently dropped file and dispatches
+ * the event to a chain of registered handler callbacks.
+ */
+class FileDropMgr : public Component {
   public:
-    FileDropMgr() = default;
+    /** @brief Constructs the FileDropMgr component. */
+    FileDropMgr();
     ~FileDropMgr();
+
+    /**
+     * @brief Records a file path as having been dropped onto the window.
+     * @param path Path of the dropped file (ownership is not taken).
+     */
     void SetDroppedFile(char* path);
+
+    /** @brief Clears the current dropped-file state. */
     void ClearDroppedFile();
+
+    /** @brief Returns true if a file has been dropped and not yet cleared. */
     bool FileDropped() const;
+
+    /**
+     * @brief Returns the path of the most recently dropped file.
+     * @return File path, or nullptr if no file has been dropped.
+     */
     char* GetDroppedFile() const;
+
+    /**
+     * @brief Registers a callback to be invoked when a file is dropped.
+     * @param func Handler function to register.
+     * @return true if the handler was successfully added.
+     */
     bool RegisterDropHandler(FileDroppedFunc func);
+
+    /**
+     * @brief Removes a previously registered drop handler.
+     * @param func Handler function to unregister.
+     * @return true if the handler was found and removed.
+     */
     bool UnregisterDropHandler(FileDroppedFunc func);
+
+    /** @brief Invokes all registered drop handlers with the current dropped file. */
     void CallHandlers();
 
   private:

@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 namespace Ship {
-Console::Console() {
+Console::Console() : Component("Console") {
 }
 
 Console::~Console() {
@@ -42,7 +42,7 @@ int32_t Console::Run(const std::string& command, std::string* output) {
     }
 
     const CommandEntry& entry = it->second;
-    int32_t commandResult = entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+    int32_t commandResult = entry.Handler(Context::GetInstance()->GetChildren().GetFirst<Console>(), cmdArgs, output);
     if (output) {
         SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
     } else {

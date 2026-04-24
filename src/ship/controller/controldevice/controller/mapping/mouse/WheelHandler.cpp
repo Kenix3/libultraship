@@ -42,7 +42,7 @@ void WheelHandler::UpdateAxisBuffer(float* buf, float input) {
 }
 
 void WheelHandler::Update() {
-    mCoords = Context::GetInstance()->GetWindow()->GetMouseWheel();
+    mCoords = Context::GetInstance()->GetChildren().GetFirst<Window>()->GetMouseWheel();
 
     UpdateAxisBuffer(&mBufferedCoords.x, mCoords.x);
     UpdateAxisBuffer(&mBufferedCoords.y, mCoords.y);

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -15,10 +16,10 @@ struct KeystoreEntry {
     KeyOrigin Origin;
 };
 
-class Keystore {
+class Keystore : public Component {
   public:
     Keystore();
-    ~Keystore() = default;
+    ~Keystore() override = default;
 
     void Load();
     void Save();

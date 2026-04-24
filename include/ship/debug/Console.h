@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <imgui.h>
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -53,7 +54,7 @@ struct CommandEntry {
  *
  * Obtain the instance from Context::GetConsole().
  */
-class Console {
+class Console : public Component {
   public:
     Console();
     ~Console();
