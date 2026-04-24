@@ -11,8 +11,8 @@ namespace Ship {
  * @brief Holds the current horizontal and vertical scroll-wheel directions.
  */
 struct WheelDirections {
-    WheelDirection x; ///< Horizontal scroll direction.
-    WheelDirection y; ///< Vertical scroll direction.
+    WheelDirection X; ///< Horizontal scroll direction.
+    WheelDirection Y; ///< Vertical scroll direction.
 };
 
 /**
