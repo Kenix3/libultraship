@@ -14,9 +14,11 @@ typedef void* LibraryHandle_t;
 /**
  * @brief Loads and manages a single shared library (DLL / .so / .dylib) at runtime.
  *
- * LibraryLoader copies a compiled library to a temporary file, loads it via the
- * platform's dynamic-linker API, and resolves exported symbols by name. This is
- * used by the scripting subsystem to hot-reload compiled script modules.
+ * LibraryLoader loads a compiled library from a caller-supplied path via the
+ * platform's dynamic-linker API, and resolves exported symbols by name. The
+ * caller is responsible for copying the library to a temporary file (via
+ * GenerateTempFile()) before calling Init(). This is used by the scripting
+ * subsystem to hot-reload compiled script modules.
  */
 class LibraryLoader {
   public:
@@ -33,8 +35,11 @@ class LibraryLoader {
     std::string GenerateTempFile();
 
     /**
-     * @brief Copies the library at @p path to a temporary file and loads it.
+     * @brief Loads the shared library at @p path using the platform dynamic linker.
      * @param path Filesystem path to the shared library to load.
+     * @note On Linux and macOS the file at @p path is unlinked from the filesystem
+     *       after a successful dlopen() call (the library stays loaded in memory).
+     *       On Windows the file is left on disk until Unload() is called.
      */
     void Init(const std::string& path);
 
@@ -46,7 +51,9 @@ class LibraryLoader {
     void* GetFunction(const std::string& name);
 
     /**
-     * @brief Unloads the library and removes the temporary file.
+     * @brief Unloads the library.
+     * @note On Windows, also deletes the associated temporary file from disk.
+     *       On Linux and macOS the temp file is already removed during Init().
      */
     void Unload();
 

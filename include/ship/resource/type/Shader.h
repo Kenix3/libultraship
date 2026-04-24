@@ -18,8 +18,10 @@ class Shader final : public Resource<void> {
     Shader();
 
     /**
-     * @brief Returns a pointer to the shader source string data.
-     * @return Pointer to the internal string buffer.
+     * @brief Returns a pointer to the shader source std::string object.
+     * @return Pointer to the internal @c std::string field (@c &Data).
+     *         To access the raw character buffer, call @c GetPointer() and
+     *         cast the result to <tt>std::string*</tt>, then call @c data().
      */
     void* GetPointer() override;
 

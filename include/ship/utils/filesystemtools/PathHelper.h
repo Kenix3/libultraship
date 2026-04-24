@@ -44,6 +44,7 @@ class PathHelper {
      * @brief Returns the file extension including the leading dot.
      * @param input File path or name as a string.
      * @return Extension string (e.g. ".txt").
+     * @note Throws @c std::out_of_range if @p input contains no '.' character.
      */
     static std::string GetFileNameExtension(const std::string& input) {
         return input.substr(input.find_last_of("."), input.length());

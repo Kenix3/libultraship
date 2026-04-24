@@ -11,8 +11,8 @@
 /**
  * @brief Utility class providing static helpers for reading and writing files on disk.
  *
- * All methods are static and operate directly on filesystem paths. Write methods
- * will create parent directories when necessary.
+ * All methods are static and operate directly on filesystem paths. Some write
+ * methods create parent directories when necessary (see individual overloads).
  */
 class DiskFile {
   public:

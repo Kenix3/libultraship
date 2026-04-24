@@ -7,10 +7,13 @@ namespace Ship {
 /**
  * @brief Converts a string to a boolean value.
  *
- * Recognises "1" and "true" (case-sensitive) as true; everything else returns @p defaultVal.
+ * First attempts a numeric integer parse: "0" → false, any other integer → true.
+ * If that fails, retries with @c std::boolalpha, which accepts "false" → false
+ * and "true" → true (locale-dependent, but typically case-sensitive for the "C" locale).
+ * If both attempts fail, returns @p defaultVal and logs a debug message.
  *
  * @param s          String to convert.
- * @param defaultVal Value returned when @p s is not a recognised boolean token.
+ * @param defaultVal Value returned when @p s cannot be parsed as a boolean.
  * @return Parsed boolean, or @p defaultVal on failure.
  */
 bool stob(const std::string& s, bool defaultVal = false);
