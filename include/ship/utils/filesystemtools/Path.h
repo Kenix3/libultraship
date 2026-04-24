@@ -12,22 +12,46 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
+/**
+ * @brief Utility class providing static helpers for extracting components from filesystem paths.
+ */
 class Path {
   public:
+    /**
+     * @brief Returns the filename component of a path (including extension).
+     * @param input Filesystem path.
+     * @return Filename string (e.g. "file.txt" from "/dir/file.txt").
+     */
     static std::string GetFileName(const fs::path& input) {
         // https://en.cppreference.com/w/cpp/filesystem/path/filename
         return input.filename().string();
     };
 
+    /**
+     * @brief Returns the filename without its extension (stem).
+     * @param input Filesystem path.
+     * @return Stem string (e.g. "file" from "/dir/file.txt").
+     */
     static std::string GetFileNameWithoutExtension(const fs::path& input) {
         // https://en.cppreference.com/w/cpp/filesystem/path/stem
         return input.stem().string();
     };
 
+    /**
+     * @brief Returns the file extension including the leading dot.
+     * @param input File path or name as a string.
+     * @return Extension string (e.g. ".txt").
+     * @note Throws @c std::out_of_range if @p input contains no '.' character.
+     */
     static std::string GetFileNameExtension(const std::string& input) {
         return input.substr(input.find_last_of("."), input.length());
     };
 
+    /**
+     * @brief Extracts the directory portion of a slash-separated path, stripping segments that contain a dot.
+     * @param input Slash-separated path string.
+     * @return Filesystem path composed of only the directory segments.
+     */
     static fs::path GetPath(const std::string& input) {
         std::vector<std::string> split = StringHelper::Split(input, "/");
         fs::path output;
@@ -40,6 +64,11 @@ class Path {
         return output;
     };
 
+    /**
+     * @brief Returns the parent directory of the given path.
+     * @param path Filesystem path.
+     * @return Parent directory path.
+     */
     static fs::path GetDirectoryName(const fs::path& path) {
         return path.parent_path();
     };
