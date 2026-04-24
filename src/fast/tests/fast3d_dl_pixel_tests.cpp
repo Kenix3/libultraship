@@ -7951,7 +7951,7 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     static constexpr uint32_t TEX_C_ADDR = prdp::TEX_ADDR + 0x400;
     static constexpr uint32_t TEX_D_ADDR = prdp::TEX_ADDR + 0x600;
 
-    // texD: 8×8 RGBA16 cool blue-cyan checkerboard (tile 3, tmem=32)
+    // texD: 8×8 RGBA16 cool blue-cyan checkerboard (tile 3, tmem=40)
     std::vector<uint16_t> texD(64);
     {
         uint16_t dA = makeRGBA16( 0, 160, 230);  // cool blue
@@ -8037,19 +8037,20 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         SoftwareRasterizeTexturedVBO(swFb, prdp::FB_WIDTH, prdp::FB_HEIGHT,
                                      cBand, 6, 2, texBRgba, 8, 8);
 
-        // 4. Right band — texC tinted by Prim×Env  (x=214..318, y=0..239)
-        // The RDP uses 2-cycle: Texel0 (cycle 0) then Combined×Env (cycle 1).
-        // Pre-tint texC by (EnvColor/255) to match.
-        // EnvColor=(230,180,40).
+        // 4. Right band — texC tinted by PrimAlpha×EnvAlpha  (x=214..318, y=0..239)
+        // The RDP 2-cycle combiner c-mux indices 10/12 are PRIM_ALPHA / ENV_ALPHA
+        // (scalars, not RGB vectors).  PrimAlpha=220, EnvAlpha=255.
+        // Net scalar = 220/255 ≈ 0.863 applied uniformly to all channels.
         std::vector<uint16_t> texCTinted(texC.size());
         for (size_t i = 0; i < texC.size(); i++) {
             uint32_t tr = ((texC[i] >> 11) & 0x1F) << 3;
             uint32_t tg = ((texC[i] >>  6) & 0x1F) << 3;
             uint32_t tb = ((texC[i] >>  1) & 0x1F) << 3;
-            // Multiply by env (230,180,40), /255
-            tr = tr * 230 / 255;
-            tg = tg * 180 / 255;
-            tb = tb * 40 / 255;
+            // Multiply by PrimAlpha (220) × EnvAlpha (255) / 255^2
+            // = 220/255 ≈ 0.863 (uniform scalar)
+            tr = tr * 220 / 255;
+            tg = tg * 220 / 255;
+            tb = tb * 220 / 255;
             texCTinted[i] = static_cast<uint16_t>(
                 ((tr >> 3) << 11) | ((tg >> 3) << 6) | ((tb >> 3) << 1) | 1u);
         }
@@ -8108,31 +8109,36 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
         std::vector<egl_offscreen::DrawPass> passes;
 
         // Left band — texA (x=0..105, y=0..239)
+        // Use GL_NEAREST to match RDP's texel-quantized output.  Although the
+        // RDP has bilinear enabled, at this UV scale the sub-texel fractional
+        // bits land near texel boundaries and the RDP's integer bilinear
+        // produces results closer to nearest-neighbor than GL's float bilinear.
         passes.push_back({
             MakeRectVbo(0.f, 0.f, 106.f, static_cast<float>(prdp::FB_HEIGHT),
                         0.f, 0.f,
                         106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texA, 8, 8, false, 1.0f, ccTex
+            texA, 8, 8, /*useNearest=*/true, 1.0f, ccTex
         });
         // Centre band — texBRgba (x=107..212, y=0..239)
         passes.push_back({
             MakeRectVbo(107.f, 0.f, 213.f, static_cast<float>(prdp::FB_HEIGHT),
                         0.f, 0.f,
                         106.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep),
-            texBRgba, 8, 8, false, 1.0f, ccTex
+            texBRgba, 8, 8, /*useNearest=*/true, 1.0f, ccTex
         });
-        // Right band — texC with 2-cycle: Texel0 (cycle 0), Combined×Env (cycle 1)
-        // (x=214..318, y=0..239).  EnvColor=(230,180,40,255)/255.
-        // The RDP cycle 0 passes through TEXEL0, then cycle 1 multiplies by ENV.
+        // Right band — texC with 2-cycle: Texel0×PrimAlpha (cycle 0), Combined×EnvAlpha (cycle 1)
+        // (x=214..318, y=0..239).
+        // The RDP c-mux indices 10/12 are PRIM_ALPHA / ENV_ALPHA (scalar, not RGB).
+        // PrimAlpha=220, EnvAlpha=255.  Net scalar = 220/255 ≈ 0.863.
         {
-            float er = 230.0f/255.0f, eg = 180.0f/255.0f, eb =  40.0f/255.0f, ea = 1.0f;
+            float pa = 220.0f / 255.0f;   // PrimAlpha/255 (uniform tint)
             passes.push_back({
                 egl_offscreen::MakeTexColorRectVbo(
                                     214.f, 0.f, 319.f, static_cast<float>(prdp::FB_HEIGHT),
                                     0.f, 0.f,
                                     105.f * kUvStep, static_cast<float>(prdp::FB_HEIGHT) * kUvStep,
-                                    er, eg, eb, ea),
-                texC, 8, 8, false, 1.0f, cc2Cyc
+                                    pa, pa, pa, 1.0f),
+                texC, 8, 8, /*useNearest=*/true, 1.0f, cc2Cyc
             });
         }
         // Top-left corner — texD checkerboard (x=0..78, y=0..78)
@@ -8254,10 +8260,11 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             steps.push_back({ cmds, {} });
         }
 
-        // 1c: Color registers + load 3 tiles into TMEM
-        //   Tile 0: texA RGBA16 at tmem=0,  line=2
-        //   Tile 1: texB I8    at tmem=16, line=1
-        //   Tile 2: texC RGBA16 at tmem=24, line=2
+        // 1c: Color registers + load 4 tiles into TMEM
+        //   Tile 0: texA RGBA16 at tmem=0,  line=2 (words 0..15)
+        //   Tile 1: texB I8    at tmem=16, line=1 (words 16..23)
+        //   Tile 2: texC RGBA16 at tmem=24, line=2 (words 24..39)
+        //   Tile 3: texD RGBA16 at tmem=40, line=2 (words 40..55)
         {
             std::vector<prdp::RDPCommand> cmds;
             cmds.push_back(prdp::MakeSyncPipe());
@@ -8293,11 +8300,12 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
             cmds.push_back(prdp::MakeLoadTile(2, 0, 0, 7 * 4, 7 * 4));
             cmds.push_back(prdp::MakeSetTileSize(2, 0, 0, 7 * 4, 7 * 4));
             cmds.push_back(prdp::MakeSyncTile());
-            // Tile 3: texD (RGBA16 cool checkerboard, 8×8, tmem=32)
+            // Tile 3: texD (RGBA16 cool checkerboard, 8×8, tmem=40)
+            // tmem=40 so it doesn't overlap texC at tmem=24..39
             cmds.push_back(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                                       8, TEX_D_ADDR));
             cmds.push_back(prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
-                                              2, 32, 3, 0, 0, 3, 3, 0, 0, 0));
+                                              2, 40, 3, 0, 0, 3, 3, 0, 0, 0));
             cmds.push_back(prdp::MakeSyncLoad());
             cmds.push_back(prdp::MakeLoadTile(3, 0, 0, 7 * 4, 7 * 4));
             cmds.push_back(prdp::MakeSetTileSize(3, 0, 0, 7 * 4, 7 * 4));
@@ -8507,11 +8515,12 @@ TEST_F(ThreeWayTextureTest, RDPSceneStress) {
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(2, 0, 0, 7 * 4, 7 * 4));
     backend_.EmitRDPCmd(prdp::MakeSyncTile());
 
-    // Tile 3: texD RGBA16 cool checkerboard at tmem=32
+    // Tile 3: texD RGBA16 cool checkerboard at tmem=40
+    // tmem=40 so it doesn't overlap texC at tmem=24..39
     backend_.EmitRDPCmd(prdp::MakeSetTextureImage(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b,
                                                     8, TEX_D_ADDR));
     backend_.EmitRDPCmd(
-        prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 2, 32, 3, 0, 0, 3, 3, 0, 0, 0));
+        prdp::MakeSetTile(prdp::RDP_FMT_RGBA, prdp::RDP_SIZ_16b, 2, 40, 3, 0, 0, 3, 3, 0, 0, 0));
     backend_.EmitRDPCmd(prdp::MakeSyncLoad());
     backend_.EmitRDPCmd(prdp::MakeLoadTile(3, 0, 0, 7 * 4, 7 * 4));
     backend_.EmitRDPCmd(prdp::MakeSetTileSize(3, 0, 0, 7 * 4, 7 * 4));
