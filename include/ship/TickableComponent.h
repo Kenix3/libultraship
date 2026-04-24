@@ -35,7 +35,7 @@ class TickableComponent : public Tickable, public Component {
      * @param name Human-readable name for the Component.
      * @param context The Context to register with.
      * @param tickGroup The TickGroup this component belongs to.
-     * @param priority Execution priority within the TickGroup.
+     * @param tickPriority Execution priority within the TickGroup.
      * @param isTicking Whether the component starts in the ticking state.
      * @param isDrawing Whether a DrawAction is created automatically.
      * @param isDrawingDebugMenu Whether a DrawDebugMenuAction is created automatically.
@@ -102,10 +102,13 @@ class TickableComponent : public Tickable, public Component {
      */
     TickableComponent& SetContext(std::shared_ptr<Context> context);
 
-  protected:
     /**
-     * @brief Virtual hook invoked when a non-draw Action runs.
-     * @param action The numeric action type that executed.
+     * @brief Virtual hook invoked when an Action runs on this component.
+     *
+     * Subclasses override this to respond to Tick, Draw, and DrawDebugMenu action types.
+     * Called by TickAction, DrawAction, and DrawDebugMenuAction after casting the owning
+     * Tickable to TickableComponent.
+     * @param action The numeric action type that executed (see ActionType enum).
      * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
@@ -118,6 +121,7 @@ class TickableComponent : public Tickable, public Component {
      */
     virtual bool DebugMenuDrawn(const double durationSinceLastTick);
 
+  protected:
   private:
     TickGroup mTickGroup;
     TickPriority mTickPriority;

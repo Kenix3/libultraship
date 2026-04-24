@@ -198,7 +198,9 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     free(symbols);
     crashHandler->PrintCommon();
 
-    Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()->GetLogger()->flush();
+    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()) {
+        loggerComponent->GetLogger()->flush();
+    }
     spdlog::shutdown();
     exit(1);
 }
@@ -391,7 +393,9 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         }
     }
     PrintCommon();
-    Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()->GetLogger()->flush();
+    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()) {
+        loggerComponent->GetLogger()->flush();
+    }
     spdlog::shutdown();
 #endif
 }

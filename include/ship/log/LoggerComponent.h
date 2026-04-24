@@ -2,11 +2,8 @@
 
 #include <memory>
 #include <string>
+#include <spdlog/logger.h>
 #include "ship/Component.h"
-
-namespace spdlog {
-class logger;
-}
 
 namespace Ship {
 
