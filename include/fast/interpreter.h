@@ -302,6 +302,12 @@ struct RDP {
 
     uint8_t prim_lod_fraction;
     struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
+
+    // Chroma key parameters (G_SETKEYR / G_SETKEYGB)
+    struct RGBA key_center;
+    struct RGBA key_scale;
+    int16_t convert_k[6]; // YUV convert coefficients (G_SETCONVERT) — K0-K5
+
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;
     void* z_buf_address;
