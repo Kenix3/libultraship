@@ -275,6 +275,18 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
         uint32_t nextInputNumber = SHADER_INPUT_1;
         for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
             for (uint32_t j = 0; j < 4; j++) {
+                // Mux values 6/7/15 are overloaded by slot. Only B (value 6 = CENTER, 7 = K4)
+                // and C (value 6 = SCALE, 15 = K5) carry chroma-key/convert inputs; A and D
+                // reuse those values for unrelated constants.
+                if (j == 1 && c[i][0][j] == G_CCMUX_CENTER) {
+                    c[i][0][j] = G_CCMUX_KEY_CENTER;
+                } else if (j == 1 && c[i][0][j] == G_CCMUX_K4) {
+                    c[i][0][j] = G_CCMUX_CONVERT_K4;
+                } else if (j == 2 && c[i][0][j] == G_CCMUX_SCALE) {
+                    c[i][0][j] = G_CCMUX_KEY_SCALE;
+                } else if (j == 2 && c[i][0][j] == G_CCMUX_K5) {
+                    c[i][0][j] = G_CCMUX_CONVERT_K5;
+                }
                 uint32_t val = 0;
                 switch (c[i][0][j]) {
                     case G_CCMUX_0:
@@ -326,6 +338,10 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                     case G_CCMUX_ENVIRONMENT:
                     case G_CCMUX_ENV_ALPHA:
                     case G_CCMUX_LOD_FRACTION:
+                    case G_CCMUX_KEY_CENTER:
+                    case G_CCMUX_KEY_SCALE:
+                    case G_CCMUX_CONVERT_K4:
+                    case G_CCMUX_CONVERT_K5:
                         if (inputNumber[c[i][0][j]] == 0) {
                             shaderInputMapping[0][nextInputNumber - 1] = c[i][0][j];
                             inputNumber[c[i][0][j]] = nextInputNumber++;
@@ -2052,6 +2068,22 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         color = &tmp;
                         break;
                     }
+                    case G_CCMUX_KEY_CENTER:
+                        color = &mRdp->key_center;
+                        break;
+                    case G_CCMUX_KEY_SCALE:
+                        color = &mRdp->key_scale;
+                        break;
+                    case G_CCMUX_CONVERT_K4: {
+                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
+                        color = &tmp;
+                        break;
+                    }
+                    case G_CCMUX_CONVERT_K5: {
+                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
+                        color = &tmp;
+                        break;
+                    }
                     case G_ACMUX_PRIM_LOD_FRAC:
                         tmp.a = mRdp->prim_lod_fraction;
                         color = &tmp;
@@ -2560,6 +2592,11 @@ static inline uint32_t color_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d
 
 static inline uint32_t alpha_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     return (a & 7) | ((b & 7) << 3) | ((c & 7) << 6) | ((d & 7) << 9);
+}
+
+// Sign-extend a 9-bit value (used for G_SETCONVERT K0..K5).
+static inline int16_t sign_extend_9(uint32_t v) {
+    return (int16_t)((v & 0x100) ? (int32_t)(v | 0xFFFFFE00u) : (int32_t)v);
 }
 
 void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -4138,6 +4175,48 @@ bool gfx_set_fog_color_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+// CENTER/SCALE and K4/K5 are wired as combiner inputs, so the standard (A-B)*C+D
+// shader path covers their common uses. TODO: chroma-key width/threshold
+// gating from G_SETKEYR/GB (wR/wG/wB ignored) and the YUV->RGB matrix K0..K3
+// applied during texture sampling.
+// G_SETKEYR: w1 = [wR:12 | cR:8 | sR:8]
+bool gfx_set_key_r_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->key_center.r = C1(8, 8);
+    gfx->mRdp->key_scale.r = C1(0, 8);
+    return false;
+}
+
+// G_SETKEYGB: w0 = [op:8 | wG:12 | _:4 | wB:12], w1 = [cG:8 | sG:8 | cB:8 | sB:8]
+bool gfx_set_key_gb_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->key_center.g = C1(24, 8);
+    gfx->mRdp->key_scale.g = C1(16, 8);
+    gfx->mRdp->key_center.b = C1(8, 8);
+    gfx->mRdp->key_scale.b = C1(0, 8);
+    return false;
+}
+
+// G_SETCONVERT: w0 = [op:8 | k0:9 | k1:9 | k2_hi:4], w1 = [k2_lo:5 | k3:9 | k4:9 | k5:9]
+// K0..K5 are signed 9-bit values; sign-extend after decoding.
+bool gfx_set_convert_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->convert_k[0] = sign_extend_9(C0(13, 9));
+    gfx->mRdp->convert_k[1] = sign_extend_9(C0(4, 9));
+    // k2 is split across w0 and w1
+    gfx->mRdp->convert_k[2] = sign_extend_9((C0(0, 4) << 5) | C1(27, 5));
+    gfx->mRdp->convert_k[3] = sign_extend_9(C1(18, 9));
+    gfx->mRdp->convert_k[4] = sign_extend_9(C1(9, 9));
+    gfx->mRdp->convert_k[5] = sign_extend_9(C1(0, 9));
+    return false;
+}
+
 bool gfx_set_blend_color_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -4380,6 +4459,9 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
     { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
     { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
+    { RDP_G_SETKEYGB, { "G_SETKEYGB", gfx_set_key_gb_handler_rdp } },                // G_SETKEYGB (-22)
+    { RDP_G_SETKEYR, { "G_SETKEYR", gfx_set_key_r_handler_rdp } },                   // G_SETKEYR (-21)
+    { RDP_G_SETCONVERT, { "G_SETCONVERT", gfx_set_convert_handler_rdp } },           // G_SETCONVERT (-20)
     { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },            // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
     { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },   // mRdpSETOTHERMODE (-17)
