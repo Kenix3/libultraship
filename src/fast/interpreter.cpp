@@ -1668,9 +1668,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             cross = -cross;
         }
 
-        // If inverted culling is requested, negate the cross
-        if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 &&
-            (mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
+        // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
+        // so apply it regardless of the active microcode handler.
+        if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
             cross = -cross;
         }
 
