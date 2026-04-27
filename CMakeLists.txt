@@ -8,8 +8,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     option(SIGN_LIBRARY "Enable xcode signing" OFF)
     option(BUNDLE_ID "Bundle ID for xcode signing" "com.example.libultraship")
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-    # TinyCC uses __clear_cache which is unavailable on iOS; disable scripting automatically.
-    set(DISABLE_SCRIPTING ON CACHE BOOL "Disable TCC-based C mod compilation and scripting system" FORCE)
 endif()
 
 project(libultraship LANGUAGES C CXX)
