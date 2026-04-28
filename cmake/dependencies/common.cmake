@@ -112,10 +112,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(prism)
 
-# prism's CMakeLists.txt explicitly sets /ZI for MSVC Debug builds, which causes
-# multiple CL.EXE processes to race over a shared .pdb file when using sccache.
-# Override it by appending /Z7 (embedded debug info) last so MSVC uses it instead.
+# prism's CMakeLists.txt calls cmake_minimum_required(VERSION <3.10), which causes
+# CMake to explicitly set CMP0141=OLD in prism's scope (cmake_policy(VERSION) disables
+# all policies newer than the specified version).  With CMP0141=OLD the compile
+# template always appends "/Fd <target>.pdb /FS" to every compile command.  sccache
+# parses the command line, sees "/Fd prism.pdb", and expects that file to exist after
+# compilation.  When our /Z7 override wins (no PDB written) sccache aborts with
+# "failed to open file prism.pdb".
+#
+# The simplest fix is to compile prism without sccache at all (clear the launcher).
+# With the launcher cleared, cl.exe compiles prism directly; /Z7 (embedded debug info)
+# is still applied so no PDB file is written and no race over a shared .pdb occurs.
 if(MSVC AND TARGET prism)
+    set_target_properties(prism PROPERTIES
+        C_COMPILER_LAUNCHER   ""
+        CXX_COMPILER_LAUNCHER ""
+    )
     target_compile_options(prism PRIVATE $<$<CONFIG:Debug>:/Z7>)
 endif()
 
