@@ -188,6 +188,27 @@ TEST_F(DiskFileTest, WriteReadRawPointerRoundTrip) {
     EXPECT_EQ(std::string(reinterpret_cast<char*>(read.data()), read.size()), "rawdata");
 }
 
+TEST_F(DiskFileTest, WriteAllBytesUint8CreatesParentIfMissing) {
+    fs::path nested = mTestDir / "sub" / "data.bin";
+    std::vector<uint8_t> data = { 0x01, 0x02 };
+    DiskFile::WriteAllBytes(nested, data);
+    EXPECT_TRUE(DiskFile::Exists(nested));
+}
+
+TEST_F(DiskFileTest, WriteAllBytesCharVecCreatesParentIfMissing) {
+    fs::path nested = mTestDir / "sub2" / "data.bin";
+    std::vector<char> data = { 'a', 'b' };
+    DiskFile::WriteAllBytes(nested.string(), data);
+    EXPECT_TRUE(DiskFile::Exists(nested));
+}
+
+TEST_F(DiskFileTest, WriteAllBytesRawPtrCreatesParentIfMissing) {
+    fs::path nested = mTestDir / "sub3" / "data.bin";
+    const char payload[] = "hi";
+    DiskFile::WriteAllBytes(nested.string(), payload, static_cast<int>(sizeof(payload) - 1));
+    EXPECT_TRUE(DiskFile::Exists(nested));
+}
+
 // ============================================================
 // DiskFile::WriteAllText / ReadAllText
 // ============================================================

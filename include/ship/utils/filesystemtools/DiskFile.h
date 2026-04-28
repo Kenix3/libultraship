@@ -11,8 +11,8 @@
 /**
  * @brief Utility class providing static helpers for reading and writing files on disk.
  *
- * All methods are static and operate directly on filesystem paths. Some write
- * methods create parent directories when necessary (see individual overloads).
+ * All methods are static and operate directly on filesystem paths. Write methods
+ * create parent directories when necessary.
  */
 class DiskFile {
   public:
@@ -79,16 +79,21 @@ class DiskFile {
 
     /**
      * @brief Writes a byte vector to a file, overwriting any existing content.
+     * @note Creates parent directories if they do not already exist.
      * @param filePath Path to the file to write.
      * @param data     Bytes to write.
      */
     static void WriteAllBytes(const fs::path& filePath, const std::vector<uint8_t>& data) {
+        if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
+            Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
+        }
         std::ofstream file(filePath, std::ios::binary);
         file.write((char*)data.data(), data.size());
     };
 
     /**
-     * @brief Writes a char vector to a file, creating parent directories if needed.
+     * @brief Writes a char vector to a file, overwriting any existing content.
+     * @note Creates parent directories if they do not already exist.
      * @param filePath Path to the file to write.
      * @param data     Characters to write.
      */
@@ -102,12 +107,16 @@ class DiskFile {
     };
 
     /**
-     * @brief Writes raw data to a file from a pointer and size.
+     * @brief Writes raw data to a file from a pointer and size, overwriting any existing content.
+     * @note Creates parent directories if they do not already exist.
      * @param filePath Path to the file to write.
      * @param data     Pointer to the data to write.
      * @param dataSize Number of bytes to write.
      */
     static void WriteAllBytes(const std::string& filePath, const char* data, int dataSize) {
+        if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
+            Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
+        }
         std::ofstream file(filePath, std::ios::binary);
         file.write((char*)data, dataSize);
     };
