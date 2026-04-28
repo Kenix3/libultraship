@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include "../StringHelper.h"
 
@@ -41,10 +42,14 @@ class Path {
      * @brief Returns the file extension including the leading dot.
      * @param input File path or name as a string.
      * @return Extension string (e.g. ".txt").
-     * @note Throws @c std::out_of_range if @p input contains no '.' character.
+     * @throws std::out_of_range if @p input contains no '.' character.
      */
     static std::string GetFileNameExtension(const std::string& input) {
-        return input.substr(input.find_last_of("."), input.length());
+        auto pos = input.find_last_of(".");
+        if (pos == std::string::npos) {
+            throw std::out_of_range("GetFileNameExtension: no '.' found in \"" + input + "\"");
+        }
+        return input.substr(pos);
     };
 
     /**

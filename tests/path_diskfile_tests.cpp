@@ -64,6 +64,10 @@ TEST(PathClass, GetExtensionBin) {
     EXPECT_EQ(Path::GetFileNameExtension("link.bin"), ".bin");
 }
 
+TEST(PathClass, GetExtensionNoDotThrows) {
+    EXPECT_THROW(Path::GetFileNameExtension("nodotfile"), std::out_of_range);
+}
+
 // ============================================================
 // Path::GetPath (removes filename segments that contain a dot)
 // ============================================================

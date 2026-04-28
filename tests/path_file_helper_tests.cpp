@@ -55,6 +55,10 @@ TEST(PathHelperGetExtension, ReturnsLastExtensionForMultipleDots) {
     EXPECT_EQ(Ship::PathHelper::GetFileNameExtension("file.tar.gz"), ".gz");
 }
 
+TEST(PathHelperGetExtension, NoDotThrows) {
+    EXPECT_THROW(Ship::PathHelper::GetFileNameExtension("nodotfile"), std::out_of_range);
+}
+
 // ============================================================
 // PathHelper::GetDirectoryName
 // ============================================================
