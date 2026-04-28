@@ -74,7 +74,7 @@ class DiskFile {
         if (!Directory::Exists(Path::GetDirectoryName(filePath))) {
             Directory::MakeDirectory(Path::GetDirectoryName(filePath).string());
         }
-        std::ofstream file(filePath, std::ios::out);
+        std::ofstream file(filePath, std::ios::out | std::ios::binary);
         file.write(text.c_str(), text.size());
     }
 };

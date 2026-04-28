@@ -91,7 +91,7 @@ class FileHelper {
     };
 
     static void WriteAllText(const fs::path& filePath, const std::string& text) {
-        std::ofstream file(filePath, std::ios::out);
+        std::ofstream file(filePath, std::ios::out | std::ios::binary);
         file.write(text.c_str(), text.size());
     }
 };
