@@ -61,6 +61,8 @@ jobs:
         SDL_AUDIODRIVER: dummy
   test-windows:
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - name: Install dependencies
       run: |

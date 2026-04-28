@@ -112,6 +112,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(prism)
 
+# prism's CMakeLists.txt explicitly sets /ZI for MSVC Debug builds, which causes
+# multiple CL.EXE processes to race over a shared .pdb file when using sccache.
+# Override it by appending /Z7 (embedded debug info) last so MSVC uses it instead.
+if(MSVC AND TARGET prism)
+    target_compile_options(prism PRIVATE $<$<CONFIG:Debug>:/Z7>)
+endif()
+
 #=========== monocypher ===========
 FetchContent_Declare(
     monocypher
