@@ -3,11 +3,8 @@ cmake_minimum_required(VERSION 3.24.0)
 # Enable /Z7 (embedded debug info) instead of /Zi (shared PDB) on MSVC so that
 # sccache can cache object files without racing over a shared .pdb file.
 # CMP0141 was introduced in CMake 3.25, so guard it for older versions.
-# CMAKE_POLICY_DEFAULT_CMP0141 propagates the NEW policy into all FetchContent
-# sub-projects so their cmake_minimum_required() also honours the variable.
 if(POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
-    set(CMAKE_POLICY_DEFAULT_CMP0141 NEW CACHE INTERNAL "")
 endif()
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
