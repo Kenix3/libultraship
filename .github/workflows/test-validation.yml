@@ -94,7 +94,7 @@ jobs:
       run: |
         $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
         $PY_EXE = (Get-Command python).Definition
-        cmake --no-warn-unused-cli -S. -Bbuild-test -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64 "-DPython3_EXECUTABLE=$PY_EXE" -DPython3_FIND_REGISTRY=NEVER -DLUS_BUILD_TESTS=ON
+        cmake --no-warn-unused-cli -S. -Bbuild-test -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64 "-DPython3_EXECUTABLE=$PY_EXE" -DPython3_FIND_REGISTRY=NEVER -DLUS_BUILD_TESTS=ON
     - name: Build
       run: cmake --build build-test --config Debug --parallel 10
     - name: Run tests
