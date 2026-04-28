@@ -28,6 +28,7 @@ set(ADDITIONAL_LIB_INCLUDES "")
 # ========= Configuration Options =========
 option(INCLUDE_MPQ_SUPPORT "Enable StormLib and MPQ archive support" OFF)
 option(GBI_UCODE "Specify the GBI ucode version" F3DEX_GBI_2)
+option(ENABLE_PRESS_TO_JOIN "Enable press-to-join multiplayer controller assignment" OFF)
 
 # =========== Dependencies =============
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

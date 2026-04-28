@@ -6,6 +6,10 @@
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToButtonMapping.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "libultraship/libultra/controller.h"
+#ifdef ENABLE_PRESS_TO_JOIN
+#include "libultraship/bridge/consolevariablebridge.h"
+#define CVAR_PRESS_TO_JOIN_ENABLED "gPressToJoinEnabled"
+#endif
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())
 
@@ -1168,6 +1172,16 @@ void InputEditorWindow::DrawGyroSection(uint8_t port) {
 }
 
 void InputEditorWindow::DrawDeviceToggles(uint8_t portIndex) {
+#ifdef ENABLE_PRESS_TO_JOIN
+    bool pressToJoinEnabled = CVarGetInteger(CVAR_PRESS_TO_JOIN_ENABLED, 1);
+    if (ImGui::Checkbox("Press-to-Join (auto-assign devices on character select)", &pressToJoinEnabled)) {
+        CVarSetInteger(CVAR_PRESS_TO_JOIN_ENABLED, pressToJoinEnabled);
+    }
+    if (pressToJoinEnabled) {
+        ImGui::BeginDisabled();
+    }
+#endif
+
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 
     auto keyboardButtonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
@@ -1214,6 +1228,12 @@ void InputEditorWindow::DrawDeviceToggles(uint8_t portIndex) {
         ImGui::PopStyleColor();
         ImGui::PopItemFlag();
     }
+
+#ifdef ENABLE_PRESS_TO_JOIN
+    if (pressToJoinEnabled) {
+        ImGui::EndDisabled();
+    }
+#endif
 }
 
 void InputEditorWindow::DrawClearAllButton(uint8_t portIndex) {
