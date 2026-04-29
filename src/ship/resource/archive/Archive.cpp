@@ -170,11 +170,6 @@ void Archive::SetGameVersion(uint32_t gameVersion) {
 }
 
 void Archive::IndexFile(const std::string& filePath) {
-    if (filePath.length() > 5 && filePath.substr(filePath.length() - 5) == ".meta") {
-        IndexFile(filePath.substr(0, filePath.length() - 5));
-        return;
-    }
-
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
