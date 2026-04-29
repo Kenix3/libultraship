@@ -128,8 +128,12 @@ void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
     mInstance = gfx;
 }
 
+// N64 prim_depth is 15-bit (0 near, 0x7FFF far).
+static constexpr float N64_PRIM_DEPTH_MAX = 32767.0f;
+
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
+        mRapi->SetCurrentPrimDepth((float)mRdp->prim_depth / N64_PRIM_DEPTH_MAX);
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
@@ -275,6 +279,18 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
         uint32_t nextInputNumber = SHADER_INPUT_1;
         for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
             for (uint32_t j = 0; j < 4; j++) {
+                // Mux values 6/7/15 are overloaded by slot. Only B (value 6 = CENTER, 7 = K4)
+                // and C (value 6 = SCALE, 15 = K5) carry chroma-key/convert inputs; A and D
+                // reuse those values for unrelated constants.
+                if (j == 1 && c[i][0][j] == G_CCMUX_CENTER) {
+                    c[i][0][j] = G_CCMUX_KEY_CENTER;
+                } else if (j == 1 && c[i][0][j] == G_CCMUX_K4) {
+                    c[i][0][j] = G_CCMUX_CONVERT_K4;
+                } else if (j == 2 && c[i][0][j] == G_CCMUX_SCALE) {
+                    c[i][0][j] = G_CCMUX_KEY_SCALE;
+                } else if (j == 2 && c[i][0][j] == G_CCMUX_K5) {
+                    c[i][0][j] = G_CCMUX_CONVERT_K5;
+                }
                 uint32_t val = 0;
                 switch (c[i][0][j]) {
                     case G_CCMUX_0:
@@ -326,6 +342,10 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                     case G_CCMUX_ENVIRONMENT:
                     case G_CCMUX_ENV_ALPHA:
                     case G_CCMUX_LOD_FRACTION:
+                    case G_CCMUX_KEY_CENTER:
+                    case G_CCMUX_KEY_SCALE:
+                    case G_CCMUX_CONVERT_K4:
+                    case G_CCMUX_CONVERT_K5:
                         if (inputNumber[c[i][0][j]] == 0) {
                             shaderInputMapping[0][nextInputNumber - 1] = c[i][0][j];
                             inputNumber[c[i][0][j]] = nextInputNumber++;
@@ -547,13 +567,21 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     uint32_t width = widthBytes / 2;
     uint32_t height = widthBytes > 0 ? sizeBytes / widthBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize (mipmap pyramids include all levels).
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike =
+        renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13; // < 1.625x
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -607,13 +635,20 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     uint32_t width = widthBytes / 4;
     uint32_t height = widthBytes > 0 ? size_bytes / widthBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -904,13 +939,20 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes * 2;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -989,13 +1031,20 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1668,9 +1717,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             cross = -cross;
         }
 
-        // If inverted culling is requested, negate the cross
-        if (ucode_handler_index == UcodeHandlers::ucode_f3dex2 &&
-            (mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) == 1) {
+        // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
+        // so apply it regardless of the active microcode handler.
+        if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
             cross = -cross;
         }
 
@@ -1690,7 +1739,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
     }
 
-    bool depth_test = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER && (mRdp->other_mode_l & Z_CMP) == Z_CMP;
+    // depth_test is set when the fragment has a depth value to compare (either from vertex Z via
+    // RSP G_ZBUFFER, or from the prim-depth register via G_ZS_PRIM) and Z_CMP is requested.
+    bool zbuffer_enabled = (mRsp->geometry_mode & G_ZBUFFER) == G_ZBUFFER;
+    bool prim_depth_enabled = (mRdp->other_mode_l & G_ZS_PRIM) != 0;
+    bool depth_test = (zbuffer_enabled || prim_depth_enabled) && (mRdp->other_mode_l & Z_CMP) == Z_CMP;
     bool depth_mask = (mRdp->other_mode_l & Z_UPD) == Z_UPD;
     uint8_t depth_test_and_mask = (depth_test ? 1 : 0) | (depth_mask ? 2 : 0);
     if (depth_test_and_mask != mRenderingState.depth_test_and_mask) {
@@ -1726,7 +1779,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                       (mRdp->other_mode_l & (3 << 16)) == (G_BL_1MA << 16)) ||
                      ((mRdp->other_mode_l & (3 << 22)) == (G_BL_CLR_MEM << 22) &&
                       (mRdp->other_mode_l & (3 << 18)) == (G_BL_1MA << 18));
-    bool use_fog = (mRdp->other_mode_l >> 30) == G_BL_CLR_FOG;
+    uint8_t blend_src = mRdp->other_mode_l >> 30;
+    bool use_blend_color = blend_src == G_BL_CLR_BL;
+    bool use_fog = blend_src == G_BL_CLR_FOG || use_blend_color;
     bool texture_edge = (mRdp->other_mode_l & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool use_noise = (mRdp->other_mode_l & (3U << G_MDSFT_ALPHACOMPARE)) == G_AC_DITHER;
     bool use_2cyc = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE;
@@ -1734,6 +1789,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     bool invisible =
         (mRdp->other_mode_l & (3 << 24)) == (G_BL_0 << 24) && (mRdp->other_mode_l & (3 << 20)) == (G_BL_CLR_MEM << 20);
     bool use_grayscale = mRdp->grayscale;
+    bool use_prim_depth = (mRdp->other_mode_l & G_ZS_PRIM) != 0;
 
     if (texture_edge) {
         if (use_alpha) {
@@ -1766,6 +1822,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     }
     if (use_grayscale) {
         cc_options |= SHADER_OPT(GRAYSCALE);
+    }
+    if (use_prim_depth) {
+        cc_options |= SHADER_OPT(PRIM_DEPTH);
     }
 
     if (!mShaderStack.empty()) {
@@ -1863,11 +1922,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             tex_width2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
             tex_height2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
 
-            // Clamp to tile bounds (mipmap loads include all levels).
-            if (tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
+            // are close to rendered pixels (mipmap), not when much bigger (window scroll).
+            uint32_t loadedPx = tex_width[i] * tex_height[i];
+            uint32_t renderedPx = tex_width2[i] * tex_height2[i];
+            bool pyrLike = renderedPx > 0 && loadedPx > renderedPx && loadedPx * 8 < renderedPx * 13;
+            if ((pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if (tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 
@@ -1991,10 +2054,18 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
 
         if (use_fog) {
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
+            if (use_blend_color) {
+                // Shroud/blend mode: blend toward blend_color using fog alpha as factor
+                mBufVbo[mBufVboLen++] = mRdp->blend_color.r / 255.0f;
+                mBufVbo[mBufVboLen++] = mRdp->blend_color.g / 255.0f;
+                mBufVbo[mBufVboLen++] = mRdp->blend_color.b / 255.0f;
+                mBufVbo[mBufVboLen++] = mRdp->fog_color.a / 255.0f;
+            } else {
+                mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
+                mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
+                mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
+            }
         }
 
         if (use_grayscale) {
@@ -2052,6 +2123,22 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         color = &tmp;
                         break;
                     }
+                    case G_CCMUX_KEY_CENTER:
+                        color = &mRdp->key_center;
+                        break;
+                    case G_CCMUX_KEY_SCALE:
+                        color = &mRdp->key_scale;
+                        break;
+                    case G_CCMUX_CONVERT_K4: {
+                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
+                        color = &tmp;
+                        break;
+                    }
+                    case G_CCMUX_CONVERT_K5: {
+                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
+                        color = &tmp;
+                        break;
+                    }
                     case G_ACMUX_PRIM_LOD_FRAC:
                         tmp.a = mRdp->prim_lod_fraction;
                         color = &tmp;
@@ -2066,8 +2153,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                     mBufVbo[mBufVboLen++] = color->g / 255.0f;
                     mBufVbo[mBufVboLen++] = color->b / 255.0f;
                 } else {
-                    if (use_fog && color == &v_arr[i]->color) {
-                        // Shade alpha is 100% for fog
+                    if (use_fog && !use_blend_color && color == &v_arr[i]->color) {
+                        // Shade alpha is 100% for standard fog, blend color mode preserves
+                        // it since fog alpha is the blend factor
                         mBufVbo[mBufVboLen++] = 1.0f;
                     } else {
                         mBufVbo[mBufVboLen++] = color->a / 255.0f;
@@ -2562,6 +2650,11 @@ static inline uint32_t alpha_comb(uint32_t a, uint32_t b, uint32_t c, uint32_t d
     return (a & 7) | ((b & 7) << 3) | ((c & 7) << 6) | ((d & 7) << 9);
 }
 
+// Sign-extend a 9-bit value (used for G_SETCONVERT K0..K5).
+static inline int16_t sign_extend_9(uint32_t v) {
+    return (int16_t)((v & 0x100) ? (int32_t)(v | 0xFFFFFE00u) : (int32_t)v);
+}
+
 void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     mRdp->grayscale_color.r = r;
     mRdp->grayscale_color.g = g;
@@ -2592,7 +2685,10 @@ void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    // TODO: Implement this command.
+    mRdp->blend_color.r = r;
+    mRdp->blend_color.g = g;
+    mRdp->blend_color.b = b;
+    mRdp->blend_color.a = a;
 }
 
 void Interpreter::GfxDpSetFillColor(uint32_t packed_color) {
@@ -3624,7 +3720,9 @@ bool gfx_end_dl_handler_common(F3DGfx** cmd0) {
 }
 
 bool gfx_set_prim_depth_handler_rdp(F3DGfx** cmd) {
-    // TODO Implement this command...
+    Interpreter* gfx = mInstance.lock().get();
+    uint32_t w1 = (*cmd)->words.w1;
+    gfx->mRdp->prim_depth = (uint16_t)((w1 >> 16) & 0x7FFF); // Mask to 15 bits
     return false;
 }
 
@@ -4172,6 +4270,48 @@ bool gfx_set_fog_color_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+// CENTER/SCALE and K4/K5 are wired as combiner inputs, so the standard (A-B)*C+D
+// shader path covers their common uses. TODO: chroma-key width/threshold
+// gating from G_SETKEYR/GB (wR/wG/wB ignored) and the YUV->RGB matrix K0..K3
+// applied during texture sampling.
+// G_SETKEYR: w1 = [wR:12 | cR:8 | sR:8]
+bool gfx_set_key_r_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->key_center.r = C1(8, 8);
+    gfx->mRdp->key_scale.r = C1(0, 8);
+    return false;
+}
+
+// G_SETKEYGB: w0 = [op:8 | wG:12 | _:4 | wB:12], w1 = [cG:8 | sG:8 | cB:8 | sB:8]
+bool gfx_set_key_gb_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->key_center.g = C1(24, 8);
+    gfx->mRdp->key_scale.g = C1(16, 8);
+    gfx->mRdp->key_center.b = C1(8, 8);
+    gfx->mRdp->key_scale.b = C1(0, 8);
+    return false;
+}
+
+// G_SETCONVERT: w0 = [op:8 | k0:9 | k1:9 | k2_hi:4], w1 = [k2_lo:5 | k3:9 | k4:9 | k5:9]
+// K0..K5 are signed 9-bit values; sign-extend after decoding.
+bool gfx_set_convert_handler_rdp(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->mRdp->convert_k[0] = sign_extend_9(C0(13, 9));
+    gfx->mRdp->convert_k[1] = sign_extend_9(C0(4, 9));
+    // k2 is split across w0 and w1
+    gfx->mRdp->convert_k[2] = sign_extend_9((C0(0, 4) << 5) | C1(27, 5));
+    gfx->mRdp->convert_k[3] = sign_extend_9(C1(18, 9));
+    gfx->mRdp->convert_k[4] = sign_extend_9(C1(9, 9));
+    gfx->mRdp->convert_k[5] = sign_extend_9(C1(0, 9));
+    return false;
+}
+
 bool gfx_set_blend_color_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -4414,6 +4554,9 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_RDPPIPESYNC, { "mRdpPIPESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-25)
     { RDP_G_RDPTILESYNC, { "mRdpTILESYNC", gfx_stubbed_command_handler } },          // mRdpPIPESYNC (-24)
     { RDP_G_RDPFULLSYNC, { "mRdpFULLSYNC", gfx_stubbed_command_handler } },          // mRdpFULLSYNC (-23)
+    { RDP_G_SETKEYGB, { "G_SETKEYGB", gfx_set_key_gb_handler_rdp } },                // G_SETKEYGB (-22)
+    { RDP_G_SETKEYR, { "G_SETKEYR", gfx_set_key_r_handler_rdp } },                   // G_SETKEYR (-21)
+    { RDP_G_SETCONVERT, { "G_SETCONVERT", gfx_set_convert_handler_rdp } },           // G_SETCONVERT (-20)
     { RDP_G_SETSCISSOR, { "G_SETSCISSOR", gfx_SetScissor_handler_rdp } },            // G_SETSCISSOR (-19)
     { RDP_G_SETPRIMDEPTH, { "G_SETPRIMDEPTH", gfx_set_prim_depth_handler_rdp } },    // G_SETPRIMDEPTH (-18)
     { RDP_G_RDPSETOTHERMODE, { "mRdpSETOTHERMODE", gfx_rdp_set_other_mode_rdp } },   // mRdpSETOTHERMODE (-17)
@@ -5153,6 +5296,7 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->opt_alpha_threshold = (shader_id1 & SHADER_OPT(ALPHA_THRESHOLD)) != 0;
     cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
     cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
+    cc_features->opt_prim_depth = (shader_id1 & SHADER_OPT(PRIM_DEPTH)) != 0;
 
     cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);

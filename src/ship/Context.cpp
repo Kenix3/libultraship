@@ -15,7 +15,7 @@
 #include "ship/log/LoggerComponent.h"
 #include "ship/thread/ThreadPoolComponent.h"
 #include "ship/events/EventSystem.h"
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #endif
 #include "ship/security/Keystore.h"
@@ -49,7 +49,7 @@ Context::~Context() {
 
     auto config = GetChildren().GetFirst<Config>();
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     auto scriptLoader = GetChildren().GetFirst<ScriptLoader>();
     if (scriptLoader) {
         scriptLoader->UnloadAll();
@@ -228,7 +228,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     // ---- File Drop Manager ----
     shared->GetChildren().Add(std::make_shared<FileDropMgr>());
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     // ---- Script Loader ----
     shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1,
                                                              "-g -Wl", std::vector<std::string>{},

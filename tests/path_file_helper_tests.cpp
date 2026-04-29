@@ -55,6 +55,10 @@ TEST(PathHelperGetExtension, ReturnsLastExtensionForMultipleDots) {
     EXPECT_EQ(Ship::PathHelper::GetFileNameExtension("file.tar.gz"), ".gz");
 }
 
+TEST(PathHelperGetExtension, NoDotThrows) {
+    EXPECT_THROW(Ship::PathHelper::GetFileNameExtension("nodotfile"), std::out_of_range);
+}
+
 // ============================================================
 // PathHelper::GetDirectoryName
 // ============================================================
@@ -245,5 +249,19 @@ TEST_F(FileHelperTest, WriteAllBytesCreatesParentDirectory) {
     fs::path nested = mTestDir / "subdir" / "nested.bin";
     std::vector<char> data = { 0x01, 0x02 };
     Ship::FileHelper::WriteAllBytes(nested.string(), data);
+    EXPECT_TRUE(Ship::FileHelper::Exists(nested));
+}
+
+TEST_F(FileHelperTest, WriteAllBytesUint8CreatesParentDirectory) {
+    fs::path nested = mTestDir / "subdir2" / "nested.bin";
+    std::vector<uint8_t> data = { 0x01, 0x02 };
+    Ship::FileHelper::WriteAllBytes(nested, data);
+    EXPECT_TRUE(Ship::FileHelper::Exists(nested));
+}
+
+TEST_F(FileHelperTest, WriteAllBytesRawPtrCreatesParentDirectory) {
+    fs::path nested = mTestDir / "subdir3" / "nested.bin";
+    const char payload[] = "hi";
+    Ship::FileHelper::WriteAllBytes(nested.string(), payload, static_cast<int>(sizeof(payload) - 1));
     EXPECT_TRUE(Ship::FileHelper::Exists(nested));
 }

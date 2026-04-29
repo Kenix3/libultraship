@@ -1097,7 +1097,7 @@ bool GfxWindowBackendDXGI::IsFullscreen() {
 void ThrowIfFailed(HRESULT res) {
     if (FAILED(res)) {
         fprintf(stderr, "Error: 0x%08X\n", res);
-        throw res;
+        throw Ship::HResultException(res);
     }
 }
 
@@ -1106,7 +1106,7 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
         char full_message[256];
         snprintf(full_message, sizeof(full_message), "%s\n\nHRESULT: 0x%08X", message, res);
         MessageBoxA(h_wnd, full_message, "Error", MB_OK | MB_ICONERROR);
-        throw res;
+        throw Ship::HResultException(res, message);
     }
 }
 

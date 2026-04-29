@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/LibraryLoader.h"
@@ -108,4 +108,4 @@ class ScriptLoader : public Component {
 
 } // namespace Ship
 
-#endif // DISABLE_SCRIPTING
+#endif // ENABLE_SCRIPTING

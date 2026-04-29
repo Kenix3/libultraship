@@ -10,7 +10,17 @@ struct FrameUniforms {
 };
 
 struct DrawUniforms {
-    int textureFiltering[2];
+    int textureFiltering[6];
+    @if(o_prim_depth)
+    float prim_depth;
+    @end
+};
+
+struct FragOut {
+    float4 color [[color(0)]];
+    @if(o_prim_depth)
+    float depth [[depth(any)]];
+    @end
 };
 
 struct Vertex {
@@ -150,7 +160,7 @@ float random(float3 value) {
     return fract(sin(random) * 143758.5453);
 }
 
-fragment float4 fragmentShader(
+fragment FragOut fragmentShader(
     ProjectedVertex in [[stage_in]],
     constant FrameUniforms &frameUniforms [[buffer(0)]],
     constant DrawUniforms &drawUniforms [[buffer(1)]]
@@ -276,6 +286,7 @@ fragment float4 fragmentShader(
         texel.w *= round(saturate(random(float3(floor(coords), float(frameUniforms.frameCount))) + texel.w - 0.5));
     @end
 
+    FragOut out;
     @if(o_alpha)
         @if(o_alpha_threshold)
             if (texel.w < 8.0 / 256.0) discard_fragment();
@@ -283,8 +294,12 @@ fragment float4 fragmentShader(
         @if(o_invisible)
             texel.w = 0.0;
         @end
-        return texel;
+        out.color = texel;
     @else
-        return float4(texel, 1.0);
+        out.color = float4(texel, 1.0);
     @end
+    @if(o_prim_depth)
+        out.depth = drawUniforms.prim_depth;
+    @end
+    return out;
 }

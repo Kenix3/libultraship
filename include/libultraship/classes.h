@@ -52,7 +52,7 @@
 #include "ship/security/Keystore.h"
 #include "ship/log/LoggerComponent.h"
 #include "ship/thread/ThreadPoolComponent.h"
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #endif
 #ifdef __APPLE__

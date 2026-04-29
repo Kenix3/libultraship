@@ -298,6 +298,11 @@ constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
 #define G_CCMUX_K5 15
 #define G_CCMUX_1 6
 #define G_CCMUX_0 31
+/* Chroma-key center/scale and YUV-convert K4/K5 combiner inputs. */
+#define G_CCMUX_KEY_CENTER 20
+#define G_CCMUX_KEY_SCALE 21
+#define G_CCMUX_CONVERT_K4 22
+#define G_CCMUX_CONVERT_K5 23
 
 /* Alpha combiner constants: */
 #define G_ACMUX_COMBINED 0

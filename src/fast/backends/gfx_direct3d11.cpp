@@ -290,6 +290,12 @@ void GfxRenderingAPIDX11::Init() {
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerDrawCb.GetAddressOf()),
                   mWindowBackend->GetWindowHandle(), "Failed to create per-draw constant buffer.");
 
+    // Create per-prim-depth constant buffer (G_ZS_PRIM), uploaded only when mPrimDepthDirty
+
+    constant_buffer_desc.ByteWidth = sizeof(PerPrimDepthCB);
+    ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerPrimDepthCb.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to create per-prim-depth constant buffer.");
+
     // Create compute shader that can be used to retrieve depth buffer values
 
     const char* shader_source = R"(
@@ -331,7 +337,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Compute shader compilation failed");
     }
 
     ThrowIfFailed(mDevice->CreateComputeShader(cs->GetBufferPointer(), cs->GetBufferSize(), nullptr,
@@ -343,7 +349,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "MSAA compute shader compilation failed");
     }
 
     // Create ImGui
@@ -404,7 +410,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Vertex shader compilation failed");
     }
 
     hr = mD3dCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0", compile_flags, 0, ps.GetAddressOf(),
@@ -413,7 +419,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Pixel shader compilation failed");
     }
 
     struct ShaderProgramD3D11* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
@@ -619,6 +625,13 @@ void GfxRenderingAPIDX11::SetDepthTestAndMask(bool depth_test, bool depth_mask) 
     mCurrentDepthMask = depth_mask;
 }
 
+void GfxRenderingAPIDX11::SetCurrentPrimDepth(float depth) {
+    if (depth != mCurrentPrimDepth) {
+        mCurrentPrimDepth = depth;
+        mPrimDepthDirty = true;
+    }
+}
+
 void GfxRenderingAPIDX11::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
@@ -743,13 +756,23 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
     }
 
     // Set per-draw constant buffer
-
     if (textures_changed) {
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
         memcpy(ms.pData, &mPerDrawCbData, sizeof(PerDrawCB));
         mContext->Unmap(mPerDrawCb.Get(), 0);
+    }
+
+    // G_ZS_PRIM: upload prim_depth cbuffer when it changed
+    if (mPrimDepthDirty) {
+        mPerPrimDepthCbData.prim_depth = mCurrentPrimDepth;
+        D3D11_MAPPED_SUBRESOURCE ms;
+        ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        mContext->Map(mPerPrimDepthCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+        memcpy(ms.pData, &mPerPrimDepthCbData, sizeof(PerPrimDepthCB));
+        mContext->Unmap(mPerPrimDepthCb.Get(), 0);
+        mPrimDepthDirty = false;
     }
 
     // Set vertex buffer data
@@ -794,8 +817,8 @@ void GfxRenderingAPIDX11::OnResize() {
 
 void GfxRenderingAPIDX11::StartFrame() {
     // Set per-frame constant buffer
-    ID3D11Buffer* buffers[2] = { mPerFrameCb.Get(), mPerDrawCb.Get() };
-    mContext->PSSetConstantBuffers(0, 2, buffers);
+    ID3D11Buffer* buffers[3] = { mPerFrameCb.Get(), mPerDrawCb.Get(), mPerPrimDepthCb.Get() };
+    mContext->PSSetConstantBuffers(0, 3, buffers);
 
     mPerFrameCbData.noise_frame++;
     if (mPerFrameCbData.noise_frame > 150) {
@@ -1392,6 +1415,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_alpha_threshold", cc_features.opt_alpha_threshold },
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
+        { "o_prim_depth", cc_features.opt_prim_depth },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },

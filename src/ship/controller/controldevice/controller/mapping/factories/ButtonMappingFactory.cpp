@@ -175,10 +175,10 @@ std::shared_ptr<ControllerButtonMapping>
 ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
     WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
     WheelDirection wheelDirection;
-    if (wheelDirections.x != LUS_WHEEL_NONE) {
-        wheelDirection = wheelDirections.x;
-    } else if (wheelDirections.y != LUS_WHEEL_NONE) {
-        wheelDirection = wheelDirections.y;
+    if (wheelDirections.X != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.X;
+    } else if (wheelDirections.Y != LUS_WHEEL_NONE) {
+        wheelDirection = wheelDirections.Y;
     } else {
         return nullptr;
     }
