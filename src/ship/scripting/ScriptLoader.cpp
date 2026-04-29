@@ -7,7 +7,7 @@
 #include "ship/resource/File.h"
 #include "spdlog/spdlog.h"
 #include <optional>
-#include <fstream>
+#include <sstream>
 #include <string_view>
 #include <libtcc.h>
 #include <memory>
@@ -131,12 +131,7 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to load platform-specific binary: " + path);
         }
 
-        std::ofstream out(temp, std::ios::binary | std::ios::trunc);
-        if (!out.is_open()) {
-            throw std::runtime_error("Failed to create temporary file for platform-specific binary: " + temp);
-        }
-        out.write(reinterpret_cast<const char*>(data->data()), data->size());
-        out.close();
+        loader.WriteToTempFile(*data);
     } else if (!info.Main.empty()) {
         const auto data = LoadFromO2R(info.Main, archive);
         if (!data.has_value()) {

@@ -47,16 +47,16 @@ void WheelHandler::Update() {
     UpdateAxisBuffer(&mBufferedCoords.x, mCoords.x);
     UpdateAxisBuffer(&mBufferedCoords.y, mCoords.y);
 
-    mDirections.x = mDirections.y = LUS_WHEEL_NONE;
+    mDirections.X = mDirections.Y = LUS_WHEEL_NONE;
     if (mCoords.x < 0) {
-        mDirections.x = LUS_WHEEL_LEFT;
+        mDirections.X = LUS_WHEEL_LEFT;
     } else if (mCoords.x > 0) {
-        mDirections.x = LUS_WHEEL_RIGHT;
+        mDirections.X = LUS_WHEEL_RIGHT;
     }
     if (mCoords.y < 0) {
-        mDirections.y = LUS_WHEEL_DOWN;
+        mDirections.Y = LUS_WHEEL_DOWN;
     } else if (mCoords.y > 0) {
-        mDirections.y = LUS_WHEEL_UP;
+        mDirections.Y = LUS_WHEEL_UP;
     }
 }
 
