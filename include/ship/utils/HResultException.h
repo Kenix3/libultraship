@@ -16,11 +16,11 @@ namespace Ship {
  */
 class HResultException : public std::runtime_error {
   public:
-    explicit HResultException(HRESULT hr) : std::runtime_error(FormatMessage(hr)), mHResult(hr) {
+    explicit HResultException(HRESULT hr) : std::runtime_error(FormatHResultMessage(hr)), mHResult(hr) {
     }
 
     HResultException(HRESULT hr, const std::string& context)
-        : std::runtime_error(context + " " + FormatMessage(hr)), mHResult(hr) {
+        : std::runtime_error(context + " " + FormatHResultMessage(hr)), mHResult(hr) {
     }
 
     /** @brief Returns the raw HRESULT value. */
@@ -31,7 +31,7 @@ class HResultException : public std::runtime_error {
   private:
     HRESULT mHResult;
 
-    static std::string FormatMessage(HRESULT hr) {
+    static std::string FormatHResultMessage(HRESULT hr) {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "HRESULT failure: 0x%08X", static_cast<unsigned int>(hr));
         return buf;
