@@ -13,6 +13,8 @@ namespace Ship {
 class StatsWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
+
+    /** @brief Virtual destructor. */
     virtual ~StatsWindow();
 
   protected:

@@ -59,3 +59,48 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
         SDL_AUDIODRIVER: dummy
+  test-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Install dependencies
+      run: |
+        choco install ninja
+        Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+    - uses: actions/checkout@v4
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2.14
+      with:
+        variant: sccache
+        key: ${{ runner.os }}-test-ccache-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-test-ccache-${{ github.ref }}
+          ${{ runner.os }}-test-ccache-
+    - name: Cache vcpkg
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        key: ${{ runner.os }}-test-vcpkg-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-test-vcpkg-${{ github.ref }}
+          ${{ runner.os }}-test-vcpkg-
+        path: D:/a/vcpkg
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+    - name: Install Python dependencies
+      run: python -m pip install -r requirements.txt
+    - name: Configure
+      env:
+        VCPKG_ROOT: D:/a/vcpkg
+      run: |
+        $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+        $PY_EXE = (Get-Command python).Definition
+        cmake --no-warn-unused-cli -S. -Bbuild-test -GNinja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DUSE_AUTO_VCPKG=ON -DCMAKE_VS_PLATFORM_NAME=x64 "-DPython3_EXECUTABLE=$PY_EXE" -DPython3_FIND_REGISTRY=NEVER -DLUS_BUILD_TESTS=ON
+    - name: Build
+      run: cmake --build build-test --config Debug --parallel 10
+    - name: Run tests
+      run: ctest --test-dir build-test --output-on-failure
+      env:
+        SDL_VIDEODRIVER: dummy
+        SDL_AUDIODRIVER: dummy

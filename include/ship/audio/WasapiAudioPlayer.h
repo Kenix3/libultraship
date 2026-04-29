@@ -87,7 +87,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID** ppvInterface);
 
     /**
-     * @brief Throws a std::runtime_error if @p res is a failed HRESULT.
+     * @brief Throws a Ship::HResultException if @p res is a failed HRESULT.
      * @param res HRESULT to check.
      */
     void ThrowIfFailed(HRESULT res);

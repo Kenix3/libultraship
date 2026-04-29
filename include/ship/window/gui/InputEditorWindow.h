@@ -27,6 +27,8 @@ namespace Ship {
 class InputEditorWindow : public GuiWindow {
   public:
     using GuiWindow::GuiWindow;
+
+    /** @brief Destroys the InputEditorWindow and releases any active rumble test state. */
     virtual ~InputEditorWindow();
 
     /**
@@ -64,26 +66,122 @@ class InputEditorWindow : public GuiWindow {
     void UpdateElement() override;
 
   private:
+    /**
+     * @brief Draws a single stick-direction mapping line (e.g. "Stick Up").
+     * @param axisDirectionName Human-readable axis/direction label.
+     * @param port              Controller port index.
+     * @param stick             Stick index (0 = left, 1 = right).
+     * @param direction         Cardinal direction of the axis.
+     * @param color             Colour used for the input chip.
+     */
     void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
                                 ImVec4 color);
+
+    /**
+     * @brief Draws a single button mapping line showing current bindings.
+     * @param buttonName Human-readable button label.
+     * @param port       Controller port index.
+     * @param bitmask    Button bitmask identifying the button.
+     * @param color      Colour used for the input chip.
+     */
     void DrawButtonLine(const char* buttonName, uint8_t port, CONTROLLERBUTTONS_T bitmask, ImVec4 color);
+
+    /**
+     * @brief Draws the edit/remove button for an existing button mapping.
+     * @param port    Controller port index.
+     * @param bitmask Button bitmask identifying the button.
+     * @param id      Mapping identifier string.
+     */
     void DrawButtonLineEditMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask, std::string id);
+
+    /**
+     * @brief Draws the "+" button that opens the mapping-add popup for a button.
+     * @param port    Controller port index.
+     * @param bitmask Button bitmask identifying the button.
+     */
     void DrawButtonLineAddMappingButton(uint8_t port, CONTROLLERBUTTONS_T bitmask);
 
+    /**
+     * @brief Draws the edit/remove button for an existing stick-direction mapping.
+     * @param port      Controller port index.
+     * @param stick     Stick index (0 = left, 1 = right).
+     * @param direction Cardinal direction of the axis.
+     * @param id        Mapping identifier string.
+     */
     void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
+
+    /**
+     * @brief Draws the "+" button that opens the mapping-add popup for a stick direction.
+     * @param port      Controller port index.
+     * @param stick     Stick index (0 = left, 1 = right).
+     * @param direction Cardinal direction of the axis.
+     */
     void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);
+
+    /**
+     * @brief Draws the complete analog-stick section (direction lines, preview, and sensitivity controls).
+     * @param port  Controller port index.
+     * @param stick Stick index (0 = left, 1 = right).
+     * @param id    ImGui identifier used to distinguish collapsing headers.
+     * @param color Colour used for input chips in this section.
+     */
     void DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color);
 
+    /**
+     * @brief Draws the rumble configuration section for a controller port.
+     * @param port Controller port index.
+     */
     void DrawRumbleSection(uint8_t port);
+
+    /**
+     * @brief Draws a remove button for an existing rumble mapping.
+     * @param port Controller port index.
+     * @param id   Mapping identifier string.
+     */
     void DrawRemoveRumbleMappingButton(uint8_t port, std::string id);
+
+    /**
+     * @brief Draws the "+" button that opens the mapping-add popup for rumble.
+     * @param port Controller port index.
+     */
     void DrawAddRumbleMappingButton(uint8_t port);
 
+    /**
+     * @brief Draws the LED colour configuration section for a controller port.
+     * @param port Controller port index.
+     */
     void DrawLEDSection(uint8_t port);
+
+    /**
+     * @brief Draws a remove button for an existing LED mapping.
+     * @param port Controller port index.
+     * @param id   Mapping identifier string.
+     */
     void DrawRemoveLEDMappingButton(uint8_t port, std::string id);
+
+    /**
+     * @brief Draws the "+" button that opens the mapping-add popup for LED.
+     * @param port Controller port index.
+     */
     void DrawAddLEDMappingButton(uint8_t port);
 
+    /**
+     * @brief Draws the gyroscope configuration section for a controller port.
+     * @param port Controller port index.
+     */
     void DrawGyroSection(uint8_t port);
+
+    /**
+     * @brief Draws a remove button for an existing gyro mapping.
+     * @param port Controller port index.
+     * @param id   Mapping identifier string.
+     */
     void DrawRemoveGyroMappingButton(uint8_t port, std::string id);
+
+    /**
+     * @brief Draws the "+" button that opens the mapping-add popup for gyro.
+     * @param port Controller port index.
+     */
     void DrawAddGyroMappingButton(uint8_t port);
 
     int32_t mGameInputBlockTimer;
@@ -98,19 +196,56 @@ class InputEditorWindow : public GuiWindow {
     std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>>
         mStickDirectionToMappingIds;
 
+    /**
+     * @brief Rebuilds the cached bitmask-to-mapping-ID table for a port.
+     * @param port Controller port index.
+     */
     void UpdateBitmaskToMappingIds(uint8_t port);
+
+    /**
+     * @brief Rebuilds the cached stick-direction-to-mapping-ID table for a port.
+     * @param port Controller port index.
+     */
     void UpdateStickDirectionToMappingIds(uint8_t port);
 
+    /**
+     * @brief Resolves button colours based on the physical device type of a mapping.
+     * @param physicalDeviceType The device type to look up colours for.
+     * @param buttonColor        Output normal-state colour.
+     * @param buttonHoveredColor Output hovered-state colour.
+     */
     void GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType, ImVec4& buttonColor,
                                               ImVec4& buttonHoveredColor);
+
+    /**
+     * @brief Draws the full content of a single controller-port tab.
+     * @param portIndex Controller port index.
+     */
     void DrawPortTab(uint8_t portIndex);
+
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     bool mInputEditorPopupOpen;
+
+    /**
+     * @brief Draws the "Set Defaults" button that restores default mappings for a port.
+     * @param portIndex Controller port index.
+     */
     void DrawSetDefaultsButton(uint8_t portIndex);
+
+    /**
+     * @brief Draws the "Clear All" button that removes every mapping for a port.
+     * @param portIndex Controller port index.
+     */
     void DrawClearAllButton(uint8_t portIndex);
 
+    /**
+     * @brief Draws per-device-type enable/disable toggles for a port.
+     * @param portIndex Controller port index.
+     */
     void DrawDeviceToggles(uint8_t portIndex);
+
+    /** @brief Adjusts the position of the active mapping popup so it stays on-screen. */
     void OffsetMappingPopup();
 };
 } // namespace Ship
