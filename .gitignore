@@ -348,6 +348,7 @@ ZAPDUtils.lib
 cmake-build-**
 cmake_install.cmake
 tcc_c2str
+tcc_c2str.exe
 *.a
 *.o
 *.so
@@ -358,6 +359,8 @@ tcc_c2str
 *.stamp
 *.depend
 *.lib
+*.exp
+*.dll
 *.dylib
 *.tlog
 *.recipe
@@ -369,4 +372,3 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcworkspace
 *.xcsettings
 build*
-tcc_c2str

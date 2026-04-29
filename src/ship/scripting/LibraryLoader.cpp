@@ -21,8 +21,9 @@
 #include <sys/stat.h>
 #include <elf.h>
 #include <iostream>
-#include <fstream>
 #endif
+
+#include <fstream>
 
 namespace Ship::Scripting {
 
@@ -62,6 +63,15 @@ std::string LibraryLoader::GenerateTempFile() {
 #else
 #error "Unsupported Operating System"
 #endif
+}
+
+void LibraryLoader::WriteToTempFile(const std::vector<uint8_t>& data) {
+    std::ofstream out(mTempFile, std::ios::binary | std::ios::trunc);
+    if (!out.is_open()) {
+        throw std::runtime_error("Failed to open temporary file for writing: " + mTempFile);
+    }
+    out.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+    out.close();
 }
 
 #ifdef __linux__

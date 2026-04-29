@@ -40,6 +40,8 @@ class Controller : public ControlDevice {
      * @param bitmasks  All button bitmasks this controller should track (one ControllerButton per entry).
      */
     Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
+
+    /** @brief Destroys the Controller and releases all mapping resources. */
     ~Controller();
 
     /**
