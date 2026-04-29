@@ -404,6 +404,13 @@ void GfxRenderingAPIMetal::SetDepthTestAndMask(bool depth_test, bool depth_mask)
     mCurrentDepthMask = depth_mask;
 }
 
+void GfxRenderingAPIMetal::SetCurrentPrimDepth(float depth) {
+    if (depth != mCurrentPrimDepth) {
+        mCurrentPrimDepth = depth;
+        mPrimDepthDirty = true;
+    }
+}
+
 void GfxRenderingAPIMetal::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
@@ -523,8 +530,10 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
     }
 
-    if (textures_changed) {
+    if (textures_changed || mPrimDepthDirty) {
+        mDrawUniforms.prim_depth = mCurrentPrimDepth;
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
+        mPrimDepthDirty = false;
     }
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {

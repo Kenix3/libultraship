@@ -77,7 +77,7 @@ float random(in float3 value) {
 // Original author: ArthurCarvalho
 // Based on GLSL implementation by twinaphex, mupen64plus-libretro project.
 
-@if(o_three_point_filtering && o_textures[0] || o_textures[1])
+@if(o_three_point_filtering && (o_textures[0] || o_textures[1]))
 cbuffer PerDrawCB : register(b1) {
     struct {
         uint width;
@@ -95,6 +95,13 @@ float4 tex2D3PointFilter(in Texture2D tex, in SamplerState tSampler, in float2 t
     float4 c1 = TEX_OFFSET(tex, tSampler, texCoord, float2(offset.x - sign(offset.x), offset.y), texSize);
     float4 c2 = TEX_OFFSET(tex, tSampler, texCoord, float2(offset.x, offset.y - sign(offset.y)), texSize);
     return c0 + abs(offset.x)*(c1-c0) + abs(offset.y)*(c2-c0);
+}
+@end
+
+@if(o_prim_depth)
+cbuffer PerPrimDepthCB : register(b2) {
+    float prim_depth;
+    float3 _pad; // pad to 16-byte cbuffer alignment
 }
 @end
 
@@ -180,7 +187,14 @@ PSInput VSMain(
 #define MOD(x, y) ((x) - (y) * floor((x)/(y)))
 #define WRAP(x, low, high) MOD((x)-(low), (high)-(low)) + (low)
 
-float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
+struct PSOutput {
+    float4 color : SV_TARGET;
+    @if(o_prim_depth)
+    float depth : SV_Depth;
+    @end
+};
+
+PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
     @for(i in 0..2)
         @if(o_textures[i])
             float2 tc@{i} = input.uv@{i};
@@ -317,16 +331,24 @@ float4 PSMain(PSInput input, float4 screenSpace : SV_Position) : SV_TARGET {
         @if(o_invisible)
             texel.a = 0.0;
         @end
+    @end
+
+    PSOutput output;
+    @if(o_alpha)
         @if(srgb_mode)
-            return fromLinear(texel);
+            output.color = fromLinear(texel);
         @else
-            return texel;
+            output.color = texel;
         @end
     @else
         @if(srgb_mode)
-            return fromLinear(float4(texel, 1.0));
+            output.color = fromLinear(float4(texel, 1.0));
         @else
-            return float4(texel, 1.0);
+            output.color = float4(texel, 1.0);
         @end
     @end
+    @if(o_prim_depth)
+        output.depth = prim_depth;
+    @end
+    return output;
 }
