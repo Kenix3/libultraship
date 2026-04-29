@@ -11,7 +11,7 @@
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 #include "ship/events/EventSystem.h"
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #endif
 #include "ship/security/Keystore.h"
@@ -49,7 +49,7 @@ Context::~Context() {
     mResourceManager = nullptr;
     mConsoleVariables = nullptr;
     mEventSystem = nullptr;
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
     if (mScriptLoader) {
         mScriptLoader->UnloadAll();
     }
@@ -105,7 +105,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
            InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
            InitEventSystem() && InitFileDropMgr() && InitScriptLoader();
 #else
            InitEventSystem() && InitFileDropMgr();
@@ -372,7 +372,7 @@ bool Context::InitEventSystem() {
     return true;
 }
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
                                std::string buildOptions, std::vector<std::string> includePaths,
                                std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
@@ -388,7 +388,7 @@ bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> comp
     }
     return true;
 }
-#endif // DISABLE_SCRIPTING
+#endif // ENABLE_SCRIPTING
 
 bool Context::InitKeystore() {
     if (GetKeystore() != nullptr) {
@@ -451,7 +451,7 @@ std::shared_ptr<EventSystem> Context::GetEventSystem() const {
     return mEventSystem;
 }
 
-#ifndef DISABLE_SCRIPTING
+#ifdef ENABLE_SCRIPTING
 std::shared_ptr<ScriptLoader> Context::GetScriptLoader() const {
     return mScriptLoader;
 }
