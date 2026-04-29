@@ -331,7 +331,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Compute shader compilation failed");
     }
 
     ThrowIfFailed(mDevice->CreateComputeShader(cs->GetBufferPointer(), cs->GetBufferSize(), nullptr,
@@ -343,7 +343,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "MSAA compute shader compilation failed");
     }
 
     // Create ImGui
@@ -404,7 +404,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Vertex shader compilation failed");
     }
 
     hr = mD3dCompile(buf, len, nullptr, nullptr, nullptr, "PSMain", "ps_4_0", compile_flags, 0, ps.GetAddressOf(),
@@ -413,7 +413,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     if (FAILED(hr)) {
         char* err = (char*)error_blob->GetBufferPointer();
         MessageBoxA(mWindowBackend->GetWindowHandle(), err, "Error", MB_OK | MB_ICONERROR);
-        throw hr;
+        throw Ship::HResultException(hr, "Pixel shader compilation failed");
     }
 
     struct ShaderProgramD3D11* prg = &mShaderProgramPool[std::make_pair(shader_id0, shader_id1)];
