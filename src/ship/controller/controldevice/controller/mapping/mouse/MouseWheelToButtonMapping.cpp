@@ -19,7 +19,7 @@ void MouseWheelToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
     }
 
     WheelDirections directions = WheelHandler::GetInstance()->GetDirections();
-    if (mWheelDirection == directions.x || mWheelDirection == directions.y) {
+    if (mWheelDirection == directions.X || mWheelDirection == directions.Y) {
         padButtons |= mBitmask;
     }
 }

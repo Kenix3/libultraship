@@ -563,13 +563,21 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     uint32_t width = widthBytes / 2;
     uint32_t height = widthBytes > 0 ? sizeBytes / widthBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize (mipmap pyramids include all levels).
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike =
+        renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13; // < 1.625x
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -623,13 +631,20 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     uint32_t width = widthBytes / 4;
     uint32_t height = widthBytes > 0 ? size_bytes / widthBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -920,13 +935,20 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes * 2;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1005,13 +1027,20 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     uint32_t width = resultLineSizeBytes;
     uint32_t height = resultLineSizeBytes > 0 ? sizeBytes / resultLineSizeBytes : 0;
 
-    // Clamp to tile dimensions from SetTileSize
+    // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
+    // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
+    // skip both. CLAMP wrap mode always opts in.
     uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
     uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
-    if (tile_w > 0 && tile_w < width) {
+    uint32_t loadedPixels = width * height;
+    uint32_t renderedPixels = tile_w * tile_h;
+    bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
+    bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
+    bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1879,11 +1908,15 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             tex_width2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
             tex_height2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
 
-            // Clamp to tile bounds (mipmap loads include all levels).
-            if (tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
+            // are close to rendered pixels (mipmap), not when much bigger (window scroll).
+            uint32_t loadedPx = tex_width[i] * tex_height[i];
+            uint32_t renderedPx = tex_width2[i] * tex_height2[i];
+            bool pyrLike = renderedPx > 0 && loadedPx > renderedPx && loadedPx * 8 < renderedPx * 13;
+            if ((pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if (tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 

@@ -1,5 +1,13 @@
 #pragma once
 
+/**
+ * @brief Embedded compressed Font Awesome webfont data.
+ *
+ * This file contains the Font Awesome webfont (fontawesome-webfont.ttf, 165548 bytes)
+ * in base85-encoded compressed form, exported using binary_to_compressed_c.cpp.
+ * The data is used by the GUI subsystem to render icon glyphs via ImGui.
+ */
+
 // File: 'fontawesome-webfont.ttf' (165548 bytes)
 // Exported using binary_to_compressed_c.cpp
 static const char fontawesome_compressed_data_base85[155710 + 1] =
