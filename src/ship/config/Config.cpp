@@ -205,18 +205,14 @@ void Config::Reload() {
     }
     std::ifstream ifs(mPath);
 
+    mNestedJson = nlohmann::json::object();
+    mFlattenedJson = nlohmann::json::object();
     try {
         mNestedJson = nlohmann::json::parse(ifs);
         mFlattenedJson = mNestedJson.flatten();
     } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Failed to parse config file {}: {}", mPath, e.what());
-        mNestedJson = nlohmann::json::object();
-        mFlattenedJson = nlohmann::json::object();
-    } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unexpected error loading config file {}: {}", mPath, e.what());
-        mNestedJson = nlohmann::json::object();
-        mFlattenedJson = nlohmann::json::object();
-    }
+    } catch (const std::exception& e) { SPDLOG_ERROR("Unexpected error loading config file {}: {}", mPath, e.what()); }
 }
 
 void Config::Save() {
