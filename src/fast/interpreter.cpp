@@ -1156,16 +1156,6 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
     uint8_t paletteIndex = mRdp->texture_tile[tile].palette;
     uint32_t origSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
 
-    // Check TLUT mode early -- before cache lookup -- so the fmt override
-    // affects both the cache key and the decode path.
-    // Only override to CI for 4-bit and 8-bit texels, which are valid CI sizes.
-    // 16-bit and 32-bit texels are full-color formats that the N64 RDP decodes
-    // natively regardless of TLUT mode.
-    uint32_t tlutMode = mRdp->other_mode_h & (3U << G_MDSFT_TEXTLUT);
-    if (tlutMode != G_TT_NONE && fmt != G_IM_FMT_CI && (siz == G_IM_SIZ_4b || siz == G_IM_SIZ_8b)) {
-        fmt = G_IM_FMT_CI;
-    }
-
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* origAddr =
         importReplacement && (metadata->resource != nullptr)
