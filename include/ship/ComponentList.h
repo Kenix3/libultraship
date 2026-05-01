@@ -38,6 +38,8 @@ class ComponentList : public PartList<Component> {
   public:
     using PartList<Component>::PartList;
 
+    ComponentList() = default;
+
     /**
      * @brief Constructs a ComponentList with a role and owner for bidirectional relationships.
      * @param owner The Component that owns this list (raw pointer, must outlive the list).
