@@ -191,12 +191,14 @@
 #define G_IMAGERECT 0x3c
 #define G_DL_INDEX 0x3d
 #define G_READFB 0x3e
+#define G_SETTIMG_PAL 0x41
 #define G_SETINTENSITY 0x40
 #define G_PUSH_SHADER 0x43
 #define G_POP_SHADER 0x44
 #define G_SETTILESIZE_INTERP 0x45
 #define G_SETTARGETINTERPINDEX 0x46
 #define G_SETTILESIZE_LERP 0x4a
+#define G_INVAL_TEX_BY_PAL 0x4C
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2805,6 +2807,22 @@ typedef union Gfx {
         _g0->words.w1 = (uintptr_t)rgba16buf;                                                 \
         _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);                           \
         _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                      \
+    }
+
+#define gDPSetTextureImagePal(pkt, tile, palSlot)                                \
+    {                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                  \
+                                                                                 \
+        _g->words.w0 = _SHIFTL(G_SETTIMG_PAL, 24, 8) | _SHIFTL(tile, 8, 8) |   \
+                       _SHIFTL(palSlot, 0, 8);                                   \
+        _g->words.w1 = 0;                                                        \
+    }
+
+#define gDPInvalTexByPalette(pkt, palAddr)                                       \
+    {                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                  \
+        _g->words.w0 = _SHIFTL(G_INVAL_TEX_BY_PAL, 24, 8);                     \
+        _g->words.w1 = (uintptr_t)(palAddr);                                    \
     }
 
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \

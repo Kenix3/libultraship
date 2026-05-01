@@ -433,6 +433,7 @@ class Interpreter {
     std::shared_ptr<Ship::IResource> ResolveResourceCached(const char* path);
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
+    void TextureCacheDeleteByPalette(const uint8_t* palAddr);
     void ImportTextureRgba16(int tile, bool importReplacement);
     void ImportTextureRgba32(int tile, bool importReplacement);
     void ImportTextureIA4(int tile, bool importReplacement);
