@@ -4287,6 +4287,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     bool bswap = C0(8, 1);
+    bool toI8 = C0(9, 1);
     ++(*cmd0);
     cmd = *cmd0;
     // Specifying the upper left origin value is unused and unsupported at the renderer level
@@ -4306,6 +4307,16 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
         }
     }
 #endif
+
+    if (toI8) {
+        uint8_t* dst = (uint8_t*)rgba16Buffer;
+        size_t count = (size_t)width * height;
+        for (size_t i = 0; i < count; i++) {
+            uint16_t px = rgba16Buffer[i];
+            uint8_t r5 = (px >> 11) & 0x1F;
+            dst[i] = (r5 << 3) | (r5 >> 2); // 5-bit → 8-bit
+        }
+    }
 
     return false;
 }
