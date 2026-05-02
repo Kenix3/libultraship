@@ -37,10 +37,10 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * **Required Context children (looked up at Init time):**
- * - **Config** — fetched in Window::InitBase() to read and persist window
+ * **Required Context children (looked up at OnInit time):**
+ * - **Config** — cached in Window::OnInit() to read and persist window
  *   settings (size, backend, fullscreen state). Config must be added to the
- *   Context before Window::InitBase() is called (from Init()).
+ *   Context before Window::Init() is called.
  *
  * The window is added to Context as a child Component and is accessible via
  * `Context::GetChildren().GetFirst<Window>()`.
@@ -68,8 +68,6 @@ class Window : public Component {
     Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager);
     virtual ~Window();
 
-    /** @brief Opens the window and initializes the graphics backend. */
-    virtual void Init() = 0;
     /** @brief Requests that the window and application close. */
     virtual void Close() = 0;
     /** @brief Runs a single GUI-only tick without executing game logic. */
@@ -222,22 +220,24 @@ class Window : public Component {
     void AddAvailableWindowBackend(WindowBackend backend);
 
     /**
-     * @brief Fetches Config from the component hierarchy and throws if not found or uninitialized.
+     * @brief Caches Config from the component hierarchy and throws if not found or uninitialized.
      *
-     * All concrete Init() overrides MUST call Window::InitBase() first before
-     * accessing any other components or reading configuration values. This also
-     * calls MarkInitialized() so that IsInitialized() returns true after Init()
-     * completes.
+     * Called by Component::Init() via OnInit(). Subclasses that override OnInit()
+     * must call Window::OnInit() first to ensure Config is cached before they
+     * access any other components or read configuration values.
      *
      * @note Init-order dependency: Config must be present **and initialized** in
-     *       the Context hierarchy before InitBase() is called. Config
+     *       the Context hierarchy before OnInit() is called. Config
      *       self-initializes on construction, so adding it to the Context before
      *       the Window satisfies this requirement.
      *
      * @throws std::runtime_error if Config is not present in the Context hierarchy.
      * @throws std::runtime_error if Config is present but not yet initialized.
      */
-    void InitBase();
+    void OnInit() override;
+
+    /** @brief Returns the cached Config component. Subclasses use this after OnInit() runs. */
+    std::shared_ptr<Config> GetConfig() const;
 
   private:
     std::shared_ptr<Gui> mGui;

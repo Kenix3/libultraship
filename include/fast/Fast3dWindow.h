@@ -4,6 +4,11 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "FastMouseStateManager.h"
 
+namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+} // namespace Ship
+
 union Gfx;
 #include "interpreter.h"
 
@@ -37,7 +42,6 @@ class Fast3dWindow : public Ship::Window {
     Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager);
     ~Fast3dWindow();
 
-    void Init() override;
     void Close() override;
     void RunGuiOnly() override;
     void StartFrame() override;
@@ -82,6 +86,8 @@ class Fast3dWindow : public Ship::Window {
     std::weak_ptr<Interpreter> GetInterpreterWeak() const;
 
   protected:
+    void OnInit() override;
+
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();
@@ -93,5 +99,12 @@ class Fast3dWindow : public Ship::Window {
     GfxRenderingAPI* mRenderingApi;
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<Ship::ControlDeck> mControlDeck;
+
+    /** @brief Returns the cached ConsoleVariable component. */
+    std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariables() const;
+    /** @brief Returns the cached ControlDeck component. */
+    std::shared_ptr<Ship::ControlDeck> GetControlDeck() const;
 };
 } // namespace Fast

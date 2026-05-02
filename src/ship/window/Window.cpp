@@ -134,7 +134,7 @@ void Window::AddAvailableWindowBackend(WindowBackend backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 
-void Window::InitBase() {
+void Window::OnInit() {
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
     if (!mConfig) {
         throw std::runtime_error("Window requires Config in the component hierarchy");
@@ -142,7 +142,9 @@ void Window::InitBase() {
     if (!mConfig->IsInitialized()) {
         throw std::runtime_error("Window::Init requires Config to be initialized before Window");
     }
-    // Mark the window as initialized so dependents can check IsInitialized().
-    MarkInitialized();
+}
+
+std::shared_ptr<Config> Window::GetConfig() const {
+    return mConfig;
 }
 } // namespace Ship

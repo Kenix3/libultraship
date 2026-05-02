@@ -60,7 +60,7 @@ class Context : public Component {
      * **Init-order dependencies within this factory:**
      * - ResourceManager::Init() — ThreadPoolComponent must be present (it self-initializes
      *   on construction, so it is always ready).
-     * - Window::InitBase() — Config must be present and initialized (Config self-initializes
+     * - Window::OnInit() — Config must be present and initialized (Config self-initializes
      *   on construction).
      * - Audio::OnInit() — Config must be present and initialized (same as above).
      */

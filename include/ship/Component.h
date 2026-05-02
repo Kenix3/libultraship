@@ -47,12 +47,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * provide their own Init(…) overload and must call MarkInitialized() when
      * initialization succeeds.
      *
-     * @note Window is a special case: its `virtual void Init() = 0` hides this
-     *       non-virtual Init(). Window subclasses implement Init() directly and
-     *       call Window::InitBase() at the start, which calls MarkInitialized().
-     *       Always call Init() through a Window* (not a Component*) so that the
-     *       virtual dispatch resolves correctly.
-     *
      * @note Init-order dependency: Components that call GetChildren().GetFirst<T>()
      *       inside OnInit() require T to be present in the hierarchy. If T also
      *       requires initialization before use, it must be IsInitialized() at the
