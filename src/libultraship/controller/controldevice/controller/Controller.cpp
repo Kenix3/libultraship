@@ -42,7 +42,8 @@ void Controller::ReadToOSContPad(OSContPad* pad) {
     if (pad != nullptr) {
         auto& padFromBuffer = mPadBuffer[std::min(
             mPadBuffer.size() - 1,
-            (size_t)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
+            (size_t)Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+                CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
 

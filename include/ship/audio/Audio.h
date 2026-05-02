@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 #include "ship/audio/AudioPlayer.h"
+#include "ship/Component.h"
 
 namespace Ship {
-
 /** @brief Identifies the audio backend implementation in use. */
 enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
 
@@ -20,13 +20,13 @@ enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
  *
  * Obtain the instance from Context::GetAudio().
  */
-class Audio {
+class Audio : public Component {
   public:
     /**
      * @brief Constructs an Audio manager with the given initial settings.
      * @param settings Initial audio backend selection and channel configuration.
      */
-    Audio(AudioSettings settings) : mAudioSettings(settings) {
+    Audio(AudioSettings settings) : Component("Audio"), mAudioSettings(settings) {
     }
     ~Audio();
 

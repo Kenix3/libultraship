@@ -53,7 +53,7 @@ class ConfigVersionUpdater {
  *
  * Obtain the instance from Context::GetConfig().
  */
-class Config {
+class Config : public Component {
   public:
     /**
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).

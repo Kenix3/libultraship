@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
+#include "ship/Component.h"
 
 namespace Ship {
 /**
  * @brief Abstract base class for all visible GUI elements (windows, menu bars, overlays).
  *
- * GuiElement provides the lifecycle skeleton (Init → Draw/Update → Show/Hide) that
+ * GuiElement provides the lifecycle skeleton (Init -> Draw/Update -> Show/Hide) that
  * every ImGui panel in the Ship GUI system must implement. Concrete subclasses are
  * GuiWindow (for floating ImGui windows) and GuiMenuBar (for the top-of-screen menu
  * bar), both of which override DrawElement(), InitElement(), and UpdateElement().
@@ -14,16 +15,19 @@ namespace Ship {
  * The element starts life uninitialized; Init() calls InitElement() exactly once.
  * Draw() and Update() are called by the Gui layer every frame for visible elements.
  */
-class GuiElement {
+class GuiElement : public Component {
   public:
     /**
      * @brief Constructs a GuiElement with an explicit initial visibility.
+     * @param name      Component name.
      * @param isVisible true if the element should start visible.
      */
-    GuiElement(bool isVisible);
+    GuiElement(const std::string& name, bool isVisible);
 
-    /** @brief Constructs a GuiElement that starts hidden. */
-    GuiElement();
+    /** @brief Constructs a GuiElement that starts hidden.
+     * @param name Component name.
+     */
+    GuiElement(const std::string& name);
     virtual ~GuiElement();
 
     /**

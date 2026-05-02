@@ -9,6 +9,7 @@
 #include "ship/window/gui/Gui.h"
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -36,10 +37,10 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * The window is created by Context::InitWindow() and is accessible via
- * Context::GetWindow().
+ * The window is added to Context as a child Component and is accessible via
+ * Context::GetChildren().GetFirst<Window>().
  */
-class Window {
+class Window : public Component {
     friend class Context;
 
   public:

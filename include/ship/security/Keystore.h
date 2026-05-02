@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -35,13 +36,13 @@ struct KeystoreEntry {
  * the user, or the engine itself. The store can be serialized to and from disk via
  * Load() and Save().
  */
-class Keystore {
+class Keystore : public Component {
   public:
     /**
      * @brief Constructs an empty Keystore.
      */
     Keystore();
-    ~Keystore() = default;
+    ~Keystore() override = default;
 
     /**
      * @brief Loads all keys from the persistent storage file on disk.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ship/utils/color.h"
+#include "ship/Component.h"
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>
@@ -48,7 +49,7 @@ typedef struct CVar {
  *
  * Obtain the singleton instance from Context::GetConsoleVariables().
  */
-class ConsoleVariable {
+class ConsoleVariable : public Component {
   public:
     ConsoleVariable();
     ~ConsoleVariable();

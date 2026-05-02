@@ -12,6 +12,8 @@
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/Component.h"
+#include "ship/thread/ThreadPoolComponent.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -88,7 +90,7 @@ struct ResourceIdentifierHash {
  * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
  * @endcode
  */
-class ResourceManager {
+class ResourceManager : public Component {
     friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
@@ -414,11 +416,12 @@ class ResourceManager {
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
-    std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
     bool mAltAssetsEnabled = false;
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
+
+    std::shared_ptr<ThreadPoolComponent> GetThreadPool();
 };
 } // namespace Ship

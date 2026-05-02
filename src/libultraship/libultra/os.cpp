@@ -29,7 +29,7 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
         exit(EXIT_FAILURE);
     }
 
-    Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->Init(controllerBits);
 
     return 0;
 }
@@ -41,7 +41,7 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
 
-    Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>()->WriteToPad(pad);
 }
 
 void osSetTime(OSTime time) {
@@ -86,7 +86,11 @@ int32_t osAiSetNextBuffer(void* buff, size_t len) {
 }
 
 int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
-    auto io = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
+    auto io = Ship::Context::GetInstance()
+                  ->GetChildren()
+                  .GetFirst<Ship::ControlDeck>()
+                  ->GetControllerByPort(pfs->channel)
+                  ->GetRumble();
     if (vibrate) {
         io->StartRumble();
     } else {
