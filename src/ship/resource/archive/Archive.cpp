@@ -11,7 +11,9 @@
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 #include "ship/utils/StringHelper.h"
+#ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
+#endif
 
 #include <tinyxml2.h>
 #include <monocypher.h>
@@ -179,6 +181,7 @@ void Archive::IndexFile(const std::string& filePath) {
 }
 
 void Archive::Validate() {
+#ifdef ENABLE_SCRIPTING
     if (mManifest.Checksum.empty()) {
         SPDLOG_WARN("Archive {} does not have a checksum in its metadata, skipping validation", GetPath());
         return;
@@ -284,6 +287,7 @@ void Archive::Validate() {
 
     mIsSigned = true;
     SPDLOG_INFO("Archive {} successfully authenticated.", GetPath());
+#endif // ENABLE_SCRIPTING
 }
 
 } // namespace Ship

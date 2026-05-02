@@ -21,25 +21,27 @@ endif()
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/install_config.h @ONLY)
 
-file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
-set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)
-set(GENERATE_KEYS_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.py)
-get_filename_component(EMBEDDED_KEYS_DIR ${EMBEDDED_KEYS_HEADER} DIRECTORY)
+if(ENABLE_SCRIPTING)
+    file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
+    set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)
+    set(GENERATE_KEYS_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.py)
+    get_filename_component(EMBEDDED_KEYS_DIR ${EMBEDDED_KEYS_HEADER} DIRECTORY)
 
-add_custom_command(
-    OUTPUT ${EMBEDDED_KEYS_HEADER}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
-    COMMAND Python3::Interpreter ${GENERATE_KEYS_SCRIPT} 
-            ${EMBEDDED_KEYS_HEADER}
-            ${SCRIPT_PUB_KEYS}
-    DEPENDS ${GENERATE_KEYS_SCRIPT} 
-            ${SCRIPT_PUB_KEYS}
-    COMMENT "Generating DefaultKeys.h from all keys in /keys/script/"
-    VERBATIM
-)
+    add_custom_command(
+        OUTPUT ${EMBEDDED_KEYS_HEADER}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
+        COMMAND Python3::Interpreter ${GENERATE_KEYS_SCRIPT}
+                ${EMBEDDED_KEYS_HEADER}
+                ${SCRIPT_PUB_KEYS}
+        DEPENDS ${GENERATE_KEYS_SCRIPT}
+                ${SCRIPT_PUB_KEYS}
+        COMMENT "Generating DefaultKeys.h from all keys in /keys/script/"
+        VERBATIM
+    )
 
-add_custom_target(GenerateScriptKeys DEPENDS ${EMBEDDED_KEYS_HEADER})
-add_dependencies(libultraship GenerateScriptKeys)
+    add_custom_target(GenerateScriptKeys DEPENDS ${EMBEDDED_KEYS_HEADER})
+    add_dependencies(libultraship GenerateScriptKeys)
+endif()
 
 #=================== Fast ===================
 

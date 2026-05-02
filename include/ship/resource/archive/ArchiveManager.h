@@ -9,12 +9,15 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
+#endif
 
 namespace Ship {
 struct File;
 class Archive;
 
+#ifdef ENABLE_SCRIPTING
 /**
  * @brief Callback invoked when an archive without a trusted key is added.
  *
@@ -22,6 +25,7 @@ class Archive;
  * the Keystore. Return true to accept the archive anyway, or false to reject it.
  */
 using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEntry& key)>;
+#endif
 
 /**
  * @brief Manages a prioritised collection of mounted Archive objects.
@@ -188,6 +192,7 @@ class ArchiveManager {
      */
     bool IsGameVersionValid(uint32_t gameVersion);
 
+#ifdef ENABLE_SCRIPTING
     /**
      * @brief Sets the callback invoked when an untrusted (unsigned/unknown-key) archive is added.
      * @param handler Callback; return true to accept, false to reject the archive.
@@ -198,6 +203,7 @@ class ArchiveManager {
      * @brief Returns the current untrusted-archive handler.
      */
     UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
+#endif
 
   protected:
     /**
@@ -220,6 +226,8 @@ class ArchiveManager {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
+#ifdef ENABLE_SCRIPTING
     UntrustedArchiveHandler mUntrustedArchiveHandler;
+#endif
 };
 } // namespace Ship
