@@ -14,6 +14,7 @@
 
 namespace Ship {
 
+
 /**
  * @brief Central singleton context for the libultraship engine.
  *
@@ -119,6 +120,7 @@ class Context : public Component {
      */
     Context(std::string name, std::string shortName, std::string configFilePath);
     ~Context();
+
 
     /** @brief Returns the human-readable application name. */
     std::string GetName() const;

@@ -93,9 +93,11 @@ endif()
 
 #=================== Security ===================
 
-file(GLOB_RECURSE Source_Files__Security RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "security/*.cpp")
-source_group("security" FILES ${Source_Files__Security})
-target_sources(libultraship PRIVATE ${Source_Files__Security})
+if(ENABLE_SCRIPTING)
+    file(GLOB_RECURSE Source_Files__Security RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "security/*.cpp")
+    source_group("security" FILES ${Source_Files__Security})
+    target_sources(libultraship PRIVATE ${Source_Files__Security})
+endif()
 
 #=================== Port ===================
 

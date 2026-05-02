@@ -17,8 +17,8 @@
 #include "ship/events/Events.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
-#endif
 #include "ship/security/Keystore.h"
+#endif
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -166,8 +166,10 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     // ---- Thread Pool ----
     shared->GetChildren().Add(std::make_shared<ThreadPoolComponent>(threadCount));
 
+#ifdef ENABLE_SCRIPTING
     // ---- Keystore ----
     shared->GetChildren().Add(std::make_shared<Keystore>());
+#endif
 
     // ---- Resource Manager ----
     auto resourceManager = std::make_shared<ResourceManager>();
