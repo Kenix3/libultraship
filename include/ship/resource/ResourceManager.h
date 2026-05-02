@@ -13,6 +13,7 @@
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
 #include "ship/Component.h"
+#include "ship/thread/ThreadPoolComponent.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -421,6 +422,6 @@ class ResourceManager : public Component {
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
 
-    std::shared_ptr<BS::thread_pool> GetThreadPool();
+    std::shared_ptr<ThreadPoolComponent> GetThreadPool();
 };
 } // namespace Ship

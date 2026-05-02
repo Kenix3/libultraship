@@ -7,7 +7,7 @@ LoggerComponent::LoggerComponent(std::shared_ptr<spdlog::logger> logger)
     : Component("LoggerComponent"), mLogger(std::move(logger)) {
 }
 
-std::shared_ptr<spdlog::logger> LoggerComponent::GetLogger() const {
+std::shared_ptr<spdlog::logger> LoggerComponent::Get() const {
     return mLogger;
 }
 

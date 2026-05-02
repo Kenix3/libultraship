@@ -27,7 +27,9 @@ class TickableList : public PartList<TickableComponent> {
 };
 
 inline TickableList& TickableList::Sort() {
+#ifdef COMPONENT_THREAD_SAFE
     const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+#endif
     auto& list = GetList();
     std::stable_sort(list.begin(), list.end(),
                      [](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {

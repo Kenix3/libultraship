@@ -26,7 +26,7 @@ class LoggerComponent : public Component {
      * @brief Returns the underlying spdlog logger.
      * @return A shared pointer to the spdlog::logger.
      */
-    std::shared_ptr<spdlog::logger> GetLogger() const;
+    std::shared_ptr<spdlog::logger> Get() const;
 
   private:
     std::shared_ptr<spdlog::logger> mLogger;

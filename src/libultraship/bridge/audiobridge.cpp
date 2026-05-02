@@ -2,6 +2,8 @@
 #include "ship/Context.h"
 #include "ship/audio/Audio.h"
 
+// Audio bridge functions require a Ship::Audio component as a direct child of the Context.
+
 extern "C" {
 
 int32_t AudioPlayerBuffered() {

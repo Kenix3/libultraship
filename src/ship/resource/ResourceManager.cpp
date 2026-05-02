@@ -59,9 +59,9 @@ void ResourceManager::Init(const std::vector<std::string>& archivePaths,
 
     if (!IsLoaded()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
-        auto pool = GetThreadPool();
-        if (pool) {
-            pool->pause();
+        auto tpc = GetThreadPool();
+        if (tpc) {
+            tpc->Pause();
         }
     }
 }
@@ -212,7 +212,7 @@ ResourceManager::LoadResourceAsync(const ResourceIdentifier& identifier, bool lo
         return promise->get_future().share();
     }
 
-    return GetThreadPool()->submit_task(
+    return GetThreadPool()->GetPool()->submit_task(
         [this, identifier, loadExact, initData]() -> std::shared_ptr<IResource> {
             return LoadResourceProcess(identifier, loadExact, initData);
         },
@@ -330,7 +330,7 @@ ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
 ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    return GetThreadPool()->submit_task(
+    return GetThreadPool()->GetPool()->submit_task(
         [this, filter]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
             return LoadResourcesProcess(filter);
         },
@@ -351,7 +351,7 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadRe
 }
 
 void ResourceManager::DirtyResources(const ResourceFilter& filter) {
-    GetThreadPool()->submit_task([this, filter]() -> void {
+    GetThreadPool()->GetPool()->submit_task([this, filter]() -> void {
         auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
         for (const auto& key : *list.get()) {
@@ -375,7 +375,7 @@ void ResourceManager::UnloadResourcesAsync(const std::string& searchMask, BS::pr
 }
 
 void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    GetThreadPool()->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
+    GetThreadPool()->GetPool()->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {
@@ -517,13 +517,10 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
     return GetResourceRawPointer(resource);
 }
 
-std::shared_ptr<BS::thread_pool> ResourceManager::GetThreadPool() {
+std::shared_ptr<ThreadPoolComponent> ResourceManager::GetThreadPool() {
     auto context = Context::GetInstance();
     if (context) {
-        auto tpc = context->GetChildren().GetFirst<ThreadPoolComponent>();
-        if (tpc) {
-            return tpc->GetPool();
-        }
+        return context->GetChildren().GetFirst<ThreadPoolComponent>();
     }
     return nullptr;
 }

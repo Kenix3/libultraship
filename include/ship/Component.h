@@ -204,7 +204,9 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 // circular dependency.
 
 template <typename T> bool ComponentList::Has(const std::string& name) const {
+#ifdef COMPONENT_THREAD_SAFE
     const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+#endif
     const auto& list = this->GetList();
     return std::find_if(list.begin(), list.end(), [&name](const std::shared_ptr<Component>& c) {
                return c->GetName() == name && std::dynamic_pointer_cast<T>(c) != nullptr;
@@ -213,7 +215,9 @@ template <typename T> bool ComponentList::Has(const std::string& name) const {
 
 template <typename T>
 std::shared_ptr<std::vector<std::shared_ptr<T>>> ComponentList::Get(const std::string& name) const {
+#ifdef COMPONENT_THREAD_SAFE
     const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+#endif
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
     for (const auto& c : this->GetList()) {
         auto typed = std::dynamic_pointer_cast<T>(c);

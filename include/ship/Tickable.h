@@ -141,8 +141,11 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      */
     virtual void Stopped(const bool forced);
 
-    /** @brief Returns a reference to the internal mutex for synchronization. */
+    /** @brief Returns a reference to the internal mutex for synchronization.
+     *  Only available when COMPONENT_THREAD_SAFE is defined. */
+#ifdef COMPONENT_THREAD_SAFE
     std::mutex& GetMutex();
+#endif
 
   private:
 #ifdef INCLUDE_PROFILING
@@ -152,7 +155,9 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
     bool mIsTicking;
     ActionList mActions;
+#ifdef COMPONENT_THREAD_SAFE
     mutable std::mutex mMutex;
+#endif
 #ifdef INCLUDE_PROFILING
     std::chrono::time_point<std::chrono::steady_clock> mClocks[static_cast<size_t>(ClockType::ClockMax)];
 #endif
@@ -169,7 +174,9 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 #endif
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     {
+#ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::recursive_mutex> lock(mActions.GetMutex());
+#endif
         for (const auto& action : mActions.GetList()) {
             if (std::dynamic_pointer_cast<T>(action)) {
                 result->push_back(action);

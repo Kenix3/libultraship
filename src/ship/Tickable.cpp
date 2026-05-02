@@ -7,7 +7,11 @@
 namespace Ship {
 
 Tickable::Tickable(const bool isTicking)
-    : mIsTicking(isTicking), mActions(), mMutex()
+    : mIsTicking(isTicking), mActions()
+#ifdef COMPONENT_THREAD_SAFE
+      ,
+      mMutex()
+#endif
 #ifdef INCLUDE_PROFILING
       ,
       mClocks()
@@ -16,7 +20,11 @@ Tickable::Tickable(const bool isTicking)
 }
 
 Tickable::Tickable(const bool isTicking, const std::vector<std::shared_ptr<Action>>& actions)
-    : mIsTicking(isTicking), mActions(), mMutex()
+    : mIsTicking(isTicking), mActions()
+#ifdef COMPONENT_THREAD_SAFE
+      ,
+      mMutex()
+#endif
 #ifdef INCLUDE_PROFILING
       ,
       mClocks()
@@ -43,7 +51,9 @@ bool Tickable::Start(const bool force) {
     }
     const bool forced = !canStart && force;
     {
+#ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::mutex> lock(mMutex);
+#endif
         mIsTicking = true;
     }
     Started(forced);
@@ -66,7 +76,9 @@ bool Tickable::Stop(const bool force) {
     }
     const bool forced = !canStop && force;
     {
+#ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::mutex> lock(mMutex);
+#endif
         mIsTicking = false;
     }
     Stopped(forced);
@@ -175,9 +187,11 @@ double Tickable::GetTime(const ClockType clockType) const {
     return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
 }
 
+#ifdef COMPONENT_THREAD_SAFE
 std::mutex& Tickable::GetMutex() {
     return mMutex;
 }
+#endif
 
 std::chrono::time_point<std::chrono::steady_clock> Tickable::GetClock(const ClockType clockType) const {
     return mClocks[static_cast<size_t>(clockType)];
@@ -188,9 +202,11 @@ Tickable& Tickable::SetClock(const ClockType clockType, std::chrono::time_point<
     return *this;
 }
 #else
+#ifdef COMPONENT_THREAD_SAFE
 std::mutex& Tickable::GetMutex() {
     return mMutex;
 }
+#endif
 #endif
 
 } // namespace Ship
