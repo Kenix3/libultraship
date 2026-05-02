@@ -12,14 +12,14 @@ class ConcreteTickable : public TickableComponent {
     explicit ConcreteTickable(std::shared_ptr<Context> ctx,
                                TickGroup tg = TickGroup::TickGroupDefault,
                                TickPriority tp = TickPriority::TickPriorityDefault)
-        : TickableComponent("TestTC", ctx, tg, tp, false, false, false) {}
+        : TickableComponent("TestTC", ctx, tg, tp) {}
 
-    uint32_t mLastAction = 0;
+    std::string mLastEventName;
     double mLastDuration = 0.0;
     bool mActionRanCalled = false;
 
-    bool ActionRan(const uint32_t action, const double durationSinceLastTick) override {
-        mLastAction = action;
+    bool ActionRan(const std::string& eventName, const double durationSinceLastTick) override {
+        mLastEventName = eventName;
         mLastDuration = durationSinceLastTick;
         mActionRanCalled = true;
         return true;
@@ -200,18 +200,21 @@ TEST_F(TickableComponentTest, TickableListHasReturnsFalseWhenNotPresent) {
 
 TEST_F(TickableComponentTest, ActionRanCallbackDispatches) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->ActionRan(42u, 0.016);
+    tc->ActionRan("Tick", 0.016);
 
     EXPECT_TRUE(tc->mActionRanCalled);
-    EXPECT_EQ(tc->mLastAction, 42u);
+    EXPECT_EQ(tc->mLastEventName, "Tick");
     EXPECT_DOUBLE_EQ(tc->mLastDuration, 0.016);
 }
 
-// ---- Test 14: DebugMenuDrawn callback returns true by default ----
+// ---- Test 14: Default ActionRan returns true ----
 
-TEST_F(TickableComponentTest, DebugMenuDrawnDefaultReturnsTrue) {
+TEST_F(TickableComponentTest, DefaultActionRanReturnsTrue) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    EXPECT_TRUE(tc->DebugMenuDrawn(0.033));
+    // Base TickableComponent::ActionRan returns true
+    TickableComponent* base = tc.get();
+    // Call through the ConcreteTickable which overrides, so test base separately
+    EXPECT_TRUE(tc->ActionRan("DrawDebugMenu", 0.033));
 }
 
 // ---- Test 15: Constructor with explicit actions list registers with context ----
@@ -223,7 +226,7 @@ class ConcreteTickableWithActions : public TickableComponent {
                             TickPriority::TickPriorityDefault,
                             std::vector<std::shared_ptr<Action>>{}) {}
 
-    bool ActionRan(const uint32_t action, const double durationSinceLastTick) override {
+    bool ActionRan(const std::string& eventName, const double durationSinceLastTick) override {
         return true;
     }
 };

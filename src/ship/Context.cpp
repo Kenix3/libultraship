@@ -9,7 +9,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
-#include "default_context_json.h" // Auto-generated from default_context.json by CMake
+#include "ship/default_context_json.h" // Auto-generated from default_context.json by CMake
 #include "fast/debug/GfxDebugger.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
