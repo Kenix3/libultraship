@@ -13,8 +13,8 @@
 #include "ship/events/EventSystem.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
-#endif
 #include "ship/security/Keystore.h"
+#endif
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -54,8 +54,8 @@ Context::~Context() {
         mScriptLoader->UnloadAll();
     }
     mScriptLoader = nullptr;
-#endif
     mKeystore = nullptr;
+#endif
     GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
@@ -221,7 +221,9 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
         return true;
     }
 
+#ifdef ENABLE_SCRIPTING
     InitKeystore();
+#endif
 
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
     mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
@@ -388,7 +390,6 @@ bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> comp
     }
     return true;
 }
-#endif // ENABLE_SCRIPTING
 
 bool Context::InitKeystore() {
     if (GetKeystore() != nullptr) {
@@ -402,6 +403,7 @@ bool Context::InitKeystore() {
     }
     return true;
 }
+#endif // ENABLE_SCRIPTING
 
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() const {
     return mConsoleVariables;
@@ -455,11 +457,11 @@ std::shared_ptr<EventSystem> Context::GetEventSystem() const {
 std::shared_ptr<ScriptLoader> Context::GetScriptLoader() const {
     return mScriptLoader;
 }
-#endif
 
 std::shared_ptr<Keystore> Context::GetKeystore() const {
     return mKeystore;
 }
+#endif
 
 std::string Context::GetName() const {
     return mName;

@@ -380,6 +380,7 @@ TEST(ArchiveManager, GetGameVersionsEmptyOnStart) {
     EXPECT_TRUE(am.GetGameVersions().empty());
 }
 
+#ifdef ENABLE_SCRIPTING
 // ============================================================
 // ArchiveManager — UntrustedArchiveHandler
 // ============================================================
@@ -396,6 +397,7 @@ TEST(ArchiveManager, SetAndGetUntrustedArchiveHandler) {
 
     EXPECT_NE(am.GetUntrustedArchiveHandler(), nullptr);
 }
+#endif
 
 // ============================================================
 // ArchiveManager — WriteFile

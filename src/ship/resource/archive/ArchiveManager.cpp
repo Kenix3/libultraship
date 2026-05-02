@@ -296,6 +296,7 @@ bool ArchiveManager::IsGameVersionValid(uint32_t gameVersion) {
     return mValidGameVersions.empty() || mValidGameVersions.contains(gameVersion);
 }
 
+#ifdef ENABLE_SCRIPTING
 void ArchiveManager::SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler) {
     mUntrustedArchiveHandler = handler;
 }
@@ -303,5 +304,6 @@ void ArchiveManager::SetUntrustedArchiveHandler(const UntrustedArchiveHandler& h
 UntrustedArchiveHandler ArchiveManager::GetUntrustedArchiveHandler() const {
     return mUntrustedArchiveHandler;
 }
+#endif
 
 } // namespace Ship
