@@ -80,7 +80,7 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
 
 void EventDebuggerWindow::DrawElement() {
     bool collapseLogic = false;
-    auto events = Ship::Context::GetInstance()->GetEventSystem()->GetEventRegistrations();
+    auto events = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::EventSystem>()->GetEventRegistrations();
     bool doingCollapseOrExpand = hookOptExpandAll || hookOptCollapseAll;
 
     if (ImGui::Button("Expand All")) {

@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 #include "ship/audio/AudioPlayer.h"
+#include "ship/Component.h"
 
 namespace Ship {
-
 /** @brief Identifies the audio backend implementation in use. */
 enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
 
@@ -18,15 +18,20 @@ enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
  * SetCurrentAudioBackend(); the channel layout can be changed via SetAudioChannels()
  * without restarting the application.
  *
- * Obtain the instance from Context::GetAudio().
+ * **Required Context children (looked up at runtime):**
+ * - **Config** — queried during Init() and SetCurrentAudioBackend() to load/persist
+ *   the selected audio backend. Config must be added to the Context **before** calling
+ *   Audio::Init().
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Audio>()`.
  */
-class Audio {
+class Audio : public Component {
   public:
     /**
      * @brief Constructs an Audio manager with the given initial settings.
      * @param settings Initial audio backend selection and channel configuration.
      */
-    Audio(AudioSettings settings) : mAudioSettings(settings) {
+    Audio(AudioSettings settings) : Component("Audio"), mAudioSettings(settings) {
     }
     ~Audio();
 

@@ -12,11 +12,11 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) : Component("Window") {
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
-    mConfig = Context::GetInstance()->GetConfig();
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
 }
 
 Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
@@ -125,8 +125,8 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
-    Context::GetInstance()->GetConfig()->Save();
+    Context::GetInstance()->GetChildren().GetFirst<Config>()->SetWindowBackend(GetWindowBackend());
+    Context::GetInstance()->GetChildren().GetFirst<Config>()->Save();
 }
 
 void Window::AddAvailableWindowBackend(WindowBackend backend) {

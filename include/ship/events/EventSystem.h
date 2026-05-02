@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "ship/events/EventTypes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -39,6 +40,11 @@ struct EventRegistration {
  * cancellation itself — the caller is responsible for checking it via the
  * CALL_CANCELLABLE_EVENT macro.
  *
+ * **Required Context children:** None — EventSystem has no dependencies on other
+ * components.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<EventSystem>()`.
+ *
  * Typical usage (C++ side):
  * @code
  * // Registration (once at startup)
@@ -54,8 +60,10 @@ struct EventRegistration {
  * CALL_EVENT(MyEvent, payload);
  * @endcode
  */
-class EventSystem {
+class EventSystem : public Component {
   public:
+    EventSystem() : Component("EventSystem") {
+    }
     /**
      * @brief Allocates a new unique EventID and optionally assigns it a debug name.
      * @param name Optional human-readable name for diagnostics (may be nullptr).

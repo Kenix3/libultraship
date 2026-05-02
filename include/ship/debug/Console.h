@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <imgui.h>
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -51,9 +52,15 @@ struct CommandEntry {
  * to the matching handler. Built-in commands (help, bind, set, get, …) are
  * registered by ConsoleWindow during its initialization.
  *
- * Obtain the instance from Context::GetConsole().
+ * **Required Context children (looked up at runtime):**
+ * - **Console** itself — command handlers use
+ *   `Context::GetChildren().GetFirst<Console>()` to obtain the Console when
+ *   executing commands. This is satisfied automatically once Console is added
+ *   to the Context.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Console>()`.
  */
-class Console {
+class Console : public Component {
   public:
     Console();
     ~Console();

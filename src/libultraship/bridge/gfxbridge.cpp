@@ -7,15 +7,17 @@
 // Set the dimensions for the VI mode that the console would be using
 // (Usually 320x240 for lo-res and 640x480 for hi-res)
 extern "C" void GfxSetNativeDimensions(uint32_t width, uint32_t height) {
-    Fast::Interpreter* gfx = static_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())
-                                 ->GetInterpreterWeak()
-                                 .lock()
-                                 .get();
+    Fast::Interpreter* gfx =
+        static_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>())
+            ->GetInterpreterWeak()
+            .lock()
+            .get();
     gfx->SetNativeDimensions(width, height);
 }
 
 extern "C" void GfxGetPixelDepthPrepare(float x, float y) {
-    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
+    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
     if (wnd == nullptr) {
         return;
     }
@@ -23,7 +25,8 @@ extern "C" void GfxGetPixelDepthPrepare(float x, float y) {
 }
 
 extern "C" uint16_t GfxGetPixelDepth(float x, float y) {
-    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
+    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
     if (wnd == nullptr) {
         return 0;
     }

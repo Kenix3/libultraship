@@ -32,13 +32,14 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(ledMappingIdsCvarKey.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            ledMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(ledMappingIdsCvarKey.c_str(),
-                                                                       ledMappingIdListString.c_str());
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+            ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
 }
 
 void ControllerLED::AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping) {
@@ -103,7 +104,8 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     std::stringstream ledMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(ledMappingIdsCvarKey.c_str(), ""));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(ledMappingIdsCvarKey.c_str(),
+                                                                                           ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
         LoadLEDMappingFromConfig(ledMappingIdString);
@@ -128,8 +130,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     SaveLEDMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
     return true;
 }
 

@@ -8,6 +8,27 @@ union Gfx;
 #include "interpreter.h"
 
 namespace Fast {
+
+/**
+ * @brief Fast3D-based window and rendering context.
+ *
+ * Fast3dWindow drives the Fast3D graphics pipeline and integrates with the
+ * Ship component hierarchy. The following components must be present as
+ * **direct children of the Context** before Fast3dWindow is used:
+ *
+ *  - **Fast3dWindow** itself (Ship::Window) — registered so that keyboard/mouse
+ *    event handlers can look up the active window.
+ *  - **Ship::Config** — queried by Fast3dWindow and the DXGI/DX11 back-ends for
+ *    persistent window settings (resolution, fullscreen, etc.).
+ *  - **Ship::ConsoleVariable** — read by all Fast3D back-ends for runtime
+ *    rendering toggles.
+ *  - **Ship::ResourceManager** — required by the DX11 and OpenGL back-ends for
+ *    shader/texture resource loading.
+ *  - **Ship::FileDropMgr** — required by the DXGI back-end to handle file-drop
+ *    events forwarded from the OS.
+ *  - **Ship::ControlDeck** — required for keyboard and mouse input routing.
+ *  - **Fast::GfxDebugger** — required by the interpreter for debug-draw mode.
+ */
 class Fast3dWindow : public Ship::Window {
   public:
     Fast3dWindow();

@@ -1,0 +1,40 @@
+#pragma once
+
+#include <memory>
+#include <string>
+#include <spdlog/logger.h>
+#include "ship/Component.h"
+
+namespace Ship {
+
+/**
+ * @brief Component wrapper around an spdlog::logger instance.
+ *
+ * LoggerComponent exposes a shared spdlog logger within the component system,
+ * allowing it to participate in the Component hierarchy and be looked up by name.
+ *
+ * **Required Context children:** None — LoggerComponent has no dependencies on
+ * other components.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<LoggerComponent>()`.
+ */
+class LoggerComponent : public Component {
+  public:
+    /**
+     * @brief Constructs a LoggerComponent wrapping the given logger.
+     * @param logger The spdlog logger instance to wrap.
+     */
+    explicit LoggerComponent(std::shared_ptr<spdlog::logger> logger);
+    ~LoggerComponent() override = default;
+
+    /**
+     * @brief Returns the underlying spdlog logger.
+     * @return A shared pointer to the spdlog::logger.
+     */
+    std::shared_ptr<spdlog::logger> Get() const;
+
+  private:
+    std::shared_ptr<spdlog::logger> mLogger;
+};
+
+} // namespace Ship

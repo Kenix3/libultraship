@@ -228,7 +228,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = std::static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -315,8 +315,8 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -381,8 +381,8 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -672,7 +672,8 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
             const int n64modeFactor = 120;
             const int noVanishFactor = 100;
             GLfloat SSDB = -2;
-            switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+            switch (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+                CVAR_Z_FIGHTING_MODE, 0)) {
                 // scaled z-fighting (N64 mode like)
                 case 1:
                     if (mFrameBuffers.size() >

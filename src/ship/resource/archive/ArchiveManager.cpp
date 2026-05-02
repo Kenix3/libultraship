@@ -14,7 +14,7 @@
 #include "ship/utils/StrHash64.h"
 
 namespace Ship {
-ArchiveManager::ArchiveManager() {
+ArchiveManager::ArchiveManager() : Component("ArchiveManager") {
 }
 
 void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
