@@ -65,7 +65,9 @@ TEST_F(TickableComponentTest, UnregisterFromContextRemovesFromTickableList) {
 // ---- Test 3: SetContext() moves from old context to new context ----
 
 TEST_F(TickableComponentTest, SetContextMovesFromOldToNew) {
-    auto ctx2 = Context::CreateInstance("test2", "t2", "");
+    // Construct a second Context directly; CreateInstance would return the existing
+    // singleton while mContext is still alive.
+    auto ctx2 = std::make_shared<Context>("test2", "t2", "");
 
     auto tc = std::make_shared<ConcreteTickable>(mContext);
     tc->RegisterWithContext(tc);
