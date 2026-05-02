@@ -72,6 +72,27 @@ class Context : public Component {
                           std::shared_ptr<Component> controlDeck = nullptr);
 
     /**
+     * @brief Builds and initializes components from a JSON specification.
+     *
+     * The JSON object should have the following structure:
+     * - "components": array of component descriptors, each with:
+     *   - "type": string identifying the component type
+     *   - "name": string name for the component
+     *   - "dependencies": optional array of dependency names
+     *   - "condition": optional compile-time condition (e.g. "ENABLE_SCRIPTING")
+     * - "initOrder": array of component names specifying initialization order
+     *
+     * @param context  The context to add components to.
+     * @param json     The JSON specification.
+     * @param initArgs A JSON object keyed by component name with init arguments for each.
+     * @param overrides Map of type→component for externally-provided components (e.g. Window, ControlDeck).
+     * @return True if all components were built and initialized successfully.
+     */
+    static bool BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
+                                        const nlohmann::json& initArgs = nlohmann::json::object(),
+                                        const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides = {});
+
+    /**
      * @brief Creates and stores the global Context instance without adding any default components.
      *
      * Consumers should add their own components via GetChildren().Add() after creation.

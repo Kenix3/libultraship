@@ -86,7 +86,7 @@ class Fast3dWindow : public Ship::Window {
     std::weak_ptr<Interpreter> GetInterpreterWeak() const;
 
   protected:
-    void OnInit() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);

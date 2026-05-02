@@ -55,7 +55,7 @@ Fast3dWindow::~Fast3dWindow() {
     delete mWindowManagerApi;
 }
 
-void Fast3dWindow::OnInit() {
+void Fast3dWindow::OnInit(const nlohmann::json& /*initArgs*/) {
     Window::OnInit();
 
     mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();

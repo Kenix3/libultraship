@@ -21,6 +21,10 @@ endif()
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/install_config.h @ONLY)
 
+# Embed default_context.json into a header at configure time.
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/ship/default_context.json DEFAULT_CONTEXT_JSON)
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/default_context_json.h.in ${CMAKE_CURRENT_BINARY_DIR}/ship/default_context_json.h @ONLY)
+
 if(ENABLE_SCRIPTING)
     file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
     set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)

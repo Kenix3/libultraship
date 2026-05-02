@@ -7,9 +7,11 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
+#include "default_context_json.h"
 #include "fast/debug/GfxDebugger.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/window/FileDropMgr.h"
 #include "ship/log/LoggerComponent.h"
@@ -244,6 +246,117 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     audio->Init();
 
     return shared;
+}
+
+bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
+                                      const nlohmann::json& initArgs,
+                                      const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides) {
+    if (!json.contains("components") || !json["components"].is_array()) {
+        SPDLOG_ERROR("BuildComponentsFromJson: missing or invalid 'components' array");
+        return false;
+    }
+
+    // Set of compile-time conditions that are active.
+    std::unordered_set<std::string> activeConditions;
+#ifdef ENABLE_SCRIPTING
+    activeConditions.insert("ENABLE_SCRIPTING");
+#endif
+#ifdef ENABLE_DX11
+    activeConditions.insert("ENABLE_DX11");
+#endif
+
+    // Phase 1: Create and add all components.
+    for (const auto& entry : json["components"]) {
+        if (!entry.contains("type") || !entry["type"].is_string()) {
+            continue;
+        }
+        std::string type = entry["type"].get<std::string>();
+        std::string name = entry.value("name", type);
+
+        // Check compile-time condition.
+        if (entry.contains("condition") && entry["condition"].is_string()) {
+            std::string condition = entry["condition"].get<std::string>();
+            if (activeConditions.find(condition) == activeConditions.end()) {
+                continue;
+            }
+        }
+
+        // Check if an override is provided.
+        if (overrides.count(type)) {
+            context->GetChildren().Add(overrides.at(type));
+            continue;
+        }
+
+        // Factory: create component by type name.
+        std::shared_ptr<Component> component = nullptr;
+        nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+
+        if (type == "Config") {
+            std::string configPath = compArgs.value("path", "");
+            component = std::make_shared<Config>(configPath);
+        } else if (type == "ConsoleVariable") {
+            component = std::make_shared<ConsoleVariable>();
+        } else if (type == "ThreadPoolComponent") {
+            size_t threadCount = compArgs.value("threadCount", static_cast<size_t>(1));
+            component = std::make_shared<ThreadPoolComponent>(threadCount);
+        } else if (type == "ResourceManager") {
+            component = std::make_shared<ResourceManager>();
+        } else if (type == "CrashHandler") {
+            component = std::make_shared<CrashHandler>();
+        } else if (type == "Console") {
+            component = std::make_shared<Console>();
+        } else if (type == "Audio") {
+            AudioSettings settings;
+            if (compArgs.contains("channelSetting")) {
+                settings.ChannelSetting = static_cast<AudioChannelsSetting>(compArgs["channelSetting"].get<int>());
+            }
+            component = std::make_shared<Audio>(settings);
+        } else if (type == "GfxDebugger") {
+            component = std::make_shared<Fast::GfxDebugger>();
+        } else if (type == "Events") {
+            component = std::make_shared<Events>();
+        } else if (type == "FileDropMgr") {
+            component = std::make_shared<FileDropMgr>();
+        } else if (type == "LoggerComponent") {
+            // LoggerComponent requires a logger - skip if not provided in overrides.
+            continue;
+#ifdef ENABLE_SCRIPTING
+        } else if (type == "Keystore") {
+            component = std::make_shared<Keystore>();
+        } else if (type == "ScriptLoader") {
+            component = std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
+                                                       std::vector<std::string>{}, std::vector<std::string>{},
+                                                       std::vector<std::string>{});
+#endif
+        } else {
+            SPDLOG_WARN("BuildComponentsFromJson: unknown component type '{}'", type);
+            continue;
+        }
+
+        if (component) {
+            context->GetChildren().Add(component);
+        }
+    }
+
+    // Phase 2: Initialize components in declared order.
+    if (json.contains("initOrder") && json["initOrder"].is_array()) {
+        for (const auto& nameEntry : json["initOrder"]) {
+            if (!nameEntry.is_string()) {
+                continue;
+            }
+            std::string name = nameEntry.get<std::string>();
+            auto components = context->GetChildren().Get();
+            for (const auto& comp : *components) {
+                if (comp->GetName() == name && !comp->IsInitialized()) {
+                    nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+                    comp->Init(compArgs);
+                    break;
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,

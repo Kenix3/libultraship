@@ -234,7 +234,10 @@ class Window : public Component {
      * @throws std::runtime_error if Config is not present in the Context hierarchy.
      * @throws std::runtime_error if Config is present but not yet initialized.
      */
-    void OnInit() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Config as a dependency. */
+    nlohmann::json GetDependencies() const override;
 
     /** @brief Returns the cached Config component. Subclasses use this after OnInit() runs. */
     std::shared_ptr<Config> GetConfig() const;

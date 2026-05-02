@@ -132,7 +132,7 @@ class Console : public Component {
      *
      * **Required Context children:** None.
      */
-    void OnInit() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
   private:
     std::map<std::string, CommandEntry> mCommands;

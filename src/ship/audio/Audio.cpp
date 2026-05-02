@@ -41,7 +41,7 @@ void Audio::InitAudioPlayer() {
     }
 }
 
-void Audio::OnInit() {
+void Audio::OnInit(const nlohmann::json& /*initArgs*/) {
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
@@ -98,6 +98,10 @@ void Audio::SetAudioChannels(AudioChannelsSetting channels) {
 
 AudioChannelsSetting Audio::GetAudioChannels() const {
     return mAudioSettings.ChannelSetting;
+}
+
+nlohmann::json Audio::GetDependencies() const {
+    return nlohmann::json::array({"Config"});
 }
 
 } // namespace Ship

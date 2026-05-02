@@ -70,11 +70,49 @@ std::shared_ptr<Component> Component::GetSharedComponent() {
     return shared_from_this();
 }
 
-void Component::Init() {
+void Component::Init(const nlohmann::json& initArgs) {
     if (mIsInitialized) {
         return;
     }
-    OnInit();
+
+    // Check declared dependencies before calling OnInit.
+    auto deps = GetDependencies();
+    if (deps.is_array()) {
+        for (const auto& dep : deps) {
+            if (!dep.is_string()) {
+                continue;
+            }
+            std::string depName = dep.get<std::string>();
+            // Search parents for the dependency (siblings are children of our parent).
+            bool found = false;
+            auto parents = GetParents().Get();
+            for (const auto& parent : *parents) {
+                auto siblings = parent->GetChildren().Get();
+                for (const auto& sibling : *siblings) {
+                    if (sibling.get() == this) {
+                        continue;
+                    }
+                    if (sibling->GetName() == depName) {
+                        if (!sibling->IsInitialized()) {
+                            throw std::runtime_error(GetName() + " requires " + depName +
+                                                     " to be initialized before it");
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
+                }
+            }
+            if (!found) {
+                throw std::runtime_error(GetName() + " requires " + depName +
+                                         " in the component hierarchy but it was not found");
+            }
+        }
+    }
+
+    OnInit(initArgs);
     mIsInitialized = true;
 }
 
@@ -82,8 +120,12 @@ bool Component::IsInitialized() const {
     return mIsInitialized;
 }
 
-void Component::OnInit() {
+void Component::OnInit(const nlohmann::json& /*initArgs*/) {
     // Default: no-op. Subclasses override to perform initialization.
+}
+
+nlohmann::json Component::GetDependencies() const {
+    return nlohmann::json::array();
 }
 
 void Component::MarkInitialized() {

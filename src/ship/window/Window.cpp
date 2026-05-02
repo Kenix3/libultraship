@@ -134,7 +134,7 @@ void Window::AddAvailableWindowBackend(WindowBackend backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 
-void Window::OnInit() {
+void Window::OnInit(const nlohmann::json& /*initArgs*/) {
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
     if (!mConfig) {
         throw std::runtime_error("Window requires Config in the component hierarchy");
@@ -146,5 +146,9 @@ void Window::OnInit() {
 
 std::shared_ptr<Config> Window::GetConfig() const {
     return mConfig;
+}
+
+nlohmann::json Window::GetDependencies() const {
+    return nlohmann::json::array({"Config"});
 }
 } // namespace Ship

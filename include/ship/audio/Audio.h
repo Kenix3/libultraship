@@ -89,7 +89,10 @@ class Audio : public Component {
      * @throws std::runtime_error if Config is not present in the hierarchy.
      * @throws std::runtime_error if Config is present but not yet initialized.
      */
-    void OnInit() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Config as a dependency. */
+    nlohmann::json GetDependencies() const override;
 
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;

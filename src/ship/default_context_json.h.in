@@ -1,0 +1,8 @@
+#pragma once
+
+// Auto-generated from default_context.json — do not edit manually.
+// clang-format off
+namespace Ship {
+inline constexpr const char* kDefaultContextJson = R"JSON(@DEFAULT_CONTEXT_JSON@)JSON";
+} // namespace Ship
+// clang-format on

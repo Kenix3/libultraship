@@ -11,7 +11,7 @@ Console::~Console() {
     SPDLOG_TRACE("destruct console");
 }
 
-void Console::OnInit() {
+void Console::OnInit(const nlohmann::json& /*initArgs*/) {
 }
 
 std::string Console::BuildUsage(const CommandEntry& entry) {

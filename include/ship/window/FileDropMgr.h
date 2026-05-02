@@ -70,7 +70,10 @@ class FileDropMgr : public Component {
 
   protected:
     /** @brief Caches the Window component from the Context hierarchy. */
-    void OnInit() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Window as a dependency. */
+    nlohmann::json GetDependencies() const override;
 
   private:
     std::vector<FileDroppedFunc> mRegisteredFuncs;

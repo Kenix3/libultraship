@@ -118,12 +118,16 @@ void FileDropMgr::CallHandlers() {
     gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
 }
 
-void FileDropMgr::OnInit() {
+void FileDropMgr::OnInit(const nlohmann::json& /*initArgs*/) {
     mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
 
 std::shared_ptr<Window> FileDropMgr::GetWindow() const {
     return mWindow;
+}
+
+nlohmann::json FileDropMgr::GetDependencies() const {
+    return nlohmann::json::array({"Window"});
 }
 
 } // namespace Ship

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <queue>
 #include <unordered_set>
+#include <nlohmann/json.hpp>
 
 #ifdef COMPONENT_THREAD_SAFE
 #include <shared_mutex>
@@ -39,21 +40,21 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * @brief Performs one-time initialization of this component.
      *
      * This method is non-virtual and manages the initialized state flag. It
-     * calls the protected virtual OnInit() hook exactly once; subsequent calls
-     * are no-ops. Concrete subclasses that need parameter-free initialization
-     * should override OnInit() rather than Init().
+     * first verifies that all dependencies declared by GetDependencies() are
+     * present and initialized, then calls the protected virtual OnInit() hook
+     * exactly once; subsequent calls are no-ops.
+     *
+     * Concrete subclasses that need parameter-free initialization should
+     * override OnInit() rather than Init().
      *
      * Subclasses that require initialization parameters (e.g. ResourceManager)
      * provide their own Init(…) overload and must call MarkInitialized() when
      * initialization succeeds.
      *
-     * @note Init-order dependency: Components that call GetChildren().GetFirst<T>()
-     *       inside OnInit() require T to be present in the hierarchy. If T also
-     *       requires initialization before use, it must be IsInitialized() at the
-     *       point OnInit() is called. Context::CreateDefaultInstance() ensures all
-     *       components are added before any Init() is invoked.
+     * @param initArgs Optional JSON object containing initialization arguments
+     *                 for this component. Passed through to OnInit().
      */
-    void Init();
+    void Init(const nlohmann::json& initArgs = nlohmann::json::object());
 
     /**
      * @brief Returns true once Init() (or MarkInitialized()) has completed
@@ -65,6 +66,25 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * only after that call succeeds.
      */
     bool IsInitialized() const;
+
+    /**
+     * @brief Returns a JSON array of dependency component names.
+     *
+     * Each element is the name (string) of a sibling component that must be
+     * present and initialized before this component's OnInit() is called.
+     * Init() checks these at runtime and throws if any are unmet.
+     *
+     * Override in subclasses to declare dependencies. Default returns an empty
+     * array (no dependencies).
+     *
+     * Example:
+     * @code
+     * nlohmann::json GetDependencies() const override {
+     *     return nlohmann::json::array({"Config", "ThreadPool"});
+     * }
+     * @endcode
+     */
+    virtual nlohmann::json GetDependencies() const;
 
     /** @brief Returns the name of this Component. */
     const std::string& GetName() const;
@@ -133,16 +153,19 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     /**
      * @brief Override this to implement component-specific initialization logic.
      *
-     * Called by Init() the first time it is invoked. After OnInit() returns
-     * without throwing, the component is marked as initialized. If OnInit()
-     * throws, the component remains uninitialized so Init() may be retried.
+     * Called by Init() the first time it is invoked, after dependency checks pass.
+     * After OnInit() returns without throwing, the component is marked as initialized.
+     * If OnInit() throws, the component remains uninitialized so Init() may be retried.
+     *
+     * @param initArgs JSON object with component-specific initialization arguments
+     *                 from the build hierarchy. Default implementation ignores them.
      *
      * Components with initialization parameters (ResourceManager, Window, …)
      * provide their own Init(…) overload instead of overriding this method.
      *
      * The default implementation is a no-op.
      */
-    virtual void OnInit();
+    virtual void OnInit(const nlohmann::json& initArgs = nlohmann::json::object());
 
     /**
      * @brief Marks this component as initialized without going through Init().

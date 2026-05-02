@@ -1,0 +1,77 @@
+{
+    "components": [
+        {
+            "type": "LoggerComponent",
+            "name": "Logger"
+        },
+        {
+            "type": "Config",
+            "name": "Config"
+        },
+        {
+            "type": "ConsoleVariable",
+            "name": "ConsoleVariable"
+        },
+        {
+            "type": "ThreadPoolComponent",
+            "name": "ThreadPool"
+        },
+        {
+            "type": "Keystore",
+            "name": "Keystore",
+            "condition": "ENABLE_SCRIPTING"
+        },
+        {
+            "type": "ResourceManager",
+            "name": "ResourceManager",
+            "dependencies": ["ThreadPool"]
+        },
+        {
+            "type": "ControlDeck",
+            "name": "ControlDeck"
+        },
+        {
+            "type": "CrashHandler",
+            "name": "CrashHandler"
+        },
+        {
+            "type": "Console",
+            "name": "Console"
+        },
+        {
+            "type": "Window",
+            "name": "Window",
+            "dependencies": ["Config"]
+        },
+        {
+            "type": "Audio",
+            "name": "Audio",
+            "dependencies": ["Config"]
+        },
+        {
+            "type": "GfxDebugger",
+            "name": "GfxDebugger"
+        },
+        {
+            "type": "Events",
+            "name": "Events"
+        },
+        {
+            "type": "FileDropMgr",
+            "name": "FileDropMgr",
+            "dependencies": ["Window"]
+        },
+        {
+            "type": "ScriptLoader",
+            "name": "ScriptLoader",
+            "condition": "ENABLE_SCRIPTING"
+        }
+    ],
+    "initOrder": [
+        "ResourceManager",
+        "Console",
+        "Window",
+        "FileDropMgr",
+        "Audio"
+    ]
+}
