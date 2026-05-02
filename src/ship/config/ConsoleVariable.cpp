@@ -14,6 +14,7 @@ namespace Ship {
 
 ConsoleVariable::ConsoleVariable() : Component("ConsoleVariables") {
     Load();
+    MarkInitialized();
 }
 
 ConsoleVariable::~ConsoleVariable() {

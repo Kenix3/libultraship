@@ -441,6 +441,7 @@ CrashHandler::CrashHandler() : Component("CrashHandler"), mOutBuffer(std::make_u
 #elif defined(_WIN32)
     SetUnhandledExceptionFilter(seh_filter);
 #endif
+    MarkInitialized();
 }
 
 CrashHandler::CrashHandler(CrashHandlerCallback callback) : CrashHandler() {

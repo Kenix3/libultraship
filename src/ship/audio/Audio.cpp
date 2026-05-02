@@ -41,7 +41,7 @@ void Audio::InitAudioPlayer() {
     }
 }
 
-void Audio::Init() {
+void Audio::OnInit() {
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
@@ -55,6 +55,9 @@ void Audio::Init() {
     auto config = Context::GetInstance()->GetChildren().GetFirst<Config>();
     if (!config) {
         throw std::runtime_error("Audio requires Config in the component hierarchy");
+    }
+    if (!config->IsInitialized()) {
+        throw std::runtime_error("Audio::Init requires Config to be initialized before Audio");
     }
     SetCurrentAudioBackend(config->GetCurrentAudioBackend());
 }

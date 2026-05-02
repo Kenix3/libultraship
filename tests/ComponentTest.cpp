@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include "ship/Component.h"
 
 using namespace Ship;
@@ -409,4 +410,125 @@ TEST(ComponentTest, GetCountReflectsAddAndRemove) {
 
     parent->GetChildren().Remove();
     EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
+}
+
+// ---- Component::Init / OnInit / IsInitialized / MarkInitialized tests ----
+
+// A component that tracks how many times OnInit() was called.
+class TrackingComponent : public Component {
+  public:
+    explicit TrackingComponent(const std::string& name = "TrackingComponent") : Component(name) {}
+    int onInitCallCount = 0;
+
+  protected:
+    void OnInit() override {
+        onInitCallCount++;
+    }
+};
+
+// A component that auto-marks itself initialized on construction (like Config).
+class AutoInitComponent : public Component {
+  public:
+    explicit AutoInitComponent(const std::string& name = "AutoInitComponent") : Component(name) {
+        MarkInitialized();
+    }
+};
+
+// A component whose OnInit() throws.
+class ThrowingComponent : public Component {
+  public:
+    explicit ThrowingComponent() : Component("ThrowingComponent") {}
+
+  protected:
+    void OnInit() override {
+        throw std::runtime_error("OnInit failed");
+    }
+};
+
+TEST(ComponentInitTest, NotInitializedByDefault) {
+    auto c = std::make_shared<TestComponent>("Foo");
+    EXPECT_FALSE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, InitSetsIsInitialized) {
+    auto c = std::make_shared<TestComponent>("Foo");
+    c->Init();
+    EXPECT_TRUE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, InitCallsOnInit) {
+    auto c = std::make_shared<TrackingComponent>();
+    EXPECT_EQ(c->onInitCallCount, 0);
+    c->Init();
+    EXPECT_EQ(c->onInitCallCount, 1);
+}
+
+TEST(ComponentInitTest, InitIsIdempotent) {
+    auto c = std::make_shared<TrackingComponent>();
+    c->Init();
+    c->Init();
+    c->Init();
+    // OnInit() must be called exactly once even when Init() is called multiple times.
+    EXPECT_EQ(c->onInitCallCount, 1);
+    EXPECT_TRUE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, MarkInitializedSetsFlag) {
+    auto c = std::make_shared<AutoInitComponent>();
+    EXPECT_TRUE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, MarkInitializedPreventsOnInitFromBeingCalledByInit) {
+    // A component that has already called MarkInitialized() in its constructor
+    // should not call OnInit() again if Init() is subsequently called.
+    class CountingAutoInit : public Component {
+      public:
+        int onInitCallCount = 0;
+        CountingAutoInit() : Component("CountingAutoInit") { MarkInitialized(); }
+      protected:
+        void OnInit() override { onInitCallCount++; }
+    };
+    auto c = std::make_shared<CountingAutoInit>();
+    c->Init(); // should be a no-op since already marked
+    EXPECT_EQ(c->onInitCallCount, 0);
+    EXPECT_TRUE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, InitDoesNotMarkInitializedIfOnInitThrows) {
+    auto c = std::make_shared<ThrowingComponent>();
+    EXPECT_FALSE(c->IsInitialized());
+    EXPECT_THROW(c->Init(), std::runtime_error);
+    // After a failed OnInit(), the component must remain uninitialized.
+    EXPECT_FALSE(c->IsInitialized());
+}
+
+TEST(ComponentInitTest, InitCanRetryAfterOnInitThrows) {
+    class ConditionalThrow : public Component {
+      public:
+        bool shouldThrow = true;
+        int callCount = 0;
+        ConditionalThrow() : Component("ConditionalThrow") {}
+      protected:
+        void OnInit() override {
+            callCount++;
+            if (shouldThrow) throw std::runtime_error("not ready");
+        }
+    };
+    auto c = std::make_shared<ConditionalThrow>();
+    EXPECT_THROW(c->Init(), std::runtime_error);
+    EXPECT_FALSE(c->IsInitialized());
+    EXPECT_EQ(c->callCount, 1);
+
+    // Fix the condition and retry.
+    c->shouldThrow = false;
+    c->Init();
+    EXPECT_TRUE(c->IsInitialized());
+    EXPECT_EQ(c->callCount, 2);
+}
+
+TEST(ComponentInitTest, DefaultOnInitIsNoOp) {
+    // The base Component::Init() calls the default (no-op) OnInit() without error.
+    auto c = std::make_shared<TestComponent>("NoOpInit");
+    EXPECT_NO_THROW(c->Init());
+    EXPECT_TRUE(c->IsInitialized());
 }

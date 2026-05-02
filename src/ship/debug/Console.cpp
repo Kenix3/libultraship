@@ -12,7 +12,7 @@ Console::~Console() {
     SPDLOG_TRACE("destruct console");
 }
 
-void Console::Init() {
+void Console::OnInit() {
 }
 
 std::string Console::BuildUsage(const CommandEntry& entry) {

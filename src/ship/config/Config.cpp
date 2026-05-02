@@ -18,6 +18,7 @@ namespace fs = std::filesystem;
 namespace Ship {
 Config::Config(std::string path) : Component("Config"), mPath(std::move(path)), mIsNewInstance(false) {
     Reload();
+    MarkInitialized();
 }
 
 Config::~Config() {

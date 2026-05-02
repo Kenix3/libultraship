@@ -5,6 +5,7 @@ namespace Ship {
 
 LoggerComponent::LoggerComponent(std::shared_ptr<spdlog::logger> logger)
     : Component("LoggerComponent"), mLogger(std::move(logger)) {
+    MarkInitialized();
 }
 
 std::shared_ptr<spdlog::logger> LoggerComponent::Get() const {

@@ -66,12 +66,14 @@ class Console : public Component {
     ~Console();
 
     /**
-     * @brief Registers built-in commands.
+     * @brief Registers built-in commands. Called by Component::Init().
      *
-     * Called automatically by Context::InitConsole(); do not call manually.
+     * Called automatically by Context::CreateDefaultInstance(); do not call manually.
+     * Use Component::Init() to trigger initialization.
+     *
+     * **Required Context children:** None — Console has no external dependencies
+     * at initialization time.
      */
-    void Init();
-
     /**
      * @brief Parses and dispatches a command string.
      *
@@ -125,6 +127,13 @@ class Console : public Component {
     std::map<std::string, CommandEntry>& GetCommands();
 
   protected:
+    /**
+     * @brief Registers built-in commands. Called automatically by Component::Init().
+     *
+     * **Required Context children:** None.
+     */
+    void OnInit() override;
+
   private:
     std::map<std::string, CommandEntry> mCommands;
 };

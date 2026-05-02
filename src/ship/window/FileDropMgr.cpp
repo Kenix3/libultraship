@@ -18,6 +18,7 @@
 
 namespace Ship {
 FileDropMgr::FileDropMgr() : Component("FileDropMgr") {
+    MarkInitialized();
 }
 
 FileDropMgr::~FileDropMgr() {

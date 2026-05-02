@@ -64,6 +64,9 @@ void ResourceManager::Init(const std::vector<std::string>& archivePaths,
             tpc->Pause();
         }
     }
+
+    // Mark initialized so dependents can check IsInitialized() before proceeding.
+    MarkInitialized();
 }
 
 ResourceManager::~ResourceManager() {

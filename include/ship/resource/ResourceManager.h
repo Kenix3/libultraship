@@ -84,10 +84,16 @@ struct ResourceIdentifierHash {
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * **Required Context children (looked up at runtime):**
+ * **Required Context children (looked up at Init time):**
  * - **ThreadPoolComponent** — used for all asynchronous resource load/unload
- *   operations. If absent, async operations will return nullptr. ThreadPoolComponent
- *   should be added to the Context before ResourceManager::Init() is called.
+ *   operations. ThreadPoolComponent self-initializes on construction, so adding it
+ *   to the Context before calling ResourceManager::Init() satisfies this requirement.
+ *
+ * @note Init-order dependency: ThreadPoolComponent must be present in the Context
+ *       hierarchy before ResourceManager::Init() is called. There is no strict
+ *       requirement that ThreadPoolComponent::IsInitialized() returns true at that
+ *       point (it always does after construction), but it must be reachable via
+ *       `Context::GetChildren().GetFirst<ThreadPoolComponent>()`.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */

@@ -23,6 +23,19 @@ namespace Ship {
  * initialization order.
  *
  * Subsystems are retrieved via GetChildren().GetFirst<T>().
+ *
+ * **Suggested future hierarchy changes (not yet implemented):**
+ * The following reorganizations would better reflect logical ownership and reduce
+ * cross-component dependencies. Implementing them requires migrating call sites:
+ * - **FileDropMgr → child of Window**: file-drop events originate from the OS
+ *   window; FileDropMgr has no reason to be a direct Context child.
+ * - **ControlDeck → child of Window**: game input is driven by and scoped to
+ *   the active window surface. Moving it under Window makes the ownership clear.
+ * - **Audio → child of Window**: audio is part of the game presentation layer
+ *   and logically belongs alongside the window.
+ * - **Console → child of Window**: the developer console is rendered inside
+ *   the GUI layer (ConsoleWindow); placing Console under Window co-locates it
+ *   with its presentation layer.
  */
 class Context : public Component {
   public:
@@ -36,11 +49,20 @@ class Context : public Component {
      * @brief Creates and stores the global Context instance with the default set of components.
      *
      * This is the convenience factory that replicates the original initialization order:
-     * Logging, Config, ConsoleVariables, ThreadPool, ResourceManager, ControlDeck,
+     * Logging, Config, ConsoleVariables, ThreadPool, Keystore, ResourceManager, ControlDeck,
      * CrashHandler, Console, Window, Audio, GfxDebugger, Events, FileDropMgr,
-     * ScriptLoader (if enabled), and Keystore.
+     * and ScriptLoader (if enabled).
      *
-     * All components are added to the hierarchy before any Init() is called.
+     * **All components are added to the hierarchy before any Init() is called.**
+     * This ensures that every component can safely look up siblings during its own
+     * Init() without requiring a specific add-order dependency.
+     *
+     * **Init-order dependencies within this factory:**
+     * - ResourceManager::Init() — ThreadPoolComponent must be present (it self-initializes
+     *   on construction, so it is always ready).
+     * - Window::InitBase() — Config must be present and initialized (Config self-initializes
+     *   on construction).
+     * - Audio::OnInit() — Config must be present and initialized (same as above).
      */
     static std::shared_ptr<Context>
     CreateDefaultInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,

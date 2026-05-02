@@ -63,6 +63,7 @@ struct EventRegistration {
 class Events : public Component {
   public:
     Events() : Component("Events") {
+        MarkInitialized();
     }
     /**
      * @brief Allocates a new unique EventID and optionally assigns it a debug name.

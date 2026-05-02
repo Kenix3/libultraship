@@ -70,4 +70,24 @@ std::shared_ptr<Component> Component::GetSharedComponent() {
     return shared_from_this();
 }
 
+void Component::Init() {
+    if (mIsInitialized) {
+        return;
+    }
+    OnInit();
+    mIsInitialized = true;
+}
+
+bool Component::IsInitialized() const {
+    return mIsInitialized;
+}
+
+void Component::OnInit() {
+    // Default: no-op. Subclasses override to perform initialization.
+}
+
+void Component::MarkInitialized() {
+    mIsInitialized = true;
+}
+
 } // namespace Ship

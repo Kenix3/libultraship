@@ -139,5 +139,10 @@ void Window::InitBase() {
     if (!mConfig) {
         throw std::runtime_error("Window requires Config in the component hierarchy");
     }
+    if (!mConfig->IsInitialized()) {
+        throw std::runtime_error("Window::Init requires Config to be initialized before Window");
+    }
+    // Mark the window as initialized so dependents can check IsInitialized().
+    MarkInitialized();
 }
 } // namespace Ship

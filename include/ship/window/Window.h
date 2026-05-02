@@ -222,11 +222,20 @@ class Window : public Component {
     void AddAvailableWindowBackend(WindowBackend backend);
 
     /**
-     * @brief Fetches Config from the component hierarchy and throws if not found.
+     * @brief Fetches Config from the component hierarchy and throws if not found or uninitialized.
      *
      * All concrete Init() overrides MUST call Window::InitBase() first before
-     * accessing any other components or reading configuration values.
+     * accessing any other components or reading configuration values. This also
+     * calls MarkInitialized() so that IsInitialized() returns true after Init()
+     * completes.
+     *
+     * @note Init-order dependency: Config must be present **and initialized** in
+     *       the Context hierarchy before InitBase() is called. Config
+     *       self-initializes on construction, so adding it to the Context before
+     *       the Window satisfies this requirement.
+     *
      * @throws std::runtime_error if Config is not present in the Context hierarchy.
+     * @throws std::runtime_error if Config is present but not yet initialized.
      */
     void InitBase();
 

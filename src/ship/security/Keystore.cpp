@@ -14,6 +14,7 @@ Keystore::Keystore() : Component("Keystore") {
     for (const auto entry : AllDefaultKeys) {
         AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), KeyOrigin::System);
     }
+    MarkInitialized();
 }
 
 bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, KeyOrigin origin) {

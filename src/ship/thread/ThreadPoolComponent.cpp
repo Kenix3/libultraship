@@ -4,6 +4,7 @@ namespace Ship {
 
 ThreadPoolComponent::ThreadPoolComponent(size_t threadCount)
     : Component("ThreadPoolComponent"), mThreadPool(std::make_shared<BS::thread_pool>(threadCount)) {
+    MarkInitialized();
 }
 
 std::shared_ptr<BS::thread_pool> ThreadPoolComponent::GetPool() const {
