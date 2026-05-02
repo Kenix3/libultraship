@@ -426,6 +426,7 @@ class ResourceManager : public Component {
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
+    std::shared_ptr<ThreadPoolComponent> mThreadPool;
 
     std::shared_ptr<ThreadPoolComponent> GetThreadPool();
 };

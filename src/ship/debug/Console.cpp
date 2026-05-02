@@ -1,6 +1,5 @@
 #include "ship/debug/Console.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 
@@ -42,7 +41,7 @@ int32_t Console::Run(const std::string& command, std::string* output) {
     }
 
     const CommandEntry& entry = it->second;
-    int32_t commandResult = entry.Handler(Context::GetInstance()->GetChildren().GetFirst<Console>(), cmdArgs, output);
+    int32_t commandResult = entry.Handler(std::static_pointer_cast<Console>(GetSharedComponent()), cmdArgs, output);
     if (output) {
         SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
     } else {

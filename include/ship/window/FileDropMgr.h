@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
+#include <memory>
 #include "ship/Component.h"
+#include "ship/window/Window.h"
 
 /**
  * @brief Callback type for file-drop event handlers.
@@ -18,10 +20,10 @@ namespace Ship {
  * FileDropMgr stores the path of the most recently dropped file and dispatches
  * the event to a chain of registered handler callbacks.
  *
- * **Required Context children (looked up at runtime):**
- * - **Window** — consulted by the drop-event dispatcher to obtain the GUI layer
- *   when forwarding drop events. Window must be added to the Context before
- *   FileDropMgr::FileDrop() is called.
+ * **Required Context children (looked up at Init time):**
+ * - **Window** — cached in OnInit() and used by the drop-event dispatcher to obtain the GUI
+ *   layer when forwarding drop events. Window must be added to the Context and initialized
+ *   before FileDropMgr::Init() is called.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<FileDropMgr>()`.
  */
@@ -66,10 +68,18 @@ class FileDropMgr : public Component {
     /** @brief Invokes all registered drop handlers with the current dropped file. */
     void CallHandlers();
 
+  protected:
+    /** @brief Caches the Window component from the Context hierarchy. */
+    void OnInit() override;
+
   private:
     std::vector<FileDroppedFunc> mRegisteredFuncs;
     char* mPath = nullptr;
     bool mFileDropped = false;
+    std::shared_ptr<Window> mWindow;
+
+    /** @brief Returns the cached Window component. */
+    std::shared_ptr<Window> GetWindow() const;
 };
 
 } // namespace Ship

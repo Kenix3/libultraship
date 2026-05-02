@@ -53,6 +53,7 @@ ResourceManager::ResourceManager() : Component("ResourceManager") {
 
 void ResourceManager::Init(const std::vector<std::string>& archivePaths,
                            const std::unordered_set<uint32_t>& validHashes) {
+    mThreadPool = Context::GetInstance()->GetChildren().GetFirst<ThreadPoolComponent>();
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(archivePaths, validHashes);
@@ -521,11 +522,7 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
 }
 
 std::shared_ptr<ThreadPoolComponent> ResourceManager::GetThreadPool() {
-    auto context = Context::GetInstance();
-    if (context) {
-        return context->GetChildren().GetFirst<ThreadPoolComponent>();
-    }
-    return nullptr;
+    return mThreadPool;
 }
 
 } // namespace Ship

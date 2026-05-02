@@ -52,14 +52,14 @@ void Audio::OnInit() {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
-    auto config = Context::GetInstance()->GetChildren().GetFirst<Config>();
-    if (!config) {
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    if (!mConfig) {
         throw std::runtime_error("Audio requires Config in the component hierarchy");
     }
-    if (!config->IsInitialized()) {
+    if (!mConfig->IsInitialized()) {
         throw std::runtime_error("Audio::Init requires Config to be initialized before Audio");
     }
-    SetCurrentAudioBackend(config->GetCurrentAudioBackend());
+    SetCurrentAudioBackend(mConfig->GetCurrentAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -72,10 +72,14 @@ AudioBackend Audio::GetCurrentAudioBackend() {
 
 void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     mAudioBackend = backend;
-    Context::GetInstance()->GetChildren().GetFirst<Config>()->SetCurrentAudioBackend(GetCurrentAudioBackend());
-    Context::GetInstance()->GetChildren().GetFirst<Config>()->Save();
+    GetConfig()->SetCurrentAudioBackend(GetCurrentAudioBackend());
+    GetConfig()->Save();
 
     InitAudioPlayer();
+}
+
+std::shared_ptr<Config> Audio::GetConfig() const {
+    return mConfig;
 }
 
 std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {

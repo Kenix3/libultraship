@@ -208,7 +208,8 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     shared->GetChildren().Add(std::make_shared<Events>());
 
     // ---- File Drop Manager ----
-    shared->GetChildren().Add(std::make_shared<FileDropMgr>());
+    auto fileDropMgr = std::make_shared<FileDropMgr>();
+    shared->GetChildren().Add(fileDropMgr);
 
 #ifdef ENABLE_SCRIPTING
     // ---- Script Loader ----
@@ -244,6 +245,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         windowCast->Init();
     }
 
+    fileDropMgr->Init();
     audio->Init();
 
     return shared;

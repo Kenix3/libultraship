@@ -3,11 +3,13 @@
 #include "ControlPort.h"
 #include <vector>
 #include "ship/config/Config.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
 #include "ship/Component.h"
+#include "ship/window/Window.h"
 
 namespace Ship {
 
@@ -24,12 +26,12 @@ namespace Ship {
  *
  * Subclass ControlDeck to implement WriteToPad() for a specific game's pad layout.
  *
- * **Required Context children (looked up at runtime):**
- * - **ConsoleVariable** — read by controller mapping layers to load/save per-mapping
- *   settings (e.g. button assignments, rumble toggle). ConsoleVariable must be added
- *   to the Context before ControlDeck::Init() is called.
- * - **Window** — consulted by controller mappings for keyboard/mouse capture state.
- *   Window must be added to the Context before ControlDeck::Init() is called.
+ * **Required Context children (looked up at Init time):**
+ * - **ConsoleVariable** — cached in Init() and used by controller mapping layers to load/save
+ *   per-mapping settings (e.g. button assignments, rumble toggle). ConsoleVariable must be
+ *   added to the Context before ControlDeck::Init() is called.
+ * - **Window** — cached in Init() and consulted by controller mappings for keyboard/mouse
+ *   capture state. Window must be added to the Context before ControlDeck::Init() is called.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<ControlDeck>()`.
  */
@@ -138,5 +140,12 @@ class ControlDeck : public Component {
     std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
     std::shared_ptr<ControllerDefaultMappings> mControllerDefaultMappings;
     std::unordered_map<CONTROLLERBUTTONS_T, std::string> mButtonNames;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
+
+    /** @brief Returns the cached Window component. */
+    std::shared_ptr<Window> GetWindow() const;
+    /** @brief Returns the cached ConsoleVariable component. */
+    std::shared_ptr<ConsoleVariable> GetConsoleVariables() const;
 };
 } // namespace Ship

@@ -5,6 +5,7 @@
 #include <vector>
 #include "ship/audio/AudioPlayer.h"
 #include "ship/Component.h"
+#include "ship/config/Config.h"
 
 namespace Ship {
 /** @brief Identifies the audio backend implementation in use. */
@@ -18,8 +19,8 @@ enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
  * SetCurrentAudioBackend(); the channel layout can be changed via SetAudioChannels()
  * without restarting the application.
  *
- * **Required Context children (looked up at runtime):**
- * - **Config** — queried during Init() and SetCurrentAudioBackend() to load/persist
+ * **Required Context children (looked up at Init time):**
+ * - **Config** — cached during OnInit() and used by SetCurrentAudioBackend() to load/persist
  *   the selected audio backend. Config must be added to the Context **before** calling
  *   Audio::Init().
  *
@@ -96,5 +97,9 @@ class Audio : public Component {
     AudioBackend mAudioBackend;
     AudioSettings mAudioSettings;
     std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
+    std::shared_ptr<Config> mConfig;
+
+    /** @brief Returns the cached Config component. */
+    std::shared_ptr<Config> GetConfig() const;
 };
 } // namespace Ship

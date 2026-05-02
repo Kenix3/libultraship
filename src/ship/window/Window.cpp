@@ -126,8 +126,8 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 
 void Window::SetWindowBackend(WindowBackend backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetChildren().GetFirst<Config>()->SetWindowBackend(GetWindowBackend());
-    Context::GetInstance()->GetChildren().GetFirst<Config>()->Save();
+    mConfig->SetWindowBackend(GetWindowBackend());
+    mConfig->Save();
 }
 
 void Window::AddAvailableWindowBackend(WindowBackend backend) {

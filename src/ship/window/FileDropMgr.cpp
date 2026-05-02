@@ -18,7 +18,6 @@
 
 namespace Ship {
 FileDropMgr::FileDropMgr() : Component("FileDropMgr") {
-    MarkInitialized();
 }
 
 FileDropMgr::~FileDropMgr() {
@@ -115,8 +114,16 @@ void FileDropMgr::CallHandlers() {
         }
     }
     SPDLOG_WARN("Dropped file {} not handled by any registered.", mPath);
-    auto gui = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui();
+    auto gui = GetWindow()->GetGui();
     gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
+}
+
+void FileDropMgr::OnInit() {
+    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
+}
+
+std::shared_ptr<Window> FileDropMgr::GetWindow() const {
+    return mWindow;
 }
 
 } // namespace Ship

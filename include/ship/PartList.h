@@ -227,10 +227,12 @@ template <typename C = Part> class PartList : public Part {
 
 // ---- Inline implementations ----
 
-template <typename C> PartList<C>::PartList(const size_t initialAllocation) : Part(), mList()
+template <typename C>
+PartList<C>::PartList(const size_t initialAllocation)
+    : Part(), mList()
 #ifdef COMPONENT_THREAD_SAFE
-                                                                               ,
-                                                                               mMutex()
+      ,
+      mMutex()
 #endif
 {
     mList.reserve(initialAllocation);
