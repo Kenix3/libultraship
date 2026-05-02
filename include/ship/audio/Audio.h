@@ -3,13 +3,12 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include "ship/audio/AudioBackend.h"
 #include "ship/audio/AudioPlayer.h"
 #include "ship/Component.h"
 #include "ship/config/Config.h"
 
 namespace Ship {
-/** @brief Identifies the audio backend implementation in use. */
-enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
 
 /**
  * @brief Manages audio playback through a platform-specific AudioPlayer.
