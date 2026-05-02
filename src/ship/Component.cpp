@@ -106,8 +106,8 @@ void Component::Init(const nlohmann::json& initArgs) {
                 // Check the current node itself.
                 if (current->GetName() == depName) {
                     if (!current->IsInitialized()) {
-                        throw std::runtime_error(GetName() + " requires " + depName +
-                                                 " to be initialized before it");
+                        throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + depName +
+                                                 "' to be initialized before calling Init()");
                     }
                     found = true;
                     break;
@@ -122,8 +122,8 @@ void Component::Init(const nlohmann::json& initArgs) {
                     visited.insert(child->GetId());
                     if (child->GetName() == depName) {
                         if (!child->IsInitialized()) {
-                            throw std::runtime_error(GetName() + " requires " + depName +
-                                                     " to be initialized before it");
+                            throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + depName +
+                                                     "' to be initialized before calling Init()");
                         }
                         found = true;
                         break;
@@ -142,8 +142,9 @@ void Component::Init(const nlohmann::json& initArgs) {
             }
 
             if (!found) {
-                throw std::runtime_error(GetName() + " requires " + depName +
-                                         " in the component hierarchy but it was not found");
+                throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + depName +
+                                         "' to be present in the component hierarchy. "
+                                         "Ensure it is added before initializing '" + GetName() + "'");
             }
         }
     }
