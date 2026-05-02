@@ -52,13 +52,9 @@ void Audio::OnInit(const nlohmann::json& /*initArgs*/) {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
+    // Dependencies (Config) are verified by Component::Init() via GetDependencies().
+    // Just cache the reference here.
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
-    if (!mConfig) {
-        throw std::runtime_error("Audio requires Config in the component hierarchy");
-    }
-    if (!mConfig->IsInitialized()) {
-        throw std::runtime_error("Audio::Init requires Config to be initialized before Audio");
-    }
     SetCurrentAudioBackend(mConfig->GetCurrentAudioBackend());
 }
 

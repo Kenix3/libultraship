@@ -88,6 +88,9 @@ class Fast3dWindow : public Ship::Window {
   protected:
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
+    /** @brief Declares Config, ConsoleVariable, ControlDeck as dependencies. */
+    nlohmann::json GetDependencies() const override;
+
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();

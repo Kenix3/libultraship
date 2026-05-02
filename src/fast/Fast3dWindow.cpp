@@ -55,8 +55,8 @@ Fast3dWindow::~Fast3dWindow() {
     delete mWindowManagerApi;
 }
 
-void Fast3dWindow::OnInit(const nlohmann::json& /*initArgs*/) {
-    Window::OnInit();
+void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
+    Window::OnInit(initArgs);
 
     mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     mControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
@@ -422,6 +422,10 @@ std::shared_ptr<Ship::ConsoleVariable> Fast3dWindow::GetConsoleVariables() const
 
 std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
     return mControlDeck;
+}
+
+nlohmann::json Fast3dWindow::GetDependencies() const {
+    return nlohmann::json::array({"Config", "ConsoleVariable", "ControlDeck"});
 }
 
 } // namespace Fast

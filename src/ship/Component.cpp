@@ -76,6 +76,8 @@ void Component::Init(const nlohmann::json& initArgs) {
     }
 
     // Check declared dependencies before calling OnInit.
+    // Dependencies are resolved by searching the full hierarchy: siblings,
+    // ancestors, and their subtrees (BFS from each parent upward).
     auto deps = GetDependencies();
     if (deps.is_array()) {
         for (const auto& dep : deps) {
@@ -83,17 +85,43 @@ void Component::Init(const nlohmann::json& initArgs) {
                 continue;
             }
             std::string depName = dep.get<std::string>();
-            // Search parents for the dependency (siblings are children of our parent).
             bool found = false;
+
+            // BFS upward through parent chain, checking siblings and ancestors.
+            std::queue<Component*> searchQueue;
+            std::unordered_set<uint64_t> visited;
+            visited.insert(GetId());
+
             auto parents = GetParents().Get();
             for (const auto& parent : *parents) {
-                auto siblings = parent->GetChildren().Get();
-                for (const auto& sibling : *siblings) {
-                    if (sibling.get() == this) {
+                if (visited.insert(parent->GetId()).second) {
+                    searchQueue.push(parent.get());
+                }
+            }
+
+            while (!searchQueue.empty() && !found) {
+                Component* current = searchQueue.front();
+                searchQueue.pop();
+
+                // Check the current node itself.
+                if (current->GetName() == depName) {
+                    if (!current->IsInitialized()) {
+                        throw std::runtime_error(GetName() + " requires " + depName +
+                                                 " to be initialized before it");
+                    }
+                    found = true;
+                    break;
+                }
+
+                // Check this node's children (our siblings, cousins, etc.).
+                auto children = current->GetChildren().Get();
+                for (const auto& child : *children) {
+                    if (visited.count(child->GetId())) {
                         continue;
                     }
-                    if (sibling->GetName() == depName) {
-                        if (!sibling->IsInitialized()) {
+                    visited.insert(child->GetId());
+                    if (child->GetName() == depName) {
+                        if (!child->IsInitialized()) {
                             throw std::runtime_error(GetName() + " requires " + depName +
                                                      " to be initialized before it");
                         }
@@ -101,10 +129,18 @@ void Component::Init(const nlohmann::json& initArgs) {
                         break;
                     }
                 }
-                if (found) {
-                    break;
+
+                // Continue searching upward through parents.
+                if (!found) {
+                    auto grandParents = current->GetParents().Get();
+                    for (const auto& gp : *grandParents) {
+                        if (visited.insert(gp->GetId()).second) {
+                            searchQueue.push(gp.get());
+                        }
+                    }
                 }
             }
+
             if (!found) {
                 throw std::runtime_error(GetName() + " requires " + depName +
                                          " in the component hierarchy but it was not found");

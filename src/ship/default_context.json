@@ -41,7 +41,14 @@
         {
             "type": "Window",
             "name": "Window",
-            "dependencies": ["Config"]
+            "dependencies": ["Config"],
+            "children": [
+                {
+                    "type": "FileDropMgr",
+                    "name": "FileDropMgr",
+                    "dependencies": ["Window"]
+                }
+            ]
         },
         {
             "type": "Audio",
@@ -55,11 +62,6 @@
         {
             "type": "Events",
             "name": "Events"
-        },
-        {
-            "type": "FileDropMgr",
-            "name": "FileDropMgr",
-            "dependencies": ["Window"]
         },
         {
             "type": "ScriptLoader",

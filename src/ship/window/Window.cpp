@@ -135,13 +135,9 @@ void Window::AddAvailableWindowBackend(WindowBackend backend) {
 }
 
 void Window::OnInit(const nlohmann::json& /*initArgs*/) {
+    // Dependencies (Config) are verified by Component::Init() via GetDependencies().
+    // Just cache the reference here.
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
-    if (!mConfig) {
-        throw std::runtime_error("Window requires Config in the component hierarchy");
-    }
-    if (!mConfig->IsInitialized()) {
-        throw std::runtime_error("Window::Init requires Config to be initialized before Window");
-    }
 }
 
 std::shared_ptr<Config> Window::GetConfig() const {

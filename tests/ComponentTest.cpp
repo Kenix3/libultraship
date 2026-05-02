@@ -421,7 +421,7 @@ class TrackingComponent : public Component {
     int onInitCallCount = 0;
 
   protected:
-    void OnInit() override {
+    void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
         onInitCallCount++;
     }
 };
@@ -440,7 +440,7 @@ class ThrowingComponent : public Component {
     explicit ThrowingComponent() : Component("ThrowingComponent") {}
 
   protected:
-    void OnInit() override {
+    void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
         throw std::runtime_error("OnInit failed");
     }
 };
@@ -486,7 +486,7 @@ TEST(ComponentInitTest, MarkInitializedPreventsOnInitFromBeingCalledByInit) {
         int onInitCallCount = 0;
         CountingAutoInit() : Component("CountingAutoInit") { MarkInitialized(); }
       protected:
-        void OnInit() override { onInitCallCount++; }
+        void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override { onInitCallCount++; }
     };
     auto c = std::make_shared<CountingAutoInit>();
     c->Init(); // should be a no-op since already marked
@@ -509,7 +509,7 @@ TEST(ComponentInitTest, InitCanRetryAfterOnInitThrows) {
         int callCount = 0;
         ConditionalThrow() : Component("ConditionalThrow") {}
       protected:
-        void OnInit() override {
+        void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
             callCount++;
             if (shouldThrow) throw std::runtime_error("not ready");
         }
