@@ -17,6 +17,11 @@ namespace Ship {
  *
  * ThreadPoolComponent manages a thread pool within the component system,
  * providing convenience methods for pausing and resuming pool execution.
+ *
+ * **Required Context children:** None — ThreadPoolComponent has no dependencies
+ * on other components.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ThreadPoolComponent>()`.
  */
 class ThreadPoolComponent : public Component {
   public:

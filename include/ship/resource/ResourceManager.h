@@ -84,11 +84,12 @@ struct ResourceIdentifierHash {
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * Typical usage:
- * @code
- * auto rm = Ship::Context::GetInstance()->GetResourceManager();
- * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
- * @endcode
+ * **Required Context children (looked up at runtime):**
+ * - **ThreadPoolComponent** — used for all asynchronous resource load/unload
+ *   operations. If absent, async operations will return nullptr. ThreadPoolComponent
+ *   should be added to the Context before ResourceManager::Init() is called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
 class ResourceManager : public Component {
     friend class ResourceLoader;

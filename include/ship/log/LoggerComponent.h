@@ -12,6 +12,11 @@ namespace Ship {
  *
  * LoggerComponent exposes a shared spdlog logger within the component system,
  * allowing it to participate in the Component hierarchy and be looked up by name.
+ *
+ * **Required Context children:** None — LoggerComponent has no dependencies on
+ * other components.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<LoggerComponent>()`.
  */
 class LoggerComponent : public Component {
   public:

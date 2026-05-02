@@ -33,6 +33,16 @@ using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEnt
  *
  * File lookups, directory listings, and game-version validation are all delegated
  * here from the ResourceManager layer.
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **ResourceManager** — used by Archive objects during mount validation to
+ *   check game versions. ResourceManager must be added to the Context before
+ *   ArchiveManager::Init() is called.
+ * - **Keystore** — used by Archive objects to verify archive signatures. Keystore
+ *   must be added to the Context before ArchiveManager::Init() is called.
+ *
+ * Obtain the instance from
+ * `Context::GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()`.
  */
 class ArchiveManager : public Component {
   public:

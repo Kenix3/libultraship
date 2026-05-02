@@ -31,8 +31,18 @@ enum class ComponentListRole {
  * human-readable name, optionally filtered by derived type via dynamic_cast.
  *
  * When constructed with a ComponentListRole and an owner pointer, the list
- * automatically maintains bidirectional parent/child relationships and
- * auto-registers/unregisters TickableComponents with the Context's TickableList.
+ * automatically maintains bidirectional parent/child relationships. For
+ * TickableComponent owners the list also manages their presence in the
+ * Context's global TickableList:
+ *
+ *  - When a TickableComponent gains its **first parent** (via the Parents-role
+ *    list), it is automatically added to the Context's TickableList so that it
+ *    will be executed on every engine tick.
+ *  - When a TickableComponent loses its **last parent**, it is automatically
+ *    removed from the Context's TickableList.
+ *
+ * The Context's TickableList is the central list that the engine iterates each
+ * frame to drive Tick, Draw, and DrawDebugMenu actions.
  */
 class ComponentList : public PartList<Component> {
   public:

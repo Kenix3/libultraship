@@ -29,6 +29,11 @@ enum class SafeLevel {
  * ScriptLoader compiles C/C++ source files found in mounted archives using TCC
  * (Tiny C Compiler), then loads the resulting shared objects at runtime so their
  * exported functions can be called by the engine via GetFunction().
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **ResourceManager** — queried during script loading to access the ArchiveManager
+ *   for enumerating script source files. ResourceManager must be added to the Context
+ *   before any ScriptLoader load methods are called.
  */
 class ScriptLoader : public Component {
   public:

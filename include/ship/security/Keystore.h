@@ -35,6 +35,13 @@ struct KeystoreEntry {
  * the authenticity of resource archives. Keys can originate from the game distribution,
  * the user, or the engine itself. The store can be serialized to and from disk via
  * Load() and Save().
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **Config** — used by Load() and Save() to determine the path of the key
+ *   persistence file. Config must be added to the Context before Keystore::Load()
+ *   or Keystore::Save() are called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Keystore>()`.
  */
 class Keystore : public Component {
   public:

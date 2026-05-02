@@ -23,7 +23,15 @@ namespace Ship {
  * - Providing access to physical device management and default-mapping configuration.
  *
  * Subclass ControlDeck to implement WriteToPad() for a specific game's pad layout.
- * Obtain the instance from Context::GetControlDeck().
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **ConsoleVariable** — read by controller mapping layers to load/save per-mapping
+ *   settings (e.g. button assignments, rumble toggle). ConsoleVariable must be added
+ *   to the Context before ControlDeck::Init() is called.
+ * - **Window** — consulted by controller mappings for keyboard/mouse capture state.
+ *   Window must be added to the Context before ControlDeck::Init() is called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ControlDeck>()`.
  */
 class ControlDeck : public Component {
   public:

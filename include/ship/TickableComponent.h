@@ -25,6 +25,17 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
  * name/hierarchy (Component) and per-frame tick/draw execution (Tickable).
  * After construction and shared_ptr ownership, call RegisterWithContext() to
  * wire the component into the Context's tick loop.
+ *
+ * **Context TickableList semantics:**
+ * A TickableComponent is present in the Context's TickableList (and therefore
+ * executed each frame) as long as it has at least one parent. It is added to
+ * the list when its first parent is assigned and removed when its last parent
+ * is removed.  This is managed automatically by ComponentList when the
+ * COMPONENT_THREAD_SAFE or default parent/child relationship hooks fire.
+ *
+ * **Required Context children:**
+ * None – TickableComponent itself does not look up other components from the
+ * Context.  Concrete subclasses may declare their own requirements.
  */
 class TickableComponent : public Tickable, public Component {
   public:

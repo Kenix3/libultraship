@@ -47,7 +47,12 @@ typedef struct CVar {
  * from a JSON file via the Config layer. Values can be registered with defaults,
  * queried, mutated, copied, and cleared at runtime.
  *
- * Obtain the singleton instance from Context::GetConsoleVariables().
+ * **Required Context children (looked up at runtime):**
+ * - **Config** — used by Load() and Save() to read and write CVar persistence.
+ *   Config must be added to the Context before ConsoleVariable::Load() or
+ *   ConsoleVariable::Save() are called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ConsoleVariable>()`.
  */
 class ConsoleVariable : public Component {
   public:

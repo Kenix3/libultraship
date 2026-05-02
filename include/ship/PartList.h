@@ -363,6 +363,9 @@ template <typename C> ListReturnCode PartList<C>::Add(const std::vector<std::sha
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#endif
     ListReturnCode result = ListReturnCode::Duplicate;
     for (const auto& part : parts) {
         const ListReturnCode r = Add(part, force);
@@ -445,6 +448,9 @@ ListReturnCode PartList<C>::Remove(const std::vector<std::shared_ptr<C>>& parts,
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#endif
     ListReturnCode result = ListReturnCode::NotFound;
     for (const auto& part : parts) {
         const ListReturnCode r = Remove(part, force);

@@ -12,6 +12,13 @@ union F3DGfx;
  * GfxDebugger allows pausing execution at a specific display-list command,
  * inspecting the current display list, and stepping through rendering.
  * It is used by the GfxDebuggerWindow GUI panel.
+ *
+ * **Required Context children:** None — GfxDebugger has no dependencies on other
+ * components. However, it must be present as a **direct child of the Context**
+ * because the Fast3D interpreter looks it up via
+ * `Context::GetChildren().GetFirst<GfxDebugger>()` on every rendered frame.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Fast::GfxDebugger>()`.
  */
 class GfxDebugger : public Ship::Component {
   public:

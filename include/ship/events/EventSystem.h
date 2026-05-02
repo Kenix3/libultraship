@@ -40,6 +40,11 @@ struct EventRegistration {
  * cancellation itself — the caller is responsible for checking it via the
  * CALL_CANCELLABLE_EVENT macro.
  *
+ * **Required Context children:** None — EventSystem has no dependencies on other
+ * components.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<EventSystem>()`.
+ *
  * Typical usage (C++ side):
  * @code
  * // Registration (once at startup)

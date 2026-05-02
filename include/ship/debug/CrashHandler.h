@@ -37,7 +37,12 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
  * any registered CrashHandlerCallback so the application can append game-specific
  * state before the process exits.
  *
- * Obtain the instance from Context::GetCrashHandler().
+ * **Required Context children (looked up at crash time):**
+ * - **LoggerComponent** — if present, its underlying spdlog logger is flushed after
+ *   the crash report is written to ensure log entries are not lost. It is optional;
+ *   the crash handler functions correctly without it.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<CrashHandler>()`.
  */
 class CrashHandler : public Component {
   public:

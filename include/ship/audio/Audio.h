@@ -18,7 +18,12 @@ enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
  * SetCurrentAudioBackend(); the channel layout can be changed via SetAudioChannels()
  * without restarting the application.
  *
- * Obtain the instance from Context::GetAudio().
+ * **Required Context children (looked up at runtime):**
+ * - **Config** — queried during Init() and SetCurrentAudioBackend() to load/persist
+ *   the selected audio backend. Config must be added to the Context **before** calling
+ *   Audio::Init().
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Audio>()`.
  */
 class Audio : public Component {
   public:

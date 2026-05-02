@@ -17,6 +17,13 @@ namespace Ship {
  *
  * FileDropMgr stores the path of the most recently dropped file and dispatches
  * the event to a chain of registered handler callbacks.
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **Window** — consulted by the drop-event dispatcher to obtain the GUI layer
+ *   when forwarding drop events. Window must be added to the Context before
+ *   FileDropMgr::FileDrop() is called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<FileDropMgr>()`.
  */
 class FileDropMgr : public Component {
   public:
