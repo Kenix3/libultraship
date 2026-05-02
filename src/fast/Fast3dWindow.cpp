@@ -56,6 +56,8 @@ Fast3dWindow::~Fast3dWindow() {
 }
 
 void Fast3dWindow::Init() {
+    Window::InitBase();
+
     bool gameMode = false;
 
 #ifdef __linux__

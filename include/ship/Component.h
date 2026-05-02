@@ -66,6 +66,15 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     /** @brief Returns a const reference to the child list. */
     const ComponentList& GetChildren() const;
 
+    /**
+     * @brief Returns a shared_ptr to this Component via the correct enable_shared_from_this base.
+     *
+     * Subclasses that inherit enable_shared_from_this via multiple paths (e.g. TickableComponent
+     * inherits from both Component and Tickable, each with their own enable_shared_from_this) must
+     * override this to use the base whose weak_ptr is properly initialized by make_shared.
+     */
+    virtual std::shared_ptr<Component> GetSharedComponent();
+
     // ---- Breadth-first hierarchy search ----
 
     /**

@@ -356,3 +356,57 @@ TEST(ComponentListTest, GetByMultipleNames) {
     auto result = list.Get(std::vector<std::string>{ "A", "C" });
     EXPECT_EQ(result->size(), 2u);
 }
+
+// ---- Additional edge-case tests ----
+
+TEST(ComponentTest, BidirectionalMultiLevelHierarchy) {
+    auto root = std::make_shared<TestComponent>("Root");
+    auto mid = std::make_shared<TestComponent>("Mid");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+
+    root->GetChildren().Add(mid);
+    mid->GetChildren().Add(leaf);
+
+    // Verify parent links go up
+    EXPECT_TRUE(mid->GetParents().Has(root));
+    EXPECT_TRUE(leaf->GetParents().Has(mid));
+
+    // Root should not be a direct parent of leaf
+    EXPECT_FALSE(leaf->GetParents().Has(root));
+}
+
+TEST(ComponentTest, RemoveMidNodeBreaksChain) {
+    auto root = std::make_shared<TestComponent>("Root");
+    auto mid = std::make_shared<TestComponent>("Mid");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+
+    root->GetChildren().Add(mid);
+    mid->GetChildren().Add(leaf);
+
+    root->GetChildren().Remove(mid);
+
+    EXPECT_EQ(root->GetChildren().GetCount(), 0u);
+    EXPECT_FALSE(mid->GetParents().Has(root));
+    // Leaf is still a child of mid
+    EXPECT_TRUE(mid->GetChildren().Has(leaf));
+}
+
+TEST(ComponentTest, GetCountReflectsAddAndRemove) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto c1 = std::make_shared<TestComponent>("C1");
+    auto c2 = std::make_shared<TestComponent>("C2");
+    auto c3 = std::make_shared<TestComponent>("C3");
+
+    EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
+    parent->GetChildren().Add(c1);
+    EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
+    parent->GetChildren().Add(c2);
+    parent->GetChildren().Add(c3);
+    EXPECT_EQ(parent->GetChildren().GetCount(), 3u);
+
+    parent->GetChildren().Remove(c2);
+    EXPECT_EQ(parent->GetChildren().GetCount(), 2u);
+
+    parent->GetChildren().Remove();
+    EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
+}

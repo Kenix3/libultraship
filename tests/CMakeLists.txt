@@ -13,6 +13,7 @@ add_executable(libultraship_tests
     ComponentTest.cpp
     ActionTest.cpp
     TickableTest.cpp
+    TickableComponentTest.cpp
 )
 
 target_link_libraries(libultraship_tests

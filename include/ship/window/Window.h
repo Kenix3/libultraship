@@ -37,10 +37,10 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * **Required Context children (looked up at construction time):**
- * - **Config** — fetched in the Window constructor to read and persist window
- *   settings (size, backend, fullscreen state). Config **must** be added to the
- *   Context before the Window is constructed.
+ * **Required Context children (looked up at Init time):**
+ * - **Config** — fetched in Window::InitBase() to read and persist window
+ *   settings (size, backend, fullscreen state). Config must be added to the
+ *   Context before Window::InitBase() is called (from Init()).
  *
  * The window is added to Context as a child Component and is accessible via
  * `Context::GetChildren().GetFirst<Window>()`.
@@ -220,6 +220,15 @@ class Window : public Component {
      * @param backend Backend to mark as available.
      */
     void AddAvailableWindowBackend(WindowBackend backend);
+
+    /**
+     * @brief Fetches Config from the component hierarchy and throws if not found.
+     *
+     * All concrete Init() overrides MUST call Window::InitBase() first before
+     * accessing any other components or reading configuration values.
+     * @throws std::runtime_error if Config is not present in the Context hierarchy.
+     */
+    void InitBase();
 
   private:
     std::shared_ptr<Gui> mGui;

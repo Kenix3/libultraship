@@ -14,9 +14,14 @@ void ComponentList::Added(std::shared_ptr<Component> part, const bool forced) {
         return;
     }
 
-    auto ownerShared = mOwner->shared_from_this();
+    auto ownerShared = mOwner->GetSharedComponent();
 
     if (mRole == ComponentListRole::Children) {
+        // Ensure the TickableComponent part has its mWeakSelf initialized before
+        // the bidirectional sync fires (which calls part->GetSharedComponent()).
+        if (auto tickable = std::dynamic_pointer_cast<TickableComponent>(part)) {
+            tickable->InitWeakSelf(tickable);
+        }
         // Add the owner as a parent of the child (if not already present)
         if (!part->GetParents().Has(ownerShared)) {
             part->GetParents().Add(ownerShared, forced);
@@ -43,7 +48,7 @@ void ComponentList::Removed(std::shared_ptr<Component> part, const bool forced) 
         return;
     }
 
-    auto ownerShared = mOwner->shared_from_this();
+    auto ownerShared = mOwner->GetSharedComponent();
 
     if (mRole == ComponentListRole::Children) {
         // Remove the owner from the child's parent list

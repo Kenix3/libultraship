@@ -100,12 +100,10 @@ class ResourceManager : public Component {
 
     /**
      * @brief Initializes the ResourceManager, mounting archives and starting the thread pool.
-     * @param archivePaths        Paths to OTR/O2R archive files or directories containing them.
-     * @param validHashes         Set of acceptable game-version hash values; empty = all accepted.
-     * @param reservedThreadCount Number of OS threads to reserve outside the resource thread pool.
+     * @param archivePaths Paths to OTR/O2R archive files or directories containing them.
+     * @param validHashes  Set of acceptable game-version hash values; empty = all accepted.
      */
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              int32_t reservedThreadCount = 1);
+    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes);
     ~ResourceManager();
 
     /**

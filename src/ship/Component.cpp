@@ -19,11 +19,15 @@ Component::Component(const std::string& name)
       mMutex()
 #endif
 {
-    SPDLOG_INFO("Constructing component {}", ToString());
+    if (spdlog::default_logger()) {
+        SPDLOG_INFO("Constructing component {}", ToString());
+    }
 }
 
 Component::~Component() {
-    SPDLOG_INFO("Destructing component {}", ToString());
+    if (spdlog::default_logger()) {
+        SPDLOG_INFO("Destructing component {}", ToString());
+    }
 }
 
 const std::string& Component::GetName() const {
@@ -60,6 +64,10 @@ ComponentList& Component::GetChildren() {
 
 const ComponentList& Component::GetChildren() const {
     return mChildren;
+}
+
+std::shared_ptr<Component> Component::GetSharedComponent() {
+    return shared_from_this();
 }
 
 } // namespace Ship

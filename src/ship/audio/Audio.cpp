@@ -4,6 +4,7 @@
 #include "ship/audio/CoreAudioAudioPlayer.h"
 #endif
 
+#include <stdexcept>
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
@@ -51,7 +52,11 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
-    SetCurrentAudioBackend(Context::GetInstance()->GetChildren().GetFirst<Config>()->GetCurrentAudioBackend());
+    auto config = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    if (!config) {
+        throw std::runtime_error("Audio requires Config in the component hierarchy");
+    }
+    SetCurrentAudioBackend(config->GetCurrentAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {

@@ -14,7 +14,7 @@
 #include "ship/window/FileDropMgr.h"
 #include "ship/log/LoggerComponent.h"
 #include "ship/thread/ThreadPoolComponent.h"
-#include "ship/events/EventSystem.h"
+#include "ship/events/Events.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #endif
@@ -41,7 +41,9 @@ std::shared_ptr<Context> Context::GetInstance() {
 }
 
 Context::~Context() {
-    SPDLOG_TRACE("destruct context");
+    if (spdlog::default_logger()) {
+        SPDLOG_TRACE("destruct context");
+    }
     auto window = GetChildren().GetFirst<Window>();
     if (window) {
         window->SaveWindowToConfig();
@@ -62,7 +64,9 @@ Context::~Context() {
     if (config) {
         config->Save();
     }
-    spdlog::shutdown();
+    if (mOwnsLogger) {
+        spdlog::shutdown();
+    }
 }
 
 std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name, const std::string& shortName,
@@ -139,6 +143,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
         spdlog::register_logger(logger);
         spdlog::set_default_logger(logger);
+        shared->mOwnsLogger = true;
 
         shared->GetChildren().Add(std::make_shared<LoggerComponent>(logger));
     } catch (const spdlog::spdlog_ex& ex) {
@@ -150,41 +155,23 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath));
     shared->GetChildren().Add(config);
 
+    // Read config values needed for component construction
+    auto mainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
+    auto patchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
+
     // ---- Console Variables ----
     shared->GetChildren().Add(std::make_shared<ConsoleVariable>());
 
     // ---- Thread Pool ----
-    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
     shared->GetChildren().Add(std::make_shared<ThreadPoolComponent>(threadCount));
 
     // ---- Keystore ----
     shared->GetChildren().Add(std::make_shared<Keystore>());
 
     // ---- Resource Manager ----
-    auto mainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
-    auto patchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
-
     auto resourceManager = std::make_shared<ResourceManager>();
     shared->GetChildren().Add(resourceManager);
-
-    if (archivePaths.empty()) {
-        std::vector<std::string> paths;
-        paths.push_back(mainPath);
-        paths.push_back(patchesPath);
-        resourceManager->Init(paths, validHashes, reservedThreadCount);
-    } else {
-        resourceManager->Init(archivePaths, validHashes, reservedThreadCount);
-    }
-
-    if (!resourceManager->IsLoaded()) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
-                                 "Main OTR file not found. Please generate one", nullptr);
-        SPDLOG_ERROR("Main OTR file not found!");
-#ifdef __IOS__
-        exit(0);
-#endif
-        return nullptr;
-    }
 
     // ---- Control Deck ----
     if (controlDeck != nullptr) {
@@ -200,30 +187,23 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     // ---- Console ----
     auto console = std::make_shared<Console>();
     shared->GetChildren().Add(console);
-    console->Init();
 
     // ---- Window ----
-    if (window != nullptr) {
-        shared->GetChildren().Add(window);
-        auto windowCast = std::dynamic_pointer_cast<Window>(window);
-        if (windowCast) {
-            windowCast->Init();
-        }
-    } else {
+    if (window == nullptr) {
         SPDLOG_ERROR("Failed to initialize window");
         return nullptr;
     }
+    shared->GetChildren().Add(window);
 
     // ---- Audio ----
     auto audio = std::make_shared<Audio>(audioSettings);
     shared->GetChildren().Add(audio);
-    audio->Init();
 
     // ---- Gfx Debugger ----
     shared->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
 
-    // ---- Event System ----
-    shared->GetChildren().Add(std::make_shared<EventSystem>());
+    // ---- Events ----
+    shared->GetChildren().Add(std::make_shared<Events>());
 
     // ---- File Drop Manager ----
     shared->GetChildren().Add(std::make_shared<FileDropMgr>());
@@ -234,6 +214,35 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
                                                              "-g -Wl", std::vector<std::string>{},
                                                              std::vector<std::string>{}, std::vector<std::string>{}));
 #endif
+
+    // ---- Init all components that need it ----
+    if (archivePaths.empty()) {
+        std::vector<std::string> paths;
+        paths.push_back(mainPath);
+        paths.push_back(patchesPath);
+        resourceManager->Init(paths, validHashes);
+    } else {
+        resourceManager->Init(archivePaths, validHashes);
+    }
+
+    if (!resourceManager->IsLoaded()) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
+                                 "Main OTR file not found. Please generate one", nullptr);
+        SPDLOG_ERROR("Main OTR file not found!");
+#ifdef __IOS__
+        exit(0);
+#endif
+        return nullptr;
+    }
+
+    console->Init();
+
+    auto windowCast = std::dynamic_pointer_cast<Window>(window);
+    if (windowCast) {
+        windowCast->Init();
+    }
+
+    audio->Init();
 
     return shared;
 }

@@ -71,11 +71,23 @@ class TickableComponent : public Tickable, public Component {
     virtual ~TickableComponent();
 
     /**
+     * @brief Initializes the internal weak self-reference.
+     *
+     * Must be called once, immediately after the object is owned by a shared_ptr.
+     * Called automatically by RegisterWithContext() and by ComponentList when
+     * this component is added as a child.
+     * @param self The shared_ptr that owns this object.
+     */
+    void InitWeakSelf(std::shared_ptr<TickableComponent> self);
+
+    /**
      * @brief Registers this component with its Context.
      *
      * Must be called after the object is managed by a shared_ptr.
+     * Calls InitWeakSelf(self) internally.
+     * @param self The shared_ptr that owns this object.
      */
-    void RegisterWithContext();
+    void RegisterWithContext(std::shared_ptr<TickableComponent> self);
 
     /** @brief Unregisters this component from its Context. */
     void UnregisterFromContext();
@@ -132,7 +144,15 @@ class TickableComponent : public Tickable, public Component {
      */
     virtual bool DebugMenuDrawn(const double durationSinceLastTick);
 
-  protected:
+    /**
+     * @brief Returns a shared_ptr to this Component via the stored mWeakSelf.
+     *
+     * TickableComponent inherits enable_shared_from_this via two paths (Tickable and Component),
+     * but neither base gets its weak_ptr initialized by make_shared. This override uses the
+     * mWeakSelf field (set by InitWeakSelf) to safely return the shared_ptr.
+     */
+    std::shared_ptr<Component> GetSharedComponent() override;
+
   private:
     TickGroup mTickGroup;
     TickPriority mTickPriority;
@@ -140,6 +160,7 @@ class TickableComponent : public Tickable, public Component {
     bool mPendingTicking;
     bool mPendingDrawing;
     bool mPendingDrawingDebugMenu;
+    std::weak_ptr<TickableComponent> mWeakSelf;
 };
 
 } // namespace Ship

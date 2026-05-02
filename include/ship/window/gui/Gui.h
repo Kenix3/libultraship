@@ -2,6 +2,7 @@
 
 #ifdef __cplusplus
 
+#include "ship/Component.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <memory>
@@ -90,9 +91,11 @@ typedef union {
  *   via ImGui::Image().
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
+ * GuiWindow children are accessible via `GetChildren().GetFirst<T>()`.
+ *
  * Obtain the instance from Window::GetGui().
  */
-class Gui {
+class Gui : public Component {
   public:
     /** @brief Constructs a Gui with no pre-registered windows. */
     Gui();

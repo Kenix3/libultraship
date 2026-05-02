@@ -52,7 +52,7 @@ ResourceManager::ResourceManager() : Component("ResourceManager") {
 }
 
 void ResourceManager::Init(const std::vector<std::string>& archivePaths,
-                           const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
+                           const std::unordered_set<uint32_t>& validHashes) {
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(archivePaths, validHashes);

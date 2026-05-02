@@ -53,7 +53,7 @@ namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
+Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Component("Gui"), mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
 
     for (auto& guiWindow : guiWindows) {
@@ -853,6 +853,7 @@ void Gui::AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
     }
 
     mGuiWindows[guiWindow->GetName()] = guiWindow;
+    GetChildren().Add(guiWindow);
     guiWindow->Init();
 }
 
@@ -861,10 +862,17 @@ void Gui::RemoveGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
 }
 
 void Gui::RemoveGuiWindow(const std::string& name) {
+    auto it = mGuiWindows.find(name);
+    if (it != mGuiWindows.end()) {
+        GetChildren().Remove(it->second);
+    }
     mGuiWindows.erase(name);
 }
 
 void Ship::Gui::RemoveAllGuiWindows() {
+    for (auto& [name, window] : mGuiWindows) {
+        GetChildren().Remove(window);
+    }
     mGuiWindows.clear();
 }
 

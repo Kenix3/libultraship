@@ -37,8 +37,10 @@ class Context : public Component {
      *
      * This is the convenience factory that replicates the original initialization order:
      * Logging, Config, ConsoleVariables, ThreadPool, ResourceManager, ControlDeck,
-     * CrashHandler, Console, Window, Audio, GfxDebugger, EventSystem, FileDropMgr,
+     * CrashHandler, Console, Window, Audio, GfxDebugger, Events, FileDropMgr,
      * ScriptLoader (if enabled), and Keystore.
+     *
+     * All components are added to the hierarchy before any Init() is called.
      */
     static std::shared_ptr<Context>
     CreateDefaultInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
@@ -113,6 +115,7 @@ class Context : public Component {
   private:
     static std::weak_ptr<Context> mContext;
 
+    bool mOwnsLogger = false;
     std::string mConfigFilePath;
     std::string mName;
     std::string mShortName;

@@ -32,30 +32,36 @@ TickableComponent::~TickableComponent() {
     // or the Context should clean up its own references.
 }
 
-void TickableComponent::RegisterWithContext() {
+void TickableComponent::InitWeakSelf(std::shared_ptr<TickableComponent> self) {
+    if (mWeakSelf.expired()) {
+        mWeakSelf = self;
+    }
+}
+
+void TickableComponent::RegisterWithContext(std::shared_ptr<TickableComponent> self) {
+    InitWeakSelf(self);
     if (mPendingTicking) {
-        GetActionList().Add(std::make_shared<TickAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<TickAction>(self));
     }
     if (mPendingDrawing) {
-        GetActionList().Add(std::make_shared<DrawAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<DrawAction>(self));
     }
     if (mPendingDrawingDebugMenu) {
-        GetActionList().Add(std::make_shared<DrawDebugMenuAction>(Tickable::shared_from_this()));
+        GetActionList().Add(std::make_shared<DrawDebugMenuAction>(self));
     }
     if (mPendingTicking || mPendingDrawing || mPendingDrawingDebugMenu) {
         Start();
     }
 
     if (GetContext() != nullptr) {
-        GetContext()->GetTickableComponents().Add(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+        GetContext()->GetTickableComponents().Add(self);
     }
 }
 
 void TickableComponent::UnregisterFromContext() {
-    if (GetContext() != nullptr) {
-        GetContext()->GetTickableComponents().Remove(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+    auto self = std::static_pointer_cast<TickableComponent>(mWeakSelf.lock());
+    if (GetContext() != nullptr && self) {
+        GetContext()->GetTickableComponents().Remove(self);
     }
 }
 
@@ -86,15 +92,14 @@ TickableComponent& TickableComponent::SetTickPriority(const TickPriority tickPri
 }
 
 TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> context) {
+    auto self = std::static_pointer_cast<TickableComponent>(mWeakSelf.lock());
     const auto& oldContext = GetContext();
-    if (oldContext != nullptr) {
-        oldContext->GetTickableComponents().Remove(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+    if (oldContext != nullptr && self) {
+        oldContext->GetTickableComponents().Remove(self);
     }
     mContext = context;
-    if (context != nullptr) {
-        context->GetTickableComponents().Add(
-            std::static_pointer_cast<TickableComponent>(Component::shared_from_this()));
+    if (context != nullptr && self) {
+        context->GetTickableComponents().Add(self);
     }
     return *this;
 }
@@ -108,6 +113,10 @@ bool TickableComponent::ActionRan(const uint32_t action, const double durationSi
 
 bool TickableComponent::DebugMenuDrawn(const double durationSinceLastTick) {
     return true;
+}
+
+std::shared_ptr<Component> TickableComponent::GetSharedComponent() {
+    return std::static_pointer_cast<Component>(mWeakSelf.lock());
 }
 
 } // namespace Ship

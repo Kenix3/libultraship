@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -16,7 +17,7 @@ Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mous
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
-    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    GetChildren().Add(gui);
 }
 
 Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
@@ -131,5 +132,12 @@ void Window::SetWindowBackend(WindowBackend backend) {
 
 void Window::AddAvailableWindowBackend(WindowBackend backend) {
     mAvailableWindowBackends->push_back(backend);
+}
+
+void Window::InitBase() {
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    if (!mConfig) {
+        throw std::runtime_error("Window requires Config in the component hierarchy");
+    }
 }
 } // namespace Ship
