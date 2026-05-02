@@ -1,29 +1,24 @@
 #include "ship/TickableComponent.h"
 #include "ship/Context.h"
-#include "ship/actions/TickAction.h"
-#include "ship/actions/DrawAction.h"
-#include "ship/actions/DrawDebugMenuAction.h"
+#include "ship/actions/EventAction.h"
 
 #include <spdlog/spdlog.h>
 
 namespace Ship {
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
-                                     const TickGroup tickGroup, const TickPriority tickPriority, const bool isTicking,
-                                     const bool isDrawing, const bool isDrawingDebugMenu)
-    : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
+                                     const TickGroup tickGroup, const TickPriority tickPriority,
+                                     const std::vector<std::string>& eventNames)
+    : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context),
+      mPendingEventNames(eventNames) {
     // Note: Actions and context registration are deferred to RegisterWithContext()
     // because shared_from_this() cannot be called in a constructor.
-    mPendingTicking = isTicking;
-    mPendingDrawing = isDrawing;
-    mPendingDrawingDebugMenu = isDrawingDebugMenu;
 }
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
                                      const std::vector<std::shared_ptr<Action>>& actions)
-    : Tickable(true, actions), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context),
-      mPendingTicking(false), mPendingDrawing(false), mPendingDrawingDebugMenu(false) {
+    : Tickable(true, actions), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context) {
 }
 
 TickableComponent::~TickableComponent() {
@@ -40,16 +35,13 @@ void TickableComponent::InitWeakSelf(std::shared_ptr<TickableComponent> self) {
 
 void TickableComponent::RegisterWithContext(std::shared_ptr<TickableComponent> self) {
     InitWeakSelf(self);
-    if (mPendingTicking) {
-        GetActionList().Add(std::make_shared<TickAction>(self));
+
+    // Create EventActions for all pending event names.
+    for (const auto& eventName : mPendingEventNames) {
+        GetActionList().Add(std::make_shared<EventAction>(eventName, self));
     }
-    if (mPendingDrawing) {
-        GetActionList().Add(std::make_shared<DrawAction>(self));
-    }
-    if (mPendingDrawingDebugMenu) {
-        GetActionList().Add(std::make_shared<DrawDebugMenuAction>(self));
-    }
-    if (mPendingTicking || mPendingDrawing || mPendingDrawingDebugMenu) {
+
+    if (!mPendingEventNames.empty()) {
         Start();
     }
 
@@ -104,14 +96,7 @@ TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> contex
     return *this;
 }
 
-bool TickableComponent::ActionRan(const uint32_t action, const double durationSinceLastTick) {
-    if (action == static_cast<uint32_t>(ActionType::DrawDebugMenu)) {
-        return DebugMenuDrawn(durationSinceLastTick);
-    }
-    return true;
-}
-
-bool TickableComponent::DebugMenuDrawn(const double durationSinceLastTick) {
+bool TickableComponent::ActionRan(const std::string& eventName, const double durationSinceLastTick) {
     return true;
 }
 

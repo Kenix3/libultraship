@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "ship/Tickable.h"
 #include "ship/Component.h"
@@ -26,35 +27,34 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
  * After construction and shared_ptr ownership, call RegisterWithContext() to
  * wire the component into the Context's tick loop.
  *
+ * Event names (e.g. "Tick", "Draw", "DrawDebugMenu") are registered dynamically
+ * with the Events component rather than using hardcoded enum values. When
+ * RegisterWithContext() is called, EventActions are created for each event name
+ * the component subscribes to.
+ *
  * **Context TickableList semantics:**
  * A TickableComponent is present in the Context's TickableList (and therefore
  * executed each frame) as long as it has at least one parent. It is added to
  * the list when its first parent is assigned and removed when its last parent
  * is removed.  This is managed automatically by ComponentList when the
  * COMPONENT_THREAD_SAFE or default parent/child relationship hooks fire.
- *
- * **Required Context children:**
- * None – TickableComponent itself does not look up other components from the
- * Context.  Concrete subclasses may declare their own requirements.
  */
 class TickableComponent : public Tickable, public Component {
   public:
     /**
-     * @brief Constructs a TickableComponent with convenience booleans.
+     * @brief Constructs a TickableComponent with event name subscriptions.
      *
      * Call RegisterWithContext() after the object is owned by a shared_ptr.
      * @param name Human-readable name for the Component.
      * @param context The Context to register with.
      * @param tickGroup The TickGroup this component belongs to.
      * @param tickPriority Execution priority within the TickGroup.
-     * @param isTicking Whether the component starts in the ticking state.
-     * @param isDrawing Whether a DrawAction is created automatically.
-     * @param isDrawingDebugMenu Whether a DrawDebugMenuAction is created automatically.
+     * @param eventNames List of event names to create EventActions for (e.g. {"Tick", "Draw"}).
      */
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
-                      const TickPriority tickPriority = TickPriority::TickPriorityDefault, const bool isTicking = true,
-                      const bool isDrawing = true, const bool isDrawingDebugMenu = true);
+                      const TickPriority tickPriority = TickPriority::TickPriorityDefault,
+                      const std::vector<std::string>& eventNames = {});
 
     /**
      * @brief Constructs a TickableComponent with an explicit list of Actions.
@@ -65,9 +65,8 @@ class TickableComponent : public Tickable, public Component {
      * @param actions The initial set of Actions to register.
      */
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
-                      const TickGroup tickGroup = TickGroup::TickGroupDefault,
-                      const TickPriority tickPriority = TickPriority::TickPriorityDefault,
-                      const std::vector<std::shared_ptr<Action>>& actions = {});
+                      const TickGroup tickGroup, const TickPriority tickPriority,
+                      const std::vector<std::shared_ptr<Action>>& actions);
     virtual ~TickableComponent();
 
     /**
@@ -84,7 +83,8 @@ class TickableComponent : public Tickable, public Component {
      * @brief Registers this component with its Context.
      *
      * Must be called after the object is managed by a shared_ptr.
-     * Calls InitWeakSelf(self) internally.
+     * Calls InitWeakSelf(self) internally. Creates EventActions for all
+     * pending event names.
      * @param self The shared_ptr that owns this object.
      */
     void RegisterWithContext(std::shared_ptr<TickableComponent> self);
@@ -126,23 +126,14 @@ class TickableComponent : public Tickable, public Component {
     TickableComponent& SetContext(std::shared_ptr<Context> context);
 
     /**
-     * @brief Virtual hook invoked when an Action runs on this component.
+     * @brief Virtual hook invoked when an EventAction runs on this component.
      *
-     * Subclasses override this to respond to Tick, Draw, and DrawDebugMenu action types.
-     * Called by TickAction, DrawAction, and DrawDebugMenuAction after casting the owning
-     * Tickable to TickableComponent.
-     * @param action The numeric action type that executed (see ActionType enum).
+     * Subclasses override this to respond to specific event names.
+     * @param eventName The event name that executed (e.g. "Tick", "Draw").
      * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
-    virtual bool ActionRan(const uint32_t action, const double durationSinceLastTick);
-
-    /**
-     * @brief Virtual hook invoked when the debug menu draw Action runs.
-     * @param durationSinceLastTick Elapsed time in seconds since the last tick.
-     * @return True if the debug menu was drawn successfully.
-     */
-    virtual bool DebugMenuDrawn(const double durationSinceLastTick);
+    virtual bool ActionRan(const std::string& eventName, const double durationSinceLastTick);
 
     /**
      * @brief Returns a shared_ptr to this Component via the stored mWeakSelf.
@@ -157,9 +148,7 @@ class TickableComponent : public Tickable, public Component {
     TickGroup mTickGroup;
     TickPriority mTickPriority;
     std::shared_ptr<Context> mContext;
-    bool mPendingTicking;
-    bool mPendingDrawing;
-    bool mPendingDrawingDebugMenu;
+    std::vector<std::string> mPendingEventNames;
     std::weak_ptr<TickableComponent> mWeakSelf;
 };
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <string>
 #include <stdint.h>
 
 #include "ship/PartList.h"
@@ -11,11 +12,11 @@
 namespace Ship {
 
 /**
- * @brief Extends PartList<Action> with action-type-based lookup helpers.
+ * @brief Extends PartList<Action> with event-name-based and type-based lookup helpers.
  *
  * Provides overloaded Has() and Get() methods that filter Actions by their
- * numeric type identifier (see ActionType). Automatically starts Actions
- * when added and stops them when removed.
+ * event name or numeric type hash. Automatically starts Actions when added
+ * and stops them when removed.
  */
 class ActionList : public PartList<Action> {
   public:
@@ -24,25 +25,25 @@ class ActionList : public PartList<Action> {
     using PartList<Action>::Get;
 
     /**
-     * @brief Checks whether any Action of the given type is in the list.
-     * @param actionType The numeric action type to search for.
+     * @brief Checks whether any Action with the given event name is in the list.
+     * @param eventName The event name to search for.
      * @return True if at least one matching Action is present.
      */
-    bool Has(const uint32_t actionType) const;
+    bool Has(const std::string& eventName) const;
 
     /**
-     * @brief Returns all Actions of the given type.
-     * @param actionType The numeric action type to filter by.
+     * @brief Returns all Actions with the given event name.
+     * @param eventName The event name to filter by.
      * @return A vector of matching Actions.
      */
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const uint32_t actionType) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::string& eventName) const;
 
     /**
-     * @brief Returns all Actions matching any of the given types.
-     * @param actionTypes A vector of numeric action types to filter by.
+     * @brief Returns all Actions matching any of the given event names.
+     * @param eventNames A vector of event names to filter by.
      * @return A vector of matching Actions.
      */
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<uint32_t>& actionTypes) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<std::string>& eventNames) const;
 
   protected:
     /**
@@ -60,17 +61,17 @@ class ActionList : public PartList<Action> {
     void Removed(std::shared_ptr<Action> action, const bool forced) override;
 };
 
-inline bool ActionList::Has(const uint32_t actionType) const {
+inline bool ActionList::Has(const std::string& eventName) const {
     const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(), [actionType](const std::shared_ptr<Action>& action) {
-               return action->GetType() == actionType;
+    return std::find_if(list.begin(), list.end(), [&eventName](const std::shared_ptr<Action>& action) {
+               return action->GetEventName() == eventName;
            }) != list.end();
 }
 
-inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(const uint32_t actionType) const {
+inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(const std::string& eventName) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : this->GetList()) {
-        if (action->GetType() == actionType) {
+        if (action->GetEventName() == eventName) {
             result->push_back(action);
         }
     }
@@ -78,10 +79,10 @@ inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(con
 }
 
 inline std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-ActionList::Get(const std::vector<uint32_t>& actionTypes) const {
+ActionList::Get(const std::vector<std::string>& eventNames) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : this->GetList()) {
-        if (std::find(actionTypes.begin(), actionTypes.end(), action->GetType()) != actionTypes.end()) {
+        if (std::find(eventNames.begin(), eventNames.end(), action->GetEventName()) != eventNames.end()) {
             result->push_back(action);
         }
     }
