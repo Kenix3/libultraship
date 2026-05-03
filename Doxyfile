@@ -1,0 +1,71 @@
+# Doxyfile for libultraship
+# Run: doxygen Doxyfile
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "libultraship"
+PROJECT_BRIEF          = "Reimplementations of libultra (N64 SDK) functions for modern hardware"
+PROJECT_LOGO           =
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = include/ README.md
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.hpp *.md
+EXTENSION_MAPPING      =
+USE_MDFILE_AS_MAINPAGE = README.md
+EXCLUDE_PATTERNS       = */fast/README.md
+
+#---------------------------------------------------------------------------
+# Output
+#---------------------------------------------------------------------------
+OUTPUT_DIRECTORY       = doxygen_out
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+
+#---------------------------------------------------------------------------
+# Extraction
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_ANON_NSPACES   = NO
+
+#---------------------------------------------------------------------------
+# Source browsing
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+
+#---------------------------------------------------------------------------
+# Graphs (requires Graphviz)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+DIRECTORY_GRAPH        = YES
+DOT_CLEANUP            = YES
+
+#---------------------------------------------------------------------------
+# Messages
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+
+#---------------------------------------------------------------------------
+# HTML appearance
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = AUTO_LIGHT

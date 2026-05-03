@@ -1,3 +1,8 @@
+---
+title: Scripting
+nav_order: 3
+---
+
 # Scripting System
 
 This document covers the C-based mod scripting system — how archives are structured, how the manifest is parsed, how signing and integrity verification work, and how to write a mod using the event system.
