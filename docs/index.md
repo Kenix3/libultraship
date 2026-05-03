@@ -18,6 +18,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 | [Fast3D Renderer](fast-renderer) | Overview of the Fast3D display-list renderer. |
 | [Contributing](contributing) | How to contribute code, formatting guidelines, and CI troubleshooting. |
 | [Code of Conduct](code-of-conduct) | Community standards for contributors. |
+| [API Reference](api/) | Doxygen-generated documentation for all public classes and functions. |
 
 ## Contributing
 
