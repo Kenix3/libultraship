@@ -188,13 +188,13 @@ class Config {
     void SetCurrentAudioBackend(AudioBackend backend);
 
     /** @brief Returns the window backend identifier stored in the config. */
-    WindowBackend GetWindowBackend();
+    int32_t GetWindowBackend();
 
     /**
      * @brief Persists the given window backend identifier to the config.
-     * @param backend Backend to store.
+     * @param backend Backend ID to store.
      */
-    void SetWindowBackend(WindowBackend backend);
+    void SetWindowBackend(int32_t backend);
 
     /** @brief Returns the audio channel layout stored in the config. */
     AudioChannelsSetting GetCurrentAudioChannelsSetting();

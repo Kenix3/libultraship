@@ -8,6 +8,22 @@ union Gfx;
 #include "interpreter.h"
 
 namespace Fast {
+
+/**
+ * @brief Identifies the graphics/windowing backend used by Fast3dWindow.
+ *
+ * These are the positive backend IDs registered by Fast3dWindow.
+ * The general convention for window backend IDs (int32_t) is:
+ *   negative  — no Window backend available (e.g. Window is not initialized)
+ *   zero      — no Window backend in use
+ *   positive  — backend defined by the Window subclass
+ */
+enum WindowBackend {
+    FAST3D_DXGI_DX11 = 1,
+    FAST3D_SDL_OPENGL = 2,
+    FAST3D_SDL_METAL = 3,
+};
+
 class Fast3dWindow : public Ship::Window {
   public:
     Fast3dWindow();

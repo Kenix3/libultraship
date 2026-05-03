@@ -303,11 +303,10 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
     }
 }
 
-WindowBackend Config::GetWindowBackend() {
-    WindowBackend backend;
+int32_t Config::GetWindowBackend() {
     auto backendId = GetInt("Window.Backend.Id", -1);
     if (Context::GetInstance()->GetWindow()->IsAvailableWindowBackend(backendId)) {
-        return static_cast<WindowBackend>(backendId);
+        return backendId;
     }
 
     SPDLOG_TRACE(
@@ -322,25 +321,11 @@ WindowBackend Config::GetWindowBackend() {
             return backends->front();
         }
     }
-    return WindowBackend::NONE;
+    return -1;
 }
 
-void Config::SetWindowBackend(WindowBackend backend) {
-    SetInt("Window.Backend.Id", static_cast<int>(backend));
-
-    switch (backend) {
-        case WindowBackend::FAST3D_DXGI_DX11:
-            SetString("Window.Backend.Name", "DirectX 11");
-            break;
-        case WindowBackend::FAST3D_SDL_OPENGL:
-            SetString("Window.Backend.Name", "OpenGL");
-            break;
-        case WindowBackend::FAST3D_SDL_METAL:
-            SetString("Window.Backend.Name", "Metal");
-            break;
-        default:
-            SetString("Window.Backend.Name", "");
-    }
+void Config::SetWindowBackend(int32_t backend) {
+    SetInt("Window.Backend.Id", backend);
 }
 
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {

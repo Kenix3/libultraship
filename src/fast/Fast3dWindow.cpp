@@ -27,14 +27,14 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
     GfxSetInstance(mInterpreter);
 
 #ifdef _WIN32
-    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
+    AddAvailableWindowBackend(WindowBackend::FAST3D_DXGI_DX11);
 #endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
-        AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_METAL);
+        AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_METAL);
     }
 #endif
-    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+    AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_OPENGL);
 }
 
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
@@ -132,19 +132,19 @@ void Fast3dWindow::InitWindowManager() {
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
-        case Ship::WindowBackend::FAST3D_DXGI_DX11:
+        case WindowBackend::FAST3D_DXGI_DX11:
             mWindowManagerApi = new GfxWindowBackendDXGI();
             mRenderingApi = new GfxRenderingAPIDX11(static_cast<GfxWindowBackendDXGI*>(mWindowManagerApi));
             break;
 #endif
 #ifdef ENABLE_OPENGL
-        case Ship::WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_OPENGL:
             mRenderingApi = new GfxRenderingAPIOGL();
             mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
 #endif
 #ifdef __APPLE__
-        case Ship::WindowBackend::FAST3D_SDL_METAL:
+        case WindowBackend::FAST3D_SDL_METAL:
             mRenderingApi = new GfxRenderingAPIMetal();
             mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
@@ -297,7 +297,7 @@ bool Fast3dWindow::SupportsWindowedFullscreen() {
     return false;
 #endif
 
-    if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL) {
+    if (GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL) {
         return true;
     }
 

@@ -15,7 +15,7 @@ namespace Ship {
 Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) {
     mGui = gui;
     mMouseStateManager = mouseStateManager;
-    mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
+    mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
     mConfig = Context::GetInstance()->GetConfig();
 }
 
@@ -67,23 +67,20 @@ void Window::SaveWindowToConfig() {
     }
 }
 
-WindowBackend Window::GetWindowBackend() {
+int32_t Window::GetWindowBackend() {
     return mWindowBackend;
 }
 
-std::shared_ptr<std::vector<WindowBackend>> Window::GetAvailableWindowBackends() {
+std::shared_ptr<std::vector<int32_t>> Window::GetAvailableWindowBackends() {
     return mAvailableWindowBackends;
 }
 
 bool Window::IsAvailableWindowBackend(int32_t backendId) {
-    // Verify the id is a valid backend enum value
-    if (backendId < 0 || backendId >= static_cast<int>(WindowBackend::WINDOW_BACKEND_COUNT)) {
+    if (backendId < 0) {
         return false;
     }
 
-    // Verify the backend is available
-    auto backend = static_cast<WindowBackend>(backendId);
-    return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backend) !=
+    return std::find(mAvailableWindowBackends->begin(), mAvailableWindowBackends->end(), backendId) !=
            mAvailableWindowBackends->end();
 }
 
@@ -123,13 +120,13 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
     return mMouseStateManager;
 }
 
-void Window::SetWindowBackend(WindowBackend backend) {
+void Window::SetWindowBackend(int32_t backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
     Context::GetInstance()->GetConfig()->Save();
 }
 
-void Window::AddAvailableWindowBackend(WindowBackend backend) {
+void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 } // namespace Ship

@@ -12,14 +12,13 @@
 
 namespace Ship {
 
-/** @brief Identifies the graphics/windowing backend in use. */
-enum class WindowBackend {
-    NONE = -1,
-    FAST3D_DXGI_DX11 = 0,
-    FAST3D_SDL_OPENGL = 1,
-    FAST3D_SDL_METAL = 2,
-    WINDOW_BACKEND_COUNT = 3
-};
+/** @brief Identifies the graphics/windowing backend in use.
+ *
+ * Window backend IDs use the following convention:
+ *  - Negative values indicate no Window backend is available (e.g. the Window is not initialized).
+ *  - Zero indicates no Window backend is in use.
+ *  - Positive values are backend IDs defined by the concrete Window subclass.
+ */
 
 /** @brief Integer pixel coordinates. */
 struct Coords {
@@ -154,13 +153,17 @@ class Window {
     /** @brief Returns a handle to the graphics API framebuffer object. */
     virtual uintptr_t GetGfxFrameBuffer() = 0;
 
-    /** @brief Returns the current graphics backend identifier. */
-    WindowBackend GetWindowBackend();
+    /** @brief Returns the current graphics backend identifier.
+     *
+     * See the window backend ID convention in the comment above this class:
+     * negative = no backend available, 0 = no backend in use, positive = defined by subclass.
+     */
+    int32_t GetWindowBackend();
     /** @brief Returns the list of backends available on this platform. */
-    std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
+    std::shared_ptr<std::vector<int32_t>> GetAvailableWindowBackends();
     /**
      * @brief Returns true if the backend with the given ID is available on this platform.
-     * @param backendId WindowBackend cast to int.
+     * @param backendId Backend identifier to check.
      */
     bool IsAvailableWindowBackend(int32_t backendId);
     /** @brief Returns the scancode of the last key event received. */
@@ -212,21 +215,21 @@ class Window {
   protected:
     /**
      * @brief Records the active graphics backend. Called by subclass constructors.
-     * @param backend The backend in use.
+     * @param backend The backend ID in use.
      */
-    void SetWindowBackend(WindowBackend backend);
+    void SetWindowBackend(int32_t backend);
     /**
      * @brief Adds a backend to the list of backends available on this platform.
-     * @param backend Backend to mark as available.
+     * @param backend Backend ID to mark as available.
      */
-    void AddAvailableWindowBackend(WindowBackend backend);
+    void AddAvailableWindowBackend(int32_t backend);
 
   private:
     std::shared_ptr<Gui> mGui;
     int32_t mLastScancode = -1;
-    WindowBackend mWindowBackend;
+    int32_t mWindowBackend;
     std::shared_ptr<MouseStateManager> mMouseStateManager;
-    std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
+    std::shared_ptr<std::vector<int32_t>> mAvailableWindowBackends;
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;
