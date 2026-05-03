@@ -9,9 +9,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
-#ifdef __APPLE__
-#include "fast/backends/gfx_metal.h"
-#endif
+
 
 namespace fs = std::filesystem;
 
@@ -317,14 +315,12 @@ WindowBackend Config::GetWindowBackend() {
     SPDLOG_TRACE(
         "Could not find available WindowBackend matching id from config file ({}). Returning default WindowBackend.",
         backendId);
-#ifdef ENABLE_DX11
-    return WindowBackend::FAST3D_DXGI_DX11;
-#endif
-#ifdef __APPLE__
-    if (Metal_IsSupported()) {
-        return WindowBackend::FAST3D_SDL_METAL;
+
+    // Use the first available backend registered by the Window (added in priority order).
+    auto backends = Context::GetInstance()->GetWindow()->GetAvailableWindowBackends();
+    if (backends && !backends->empty()) {
+        return backends->front();
     }
-#endif
     return WindowBackend::FAST3D_SDL_OPENGL;
 }
 

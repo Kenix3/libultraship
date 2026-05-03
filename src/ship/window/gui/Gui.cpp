@@ -16,7 +16,6 @@
 #include "ship/window/gui/Fonts.h"
 #include "ship/window/gui/resource/GuiTextureFactory.h"
 
-#include "libultraship/window/gui/GfxDebuggerWindow.h"
 #include "fast/Fast3dWindow.h"
 #ifdef __APPLE__
 #include <SDL_hints.h>
@@ -78,11 +77,6 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
         AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),
                                                      ImGuiWindowFlags_NoFocusOnAppearing));
     }
-
-    if (GetGuiWindow("GfxDebuggerWindow") == nullptr) {
-        AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "GfxDebuggerWindow",
-                                                              ImVec2(520, 600)));
-    }
 }
 
 Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
@@ -139,7 +133,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     GetGuiWindow("Stats")->Init();
     GetGuiWindow("Input Editor")->Init();
     GetGuiWindow("Console")->Init();
-    GetGuiWindow("GfxDebuggerWindow")->Init();
     GetGameOverlay()->Init();
 
     Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(

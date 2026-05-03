@@ -5,7 +5,6 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
-#include "fast/debug/GfxDebugger.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/CrashHandler.h"
@@ -104,7 +103,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
-           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
+           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) &&
 #ifdef ENABLE_SCRIPTING
            InitEventSystem() && InitFileDropMgr() && InitScriptLoader();
 #else
@@ -299,12 +298,12 @@ bool Context::InitAudio(AudioSettings settings) {
     return true;
 }
 
-bool Context::InitGfxDebugger() {
+bool Context::InitGfxDebugger(std::shared_ptr<Fast::GfxDebugger> gfxDebugger) {
     if (GetGfxDebugger() != nullptr) {
         return true;
     }
 
-    mGfxDebugger = std::make_shared<Fast::GfxDebugger>();
+    mGfxDebugger = gfxDebugger;
 
     if (GetGfxDebugger() == nullptr) {
         SPDLOG_ERROR("Failed to initialize gfx debugger");
