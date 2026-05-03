@@ -9,8 +9,6 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
-
-
 namespace fs = std::filesystem;
 
 namespace Ship {
