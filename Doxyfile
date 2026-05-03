@@ -37,8 +37,16 @@ EXTRACT_ANON_NSPACES   = NO
 #---------------------------------------------------------------------------
 # Filtering
 #---------------------------------------------------------------------------
-# Expose OtrArchive (guarded by INCLUDE_MPQ_SUPPORT).
-PREDEFINED             = INCLUDE_MPQ_SUPPORT
+# Define all feature-gate macros so Doxygen sees the complete API surface.
+PREDEFINED             = INCLUDE_MPQ_SUPPORT \
+                         INCLUDE_PROFILING \
+                         COMPONENT_THREAD_SAFE \
+                         INIT_EVENT_IDS \
+                         ENABLE_SCRIPTING \
+                         ENABLE_OPENGL \
+                         ENABLE_DX11 \
+                         ENABLE_DX12 \
+                         DECLARE_GFX_DXGI_FUNCTIONS
 
 # Hide forward-declaration-only namespaces that are not part of the public API.
 EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::*
