@@ -54,6 +54,13 @@ jobs:
         with:
           path: _site
 
+      - name: Upload site preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-preview
+          path: _site
+          retention-days: 7
+
   deploy:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/copilot/')
     environment:
