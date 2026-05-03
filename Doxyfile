@@ -37,7 +37,9 @@ EXTRACT_ANON_NSPACES   = NO
 #---------------------------------------------------------------------------
 # Filtering
 #---------------------------------------------------------------------------
-# Define all feature-gate macros so Doxygen sees the complete API surface.
+# Define all feature-gate and platform macros so Doxygen sees the complete API
+# surface.  OS macros are defined simultaneously so that every platform-specific
+# code path appears in the generated documentation.
 PREDEFINED             = INCLUDE_MPQ_SUPPORT \
                          INCLUDE_PROFILING \
                          COMPONENT_THREAD_SAFE \
@@ -46,7 +48,15 @@ PREDEFINED             = INCLUDE_MPQ_SUPPORT \
                          ENABLE_OPENGL \
                          ENABLE_DX11 \
                          ENABLE_DX12 \
-                         DECLARE_GFX_DXGI_FUNCTIONS
+                         DECLARE_GFX_DXGI_FUNCTIONS \
+                         USE_OPENGLES \
+                         USE_GBI_TRACE \
+                         _WIN32 \
+                         _MSC_VER \
+                         __APPLE__ \
+                         __linux__ \
+                         __OpenBSD__ \
+                         __cplusplus
 
 # Hide forward-declaration-only namespaces that are not part of the public API.
 EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::*

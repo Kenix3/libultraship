@@ -14,13 +14,25 @@
 
 /**
  * @namespace Ship
- * @brief The core engine namespace for libultraship.
+ * @brief Core namespace for the libultraship engine framework.
  *
- * Ship contains all components, subsystems, and utilities that make up the
- * libultraship engine.  The engine provides reimplementations of libultra
- * (N64 SDK) functions that run on modern hardware, enabling PC ports of N64
- * games without embedding console-specific code.  Nothing console-specific
- * should live in this namespace — this is a work in progress toward that goal.
+ * The Ship namespace contains all public types that form the libultraship
+ * engine — a component-based framework for running N64 game re-implementations
+ * on modern desktop and mobile hardware.
+ *
+ * Key subsystems inside Ship include:
+ * - **Context** — the root singleton that owns every other component.
+ * - **Resource** — asset loading, archive management, and caching.
+ * - **Window / Gui** — platform-agnostic windowing, input, and ImGui overlay.
+ * - **Audio** — mixing and playback through platform audio backends.
+ * - **Controller** — unified controller input with configurable mappings.
+ * - **Console** — developer console with console variables and commands.
+ * - **Events** — a publish/subscribe event bus for decoupled communication.
+ * - **Scripting** — optional dynamic library loading for game-specific plugins.
+ *
+ * Ship is intentionally platform-neutral; platform-specific code lives behind
+ * compile-time feature guards (e.g. `ENABLE_DX11`, `ENABLE_OPENGL`) and is
+ * abstracted by the subsystem interfaces listed above.
  */
 namespace Ship {
 
