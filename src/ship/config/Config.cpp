@@ -322,7 +322,7 @@ WindowBackend Config::GetWindowBackend() {
             return backends->front();
         }
     }
-    return WindowBackend::FAST3D_SDL_OPENGL;
+    return WindowBackend::NONE;
 }
 
 void Config::SetWindowBackend(WindowBackend backend) {
