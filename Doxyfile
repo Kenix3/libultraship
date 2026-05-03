@@ -16,6 +16,7 @@ RECURSIVE              = YES
 FILE_PATTERNS          = *.h *.hpp *.md
 EXTENSION_MAPPING      =
 USE_MDFILE_AS_MAINPAGE = README.md
+EXCLUDE                = include/libultraship/libultra
 EXCLUDE_PATTERNS       = */fast/README.md
 
 #---------------------------------------------------------------------------
