@@ -9,6 +9,16 @@ libultraship (LUS) is a library meant to provide reimplementations of libultra (
 
 LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr` or `.o2r`. `.otr` files are [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible files. `.o2r` files are `.zip` compatible files. This separation of data from executable follows modern design practices which are more mod friendly. All one needs to do is supply a patch `.otr` or `.o2r` and the system will automatically replace the data.
 
+## Documentation
+
+| Page | Description |
+| :--- | :--- |
+| [Porting Guide](PORTING) | How to port an N64 game to PC using LUS. |
+| [Scripting](SCRIPTING) | Writing and packaging C mods for the scripting system. |
+| [Fast3D Renderer](fast-renderer) | Overview of the Fast3D display-list renderer. |
+| [Contributing](contributing) | How to contribute code, formatting guidelines, and CI troubleshooting. |
+| [Code of Conduct](code-of-conduct) | Community standards for contributors. |
+
 ## Contributing
 
 LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
