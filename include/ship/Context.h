@@ -233,8 +233,8 @@ class Context {
      */
     bool InitAudio(AudioSettings settings);
 
-    /** @brief Initializes the graphics debugger with the provided instance. @return true on success. */
-    bool InitGfxDebugger(std::shared_ptr<Fast::GfxDebugger> gfxDebugger);
+    /** @brief Initializes the graphics debugger. @return true on success. */
+    bool InitGfxDebugger();
 
     /** @brief Initializes the developer Console window. @return true on success. */
     bool InitConsole();
