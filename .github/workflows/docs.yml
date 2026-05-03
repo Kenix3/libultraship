@@ -55,7 +55,7 @@ jobs:
           path: _site
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/copilot/')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
