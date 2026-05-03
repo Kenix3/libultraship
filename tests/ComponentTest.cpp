@@ -750,11 +750,12 @@ TEST(ComponentSearchTest, GetInChildrenFindsAll) {
 // maps each name to the concrete class in the appropriate namespace.
 
 // Helper: create a fresh Context instance for each test, then destroy it afterward.
-// The context singleton is weak, so letting the shared_ptr go out of scope clears it.
+// Uses CreateInstance so that Context::GetInstance() returns the context during the test,
+// satisfying components (e.g. ConsoleVariable) that look up siblings via the singleton.
+// The context singleton is a weak_ptr; when the returned shared_ptr goes out of scope at
+// the end of the test, the weak_ptr expires and the next test can create a fresh one.
 static std::shared_ptr<Ship::Context> MakeTestContext() {
-    // Each call creates a new context; the weak_ptr in Context resets when the
-    // previous shared_ptr is destroyed, so this is safe inside unit tests.
-    return std::make_shared<Ship::Context>("TestApp", "test", "");
+    return Ship::Context::CreateInstance("TestApp", "test", "");
 }
 
 // BuildComponentsFromJson should return false when the JSON has no "components" array.
@@ -765,10 +766,14 @@ TEST(BuildComponentsFromJsonTest, ReturnsFalseForMissingComponentsArray) {
 }
 
 // "ConsoleVariable" type maps to Ship::ConsoleVariable (Ship namespace).
+// Config must be present first because ConsoleVariable::Load() looks it up via the context.
 TEST(BuildComponentsFromJsonTest, ShipNamespaceConsoleVariableIsCreated) {
     auto ctx = MakeTestContext();
     nlohmann::json spec = {
-        {"components", {{{"type", "ConsoleVariable"}}}}
+        {"components", {
+            {{"type", "Config"}},
+            {{"type", "ConsoleVariable"}}
+        }}
     };
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
     // The component was added and initialized; look it up by type.
@@ -792,10 +797,12 @@ TEST(BuildComponentsFromJsonTest, FastNamespaceGfxDebuggerIsCreated) {
 }
 
 // Both a Ship-namespace and a Fast-namespace component can coexist in the same JSON spec.
+// Config must precede ConsoleVariable because ConsoleVariable::Load() depends on it.
 TEST(BuildComponentsFromJsonTest, MixedNamespaceComponentsCoexist) {
     auto ctx = MakeTestContext();
     nlohmann::json spec = {
         {"components", {
+            {{"type", "Config"}},
             {{"type", "ConsoleVariable"}},
             {{"type", "GfxDebugger"}}
         }}

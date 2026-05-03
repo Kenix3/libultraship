@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - "copilot/**"
   workflow_dispatch:
 
 # Allow one concurrent deployment
@@ -62,7 +61,7 @@ jobs:
           retention-days: 7
 
   deploy:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/copilot/')
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
