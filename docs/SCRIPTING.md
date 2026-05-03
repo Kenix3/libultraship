@@ -1,6 +1,7 @@
 ---
 title: Scripting
-nav_order: 3
+parent: Guides
+nav_order: 2
 ---
 
 # Scripting System

@@ -1,6 +1,7 @@
 ---
 title: Fast3D Renderer
-nav_order: 4
+parent: Guides
+nav_order: 3
 ---
 
 # Nintendo 64 Fast3D Renderer

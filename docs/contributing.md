@@ -1,6 +1,7 @@
 ---
 title: Contributing
-nav_order: 5
+parent: Community
+nav_order: 1
 ---
 
 # Preface

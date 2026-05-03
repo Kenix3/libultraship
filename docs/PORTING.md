@@ -1,6 +1,7 @@
 ---
 title: Porting Guide
-nav_order: 2
+parent: Guides
+nav_order: 1
 ---
 
 # Libultraship (LUS) Porting Guide

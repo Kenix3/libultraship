@@ -1,6 +1,7 @@
 ---
 title: Code of Conduct
-nav_order: 6
+parent: Community
+nav_order: 2
 ---
 
 # Contributor Covenant Code of Conduct
