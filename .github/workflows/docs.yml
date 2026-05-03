@@ -40,6 +40,8 @@ jobs:
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Generate Doxygen API docs
         run: doxygen Doxyfile
