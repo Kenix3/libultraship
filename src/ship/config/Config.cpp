@@ -317,9 +317,12 @@ WindowBackend Config::GetWindowBackend() {
         backendId);
 
     // Use the first available backend registered by the Window (added in priority order).
-    auto backends = Context::GetInstance()->GetWindow()->GetAvailableWindowBackends();
-    if (backends && !backends->empty()) {
-        return backends->front();
+    auto window = Context::GetInstance()->GetWindow();
+    if (window != nullptr) {
+        auto backends = window->GetAvailableWindowBackends();
+        if (backends && !backends->empty()) {
+            return backends->front();
+        }
     }
     return WindowBackend::FAST3D_SDL_OPENGL;
 }

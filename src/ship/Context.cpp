@@ -303,13 +303,12 @@ bool Context::InitGfxDebugger(std::shared_ptr<Fast::GfxDebugger> gfxDebugger) {
         return true;
     }
 
-    mGfxDebugger = gfxDebugger;
-
-    if (GetGfxDebugger() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize gfx debugger");
+    if (gfxDebugger == nullptr) {
+        SPDLOG_ERROR("Failed to initialize gfx debugger: null instance provided");
         return false;
     }
 
+    mGfxDebugger = gfxDebugger;
     return true;
 }
 
