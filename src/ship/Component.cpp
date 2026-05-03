@@ -144,7 +144,8 @@ void Component::Init(const nlohmann::json& initArgs) {
             if (!found) {
                 throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + depName +
                                          "' to be present in the component hierarchy. "
-                                         "Ensure it is added before initializing '" + GetName() + "'");
+                                         "Ensure it is added before initializing '" +
+                                         GetName() + "'");
             }
         }
     }

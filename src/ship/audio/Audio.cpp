@@ -97,7 +97,7 @@ AudioChannelsSetting Audio::GetAudioChannels() const {
 }
 
 nlohmann::json Audio::GetDependencies() const {
-    return nlohmann::json::array({"Config"});
+    return nlohmann::json::array({ "Config" });
 }
 
 } // namespace Ship

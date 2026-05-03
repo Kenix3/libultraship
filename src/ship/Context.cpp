@@ -304,8 +304,8 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
             return std::make_shared<Keystore>();
         } else if (type == "ScriptLoader") {
             return std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
-                                                   std::vector<std::string>{}, std::vector<std::string>{},
-                                                   std::vector<std::string>{});
+                                                  std::vector<std::string>{}, std::vector<std::string>{},
+                                                  std::vector<std::string>{});
 #endif
         }
         SPDLOG_WARN("BuildComponentsFromJson: unknown component type '{}'", type);

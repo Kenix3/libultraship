@@ -94,9 +94,10 @@ class Context : public Component {
      * @param overrides Map of type→component for externally-provided components (e.g. Window, ControlDeck).
      * @return True if all components were built and initialized successfully.
      */
-    static bool BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
-                                        const nlohmann::json& initArgs = nlohmann::json::object(),
-                                        const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides = {});
+    static bool
+    BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
+                            const nlohmann::json& initArgs = nlohmann::json::object(),
+                            const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides = {});
 
     /**
      * @brief Creates and stores the global Context instance without adding any default components.

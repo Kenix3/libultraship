@@ -64,9 +64,8 @@ class TickableComponent : public Tickable, public Component {
      * @param tickPriority Execution priority within the TickGroup.
      * @param actions The initial set of Actions to register.
      */
-    TickableComponent(const std::string& name, std::shared_ptr<Context> context,
-                      const TickGroup tickGroup, const TickPriority tickPriority,
-                      const std::vector<std::shared_ptr<Action>>& actions);
+    TickableComponent(const std::string& name, std::shared_ptr<Context> context, const TickGroup tickGroup,
+                      const TickPriority tickPriority, const std::vector<std::shared_ptr<Action>>& actions);
     virtual ~TickableComponent();
 
     /**

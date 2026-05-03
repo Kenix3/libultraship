@@ -145,6 +145,6 @@ std::shared_ptr<Config> Window::GetConfig() const {
 }
 
 nlohmann::json Window::GetDependencies() const {
-    return nlohmann::json::array({"Config"});
+    return nlohmann::json::array({ "Config" });
 }
 } // namespace Ship

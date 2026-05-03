@@ -5,8 +5,7 @@
 namespace Ship {
 
 Action::Action(const std::string& eventName, std::shared_ptr<Tickable> tickable)
-    : Part(), mEventName(eventName),
-      mActionType(static_cast<uint32_t>(std::hash<std::string>{}(eventName))),
+    : Part(), mEventName(eventName), mActionType(static_cast<uint32_t>(std::hash<std::string>{}(eventName))),
       mTickable(tickable), mIsActionRunning(false)
 #ifdef INCLUDE_PROFILING
       ,
