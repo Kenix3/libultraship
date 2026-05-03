@@ -58,8 +58,26 @@ PREDEFINED             = INCLUDE_MPQ_SUPPORT \
                          __OpenBSD__ \
                          __cplusplus
 
-# Hide forward-declaration-only namespaces that are not part of the public API.
-EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::*
+# Exclude symbols that live outside the Ship / LUS / Fast namespace hierarchy.
+# This includes:
+#   - Objective-C bridge namespaces used by Metal headers (MTL, CA, NS).
+#   - The tinyxml2 library namespace exposed by forward declarations.
+#   - Global-scope utility classes (StringHelper, Path, DiskFile, Directory,
+#     BitConverter, Endianness) that have not yet been moved into a Ship sub-namespace.
+#   - Global-scope C-compatible structs/enums from fast/interpreter.h
+#     (ColorCombinerKey, CCFeatures, ShaderOpts) that must remain at global scope
+#     for C-linkage but are not part of the public C++ API.
+EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::* \
+                         StringHelper \
+                         Path \
+                         DiskFile \
+                         Directory \
+                         BinaryReader \
+                         BitConverter \
+                         Endianness \
+                         ColorCombinerKey \
+                         CCFeatures \
+                         ShaderOpts
 
 #---------------------------------------------------------------------------
 # Source browsing

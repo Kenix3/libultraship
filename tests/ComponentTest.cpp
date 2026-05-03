@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include "ship/Component.h"
+#include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
+#include "fast/debug/GfxDebugger.h"
 
 using namespace Ship;
 
@@ -737,4 +740,83 @@ TEST(ComponentSearchTest, GetInChildrenFindsAll) {
 
     auto all = root->GetInChildren<DerivedComponent>();
     EXPECT_EQ(all->size(), 2u);
+}
+
+// ---- BuildComponentsFromJson cross-namespace tests ----
+//
+// These tests verify that Context::BuildComponentsFromJson correctly instantiates
+// components that belong to different C++ namespaces (Ship::*, Fast::*).  The
+// type strings in JSON are unqualified names; the factory inside BuildComponentsFromJson
+// maps each name to the concrete class in the appropriate namespace.
+
+// Helper: create a fresh Context instance for each test, then destroy it afterward.
+// The context singleton is weak, so letting the shared_ptr go out of scope clears it.
+static std::shared_ptr<Ship::Context> MakeTestContext() {
+    // Each call creates a new context; the weak_ptr in Context resets when the
+    // previous shared_ptr is destroyed, so this is safe inside unit tests.
+    return std::make_shared<Ship::Context>("TestApp", "test", "");
+}
+
+// BuildComponentsFromJson should return false when the JSON has no "components" array.
+TEST(BuildComponentsFromJsonTest, ReturnsFalseForMissingComponentsArray) {
+    auto ctx = MakeTestContext();
+    nlohmann::json bad = nlohmann::json::object();
+    EXPECT_FALSE(Ship::Context::BuildComponentsFromJson(ctx, bad));
+}
+
+// "ConsoleVariable" type maps to Ship::ConsoleVariable (Ship namespace).
+TEST(BuildComponentsFromJsonTest, ShipNamespaceConsoleVariableIsCreated) {
+    auto ctx = MakeTestContext();
+    nlohmann::json spec = {
+        {"components", {{{"type", "ConsoleVariable"}}}}
+    };
+    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
+    // The component was added and initialized; look it up by type.
+    auto cv = ctx->GetFirstInChildren<Ship::ConsoleVariable>();
+    ASSERT_NE(cv, nullptr);
+    EXPECT_TRUE(cv->IsInitialized());
+}
+
+// "GfxDebugger" type maps to Fast::GfxDebugger (Fast namespace, not Ship).
+// This specifically exercises the cross-namespace path in BuildComponentsFromJson.
+TEST(BuildComponentsFromJsonTest, FastNamespaceGfxDebuggerIsCreated) {
+    auto ctx = MakeTestContext();
+    nlohmann::json spec = {
+        {"components", {{{"type", "GfxDebugger"}}}}
+    };
+    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
+    // GetFirstInChildren uses the C++ type, verifying the correct concrete class.
+    auto dbg = ctx->GetFirstInChildren<Fast::GfxDebugger>();
+    ASSERT_NE(dbg, nullptr) << "GfxDebugger was not added as a Fast::GfxDebugger instance";
+    EXPECT_TRUE(dbg->IsInitialized());
+}
+
+// Both a Ship-namespace and a Fast-namespace component can coexist in the same JSON spec.
+TEST(BuildComponentsFromJsonTest, MixedNamespaceComponentsCoexist) {
+    auto ctx = MakeTestContext();
+    nlohmann::json spec = {
+        {"components", {
+            {{"type", "ConsoleVariable"}},
+            {{"type", "GfxDebugger"}}
+        }}
+    };
+    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
+
+    EXPECT_NE(ctx->GetFirstInChildren<Ship::ConsoleVariable>(), nullptr);
+    EXPECT_NE(ctx->GetFirstInChildren<Fast::GfxDebugger>(), nullptr);
+}
+
+// An unknown type string logs a warning and returns true (the rest of the spec is processed).
+TEST(BuildComponentsFromJsonTest, UnknownTypeIsSkipped) {
+    auto ctx = MakeTestContext();
+    nlohmann::json spec = {
+        {"components", {
+            {{"type", "ThisTypeDoesNotExist"}},
+            {{"type", "GfxDebugger"}}
+        }}
+    };
+    // BuildComponentsFromJson should not fail for an unknown type.
+    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
+    // The known type must still have been added despite the unknown one preceding it.
+    EXPECT_NE(ctx->GetFirstInChildren<Fast::GfxDebugger>(), nullptr);
 }
