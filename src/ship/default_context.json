@@ -75,10 +75,5 @@
         "Window",
         "FileDropMgr",
         "Audio"
-    ],
-    "tickableDefaults": {
-        "tickGroup": 0,
-        "tickPriority": 0,
-        "events": ["Tick", "Draw", "DrawDebugMenu"]
-    }
+    ]
 }

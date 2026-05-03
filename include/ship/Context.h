@@ -80,7 +80,13 @@ class Context : public Component {
      *   - "name": string name for the component
      *   - "dependencies": optional array of dependency names
      *   - "condition": optional compile-time condition (e.g. "ENABLE_SCRIPTING")
-     * - "initOrder": array of component names specifying initialization order
+     *   - "initArgs": optional JSON object with initialization arguments for this component
+     *   - "tickPriority": optional uint32 tick priority (for TickableComponents)
+     *   - "tickGroup": optional uint32 tick group (for TickableComponents)
+     *   - "children": optional array of child component descriptors
+     * - "initOrder": array of entries specifying initialization order, each either:
+     *   - A string: the component name
+     *   - An object: {"name": "...", "initArgs": {...}} with inline init arguments
      *
      * @param context  The context to add components to.
      * @param json     The JSON specification.

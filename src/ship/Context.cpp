@@ -331,11 +331,20 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
 
             std::shared_ptr<Component> component = nullptr;
 
+            // Merge initArgs: inline "initArgs" from the entry takes precedence,
+            // then the top-level initArgs keyed by name.
+            nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+            if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
+                // Inline initArgs override top-level ones.
+                for (auto& [key, value] : entry["initArgs"].items()) {
+                    compArgs[key] = value;
+                }
+            }
+
             // Check if an override is provided.
             if (overrides.count(type)) {
                 component = overrides.at(type);
             } else {
-                nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
                 component = createComponent(type, compArgs);
             }
 
@@ -359,12 +368,26 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
     // Phase 2: Initialize components in declared order.
     // Search the full hierarchy for each named component.
     if (json.contains("initOrder") && json["initOrder"].is_array()) {
-        for (const auto& nameEntry : json["initOrder"]) {
-            if (!nameEntry.is_string()) {
+        for (const auto& initEntry : json["initOrder"]) {
+            std::string name;
+            nlohmann::json compArgs;
+
+            if (initEntry.is_string()) {
+                // Simple string: just the component name.
+                name = initEntry.get<std::string>();
+                compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+            } else if (initEntry.is_object() && initEntry.contains("name")) {
+                // Object with inline initArgs: {"name": "Foo", "initArgs": {...}}
+                name = initEntry["name"].get<std::string>();
+                compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+                if (initEntry.contains("initArgs") && initEntry["initArgs"].is_object()) {
+                    for (auto& [key, value] : initEntry["initArgs"].items()) {
+                        compArgs[key] = value;
+                    }
+                }
+            } else {
                 continue;
             }
-            std::string name = nameEntry.get<std::string>();
-            nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
 
             // BFS through the full hierarchy to find the component.
             std::queue<Component*> searchQueue;
