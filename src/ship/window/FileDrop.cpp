@@ -1,4 +1,4 @@
-#include "ship/window/FileDropMgr.h"
+#include "ship/window/FileDrop.h"
 #include <cstdlib>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -17,16 +17,16 @@
 #endif
 
 namespace Ship {
-FileDropMgr::FileDropMgr() : Component("FileDropMgr") {
+FileDrop::FileDrop() : Component("FileDrop") {
 }
 
-FileDropMgr::~FileDropMgr() {
+FileDrop::~FileDrop() {
     if (mPath != nullptr) {
         free(mPath);
     }
 }
 
-void FileDropMgr::SetDroppedFile(char* path) {
+void FileDrop::SetDroppedFile(char* path) {
     if (mPath != nullptr) {
         SPDLOG_WARN("Overwriting dropped file: {} with {}", mPath, path);
         free(mPath);
@@ -36,7 +36,7 @@ void FileDropMgr::SetDroppedFile(char* path) {
     CallHandlers();
 }
 
-void FileDropMgr::ClearDroppedFile() {
+void FileDrop::ClearDroppedFile() {
     if (mPath != nullptr) {
         free(mPath);
         mPath = nullptr;
@@ -44,11 +44,11 @@ void FileDropMgr::ClearDroppedFile() {
     mFileDropped = false;
 }
 
-bool FileDropMgr::FileDropped() const {
+bool FileDrop::FileDropped() const {
     return mFileDropped;
 }
 
-char* FileDropMgr::GetDroppedFile() const {
+char* FileDrop::GetDroppedFile() const {
     return mPath;
 }
 
@@ -86,7 +86,7 @@ static void PrintRegError(void* funcAddr) {
 #endif
 }
 
-bool FileDropMgr::RegisterDropHandler(FileDroppedFunc func) {
+bool FileDrop::RegisterDropHandler(FileDroppedFunc func) {
     for (const auto f : mRegisteredFuncs) {
         if (func == f) {
             PrintRegError((void*)func);
@@ -97,7 +97,7 @@ bool FileDropMgr::RegisterDropHandler(FileDroppedFunc func) {
     return true;
 }
 
-bool FileDropMgr::UnregisterDropHandler(FileDroppedFunc func) {
+bool FileDrop::UnregisterDropHandler(FileDroppedFunc func) {
     for (auto it = mRegisteredFuncs.begin(); it != mRegisteredFuncs.end(); ++it) {
         if (*it == func) {
             mRegisteredFuncs.erase(it);
@@ -107,7 +107,7 @@ bool FileDropMgr::UnregisterDropHandler(FileDroppedFunc func) {
     return false;
 }
 
-void FileDropMgr::CallHandlers() {
+void FileDrop::CallHandlers() {
     for (const auto f : mRegisteredFuncs) {
         if (f(mPath)) {
             return;
@@ -118,16 +118,17 @@ void FileDropMgr::CallHandlers() {
     gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
 }
 
-void FileDropMgr::OnInit(const nlohmann::json& /*initArgs*/) {
+void FileDrop::OnInit(const nlohmann::json& /*initArgs*/) {
     mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
 
-std::shared_ptr<Window> FileDropMgr::GetWindow() const {
+std::shared_ptr<Window> FileDrop::GetWindow() const {
     return mWindow;
 }
 
-nlohmann::json FileDropMgr::GetDependencies() const {
-    return nlohmann::json::array({ "Window" });
+const nlohmann::json& FileDrop::GetDependencies() const {
+    static const nlohmann::json deps = nlohmann::json::array({ "Window" });
+    return deps;
 }
 
 } // namespace Ship

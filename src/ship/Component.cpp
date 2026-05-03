@@ -78,7 +78,7 @@ void Component::Init(const nlohmann::json& initArgs) {
     // Check declared dependencies before calling OnInit.
     // Dependencies are resolved by searching the full hierarchy: siblings,
     // ancestors, and their subtrees (BFS from each parent upward).
-    auto deps = GetDependencies();
+    const auto& deps = GetDependencies();
     if (deps.is_array()) {
         for (const auto& dep : deps) {
             if (!dep.is_string()) {
@@ -162,8 +162,9 @@ void Component::OnInit(const nlohmann::json& /*initArgs*/) {
     // Default: no-op. Subclasses override to perform initialization.
 }
 
-nlohmann::json Component::GetDependencies() const {
-    return nlohmann::json::array();
+const nlohmann::json& Component::GetDependencies() const {
+    static const nlohmann::json empty = nlohmann::json::array();
+    return empty;
 }
 
 void Component::MarkInitialized() {

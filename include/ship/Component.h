@@ -61,7 +61,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      *        successfully.
      *
      * Components that self-initialize in their constructor (e.g. Config,
-     * ThreadPoolComponent) call MarkInitialized() there and return true
+     * ThreadPool) call MarkInitialized() there and return true
      * immediately. Components initialized via Init() / OnInit() return true
      * only after that call succeeds.
      */
@@ -84,7 +84,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * }
      * @endcode
      */
-    virtual nlohmann::json GetDependencies() const;
+    virtual const nlohmann::json& GetDependencies() const;
 
     /** @brief Returns the name of this Component. */
     const std::string& GetName() const;

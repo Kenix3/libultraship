@@ -16,9 +16,9 @@
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/resource/ResourceManager.h"
-#include "ship/window/FileDropMgr.h"
-#include "ship/log/LoggerComponent.h"
-#include "ship/thread/ThreadPoolComponent.h"
+#include "ship/window/FileDrop.h"
+#include "ship/log/Logger.h"
+#include "ship/thread/ThreadPool.h"
 #include "ship/events/Events.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
@@ -150,7 +150,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         spdlog::set_default_logger(logger);
         shared->mOwnsLogger = true;
 
-        shared->GetChildren().Add(std::make_shared<LoggerComponent>(logger));
+        shared->GetChildren().Add(std::make_shared<Logger>(logger));
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
         return nullptr;
@@ -169,7 +169,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     shared->GetChildren().Add(std::make_shared<ConsoleVariable>());
 
     // ---- Thread Pool ----
-    shared->GetChildren().Add(std::make_shared<ThreadPoolComponent>(threadCount));
+    shared->GetChildren().Add(std::make_shared<ThreadPool>(threadCount));
 
 #ifdef ENABLE_SCRIPTING
     // ---- Keystore ----
@@ -213,7 +213,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     shared->GetChildren().Add(std::make_shared<Events>());
 
     // ---- File Drop Manager ----
-    auto fileDropMgr = std::make_shared<FileDropMgr>();
+    auto fileDropMgr = std::make_shared<FileDrop>();
     shared->GetChildren().Add(fileDropMgr);
 
 #ifdef ENABLE_SCRIPTING
@@ -275,9 +275,9 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
             return std::make_shared<Config>(configPath);
         } else if (type == "ConsoleVariable") {
             return std::make_shared<ConsoleVariable>();
-        } else if (type == "ThreadPoolComponent") {
+        } else if (type == "ThreadPool") {
             size_t threadCount = compArgs.value("threadCount", static_cast<size_t>(1));
-            return std::make_shared<ThreadPoolComponent>(threadCount);
+            return std::make_shared<ThreadPool>(threadCount);
         } else if (type == "ResourceManager") {
             return std::make_shared<ResourceManager>();
         } else if (type == "CrashHandler") {
@@ -294,10 +294,10 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
             return std::make_shared<Fast::GfxDebugger>();
         } else if (type == "Events") {
             return std::make_shared<Events>();
-        } else if (type == "FileDropMgr") {
-            return std::make_shared<FileDropMgr>();
-        } else if (type == "LoggerComponent") {
-            // LoggerComponent requires a logger - skip if not provided in overrides.
+        } else if (type == "FileDrop") {
+            return std::make_shared<FileDrop>();
+        } else if (type == "Logger") {
+            // Logger requires a logger - skip if not provided in overrides.
             return nullptr;
 #ifdef ENABLE_SCRIPTING
         } else if (type == "Keystore") {
@@ -365,53 +365,63 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
         processEntry(entry, context);
     }
 
-    // Phase 2: Initialize components in declared order.
-    // Search the full hierarchy for each named component.
-    if (json.contains("initOrder") && json["initOrder"].is_array()) {
-        for (const auto& initEntry : json["initOrder"]) {
-            std::string name;
-            nlohmann::json compArgs;
+    // Phase 2: Initialize components in declaration order.
+    // Components that self-initialize (MarkInitialized in constructor) are skipped.
+    // Iterate in the same order as the components array, including children depth-first.
+    std::function<void(const nlohmann::json&)> initEntry = [&](const nlohmann::json& entry) {
+        if (!entry.contains("type") || !entry["type"].is_string()) {
+            return;
+        }
+        std::string name = entry.value("name", entry["type"].get<std::string>());
 
-            if (initEntry.is_string()) {
-                // Simple string: just the component name.
-                name = initEntry.get<std::string>();
-                compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
-            } else if (initEntry.is_object() && initEntry.contains("name")) {
-                // Object with inline initArgs: {"name": "Foo", "initArgs": {...}}
-                name = initEntry["name"].get<std::string>();
-                compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
-                if (initEntry.contains("initArgs") && initEntry["initArgs"].is_object()) {
-                    for (auto& [key, value] : initEntry["initArgs"].items()) {
-                        compArgs[key] = value;
-                    }
-                }
-            } else {
-                continue;
+        // Skip if condition not met.
+        if (entry.contains("condition") && entry["condition"].is_string()) {
+            std::string condition = entry["condition"].get<std::string>();
+            if (activeConditions.find(condition) == activeConditions.end()) {
+                return;
             }
+        }
 
-            // BFS through the full hierarchy to find the component.
-            std::queue<Component*> searchQueue;
-            searchQueue.push(context.get());
-            std::unordered_set<uint64_t> visited;
-            visited.insert(context->GetId());
-            bool found = false;
+        // Merge initArgs for this component.
+        nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+        if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
+            for (auto& [key, value] : entry["initArgs"].items()) {
+                compArgs[key] = value;
+            }
+        }
 
-            while (!searchQueue.empty() && !found) {
-                Component* current = searchQueue.front();
-                searchQueue.pop();
-                auto children = current->GetChildren().Get();
-                for (const auto& child : *children) {
-                    if (visited.insert(child->GetId()).second) {
-                        if (child->GetName() == name && !child->IsInitialized()) {
-                            child->Init(compArgs);
-                            found = true;
-                            break;
-                        }
-                        searchQueue.push(child.get());
+        // BFS through the full hierarchy to find the component by name.
+        std::queue<Component*> searchQueue;
+        searchQueue.push(context.get());
+        std::unordered_set<uint64_t> visited;
+        visited.insert(context->GetId());
+
+        while (!searchQueue.empty()) {
+            Component* current = searchQueue.front();
+            searchQueue.pop();
+            auto children = current->GetChildren().Get();
+            for (const auto& child : *children) {
+                if (visited.insert(child->GetId()).second) {
+                    if (child->GetName() == name && !child->IsInitialized()) {
+                        child->Init(compArgs);
+                        goto done;
                     }
+                    searchQueue.push(child.get());
                 }
             }
         }
+    done:
+
+        // Recursively init children in declared order.
+        if (entry.contains("children") && entry["children"].is_array()) {
+            for (const auto& childEntry : entry["children"]) {
+                initEntry(childEntry);
+            }
+        }
+    };
+
+    for (const auto& entry : json["components"]) {
+        initEntry(entry);
     }
 
     return true;

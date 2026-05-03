@@ -11,7 +11,7 @@
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/window/FileDropMgr.h"
+#include "ship/window/FileDrop.h"
 #include "fast/backends/gfx_sdl.h"
 
 #ifdef __OpenBSD__
@@ -617,7 +617,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDropMgr>()->SetDroppedFile(event.drop.file);
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDrop>()->SetDroppedFile(event.drop.file);
             break;
         case SDL_QUIT:
             Close();

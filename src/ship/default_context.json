@@ -1,7 +1,7 @@
 {
     "components": [
         {
-            "type": "LoggerComponent",
+            "type": "Logger",
             "name": "Logger"
         },
         {
@@ -13,7 +13,7 @@
             "name": "ConsoleVariable"
         },
         {
-            "type": "ThreadPoolComponent",
+            "type": "ThreadPool",
             "name": "ThreadPool"
         },
         {
@@ -41,14 +41,7 @@
         {
             "type": "Window",
             "name": "Window",
-            "dependencies": ["Config"],
-            "children": [
-                {
-                    "type": "FileDropMgr",
-                    "name": "FileDropMgr",
-                    "dependencies": ["Window"]
-                }
-            ]
+            "dependencies": ["Config"]
         },
         {
             "type": "Audio",
@@ -64,16 +57,14 @@
             "name": "Events"
         },
         {
+            "type": "FileDrop",
+            "name": "FileDrop",
+            "dependencies": ["Window"]
+        },
+        {
             "type": "ScriptLoader",
             "name": "ScriptLoader",
             "condition": "ENABLE_SCRIPTING"
         }
-    ],
-    "initOrder": [
-        "ResourceManager",
-        "Console",
-        "Window",
-        "FileDropMgr",
-        "Audio"
     ]
 }

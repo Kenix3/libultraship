@@ -8,7 +8,7 @@
 #include "ship/utils/Utils.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/Context.h"
-#include "ship/thread/ThreadPoolComponent.h"
+#include "ship/thread/ThreadPool.h"
 
 namespace Ship {
 
@@ -55,7 +55,7 @@ void ResourceManager::Init(const std::vector<std::string>& archivePaths,
                            const std::unordered_set<uint32_t>& validHashes) {
     auto context = Context::GetInstance();
     if (context) {
-        mThreadPool = context->GetChildren().GetFirst<ThreadPoolComponent>();
+        mThreadPool = context->GetChildren().GetFirst<ThreadPool>();
     }
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
@@ -524,7 +524,7 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
     return GetResourceRawPointer(resource);
 }
 
-std::shared_ptr<ThreadPoolComponent> ResourceManager::GetThreadPool() {
+std::shared_ptr<ThreadPool> ResourceManager::GetThreadPool() {
     return mThreadPool;
 }
 

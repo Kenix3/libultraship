@@ -24,7 +24,7 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/config/Config.h"
 #include "ship/Context.h"
-#include "ship/window/FileDropMgr.h"
+#include "ship/window/FileDrop.h"
 
 #include "libultraship/bridge/controllerbridge.h"
 
@@ -483,7 +483,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDropMgr>()->SetDroppedFile(fileName);
+            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDrop>()->SetDroppedFile(fileName);
             break;
         case WM_DISPLAYCHANGE:
             self->monitor_list = GetMonitorList();

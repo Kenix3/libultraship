@@ -2,7 +2,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/Context.h"
-#include "ship/log/LoggerComponent.h"
+#include "ship/log/Logger.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -198,7 +198,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
     free(symbols);
     crashHandler->PrintCommon();
 
-    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()) {
+    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<Logger>()) {
         loggerComponent->Get()->flush();
     }
     spdlog::shutdown();
@@ -393,7 +393,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         }
     }
     PrintCommon();
-    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<LoggerComponent>()) {
+    if (auto loggerComponent = Context::GetInstance()->GetChildren().GetFirst<Logger>()) {
         loggerComponent->Get()->flush();
     }
     spdlog::shutdown();

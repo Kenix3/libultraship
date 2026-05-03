@@ -92,7 +92,7 @@ class Audio : public Component {
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Declares Config as a dependency. */
-    nlohmann::json GetDependencies() const override;
+    const nlohmann::json& GetDependencies() const override;
 
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;

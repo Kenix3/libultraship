@@ -13,7 +13,7 @@
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
 #include "ship/Component.h"
-#include "ship/thread/ThreadPoolComponent.h"
+#include "ship/thread/ThreadPool.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -85,15 +85,15 @@ struct ResourceIdentifierHash {
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
  * **Required Context children (looked up at Init time):**
- * - **ThreadPoolComponent** — used for all asynchronous resource load/unload
- *   operations. ThreadPoolComponent self-initializes on construction, so adding it
+ * - **ThreadPool** — used for all asynchronous resource load/unload
+ *   operations. ThreadPool self-initializes on construction, so adding it
  *   to the Context before calling ResourceManager::Init() satisfies this requirement.
  *
- * @note Init-order dependency: ThreadPoolComponent must be present in the Context
+ * @note Init-order dependency: ThreadPool must be present in the Context
  *       hierarchy before ResourceManager::Init() is called. There is no strict
- *       requirement that ThreadPoolComponent::IsInitialized() returns true at that
+ *       requirement that ThreadPool::IsInitialized() returns true at that
  *       point (it always does after construction), but it must be reachable via
- *       `Context::GetChildren().GetFirst<ThreadPoolComponent>()`.
+ *       `Context::GetChildren().GetFirst<ThreadPool>()`.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
@@ -426,8 +426,8 @@ class ResourceManager : public Component {
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
-    std::shared_ptr<ThreadPoolComponent> mThreadPool;
+    std::shared_ptr<ThreadPool> mThreadPool;
 
-    std::shared_ptr<ThreadPoolComponent> GetThreadPool();
+    std::shared_ptr<ThreadPool> GetThreadPool();
 };
 } // namespace Ship

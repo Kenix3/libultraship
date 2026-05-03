@@ -50,8 +50,8 @@
 #include "ship/audio/SDLAudioPlayer.h"
 #include "ship/events/EventSystem.h"
 #include "ship/security/Keystore.h"
-#include "ship/log/LoggerComponent.h"
-#include "ship/thread/ThreadPoolComponent.h"
+#include "ship/log/Logger.h"
+#include "ship/thread/ThreadPool.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #endif

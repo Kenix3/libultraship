@@ -17,21 +17,21 @@ namespace Ship {
 /**
  * @brief Handles drag-and-drop file events for the application window.
  *
- * FileDropMgr stores the path of the most recently dropped file and dispatches
+ * FileDrop stores the path of the most recently dropped file and dispatches
  * the event to a chain of registered handler callbacks.
  *
  * **Required Context children (looked up at Init time):**
  * - **Window** — cached in OnInit() and used by the drop-event dispatcher to obtain the GUI
  *   layer when forwarding drop events. Window must be added to the Context and initialized
- *   before FileDropMgr::Init() is called.
+ *   before FileDrop::Init() is called.
  *
- * Obtain the instance from `Context::GetChildren().GetFirst<FileDropMgr>()`.
+ * Obtain the instance from `Context::GetChildren().GetFirst<FileDrop>()`.
  */
-class FileDropMgr : public Component {
+class FileDrop : public Component {
   public:
-    /** @brief Constructs the FileDropMgr component. */
-    FileDropMgr();
-    ~FileDropMgr();
+    /** @brief Constructs the FileDrop component. */
+    FileDrop();
+    ~FileDrop();
 
     /**
      * @brief Records a file path as having been dropped onto the window.
@@ -73,7 +73,7 @@ class FileDropMgr : public Component {
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Declares Window as a dependency. */
-    nlohmann::json GetDependencies() const override;
+    const nlohmann::json& GetDependencies() const override;
 
   private:
     std::vector<FileDroppedFunc> mRegisteredFuncs;

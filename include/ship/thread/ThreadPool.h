@@ -15,22 +15,22 @@ namespace Ship {
 /**
  * @brief Component wrapper around a BS::thread_pool.
  *
- * ThreadPoolComponent manages a thread pool within the component system,
+ * ThreadPool manages a thread pool within the component system,
  * providing convenience methods for pausing and resuming pool execution.
  *
- * **Required Context children:** None — ThreadPoolComponent has no dependencies
+ * **Required Context children:** None — ThreadPool has no dependencies
  * on other components.
  *
- * Obtain the instance from `Context::GetChildren().GetFirst<ThreadPoolComponent>()`.
+ * Obtain the instance from `Context::GetChildren().GetFirst<ThreadPool>()`.
  */
-class ThreadPoolComponent : public Component {
+class ThreadPool : public Component {
   public:
     /**
-     * @brief Constructs a ThreadPoolComponent with the given number of worker threads.
+     * @brief Constructs a ThreadPool with the given number of worker threads.
      * @param threadCount The number of threads in the pool.
      */
-    explicit ThreadPoolComponent(size_t threadCount);
-    ~ThreadPoolComponent() override = default;
+    explicit ThreadPool(size_t threadCount);
+    ~ThreadPool() override = default;
 
     /**
      * @brief Returns the underlying thread pool.

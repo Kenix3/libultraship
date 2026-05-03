@@ -29,7 +29,7 @@ namespace Fast {
  *    rendering toggles.
  *  - **Ship::ResourceManager** — required by the DX11 and OpenGL back-ends for
  *    shader/texture resource loading.
- *  - **Ship::FileDropMgr** — required by the DXGI back-end to handle file-drop
+ *  - **Ship::FileDrop** — required by the DXGI back-end to handle file-drop
  *    events forwarded from the OS.
  *  - **Ship::ControlDeck** — required for keyboard and mouse input routing.
  *  - **Fast::GfxDebugger** — required by the interpreter for debug-draw mode.
@@ -89,7 +89,7 @@ class Fast3dWindow : public Ship::Window {
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Declares Config, ConsoleVariable, ControlDeck as dependencies. */
-    nlohmann::json GetDependencies() const override;
+    const nlohmann::json& GetDependencies() const override;
 
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);

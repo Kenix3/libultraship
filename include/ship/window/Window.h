@@ -237,7 +237,7 @@ class Window : public Component {
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Declares Config as a dependency. */
-    nlohmann::json GetDependencies() const override;
+    const nlohmann::json& GetDependencies() const override;
 
     /** @brief Returns the cached Config component. Subclasses use this after OnInit() runs. */
     std::shared_ptr<Config> GetConfig() const;

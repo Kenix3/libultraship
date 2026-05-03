@@ -540,16 +540,19 @@ class DependentComponent : public Component {
   public:
     std::vector<std::string> mDeps;
     explicit DependentComponent(const std::string& name, std::vector<std::string> deps)
-        : Component(name), mDeps(std::move(deps)) {}
-  protected:
-    nlohmann::json GetDependencies() const override {
-        nlohmann::json arr = nlohmann::json::array();
+        : Component(name), mDeps(std::move(deps)) {
+        mDepsJson = nlohmann::json::array();
         for (const auto& d : mDeps) {
-            arr.push_back(d);
+            mDepsJson.push_back(d);
         }
-        return arr;
     }
+
+  protected:
+    const nlohmann::json& GetDependencies() const override { return mDepsJson; }
     void OnInit(const nlohmann::json& /*initArgs*/) override {}
+
+  private:
+    nlohmann::json mDepsJson;
 };
 
 TEST(ComponentDependencyTest, ThrowsWhenDependencyNotPresent) {

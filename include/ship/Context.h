@@ -27,8 +27,8 @@ namespace Ship {
  * **Suggested future hierarchy changes (not yet implemented):**
  * The following reorganizations would better reflect logical ownership and reduce
  * cross-component dependencies. Implementing them requires migrating call sites:
- * - **FileDropMgr → child of Window**: file-drop events originate from the OS
- *   window; FileDropMgr has no reason to be a direct Context child.
+ * - **FileDrop → child of Window**: file-drop events originate from the OS
+ *   window; FileDrop has no reason to be a direct Context child.
  * - **ControlDeck → child of Window**: game input is driven by and scoped to
  *   the active window surface. Moving it under Window makes the ownership clear.
  * - **Audio → child of Window**: audio is part of the game presentation layer
@@ -50,7 +50,7 @@ class Context : public Component {
      *
      * This is the convenience factory that replicates the original initialization order:
      * Logging, Config, ConsoleVariables, ThreadPool, Keystore, ResourceManager, ControlDeck,
-     * CrashHandler, Console, Window, Audio, GfxDebugger, Events, FileDropMgr,
+     * CrashHandler, Console, Window, Audio, GfxDebugger, Events, FileDrop,
      * and ScriptLoader (if enabled).
      *
      * **All components are added to the hierarchy before any Init() is called.**
@@ -58,7 +58,7 @@ class Context : public Component {
      * Init() without requiring a specific add-order dependency.
      *
      * **Init-order dependencies within this factory:**
-     * - ResourceManager::Init() — ThreadPoolComponent must be present (it self-initializes
+     * - ResourceManager::Init() — ThreadPool must be present (it self-initializes
      *   on construction, so it is always ready).
      * - Window::OnInit() — Config must be present and initialized (Config self-initializes
      *   on construction).
@@ -78,15 +78,15 @@ class Context : public Component {
      * - "components": array of component descriptors, each with:
      *   - "type": string identifying the component type
      *   - "name": string name for the component
-     *   - "dependencies": optional array of dependency names
+     *   - "dependencies": optional array of dependency names (verified at Init time)
      *   - "condition": optional compile-time condition (e.g. "ENABLE_SCRIPTING")
      *   - "initArgs": optional JSON object with initialization arguments for this component
-     *   - "tickPriority": optional uint32 tick priority (for TickableComponents)
-     *   - "tickGroup": optional uint32 tick group (for TickableComponents)
      *   - "children": optional array of child component descriptors
-     * - "initOrder": array of entries specifying initialization order, each either:
-     *   - A string: the component name
-     *   - An object: {"name": "...", "initArgs": {...}} with inline init arguments
+     *
+     * Components are initialized in the order they appear in the "components" array.
+     * Components that self-initialize in their constructor (e.g. Config, ThreadPool)
+     * are skipped. Place components that depend on others after their dependencies
+     * in the array.
      *
      * @param context  The context to add components to.
      * @param json     The JSON specification.

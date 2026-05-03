@@ -38,7 +38,7 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
  * state before the process exits.
  *
  * **Required Context children (looked up at crash time):**
- * - **LoggerComponent** — if present, its underlying spdlog logger is flushed after
+ * - **Logger** — if present, its underlying spdlog logger is flushed after
  *   the crash report is written to ensure log entries are not lost. It is optional;
  *   the crash handler functions correctly without it.
  *
