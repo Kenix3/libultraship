@@ -12,6 +12,16 @@
 #include "ship/Component.h"
 #include "ship/TickableList.h"
 
+/**
+ * @namespace Ship
+ * @brief The core engine namespace for libultraship.
+ *
+ * Ship contains all components, subsystems, and utilities that make up the
+ * libultraship engine.  The engine provides reimplementations of libultra
+ * (N64 SDK) functions that run on modern hardware, enabling PC ports of N64
+ * games without embedding console-specific code.  Nothing console-specific
+ * should live in this namespace — this is a work in progress toward that goal.
+ */
 namespace Ship {
 
 /**

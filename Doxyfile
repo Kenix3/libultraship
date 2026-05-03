@@ -35,6 +35,15 @@ EXTRACT_PRIVATE        = NO
 EXTRACT_ANON_NSPACES   = NO
 
 #---------------------------------------------------------------------------
+# Filtering
+#---------------------------------------------------------------------------
+# Expose OtrArchive (guarded by INCLUDE_MPQ_SUPPORT).
+PREDEFINED             = INCLUDE_MPQ_SUPPORT
+
+# Hide forward-declaration-only namespaces that are not part of the public API.
+EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::*
+
+#---------------------------------------------------------------------------
 # Source browsing
 #---------------------------------------------------------------------------
 SOURCE_BROWSER         = NO
