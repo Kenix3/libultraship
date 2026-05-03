@@ -53,7 +53,10 @@ ResourceManager::ResourceManager() : Component("ResourceManager") {
 
 void ResourceManager::Init(const std::vector<std::string>& archivePaths,
                            const std::unordered_set<uint32_t>& validHashes) {
-    mThreadPool = Context::GetInstance()->GetChildren().GetFirst<ThreadPoolComponent>();
+    auto context = Context::GetInstance();
+    if (context) {
+        mThreadPool = context->GetChildren().GetFirst<ThreadPoolComponent>();
+    }
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(archivePaths, validHashes);

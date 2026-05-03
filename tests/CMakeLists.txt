@@ -34,6 +34,8 @@ target_compile_definitions(libultraship_tests PRIVATE
     $<TARGET_PROPERTY:libultraship,COMPILE_DEFINITIONS>
 )
 
+set_property(TARGET libultraship_tests PROPERTY CXX_STANDARD 20)
+
 include(GoogleTest)
 gtest_discover_tests(libultraship_tests)
 

@@ -12,7 +12,8 @@ namespace Ship {
  * GuiWindow (for floating ImGui windows) and GuiMenuBar (for the top-of-screen menu
  * bar), both of which override DrawElement(), InitElement(), and UpdateElement().
  *
- * The element starts life uninitialized; Init() calls InitElement() exactly once.
+ * GuiElement uses the Component initialization system. Calling Init() delegates to
+ * the Component::Init() path which invokes OnInit() → InitElement() exactly once.
  * Draw() and Update() are called by the Gui layer every frame for visible elements.
  */
 class GuiElement : public Component {
@@ -29,14 +30,6 @@ class GuiElement : public Component {
      */
     GuiElement(const std::string& name);
     virtual ~GuiElement();
-
-    /**
-     * @brief Runs one-time initialization if not already done.
-     *
-     * Calls InitElement() the first time it is invoked, then sets the initialized flag.
-     * Subsequent calls are no-ops.
-     */
-    void Init();
 
     /**
      * @brief Renders the element for the current frame.
@@ -65,9 +58,6 @@ class GuiElement : public Component {
     /** @brief Returns true if the element is currently visible. */
     bool IsVisible();
 
-    /** @brief Returns true if Init() has been called at least once. */
-    bool IsInitialized();
-
     /**
      * @brief Renders the element's content (pure ImGui draw calls).
      *
@@ -78,7 +68,15 @@ class GuiElement : public Component {
     virtual void DrawElement() = 0;
 
   protected:
-    /** @brief One-time setup called by Init(). Subclasses perform widget/resource setup here. */
+    /**
+     * @brief Component initialization hook. Delegates to InitElement().
+     *
+     * Called by Component::Init() exactly once. Subclasses should override
+     * InitElement() for their specific setup rather than overriding OnInit().
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief One-time setup called by OnInit(). Subclasses perform widget/resource setup here. */
     virtual void InitElement() = 0;
 
     /** @brief Per-frame logic update called by Update(). Subclasses perform state updates here. */
@@ -95,9 +93,6 @@ class GuiElement : public Component {
     virtual void SetVisibility(bool visible);
 
     bool mIsVisible; ///< Current visibility state. Subclasses may read this directly.
-
-  private:
-    bool mIsInitialized;
 };
 
 } // namespace Ship

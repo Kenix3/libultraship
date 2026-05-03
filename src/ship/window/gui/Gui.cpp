@@ -154,6 +154,8 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 
     mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetChildren().GetFirst<Window>())
                        ->GetInterpreterWeak();
+
+    MarkInitialized();
 }
 
 void Gui::ImGuiWMInit() {
