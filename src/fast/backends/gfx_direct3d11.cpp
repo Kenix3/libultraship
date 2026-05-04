@@ -361,7 +361,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     mConsoleVariable = ctx->GetChildren().GetFirst<Ship::ConsoleVariable>();
     mResourceManager = ctx->GetChildren().GetFirst<Ship::ResourceManager>();
     sDX11ResourceManager = mResourceManager;
-    std::dynamic_pointer_cast<Fast::Fast3dGui>(ctx->GetChildren().GetFirst<Ship::Window>()->GetGui())->Init(window_impl);
+    std::dynamic_pointer_cast<Fast::Fast3dGui>(ctx->GetChildren().GetFirst<Ship::Window>()->GetGui())
+        ->Init(window_impl);
 }
 
 int GfxRenderingAPIDX11::GetMaxTextureSize() {
@@ -1380,8 +1381,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(
-        sDX11ResourceManager->LoadResource(path, true, init));
+    auto res = static_pointer_cast<Ship::Shader>(sDX11ResourceManager->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -1449,8 +1449,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
-        sDX11ResourceManager->LoadResource(
-            "shaders/directx/default.shader.hlsl", true, init));
+        sDX11ResourceManager->LoadResource("shaders/directx/default.shader.hlsl", true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");

@@ -31,8 +31,7 @@ class TestAction : public Action {
 // A derived TestAction for type filtering.
 class DerivedTestAction : public TestAction {
   public:
-    DerivedTestAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : TestAction(eventId, tickable) {
+    DerivedTestAction(EventID eventId, std::shared_ptr<Tickable> tickable) : TestAction(eventId, tickable) {
     }
 };
 

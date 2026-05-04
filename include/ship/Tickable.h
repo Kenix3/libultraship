@@ -185,8 +185,7 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 #endif
 }
 
-template <typename T>
-double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+template <typename T> double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
     if (!mIsTicking) {
         return 0.0;
     }

@@ -83,12 +83,13 @@ void Gui::Init() {
     mImGuiIo->IniFilename = mImGuiIniPath.c_str();
     mImGuiIo->LogFilename = mImGuiLogPath.c_str();
 
-    if (SupportsViewports() &&
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
+    if (SupportsViewports() && Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                                   CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                            0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
@@ -138,7 +139,8 @@ void Gui::BlockGamepadNavigation() {
 }
 
 void Gui::UnblockGamepadNavigation() {
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                            0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
@@ -204,7 +206,8 @@ void Gui::DrawMenu() {
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) &&
-         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
+         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+                                                                                             0))) {
         if ((ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) && GetMenu()) {
             GetMenu()->ToggleVisibility();
         } else if ((ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) &&
@@ -212,7 +215,8 @@ void Gui::DrawMenu() {
             GetMenuBar()->ToggleVisibility();
         }
         Ship::Context::GetInstance()->GetChildren().GetFirst<Window>()->GetMouseStateManager()->UpdateMouseCapture();
-        if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+        if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+                CVAR_IMGUI_CONTROLLER_NAV, 0) &&
             GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {

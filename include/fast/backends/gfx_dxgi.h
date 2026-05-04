@@ -121,6 +121,9 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     POINT mPrevMouseCursorPos;
 
     std::shared_ptr<Ship::Config> mConfig;
+
+    // These need to be public to be accessible in the window callback (gfx_dxgi_wnd_proc)
+  public:
     std::shared_ptr<Ship::FileDrop> mFileDrop;
     std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
     std::shared_ptr<Fast::Fast3dGui> mFast3dGui;

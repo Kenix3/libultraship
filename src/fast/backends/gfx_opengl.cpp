@@ -229,8 +229,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(
-        sOGLResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -317,8 +316,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = std::static_pointer_cast<Ship::Shader>(
-        sOGLResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -383,8 +381,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = std::static_pointer_cast<Ship::Shader>(
-        sOGLResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");

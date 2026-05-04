@@ -4,7 +4,6 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-
 #include "ship/window/Window.h"
 
 namespace Ship {
