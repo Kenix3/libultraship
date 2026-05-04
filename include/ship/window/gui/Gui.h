@@ -364,7 +364,7 @@ class Gui {
     ImGuiIO* mImGuiIo;          ///< Pointer to the active ImGuiIO context.
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
     std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the scripting interpreter, if active.
-    GuiWindowInitData mImpl; ///< Backend-specific window/context handles passed to Init().
+    GuiWindowInitData mImpl;                       ///< Backend-specific window/context handles passed to Init().
 
   private:
     bool mNeedsConsoleVariableSave;

@@ -78,8 +78,7 @@ void Fast3dGui::HandleWindowEvents(Ship::WindowEvent event) {
 
 void Fast3dGui::ImGuiWMInit() {
     auto window = Ship::Context::GetInstance()->GetWindow();
-    mInterpreter =
-        std::dynamic_pointer_cast<Fast3dWindow>(window)->GetInterpreterWeak();
+    mInterpreter = std::dynamic_pointer_cast<Fast3dWindow>(window)->GetInterpreterWeak();
 
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
