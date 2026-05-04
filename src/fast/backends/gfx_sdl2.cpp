@@ -35,6 +35,7 @@
 #endif
 
 #include "ship/window/gui/Gui.h"
+#include "fast/Fast3dGui.h"
 
 #ifdef _WIN32
 #include <WTypesbase.h>
@@ -393,7 +394,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
-    Ship::GuiWindowInitData window_impl;
+    Fast::GuiWindowInitData window_impl;
 
     int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
     if (display_in_use < 0) { // Fallback to default if out of bounds
@@ -433,7 +434,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         window_impl.Metal = { mWnd, mRenderer };
     }
 
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetWindow()->GetGui())->Init(window_impl);
 
     for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
         mSdlToLusTable[lus_to_sdl_table[i]] = i;
@@ -527,6 +528,29 @@ void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int3
     SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
+void GfxWindowBackendSDL2::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowWidth = width;
+    mWindowHeight = height;
+    if (mWnd) {
+        SDL_SetWindowPosition(mWnd, posX, posY);
+        SDL_SetWindowSize(mWnd, mWindowWidth, mWindowHeight);
+    }
+}
+
+Ship::WindowRect GfxWindowBackendSDL2::GetPrimaryMonitorRect() {
+    SDL_DisplayMode mode;
+    int display_in_use = mWnd ? SDL_GetWindowDisplayIndex(mWnd) : 0;
+    if (display_in_use < 0) {
+        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
+        display_in_use = 0;
+    }
+    if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+        return { 0, 0, mode.w, mode.h };
+    }
+    SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
+    return { 0, 0, 0, 0 };
+}
+
 int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
     if (scancode < 512) {
         return mSdlToLusTable[scancode];
@@ -574,9 +598,19 @@ void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
 }
 
 void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
-    Ship::WindowEvent event_impl;
+    Fast::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+    auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(gui);
+    if (fast3dGui) {
+        fast3dGui->HandleWindowEvents(event_impl);
+    } else {
+        static bool sWarnedOnce = false;
+        if (!sWarnedOnce) {
+            SPDLOG_ERROR("gfx_sdl2: Gui is not a Fast3dGui; cannot dispatch window event");
+            sWarnedOnce = true;
+        }
+    }
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

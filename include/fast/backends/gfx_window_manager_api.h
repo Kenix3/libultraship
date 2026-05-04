@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "ship/window/Window.h"
 namespace Fast {
 class GfxWindowBackend {
   public:
@@ -24,6 +25,8 @@ class GfxWindowBackend {
     virtual void SetMouseCapture(bool capture) = 0;
     virtual bool IsMouseCaptured() = 0;
     virtual void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) = 0;
+    virtual void SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
+    virtual Ship::WindowRect GetPrimaryMonitorRect() = 0;
     virtual void HandleEvents() = 0;
     virtual bool IsFrameReady() = 0;
     virtual void SwapBuffersBegin() = 0;

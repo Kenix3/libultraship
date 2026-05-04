@@ -4,7 +4,6 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-#include "ship/audio/Audio.h"
 #include "ship/window/Window.h"
 
 namespace Ship {
@@ -177,27 +176,6 @@ class Config {
      * dot-notation key hierarchy as nested JSON objects.
      */
     nlohmann::json GetNestedJson();
-
-    /** @brief Returns the audio backend identifier stored in the config. */
-    AudioBackend GetCurrentAudioBackend();
-
-    /**
-     * @brief Persists the given audio backend identifier to the config.
-     * @param backend Backend to store.
-     */
-    void SetCurrentAudioBackend(AudioBackend backend);
-
-    /** @brief Returns the window backend identifier stored in the config. */
-    WindowBackend GetWindowBackend();
-
-    /**
-     * @brief Persists the given window backend identifier to the config.
-     * @param backend Backend to store.
-     */
-    void SetWindowBackend(WindowBackend backend);
-
-    /** @brief Returns the audio channel layout stored in the config. */
-    AudioChannelsSetting GetCurrentAudioChannelsSetting();
 
     /**
      * @brief Adds a ConfigVersionUpdater instance to the list to be run later via RunVersionUpdates

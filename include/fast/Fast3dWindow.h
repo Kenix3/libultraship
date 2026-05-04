@@ -3,11 +3,28 @@
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "FastMouseStateManager.h"
+#include "fast/debug/GfxDebugger.h"
 
 union Gfx;
 #include "interpreter.h"
 
 namespace Fast {
+
+/**
+ * @brief Identifies the graphics/windowing backend used by Fast3dWindow.
+ *
+ * These are the positive backend IDs registered by Fast3dWindow.
+ * The general convention for window backend IDs (int32_t) is:
+ *   negative  — no Window backend available (e.g. Window is not initialized)
+ *   zero      — no Window backend in use
+ *   positive  — backend defined by the Window subclass
+ */
+enum WindowBackend {
+    FAST3D_DXGI_DX11 = 1,
+    FAST3D_SDL_OPENGL = 2,
+    FAST3D_SDL_METAL = 3,
+};
+
 class Fast3dWindow : public Ship::Window {
   public:
     Fast3dWindow();
@@ -47,6 +64,14 @@ class Fast3dWindow : public Ship::Window {
     uintptr_t GetGfxFrameBuffer() override;
     const char* GetKeyName(int32_t scancode) override;
 
+    std::string GetWindowBackendName() override;
+
+    void SetCurrentDimensions(uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    Ship::WindowRect GetPrimaryMonitorRect() override;
+
     void InitWindowManager();
     int32_t GetTargetFps();
     void SetTargetFps(int32_t fps);
@@ -60,6 +85,9 @@ class Fast3dWindow : public Ship::Window {
 
     std::weak_ptr<Interpreter> GetInterpreterWeak() const;
 
+    /** @brief Returns the graphics debugger for this Fast3D window. */
+    std::shared_ptr<GfxDebugger> GetGfxDebugger() const;
+
   protected:
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
@@ -72,5 +100,6 @@ class Fast3dWindow : public Ship::Window {
     GfxRenderingAPI* mRenderingApi;
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
+    std::shared_ptr<GfxDebugger> mGfxDebugger;
 };
 } // namespace Fast

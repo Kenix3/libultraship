@@ -8,6 +8,7 @@
 #include "libultraship/bridge.h"
 #include "fast/interpreter.h"
 #include "fast/Fast3dWindow.h"
+#include "fast/Fast3dGui.h"
 #include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER
 #include <gfxd.h>
@@ -42,7 +43,8 @@ static const char* GetOpName(int8_t op) {
 void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfxPath,
                                       float parentPosY = 0) const {
     const F3DGfx* dlStart = cmd;
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg =
+        std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
 
     auto nodeWithText = [dbg, dlStart, parentPosY, this, &gfxPath](const F3DGfx* cmd, const std::string& text,
                                                                    const F3DGfx* sub = nullptr) mutable {
@@ -586,7 +588,8 @@ static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<cons
 
 void GfxDebuggerWindow::DrawDisas() {
 
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg =
+        std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
     auto dlist = dbg->GetDisplayList();
     ImGui::Text("dlist: %p", dlist);
     std::string bp = "";
@@ -604,7 +607,7 @@ void GfxDebuggerWindow::DrawDisas() {
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
     const F3DGfx* cmd = dlist;
-    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+    auto gui = std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetWindow()->GetGui());
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
     {
@@ -707,7 +710,8 @@ void GfxDebuggerWindow::DrawDisas() {
 }
 
 void GfxDebuggerWindow::DrawElement() {
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg =
+        std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
     // const ImVec2 pos = ImGui::GetWindowPos();
     // const ImVec2 size = ImGui::GetWindowSize();
 

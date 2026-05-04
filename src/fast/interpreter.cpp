@@ -4853,6 +4853,14 @@ GfxRenderingAPI* Interpreter::GetCurrentRenderingAPI() {
     return mRapi;
 }
 
+void Interpreter::SetGfxDebugger(std::shared_ptr<GfxDebugger> debugger) {
+    mGfxDebugger = std::move(debugger);
+}
+
+std::shared_ptr<GfxDebugger> Interpreter::GetGfxDebugger() const {
+    return mGfxDebugger;
+}
+
 void Interpreter::HandleWindowEvents() {
     mWapi->HandleEvents();
 }
@@ -4984,7 +4992,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mRenderingState.viewport = {};
     mRenderingState.scissor = {};
 
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = mGfxDebugger;
     g_exec_stack.start((F3DGfx*)commands);
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();

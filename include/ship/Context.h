@@ -12,10 +12,6 @@ namespace spdlog {
 class logger;
 }
 
-namespace Fast {
-class GfxDebugger;
-}
-
 namespace Ship {
 
 class Console;
@@ -171,8 +167,6 @@ class Context {
     std::shared_ptr<Console> GetConsole() const;
     /** @brief Returns the Audio subsystem. */
     std::shared_ptr<Audio> GetAudio() const;
-    /** @brief Returns the graphics debugger. */
-    std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() const;
     /** @brief Returns the FileDropMgr subsystem for handling drag-and-drop file events. */
     std::shared_ptr<FileDropMgr> GetFileDropMgr() const;
     /** @brief Returns the EventSystem subsystem. */
@@ -233,9 +227,6 @@ class Context {
      */
     bool InitAudio(AudioSettings settings);
 
-    /** @brief Initializes the graphics debugger. @return true on success. */
-    bool InitGfxDebugger();
-
     /** @brief Initializes the developer Console window. @return true on success. */
     bool InitConsole();
 
@@ -286,7 +277,6 @@ class Context {
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
     std::shared_ptr<Audio> mAudio;
-    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;
     std::shared_ptr<EventSystem> mEventSystem;
 #ifdef ENABLE_SCRIPTING
