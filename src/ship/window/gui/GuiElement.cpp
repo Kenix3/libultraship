@@ -3,22 +3,17 @@
 #include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
-GuiElement::GuiElement(bool isVisible) : mIsVisible(isVisible), mIsInitialized(false) {
+GuiElement::GuiElement(const std::string& name, bool isVisible) : Component(name), mIsVisible(isVisible) {
 }
 
-GuiElement::GuiElement() : GuiElement(false) {
+GuiElement::GuiElement(const std::string& name) : GuiElement(name, false) {
 }
 
 GuiElement::~GuiElement() {
 }
 
-void GuiElement::Init() {
-    if (IsInitialized()) {
-        return;
-    }
-
+void GuiElement::OnInit(const nlohmann::json& /*initArgs*/) {
     InitElement();
-    mIsInitialized = true;
 }
 
 void GuiElement::Update() {
@@ -43,9 +38,5 @@ void GuiElement::ToggleVisibility() {
 
 bool GuiElement::IsVisible() {
     return mIsVisible;
-}
-
-bool GuiElement::IsInitialized() {
-    return mIsInitialized;
 }
 } // namespace Ship

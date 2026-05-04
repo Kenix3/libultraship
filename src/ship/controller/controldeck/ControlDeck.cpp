@@ -11,7 +11,8 @@ namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
-                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames) {
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
+    : Component("ControlDeck") {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
@@ -23,6 +24,10 @@ ControlDeck::~ControlDeck() {
 }
 
 void ControlDeck::Init(uint8_t* controllerBits) {
+    auto ctx = Context::GetInstance();
+    mWindow = ctx->GetChildren().GetFirst<Window>();
+    mConsoleVariables = ctx->GetChildren().GetFirst<ConsoleVariable>();
+
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
@@ -72,17 +77,15 @@ bool ControlDeck::AllGameInputBlocked() {
 
 bool ControlDeck::GamepadGameInputBlocked() {
     // block controller input when using the controller to navigate imgui menus
-    return AllGameInputBlocked() ||
-           Context::GetInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible() &&
-               Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
+    return AllGameInputBlocked() || GetWindow()->GetGui()->GetMenuOrMenubarVisible() &&
+                                        GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0);
 }
 
 bool ControlDeck::KeyboardGameInputBlocked() {
     // block keyboard input when typing in imgui
     ImGuiWindow* activeIDWindow = ImGui::GetCurrentContext()->ActiveIdWindow;
     return AllGameInputBlocked() ||
-           (activeIDWindow != NULL &&
-            activeIDWindow->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID()) ||
+           (activeIDWindow != NULL && activeIDWindow->ID != GetWindow()->GetGui()->GetMainGameWindowID()) ||
            ImGui::GetTopMostPopupModal() != NULL; // ImGui::GetIO().WantCaptureKeyboard, but ActiveId check altered
 }
 
@@ -92,8 +95,7 @@ bool ControlDeck::MouseGameInputBlocked() {
     if (window == NULL) {
         return true;
     }
-    return AllGameInputBlocked() ||
-           (window->ID != Context::GetInstance()->GetWindow()->GetGui()->GetMainGameWindowID());
+    return AllGameInputBlocked() || (window->ID != GetWindow()->GetGui()->GetMainGameWindowID());
 }
 
 std::shared_ptr<Controller> ControlDeck::GetControllerByPort(uint8_t port) {
@@ -132,5 +134,13 @@ std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
     }
 
     return mButtonNames[bitmask];
+}
+
+std::shared_ptr<Window> ControlDeck::GetWindow() const {
+    return mWindow;
+}
+
+std::shared_ptr<ConsoleVariable> ControlDeck::GetConsoleVariables() const {
+    return mConsoleVariables;
 }
 } // namespace Ship

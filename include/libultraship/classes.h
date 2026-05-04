@@ -1,3 +1,11 @@
+/**
+ * @file classes.h
+ * @brief Convenience umbrella header that includes all major public libultraship headers.
+ *
+ * Include this single header to gain access to the full public API surface of
+ * libultraship: archives, resources, windowing, GUI, controllers, audio, and
+ * configuration.
+ */
 #pragma once
 #ifdef __cplusplus
 
@@ -7,6 +15,14 @@
 #include "ship/resource/archive/O2rArchive.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/Context.h"
+#include "ship/Part.h"
+#include "ship/PartList.h"
+#include "ship/Component.h"
+#include "ship/ComponentList.h"
+#include "ship/Action.h"
+#include "ship/ActionList.h"
+#include "ship/Tickable.h"
+#include "ship/TickableComponent.h"
 #include "ship/window/Window.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
@@ -31,6 +47,13 @@
 #include "ship/audio/WasapiAudioPlayer.h"
 #endif
 #include "ship/audio/SDLAudioPlayer.h"
+#include "ship/events/EventSystem.h"
+#include "ship/security/Keystore.h"
+#include "ship/log/Logger.h"
+#include "ship/thread/ThreadPool.h"
+#ifdef ENABLE_SCRIPTING
+#include "ship/scripting/ScriptLoader.h"
+#endif
 #ifdef __APPLE__
 #include "ship/utils/AppleFolderManager.h"
 #endif

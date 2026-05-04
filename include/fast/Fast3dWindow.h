@@ -5,6 +5,11 @@
 #include "FastMouseStateManager.h"
 #include "fast/debug/GfxDebugger.h"
 
+namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+} // namespace Ship
+
 union Gfx;
 #include "interpreter.h"
 
@@ -25,6 +30,25 @@ enum WindowBackend {
     FAST3D_SDL_METAL = 3,
 };
 
+/**
+ * @brief Fast3D-based window and rendering context.
+ *
+ * Fast3dWindow drives the Fast3D graphics pipeline and integrates with the
+ * Ship component hierarchy. The following components must be present as
+ * **direct children of the Context** before Fast3dWindow is used:
+ *
+ *  - **Ship::Config** — queried by Fast3dWindow and the DXGI/DX11 back-ends for
+ *    persistent window settings (resolution, fullscreen, etc.).
+ *  - **Ship::ConsoleVariable** — read by all Fast3D back-ends for runtime
+ *    rendering toggles.
+ *  - **Ship::ResourceManager** — required by the DX11 and OpenGL back-ends for
+ *    shader/texture resource loading.
+ *  - **Ship::FileDrop** — required by the DXGI back-end to handle file-drop
+ *    events forwarded from the OS.
+ *  - **Ship::ControlDeck** — required for keyboard and mouse input routing.
+ *  - **Fast::GfxDebugger** — required by the interpreter for debug-draw mode.
+ *  - **Ship::Logger** — required for logging.
+ */
 class Fast3dWindow : public Ship::Window {
   public:
     Fast3dWindow();
@@ -33,7 +57,6 @@ class Fast3dWindow : public Ship::Window {
     Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager);
     ~Fast3dWindow();
 
-    void Init() override;
     void Close() override;
     void RunGuiOnly() override;
     void StartFrame() override;
@@ -89,6 +112,11 @@ class Fast3dWindow : public Ship::Window {
     std::shared_ptr<GfxDebugger> GetGfxDebugger() const;
 
   protected:
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Config, ConsoleVariable, ControlDeck as dependencies. */
+    const nlohmann::json& GetDependencies() const override;
+
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();
@@ -100,6 +128,13 @@ class Fast3dWindow : public Ship::Window {
     GfxRenderingAPI* mRenderingApi;
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
+std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
+
+    /** @brief Returns the cached ConsoleVariable component. */
+    std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariables() const;
+    /** @brief Returns the cached ControlDeck component. */
+    std::shared_ptr<Ship::ControlDeck> GetControlDeck() const;
 };
 } // namespace Fast

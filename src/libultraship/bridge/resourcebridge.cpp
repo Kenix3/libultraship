@@ -1,16 +1,27 @@
 #include "libultraship/bridge/resourcebridge.h"
 #include "ship/Context.h"
+#include "ship/resource/ResourceManager.h"
 #include <string>
 #include <algorithm>
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 
+static std::shared_ptr<Ship::ResourceManager> sResourceManager;
+
+static Ship::ResourceManager* GetResourceManager() {
+    if (!sResourceManager) {
+        sResourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>();
+    }
+    return sResourceManager.get();
+}
+
+
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {
-    return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(name);
+    return GetResourceManager()->LoadResource(name);
 }
 
 std::shared_ptr<Ship::IResource> ResourceLoad(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetResourceManager()->LoadResource(crc);
+    return GetResourceManager()->LoadResource(crc);
 }
 
 extern "C" {
@@ -20,31 +31,33 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(crc);
+    return GetResourceManager()
+        ->GetArchiveManager()
+        ->HashToCString(crc);
 }
 
 size_t ResourceGetSizeByName(const char* name) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceSize(name);
+    return GetResourceManager()->GetResourceSize(name);
 }
 
 size_t ResourceGetSizeByCrc(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceSize(crc);
+    return GetResourceManager()->GetResourceSize(crc);
 }
 
 uint8_t ResourceGetIsCustomByName(const char* name) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceIsCustom(name);
+    return GetResourceManager()->GetResourceIsCustom(name);
 }
 
 uint8_t ResourceGetIsCustomByCrc(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceIsCustom(crc);
+    return GetResourceManager()->GetResourceIsCustom(crc);
 }
 
 void* ResourceGetDataByName(const char* name) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(name);
+    return GetResourceManager()->GetResourceRawPointer(name);
 }
 
 void* ResourceGetDataByCrc(uint64_t crc) {
-    return Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(crc);
+    return GetResourceManager()->GetResourceRawPointer(crc);
 }
 
 uint16_t ResourceGetTexWidthByName(const char* name) {
@@ -114,26 +127,30 @@ size_t ResourceGetTexSizeByCrc(uint64_t crc) {
 }
 
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
+    auto list = GetResourceManager()
+                    ->GetArchiveManager()
+                    ->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
 
 void ResourceLoadDirectoryAsync(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->LoadResourcesAsync(name);
+    GetResourceManager()->LoadResourcesAsync(name);
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
-    auto list = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions();
+    auto list = GetResourceManager()
+                    ->GetArchiveManager()
+                    ->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 
 void ResourceLoadDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->LoadResources(name);
+    GetResourceManager()->LoadResources(name);
 }
 
 void ResourceDirtyDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->DirtyResources(name);
+    GetResourceManager()->DirtyResources(name);
 }
 
 void ResourceDirtyByName(const char* name) {
@@ -153,7 +170,7 @@ void ResourceDirtyByCrc(uint64_t crc) {
 }
 
 void ResourceUnloadByName(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->UnloadResource(name);
+    GetResourceManager()->UnloadResource(name);
 }
 
 void ResourceUnloadByCrc(uint64_t crc) {
@@ -161,10 +178,10 @@ void ResourceUnloadByCrc(uint64_t crc) {
 }
 
 void ResourceUnloadDirectory(const char* name) {
-    Ship::Context::GetInstance()->GetResourceManager()->UnloadResources(name);
+    GetResourceManager()->UnloadResources(name);
 }
 
 uint32_t IsResourceManagerLoaded() {
-    return Ship::Context::GetInstance()->GetResourceManager()->IsLoaded();
+    return GetResourceManager()->IsLoaded();
 }
 }

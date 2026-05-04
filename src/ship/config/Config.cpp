@@ -12,12 +12,17 @@
 namespace fs = std::filesystem;
 
 namespace Ship {
-Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false) {
+Config::Config(std::string path) : Component("Config"), mPath(std::move(path)), mIsNewInstance(false) {
     Reload();
+    MarkInitialized();
 }
 
 Config::~Config() {
     SPDLOG_TRACE("destruct config");
+}
+
+std::string Config::GetPath() const {
+    return mPath;
 }
 
 std::string Config::FormatNestedKey(const std::string& key) {
@@ -231,6 +236,7 @@ template <typename T> void Config::SetArray(const std::string& key, std::vector<
 nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
+
 
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
     auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);

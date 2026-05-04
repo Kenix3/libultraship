@@ -9,6 +9,7 @@
 #include "ship/window/gui/Gui.h"
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/Component.h"
 
 namespace Ship {
 
@@ -49,10 +50,15 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * The window is created by Context::InitWindow() and is accessible via
- * Context::GetWindow().
+ * **Required Context children (looked up at OnInit time):**
+ * - **Config** — cached in Window::OnInit() to read and persist window
+ *   settings (size, backend, fullscreen state). Config must be added to the
+ *   Context before Window::Init() is called.
+ *
+ * The window is added to Context as a child Component and is accessible via
+ * `Context::GetChildren().GetFirst<Window>()`.
  */
-class Window {
+class Window : public Component {
     friend class Context;
 
   public:
@@ -75,8 +81,6 @@ class Window {
     Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager);
     virtual ~Window();
 
-    /** @brief Opens the window and initializes the graphics backend. */
-    virtual void Init() = 0;
     /** @brief Requests that the window and application close. */
     virtual void Close() = 0;
     /** @brief Runs a single GUI-only tick without executing game logic. */
@@ -282,6 +286,29 @@ class Window {
      * the first registered backend if the saved value is not available.
      */
     int32_t GetSavedWindowBackend();
+
+    /**
+     * @brief Caches Config from the component hierarchy and throws if not found or uninitialized.
+     *
+     * Called by Component::Init() via OnInit(). Subclasses that override OnInit()
+     * must call Window::OnInit() first to ensure Config is cached before they
+     * access any other components or read configuration values.
+     *
+     * @note Init-order dependency: Config must be present **and initialized** in
+     *       the Context hierarchy before OnInit() is called. Config
+     *       self-initializes on construction, so adding it to the Context before
+     *       the Window satisfies this requirement.
+     *
+     * @throws std::runtime_error if Config is not present in the Context hierarchy.
+     * @throws std::runtime_error if Config is present but not yet initialized.
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Config as a dependency. */
+    const nlohmann::json& GetDependencies() const override;
+
+    /** @brief Returns the cached Config component. Subclasses use this after OnInit() runs. */
+    std::shared_ptr<Config> GetConfig() const;
 
   private:
     std::shared_ptr<Gui> mGui;

@@ -1,3 +1,9 @@
+---
+title: Porting Guide
+parent: Guides
+nav_order: 1
+---
+
 # Libultraship (LUS) Porting Guide
 
 **Libultraship (LUS)** is a library designed to facilitate PC ports of Nintendo 64 games. It is not a recompilation tool; rather, it allows developers to build a game's original source code (derived from decompilation) on modern hardware by providing a header-compatible wrapper around modern reimplementations of N64 SDK functions.

@@ -12,6 +12,8 @@
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/Component.h"
+#include "ship/thread/ThreadPool.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -82,13 +84,20 @@ struct ResourceIdentifierHash {
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * Typical usage:
- * @code
- * auto rm = Ship::Context::GetInstance()->GetResourceManager();
- * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
- * @endcode
+ * **Required Context children (looked up at Init time):**
+ * - **ThreadPool** — used for all asynchronous resource load/unload
+ *   operations. ThreadPool self-initializes on construction, so adding it
+ *   to the Context before calling ResourceManager::Init() satisfies this requirement.
+ *
+ * @note Init-order dependency: ThreadPool must be present in the Context
+ *       hierarchy before ResourceManager::Init() is called. There is no strict
+ *       requirement that ThreadPool::IsInitialized() returns true at that
+ *       point (it always does after construction), but it must be reachable via
+ *       `Context::GetChildren().GetFirst<ThreadPool>()`.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
-class ResourceManager {
+class ResourceManager : public Component {
     friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
@@ -97,12 +106,10 @@ class ResourceManager {
 
     /**
      * @brief Initializes the ResourceManager, mounting archives and starting the thread pool.
-     * @param archivePaths        Paths to OTR/O2R archive files or directories containing them.
-     * @param validHashes         Set of acceptable game-version hash values; empty = all accepted.
-     * @param reservedThreadCount Number of OS threads to reserve outside the resource thread pool.
+     * @param archivePaths Paths to OTR/O2R archive files or directories containing them.
+     * @param validHashes  Set of acceptable game-version hash values; empty = all accepted.
      */
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              int32_t reservedThreadCount = 1);
+    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes);
     ~ResourceManager();
 
     /**
@@ -414,11 +421,13 @@ class ResourceManager {
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
-    std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
     bool mAltAssetsEnabled = false;
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
+    std::shared_ptr<ThreadPool> mThreadPool;
+
+    std::shared_ptr<ThreadPool> GetThreadPool();
 };
 } // namespace Ship

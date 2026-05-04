@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#include "ship/Component.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
 #endif
@@ -37,8 +38,18 @@ using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEnt
  *
  * File lookups, directory listings, and game-version validation are all delegated
  * here from the ResourceManager layer.
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **ResourceManager** — used by Archive objects during mount validation to
+ *   check game versions. ResourceManager must be added to the Context before
+ *   ArchiveManager::Init() is called.
+ * - **Keystore** — used by Archive objects to verify archive signatures. Keystore
+ *   must be added to the Context before ArchiveManager::Init() is called.
+ *
+ * Obtain the instance from
+ * `Context::GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()`.
  */
-class ArchiveManager {
+class ArchiveManager : public Component {
   public:
     ArchiveManager();
 
@@ -140,8 +151,7 @@ class ArchiveManager {
      * @param filePath Virtual path of the file.
      * @return Shared pointer to the owning Archive, or nullptr if not found.
      */
-    std::shared_ptr<Archive>
-    GetArchiveFromFile(const std::string& filePath); // Retrieves a ptr to the archive that the asset is inside of
+    std::shared_ptr<Archive> GetArchiveFromFile(const std::string& filePath);
 
     /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.
@@ -199,9 +209,7 @@ class ArchiveManager {
      */
     void SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler);
 
-    /**
-     * @brief Returns the current untrusted-archive handler.
-     */
+    /** @brief Returns the current untrusted-archive handler. */
     UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
 #endif
 
@@ -216,7 +224,7 @@ class ArchiveManager {
     /** @brief Adds a game-version value to the internal version set. */
     void AddGameVersion(uint32_t newGameVersion);
 
-    /** @brief Rebuilds the hash→path and path→archive lookup tables from the current archive list. */
+    /** @brief Rebuilds the hash-to-path and path-to-archive lookup tables from the current archive list. */
     void ResetVirtualFileSystem();
 
   private:

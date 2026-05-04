@@ -3,13 +3,13 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include "ship/audio/AudioBackend.h"
 #include "ship/audio/AudioPlayer.h"
+#include "ship/Component.h"
+#include "ship/config/Config.h"
 
 namespace Ship {
 class Config;
-
-/** @brief Identifies the audio backend implementation in use. */
-enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
 
 /**
  * @brief Manages audio playback through a platform-specific AudioPlayer.
@@ -19,26 +19,38 @@ enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
  * SetCurrentAudioBackend(); the channel layout can be changed via SetAudioChannels()
  * without restarting the application.
  *
- * Obtain the instance from Context::GetAudio().
+ * **Required Context children (looked up at Init time):**
+ * - **Config** — cached during OnInit() and used by SetCurrentAudioBackend() to load/persist
+ *   the selected audio backend. Config must be added to the Context **before** calling
+ *   Audio::Init().
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Audio>()`.
  */
-class Audio {
+class Audio : public Component {
   public:
     /**
      * @brief Constructs an Audio manager with the given initial settings.
      * @param settings Initial audio backend selection and channel configuration.
      */
-    Audio(AudioSettings settings) : mAudioSettings(settings) {
+    Audio(AudioSettings settings) : Component("Audio"), mAudioSettings(settings) {
     }
     ~Audio();
 
     /**
      * @brief Selects and initialises the best available audio backend.
      *
-     * Populates the list of available backends, picks the one specified in the
-     * AudioSettings (or falls back to a default), and starts the AudioPlayer.
+     * Called by Component::Init(). Populates the list of available backends,
+     * picks the one specified in the AudioSettings (or falls back to a default),
+     * and starts the AudioPlayer.
+     *
+     * @note Init-order dependency: Config must be present **and initialized** in
+     *       the Context hierarchy before Component::Init() is called on Audio.
+     *       Config self-initializes on construction, so adding it to the Context
+     *       before Audio satisfies this requirement.
+     *
+     * @throws std::runtime_error if Config is not present in the hierarchy.
+     * @throws std::runtime_error if Config is present but not yet initialized.
      */
-    void Init();
-
     /** @brief Returns the currently active AudioPlayer instance. */
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
 
@@ -73,19 +85,23 @@ class Audio {
     void InitAudioPlayer();
 
     /**
-     * @brief Reads and validates the audio backend from the persisted config.
+     * @brief Implements audio initialization. Called by Component::Init().
      *
-     * Reads `Window.AudioBackend`, maps the stored string to an AudioBackend enum value,
-     * handles the "pulse" → SDL migration, and returns a platform-appropriate default when
-     * the stored value is absent or unrecognised.
+     * @throws std::runtime_error if Config is not present in the hierarchy.
+     * @throws std::runtime_error if Config is present but not yet initialized.
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
+    /** @brief Declares Config as a dependency. */
+    const nlohmann::json& GetDependencies() const override;
+
+    /**
+     * @brief Reads and validates the audio backend from the persisted config.
      */
     AudioBackend GetSavedAudioBackend();
 
     /**
      * @brief Reads and validates the audio channel layout from the persisted config.
-     *
-     * Reads the channel setting CVar and maps it to a valid AudioChannelsSetting,
-     * defaulting to stereo when the stored value is absent or unrecognised.
      */
     AudioChannelsSetting GetSavedAudioChannelsSetting();
 
@@ -95,5 +111,8 @@ class Audio {
     AudioSettings mAudioSettings;
     std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
     std::shared_ptr<Config> mConfig;
+
+    /** @brief Returns the cached Config component. */
+    std::shared_ptr<Config> GetConfig() const;
 };
 } // namespace Ship

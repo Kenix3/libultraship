@@ -1,6 +1,7 @@
 #pragma once
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
+#include <memory>
 #include "gfx_rendering_api.h"
 #include "ship/utils/HResultException.h"
 
@@ -8,7 +9,14 @@
 
 #include <dxgi1_2.h>
 
+namespace Ship {
+class Config;
+class FileDrop;
+class ConsoleVariable;
+} // namespace Ship
+
 namespace Fast {
+class Fast3dGui;
 
 class GfxWindowBackendDXGI final : public GfxWindowBackend {
   public:
@@ -111,6 +119,11 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
 
     RAWINPUTDEVICE mRawInputDevice[1];
     POINT mPrevMouseCursorPos;
+
+    std::shared_ptr<Ship::Config> mConfig;
+    std::shared_ptr<Ship::FileDrop> mFileDrop;
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;
 };
 
 } // namespace Fast

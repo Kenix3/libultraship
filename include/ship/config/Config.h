@@ -4,6 +4,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
+
 #include "ship/window/Window.h"
 
 namespace Ship {
@@ -50,9 +51,14 @@ class ConfigVersionUpdater {
  * Version migration is supported through ConfigVersionUpdater subclasses; register them
  * with RegisterVersionUpdater() and call RunVersionUpdates() on startup.
  *
- * Obtain the instance from Context::GetConfig().
+ * **Required Context children (looked up at runtime):**
+ * - **Window** — queried by GetCurrentWindowBackend() to validate that the stored
+ *   backend is available. Window must be added to the Context before
+ *   Config::GetCurrentWindowBackend() is called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Config>()`.
  */
-class Config {
+class Config : public Component {
   public:
     /**
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).
@@ -60,6 +66,12 @@ class Config {
      */
     Config(std::string path);
     ~Config();
+
+    /**
+     * @brief Returns the filesystem path to the JSON configuration file.
+     * @return The path that was passed to the constructor (resolved by the caller).
+     */
+    std::string GetPath() const;
 
     /**
      * @brief Returns the string value for @p key, or @p defaultValue if absent.

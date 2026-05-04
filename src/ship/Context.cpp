@@ -1,15 +1,25 @@
 #include "ship/Context.h"
-#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/TickableComponent.h"
 #include <cstring>
+#include <functional>
 #include <iostream>
+#include <algorithm>
+#include <queue>
+#include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
+#include "ship/default_context_json.h" // Auto-generated from default_context.json by CMake
+#include "fast/debug/GfxDebugger.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
-#include "ship/window/FileDropMgr.h"
-#include "ship/events/EventSystem.h"
+#include "ship/resource/ResourceManager.h"
+#include "ship/window/FileDrop.h"
+#include "ship/log/Logger.h"
+#include "ship/thread/ThreadPool.h"
+#include "ship/events/Events.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/scripting/ScriptLoader.h"
 #include "ship/security/Keystore.h"
@@ -36,96 +46,56 @@ std::shared_ptr<Context> Context::GetInstance() {
 }
 
 Context::~Context() {
-    SPDLOG_TRACE("destruct context");
-    GetWindow()->SaveWindowToConfig();
+    if (spdlog::default_logger()) {
+        SPDLOG_TRACE("destruct context");
+    }
+    auto window = GetChildren().GetFirst<Window>();
+    if (window) {
+        window->SaveWindowToConfig();
+    }
 
-    // Explicitly destructing everything so that logging is done last.
-    mAudio = nullptr;
-    mWindow = nullptr;
-    mConsole = nullptr;
-    mCrashHandler = nullptr;
-    mControlDeck = nullptr;
-    mResourceManager = nullptr;
-    mConsoleVariables = nullptr;
-    mEventSystem = nullptr;
+    auto config = GetChildren().GetFirst<Config>();
+
 #ifdef ENABLE_SCRIPTING
-    if (mScriptLoader) {
-        mScriptLoader->UnloadAll();
+    auto scriptLoader = GetChildren().GetFirst<ScriptLoader>();
+    if (scriptLoader) {
+        scriptLoader->UnloadAll();
     }
-    mScriptLoader = nullptr;
-    mKeystore = nullptr;
 #endif
-    GetConfig()->Save();
-    mConfig = nullptr;
-    spdlog::shutdown();
+
+    // Remove children in order to allow explicit teardown before logging shuts down.
+    GetChildren().Remove(true);
+
+    if (config) {
+        config->Save();
+    }
+    if (mOwnsLogger) {
+        spdlog::shutdown();
+    }
 }
 
-std::shared_ptr<Context>
-Context::CreateInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
-                        const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                        uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
-                        std::shared_ptr<ControlDeck> controlDeck) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
-            return shared;
-        } else {
-            SPDLOG_ERROR("Failed to initialize");
-            return nullptr;
-        };
+std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name, const std::string& shortName,
+                                                        const std::string& configFilePath,
+                                                        const std::vector<std::string>& archivePaths,
+                                                        const std::unordered_set<uint32_t>& validHashes,
+                                                        uint32_t reservedThreadCount, AudioSettings audioSettings,
+                                                        std::shared_ptr<Component> window,
+                                                        std::shared_ptr<Component> controlDeck) {
+    if (!mContext.expired()) {
+        SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
+        return GetInstance();
     }
 
-    SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
+    auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+    mContext = shared;
 
-    return GetInstance();
-}
-
-std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string& name, const std::string& shortName,
-                                                              const std::string& configFilePath) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        return shared;
-    }
-
-    SPDLOG_DEBUG("Trying to create an uninitialized context when it already exists. Returning existing.");
-
-    return GetInstance();
-}
-
-Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : mConfigFilePath(std::move(configFilePath)), mName(std::move(name)), mShortName(std::move(shortName)) {
-}
-
-bool Context::Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                   uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
-                   std::shared_ptr<ControlDeck> controlDeck) {
-    return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
-           InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
-           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) &&
-#ifdef ENABLE_SCRIPTING
-           InitEventSystem() && InitFileDropMgr() && InitScriptLoader();
-#else
-           InitEventSystem() && InitFileDropMgr();
-#endif
-}
-
-bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
-                          spdlog::level::level_enum releaseBuildLogLevel) {
-    if (GetLogger() != nullptr) {
-        return true;
-    }
-
+    // ---- Logging ----
     try {
-        // Setup Logging
         spdlog::init_thread_pool(8192, 1);
         std::vector<spdlog::sink_ptr> sinks;
 
 #if (!defined(_WIN32)) || defined(_DEBUG)
 #if defined(_DEBUG) && defined(_WIN32)
-        // LLVM on Windows allocs a hidden console in its entrypoint function.
-        // We free that console here to create our own.
         FreeConsole();
         if (AllocConsole() == 0) {
             throw std::system_error(GetLastError(), std::generic_category(), "Failed to create debug console");
@@ -155,293 +125,335 @@ bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
         std::wcin.clear();
 #endif
         auto systemConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        // systemConsoleSink->set_level(spdlog::level::trace);
         sinks.push_back(systemConsoleSink);
 #endif
 
-        auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
+        auto logPath = GetPathRelativeToAppDirectory(("logs/" + name + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
         sinks.push_back(fileSink);
-#ifdef _DEBUG
-        mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
-        GetLogger()->set_level(debugBuildLogLevel);
-        GetLogger()->flush_on(spdlog::level::trace);
-#else
-        mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
-                                                         spdlog::async_overflow_policy::block);
-        GetLogger()->set_level(releaseBuildLogLevel);
-        GetLogger()->flush_on(spdlog::level::info);
-#endif
-        GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 
-        spdlog::register_logger(GetLogger());
-        spdlog::set_default_logger(GetLogger());
-        return true;
+        std::shared_ptr<spdlog::logger> logger;
+#ifdef _DEBUG
+        logger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
+        logger->set_level(spdlog::level::debug);
+        logger->flush_on(spdlog::level::trace);
+#else
+        logger = std::make_shared<spdlog::async_logger>(name, sinks.begin(), sinks.end(), spdlog::thread_pool(),
+                                                        spdlog::async_overflow_policy::block);
+        logger->set_level(spdlog::level::warn);
+        logger->flush_on(spdlog::level::info);
+#endif
+
+        logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
+
+        spdlog::register_logger(logger);
+        spdlog::set_default_logger(logger);
+        shared->mOwnsLogger = true;
+
+        shared->GetChildren().Add(std::make_shared<Logger>(logger));
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
-        return false;
-    }
-}
-
-bool Context::InitConfiguration() {
-    if (GetConfig() != nullptr) {
-        return true;
+        return nullptr;
     }
 
-    mConfig = std::make_shared<Config>(GetPathRelativeToAppDirectory(mConfigFilePath));
+    // ---- Configuration ----
+    auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath));
+    shared->GetChildren().Add(config);
 
-    if (GetConfig() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize config");
-        return false;
-    }
+    // Read config values needed for component construction
+    auto mainPath = config->GetString("Game.Main Archive", GetAppDirectoryPath());
+    auto patchesPath = config->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
 
-    return true;
-}
+    // ---- Console Variables ----
+    shared->GetChildren().Add(std::make_shared<ConsoleVariable>());
 
-bool Context::InitConsoleVariables() {
-    if (GetConsoleVariables() != nullptr) {
-        return true;
-    }
-
-    mConsoleVariables = std::make_shared<ConsoleVariable>();
-
-    if (GetConsoleVariables() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize console variables");
-        return false;
-    }
-
-    return true;
-}
-
-bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
-                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount,
-                                  const bool allowEmptyPaths) {
-    if (GetResourceManager() != nullptr) {
-        return true;
-    }
+    // ---- Thread Pool ----
+    shared->GetChildren().Add(std::make_shared<ThreadPool>(threadCount));
 
 #ifdef ENABLE_SCRIPTING
-    InitKeystore();
+    // ---- Keystore ----
+    shared->GetChildren().Add(std::make_shared<Keystore>());
 #endif
 
-    mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
-    mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
-    if (archivePaths.empty()) {
-        std::vector<std::string> paths = std::vector<std::string>();
-        paths.push_back(mMainPath);
-        paths.push_back(mPatchesPath);
+    // ---- Resource Manager ----
+    auto resourceManager = std::make_shared<ResourceManager>();
+    shared->GetChildren().Add(resourceManager);
 
-        mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(paths, validHashes, reservedThreadCount);
+    // ---- Control Deck ----
+    if (controlDeck != nullptr) {
+        shared->GetChildren().Add(controlDeck);
     } else {
-        mResourceManager = std::make_shared<ResourceManager>();
-        GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
+        SPDLOG_ERROR("Failed to initialize control deck");
+        return nullptr;
     }
 
-    if (!allowEmptyPaths && !GetResourceManager()->IsLoaded()) {
+    // ---- Crash Handler ----
+    shared->GetChildren().Add(std::make_shared<CrashHandler>());
+
+    // ---- Console ----
+    auto console = std::make_shared<Console>();
+    shared->GetChildren().Add(console);
+
+    // ---- Window ----
+    if (window == nullptr) {
+        SPDLOG_ERROR("Failed to initialize window");
+        return nullptr;
+    }
+    shared->GetChildren().Add(window);
+
+    // ---- Audio ----
+    auto audio = std::make_shared<Audio>(audioSettings);
+    shared->GetChildren().Add(audio);
+
+    // ---- Gfx Debugger ----
+    shared->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
+
+    // ---- Events ----
+    shared->GetChildren().Add(std::make_shared<Events>());
+
+    // ---- File Drop Manager ----
+    auto fileDropMgr = std::make_shared<FileDrop>();
+    shared->GetChildren().Add(fileDropMgr);
+
+#ifdef ENABLE_SCRIPTING
+    // ---- Script Loader ----
+    shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1,
+                                                             "-g -Wl", std::vector<std::string>{},
+                                                             std::vector<std::string>{}, std::vector<std::string>{}));
+#endif
+
+    // ---- Init all components that need it ----
+    if (archivePaths.empty()) {
+        std::vector<std::string> paths;
+        paths.push_back(mainPath);
+        paths.push_back(patchesPath);
+        resourceManager->Init(paths, validHashes);
+    } else {
+        resourceManager->Init(archivePaths, validHashes);
+    }
+
+    if (!resourceManager->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
 #ifdef __IOS__
-        // We need this exit to close the app when we dismiss the dialog
         exit(0);
 #endif
+        return nullptr;
+    }
+
+    console->Init();
+    window->Init();
+    fileDropMgr->Init();
+    audio->Init();
+
+    return shared;
+}
+
+bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
+                                      const nlohmann::json& initArgs,
+                                      const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides) {
+    if (!json.contains("components") || !json["components"].is_array()) {
+        SPDLOG_ERROR("BuildComponentsFromJson: missing or invalid 'components' array");
         return false;
     }
 
-    return true;
-}
-
-bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
-    if (GetControlDeck() != nullptr) {
-        return true;
-    }
-
-    mControlDeck = controlDeck;
-
-    if (GetControlDeck() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize control deck");
-        return false;
-    }
-
-    return true;
-}
-
-bool Context::InitCrashHandler() {
-    if (GetCrashHandler() != nullptr) {
-        return true;
-    }
-
-    mCrashHandler = std::make_shared<CrashHandler>();
-
-    if (GetCrashHandler() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize crash handler");
-        return false;
-    }
-
-    return true;
-}
-
-bool Context::InitAudio(AudioSettings settings) {
-    if (GetAudio() != nullptr) {
-        return true;
-    }
-
-    mAudio = std::make_shared<Audio>(settings);
-
-    if (GetAudio() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize audio");
-        return false;
-    }
-
-    GetAudio()->Init();
-    return true;
-}
-
-bool Context::InitConsole() {
-    if (GetConsole() != nullptr) {
-        return true;
-    }
-
-    mConsole = std::make_shared<Console>();
-
-    if (GetConsole() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize console");
-        return false;
-    }
-
-    GetConsole()->Init();
-
-    return true;
-}
-
-bool Context::InitWindow(std::shared_ptr<Window> window) {
-    if (GetWindow() != nullptr) {
-        return true;
-    }
-
-    mWindow = window;
-
-    if (GetWindow() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize window");
-        return false;
-    }
-
-    GetWindow()->Init();
-
-    return true;
-}
-
-bool Context::InitFileDropMgr() {
-    if (GetFileDropMgr() != nullptr) {
-        return true;
-    }
-
-    mFileDropMgr = std::make_shared<FileDropMgr>();
-    if (GetFileDropMgr() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize file drop manager");
-        return false;
-    }
-    return true;
-}
-
-bool Context::InitEventSystem() {
-    if (GetEventSystem() != nullptr) {
-        return true;
-    }
-
-    mEventSystem = std::make_shared<EventSystem>();
-    if (GetEventSystem() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize event system");
-        return false;
-    }
-    return true;
-}
-
+    // Set of compile-time conditions that are active.
+    std::unordered_set<std::string> activeConditions;
 #ifdef ENABLE_SCRIPTING
-bool Context::InitScriptLoader(std::unordered_map<std::string, std::string> compileDefines, int codeVersion,
-                               std::string buildOptions, std::vector<std::string> includePaths,
-                               std::vector<std::string> libraryPaths, std::vector<std::string> libraries) {
-    if (GetScriptLoader() != nullptr) {
-        return true;
-    }
-
-    mScriptLoader = std::make_shared<ScriptLoader>(compileDefines, codeVersion, buildOptions, includePaths,
-                                                   libraryPaths, libraries);
-    if (GetScriptLoader() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize script system");
-        return false;
-    }
-    return true;
-}
-
-bool Context::InitKeystore() {
-    if (GetKeystore() != nullptr) {
-        return true;
-    }
-
-    mKeystore = std::make_shared<Keystore>();
-    if (GetKeystore() == nullptr) {
-        SPDLOG_ERROR("Failed to initialize keystore system");
-        return false;
-    }
-    return true;
-}
-#endif // ENABLE_SCRIPTING
-
-std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() const {
-    return mConsoleVariables;
-}
-
-std::shared_ptr<spdlog::logger> Context::GetLogger() const {
-    return mLogger;
-}
-
-std::shared_ptr<Config> Context::GetConfig() const {
-    return mConfig;
-}
-
-std::shared_ptr<ResourceManager> Context::GetResourceManager() const {
-    return mResourceManager;
-}
-
-std::shared_ptr<ControlDeck> Context::GetControlDeck() const {
-    return mControlDeck;
-}
-
-std::shared_ptr<CrashHandler> Context::GetCrashHandler() const {
-    return mCrashHandler;
-}
-
-std::shared_ptr<Window> Context::GetWindow() const {
-    return mWindow;
-}
-
-std::shared_ptr<Console> Context::GetConsole() const {
-    return mConsole;
-}
-
-std::shared_ptr<Audio> Context::GetAudio() const {
-    return mAudio;
-}
-
-std::shared_ptr<FileDropMgr> Context::GetFileDropMgr() const {
-    return mFileDropMgr;
-}
-
-std::shared_ptr<EventSystem> Context::GetEventSystem() const {
-    return mEventSystem;
-}
-
-#ifdef ENABLE_SCRIPTING
-std::shared_ptr<ScriptLoader> Context::GetScriptLoader() const {
-    return mScriptLoader;
-}
-
-std::shared_ptr<Keystore> Context::GetKeystore() const {
-    return mKeystore;
-}
+    activeConditions.insert("ENABLE_SCRIPTING");
 #endif
+#ifdef ENABLE_DX11
+    activeConditions.insert("ENABLE_DX11");
+#endif
+
+    // Helper: create a component by type name.
+    auto createComponent = [&](const std::string& type, const nlohmann::json& compArgs) -> std::shared_ptr<Component> {
+        if (type == "Config") {
+            std::string configPath = compArgs.value("path", "");
+            return std::make_shared<Config>(configPath);
+        } else if (type == "ConsoleVariable") {
+            return std::make_shared<ConsoleVariable>();
+        } else if (type == "ThreadPool") {
+            size_t threadCount = compArgs.value("threadCount", static_cast<size_t>(1));
+            return std::make_shared<ThreadPool>(threadCount);
+        } else if (type == "ResourceManager") {
+            return std::make_shared<ResourceManager>();
+        } else if (type == "CrashHandler") {
+            return std::make_shared<CrashHandler>();
+        } else if (type == "Console") {
+            return std::make_shared<Console>();
+        } else if (type == "Audio") {
+            AudioSettings settings;
+            if (compArgs.contains("channelSetting")) {
+                settings.ChannelSetting = static_cast<AudioChannelsSetting>(compArgs["channelSetting"].get<int>());
+            }
+            return std::make_shared<Audio>(settings);
+        } else if (type == "GfxDebugger") {
+            return std::make_shared<Fast::GfxDebugger>();
+        } else if (type == "Events") {
+            return std::make_shared<Events>();
+        } else if (type == "FileDrop") {
+            return std::make_shared<FileDrop>();
+        } else if (type == "Logger") {
+            // Logger requires a logger - skip if not provided in overrides.
+            return nullptr;
+#ifdef ENABLE_SCRIPTING
+        } else if (type == "Keystore") {
+            return std::make_shared<Keystore>();
+        } else if (type == "ScriptLoader") {
+            return std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
+                                                  std::vector<std::string>{}, std::vector<std::string>{},
+                                                  std::vector<std::string>{});
+#endif
+        }
+        SPDLOG_WARN("BuildComponentsFromJson: unknown component type '{}'", type);
+        return nullptr;
+    };
+
+    // Recursive helper: process a component entry and its children.
+    std::function<void(const nlohmann::json&, std::shared_ptr<Component>)> processEntry =
+        [&](const nlohmann::json& entry, std::shared_ptr<Component> parent) {
+            if (!entry.contains("type") || !entry["type"].is_string()) {
+                return;
+            }
+            std::string type = entry["type"].get<std::string>();
+            std::string name = entry.value("name", type);
+
+            // Check compile-time condition.
+            if (entry.contains("condition") && entry["condition"].is_string()) {
+                std::string condition = entry["condition"].get<std::string>();
+                if (activeConditions.find(condition) == activeConditions.end()) {
+                    return;
+                }
+            }
+
+            std::shared_ptr<Component> component = nullptr;
+
+            // Merge initArgs: inline "initArgs" from the entry takes precedence,
+            // then the top-level initArgs keyed by name.
+            nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+            if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
+                // Inline initArgs override top-level ones.
+                for (auto& [key, value] : entry["initArgs"].items()) {
+                    compArgs[key] = value;
+                }
+            }
+
+            // Check if an override is provided.
+            if (overrides.count(type)) {
+                component = overrides.at(type);
+            } else {
+                component = createComponent(type, compArgs);
+            }
+
+            if (component) {
+                parent->GetChildren().Add(component);
+
+                // Recursively process children specified in the JSON hierarchy.
+                if (entry.contains("children") && entry["children"].is_array()) {
+                    for (const auto& childEntry : entry["children"]) {
+                        processEntry(childEntry, component);
+                    }
+                }
+            }
+        };
+
+    // Phase 1: Create and add all components respecting hierarchy.
+    for (const auto& entry : json["components"]) {
+        processEntry(entry, context);
+    }
+
+    // Phase 2: Initialize components in declaration order.
+    // Components that self-initialize (MarkInitialized in constructor) are skipped.
+    // Iterate in the same order as the components array, including children depth-first.
+    std::function<void(const nlohmann::json&)> initEntry = [&](const nlohmann::json& entry) {
+        if (!entry.contains("type") || !entry["type"].is_string()) {
+            return;
+        }
+        std::string name = entry.value("name", entry["type"].get<std::string>());
+
+        // Skip if condition not met.
+        if (entry.contains("condition") && entry["condition"].is_string()) {
+            std::string condition = entry["condition"].get<std::string>();
+            if (activeConditions.find(condition) == activeConditions.end()) {
+                return;
+            }
+        }
+
+        // Merge initArgs for this component.
+        nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
+        if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
+            for (auto& [key, value] : entry["initArgs"].items()) {
+                compArgs[key] = value;
+            }
+        }
+
+        // BFS through the full hierarchy to find the component by name.
+        std::queue<Component*> searchQueue;
+        searchQueue.push(context.get());
+        std::unordered_set<uint64_t> visited;
+        visited.insert(context->GetId());
+
+        while (!searchQueue.empty()) {
+            Component* current = searchQueue.front();
+            searchQueue.pop();
+            auto children = current->GetChildren().Get();
+            for (const auto& child : *children) {
+                if (visited.insert(child->GetId()).second) {
+                    if (child->GetName() == name && !child->IsInitialized()) {
+                        child->Init(compArgs);
+                        goto done;
+                    }
+                    searchQueue.push(child.get());
+                }
+            }
+        }
+    done:
+
+        // Recursively init children in declared order.
+        if (entry.contains("children") && entry["children"].is_array()) {
+            for (const auto& childEntry : entry["children"]) {
+                initEntry(childEntry);
+            }
+        }
+    };
+
+    for (const auto& entry : json["components"]) {
+        initEntry(entry);
+    }
+
+    return true;
+}
+
+std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
+                                                 const std::string& configFilePath) {
+    if (!mContext.expired()) {
+        SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
+        return GetInstance();
+    }
+
+    auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+    mContext = shared;
+    return shared;
+}
+
+std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
+                                                 const std::string& configFilePath,
+                                                 std::vector<std::shared_ptr<Component>> components) {
+    auto ctx = CreateInstance(name, shortName, configFilePath);
+    for (auto& component : components) {
+        ctx->GetChildren().Add(component);
+        component->Init();
+    }
+    return ctx;
+}
+
+Context::Context(std::string name, std::string shortName, std::string configFilePath)
+    : Component(name), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
+      mShortName(std::move(shortName)) {
+}
 
 std::string Context::GetName() const {
     return mName;
@@ -585,6 +597,16 @@ std::string Context::LocateFileAcrossAppDirs(const std::string& path, const std:
     }
     // current dir
     return "./" + std::string(path);
+}
+
+// ---- TickableComponent list ----
+
+TickableList& Context::GetTickableComponents() {
+    return mTickableComponents;
+}
+
+const TickableList& Context::GetTickableComponents() const {
+    return mTickableComponents;
 }
 
 } // namespace Ship

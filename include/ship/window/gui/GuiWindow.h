@@ -33,8 +33,6 @@ namespace Ship {
  */
 class GuiWindow : public GuiElement {
   public:
-    GuiWindow() = default;
-
     /**
      * @brief Full constructor with explicit size and window flags.
      * @param consoleVariable  CVar name used to persist/read visibility (e.g. "gMyWindow").
@@ -94,9 +92,6 @@ class GuiWindow : public GuiElement {
      */
     void Draw() override;
 
-    /** @brief Returns the window's display name. */
-    std::string GetName();
-
   protected:
     /**
      * @brief Overrides SetVisibility to also write the new state to the backing CVar.
@@ -121,7 +116,6 @@ class GuiWindow : public GuiElement {
     void SyncVisibilityConsoleVariable();
 
   private:
-    std::string mName;
     std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;
     ImVec2 mOriginalSize;

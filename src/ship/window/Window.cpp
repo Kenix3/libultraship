@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -12,11 +13,11 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) : Component("Window") {
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
-    mConfig = Context::GetInstance()->GetConfig();
+    GetChildren().Add(gui);
 }
 
 Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
@@ -131,6 +132,12 @@ void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 
+void Window::OnInit(const nlohmann::json& /*initArgs*/) {
+    // Dependencies (Config) are verified by Component::Init() via GetDependencies().
+    // Just cache the reference here.
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+}
+
 int32_t Window::GetSavedWindowBackend() {
     auto backendId = mConfig->GetInt("Window.Backend.Id", -1);
     if (IsAvailableWindowBackend(backendId)) {
@@ -149,5 +156,14 @@ int32_t Window::GetSavedWindowBackend() {
 
 std::string Window::GetWindowBackendName() {
     return "";
+}
+
+std::shared_ptr<Config> Window::GetConfig() const {
+    return mConfig;
+}
+
+const nlohmann::json& Window::GetDependencies() const {
+    static const nlohmann::json deps = nlohmann::json::array({ "Config" });
+    return deps;
 }
 } // namespace Ship

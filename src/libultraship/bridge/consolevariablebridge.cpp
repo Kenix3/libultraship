@@ -1,88 +1,100 @@
 #include "libultraship/bridge/consolevariablebridge.h"
 #include "ship/Context.h"
 
+static std::shared_ptr<Ship::ConsoleVariable> sConsoleVariable;
+
+static Ship::ConsoleVariable* GetConsoleVariable() {
+    if (!sConsoleVariable) {
+        sConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    }
+    return sConsoleVariable.get();
+}
+
+
 std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->Get(name);
+    return GetConsoleVariable()->Get(name);
 }
 
 extern "C" {
 int32_t CVarGetInteger(const char* name, int32_t defaultValue) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(name, defaultValue);
+    return GetConsoleVariable()->GetInteger(name,
+                                                                                                     defaultValue);
 }
 
 float CVarGetFloat(const char* name, float defaultValue) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(name, defaultValue);
+    return GetConsoleVariable()->GetFloat(name, defaultValue);
 }
 
 const char* CVarGetString(const char* name, const char* defaultValue) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetString(name, defaultValue);
+    return GetConsoleVariable()->GetString(name, defaultValue);
 }
 
 Color_RGBA8 CVarGetColor(const char* name, Color_RGBA8 defaultValue) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetColor(name, defaultValue);
+    return GetConsoleVariable()->GetColor(name, defaultValue);
 }
 
 Color_RGB8 CVarGetColor24(const char* name, Color_RGB8 defaultValue) {
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetColor24(name, defaultValue);
+    return GetConsoleVariable()->GetColor24(name,
+                                                                                                     defaultValue);
 }
 
 void CVarSetInteger(const char* name, int32_t value) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(name, value);
+    GetConsoleVariable()->SetInteger(name, value);
 }
 
 void CVarSetFloat(const char* name, float value) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat(name, value);
+    GetConsoleVariable()->SetFloat(name, value);
 }
 
 void CVarSetString(const char* name, const char* value) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(name, value);
+    GetConsoleVariable()->SetString(name, value);
 }
 
 void CVarSetColor(const char* name, Color_RGBA8 value) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetColor(name, value);
+    GetConsoleVariable()->SetColor(name, value);
 }
 
 void CVarSetColor24(const char* name, Color_RGB8 value) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetColor24(name, value);
+    GetConsoleVariable()->SetColor24(name, value);
 }
 
 void CVarRegisterInteger(const char* name, int32_t defaultValue) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->RegisterInteger(name, defaultValue);
+    GetConsoleVariable()->RegisterInteger(name, defaultValue);
 }
 
 void CVarRegisterFloat(const char* name, float defaultValue) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->RegisterFloat(name, defaultValue);
+    GetConsoleVariable()->RegisterFloat(name, defaultValue);
 }
 
 void CVarRegisterString(const char* name, const char* defaultValue) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->RegisterString(name, defaultValue);
+    GetConsoleVariable()->RegisterString(name, defaultValue);
 }
 
 void CVarRegisterColor(const char* name, Color_RGBA8 defaultValue) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->RegisterColor(name, defaultValue);
+    GetConsoleVariable()->RegisterColor(name, defaultValue);
 }
 
 void CVarRegisterColor24(const char* name, Color_RGB8 defaultValue) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->RegisterColor24(name, defaultValue);
+    GetConsoleVariable()->RegisterColor24(name, defaultValue);
 }
 
 void CVarClear(const char* name) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(name);
+    GetConsoleVariable()->ClearVariable(name);
 }
 
 void CVarClearBlock(const char* name) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearBlock(name);
+    GetConsoleVariable()->ClearBlock(name);
 }
 
 void CVarCopy(const char* from, const char* to) {
-    Ship::Context::GetInstance()->GetConsoleVariables()->CopyVariable(from, to);
+    GetConsoleVariable()->CopyVariable(from, to);
 }
 
 void CVarLoad() {
-    Ship::Context::GetInstance()->GetConsoleVariables()->Load();
+    GetConsoleVariable()->Load();
 }
 
 void CVarSave() {
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    GetConsoleVariable()->Save();
 }
 }

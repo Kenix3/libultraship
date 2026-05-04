@@ -4,6 +4,7 @@
 #include "ship/audio/CoreAudioAudioPlayer.h"
 #endif
 
+#include <stdexcept>
 #include "ship/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -41,9 +42,7 @@ void Audio::InitAudioPlayer() {
     }
 }
 
-void Audio::Init() {
-    mConfig = Context::GetInstance()->GetConfig();
-
+void Audio::OnInit(const nlohmann::json& /*initArgs*/) {
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
@@ -54,8 +53,10 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
+    // Dependencies (Config) are verified by Component::Init() via GetDependencies().
+    // Just cache the reference here.
+    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
     SetCurrentAudioBackend(GetSavedAudioBackend());
-    SetAudioChannels(GetSavedAudioChannelsSetting());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -128,6 +129,10 @@ void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     InitAudioPlayer();
 }
 
+std::shared_ptr<Config> Audio::GetConfig() const {
+    return mConfig;
+}
+
 std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
     return mAvailableAudioBackends;
 }
@@ -159,6 +164,11 @@ AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
         default:
             return AudioChannelsSetting::audioStereo;
     }
+}
+
+const nlohmann::json& Audio::GetDependencies() const {
+    static const nlohmann::json deps = nlohmann::json::array({ "Config" });
+    return deps;
 }
 
 } // namespace Ship

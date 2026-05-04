@@ -3,10 +3,13 @@
 #include "ControlPort.h"
 #include <vector>
 #include "ship/config/Config.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "ship/Component.h"
+#include "ship/window/Window.h"
 
 namespace Ship {
 
@@ -22,9 +25,17 @@ namespace Ship {
  * - Providing access to physical device management and default-mapping configuration.
  *
  * Subclass ControlDeck to implement WriteToPad() for a specific game's pad layout.
- * Obtain the instance from Context::GetControlDeck().
+ *
+ * **Required Context children (looked up at Init time):**
+ * - **ConsoleVariable** — cached in Init() and used by controller mapping layers to load/save
+ *   per-mapping settings (e.g. button assignments, rumble toggle). ConsoleVariable must be
+ *   added to the Context before ControlDeck::Init() is called.
+ * - **Window** — cached in Init() and consulted by controller mappings for keyboard/mouse
+ *   capture state. Window must be added to the Context before ControlDeck::Init() is called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ControlDeck>()`.
  */
-class ControlDeck {
+class ControlDeck : public Component {
   public:
     /**
      * @brief Constructs the ControlDeck and sets up the port list.
@@ -42,7 +53,6 @@ class ControlDeck {
      * @param controllerBits Pointer to the byte the game uses as a bitmask of connected ports.
      */
     void Init(uint8_t* controllerBits);
-
     /**
      * @brief Reads controller state and writes it to the game-specific pad structure(s).
      *
@@ -52,18 +62,15 @@ class ControlDeck {
      * @param pads Pointer to the game's pad buffer.
      */
     virtual void WriteToPad(void* pads) = 0;
-
     /**
      * @brief Returns the pointer passed to Init() that tracks which ports have controllers.
      */
     uint8_t* GetControllerBits();
-
     /**
      * @brief Returns the Controller connected to the given port, or nullptr.
      * @param port Zero-based port index.
      */
     std::shared_ptr<Controller> GetControllerByPort(uint8_t port);
-
     /**
      * @brief Blocks all game input for the caller identified by @p blockId.
      *
@@ -73,22 +80,17 @@ class ControlDeck {
      * @param blockId Arbitrary identifier that distinguishes this blocker from others.
      */
     void BlockGameInput(int32_t blockId);
-
     /**
      * @brief Removes the block associated with @p blockId.
      * @param blockId The same ID passed to BlockGameInput().
      */
     void UnblockGameInput(int32_t blockId);
-
     /** @brief Returns true if any blocker has blocked gamepad game input. */
     bool GamepadGameInputBlocked();
-
     /** @brief Returns true if any blocker has blocked keyboard game input. */
     bool KeyboardGameInputBlocked();
-
     /** @brief Returns true if any blocker has blocked mouse game input. */
     bool MouseGameInputBlocked();
-
     /**
      * @brief Forwards a keyboard event to all controllers that have keyboard bindings.
      * @param eventType Key-down or key-up.
@@ -96,7 +98,6 @@ class ControlDeck {
      * @return true if any controller consumed the event.
      */
     bool ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode);
-
     /**
      * @brief Forwards a mouse-button event to all controllers that have mouse bindings.
      * @param isPressed true for button-down, false for button-up.
@@ -107,18 +108,14 @@ class ControlDeck {
 
     /** @brief Returns the manager that tracks currently connected SDL/HID devices. */
     std::shared_ptr<ConnectedPhysicalDeviceManager> GetConnectedPhysicalDeviceManager();
-
     /** @brief Returns the global SDL device settings (dead-zone, axis scale, etc.). */
     std::shared_ptr<GlobalSDLDeviceSettings> GetGlobalSDLDeviceSettings();
-
     /** @brief Returns the default mapping configuration applied to new controllers. */
     std::shared_ptr<ControllerDefaultMappings> GetControllerDefaultMappings();
-
     /**
      * @brief Returns the full bitmask→name map for all registered buttons.
      */
     const std::unordered_map<CONTROLLERBUTTONS_T, std::string>& GetAllButtonNames() const;
-
     /**
      * @brief Returns the human-readable name for the given button bitmask.
      * @param bitmask Single-bit button bitmask.
@@ -134,7 +131,6 @@ class ControlDeck {
      * zeroed or real pad data to the game.
      */
     bool AllGameInputBlocked();
-
     std::vector<std::shared_ptr<ControlPort>> mPorts = {}; ///< One entry per controller port.
 
   private:
@@ -144,5 +140,12 @@ class ControlDeck {
     std::shared_ptr<GlobalSDLDeviceSettings> mGlobalSDLDeviceSettings;
     std::shared_ptr<ControllerDefaultMappings> mControllerDefaultMappings;
     std::unordered_map<CONTROLLERBUTTONS_T, std::string> mButtonNames;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
+
+    /** @brief Returns the cached Window component. */
+    std::shared_ptr<Window> GetWindow() const;
+    /** @brief Returns the cached ConsoleVariable component. */
+    std::shared_ptr<ConsoleVariable> GetConsoleVariables() const;
 };
 } // namespace Ship

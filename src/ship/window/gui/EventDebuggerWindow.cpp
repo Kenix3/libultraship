@@ -4,7 +4,7 @@
 #include <version>
 
 #include "ship/utils/StringHelper.h"
-#include "ship/events/EventSystem.h"
+#include "ship/events/Events.h"
 #include "ship/Context.h"
 
 namespace Ship {
@@ -80,7 +80,7 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
 
 void EventDebuggerWindow::DrawElement() {
     bool collapseLogic = false;
-    auto events = Ship::Context::GetInstance()->GetEventSystem()->GetEventRegistrations();
+    auto events = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Events>()->GetEventRegistrations();
     bool doingCollapseOrExpand = hookOptExpandAll || hookOptCollapseAll;
 
     if (ImGui::Button("Expand All")) {
