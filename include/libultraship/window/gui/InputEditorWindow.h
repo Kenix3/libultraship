@@ -24,9 +24,9 @@ namespace LUS {
  * The window is added to the GUI by Context::Init() and is accessible via
  * Gui::GetGuiWindow("Input Editor").
  */
-class InputEditorWindow : public GuiWindow {
+class InputEditorWindow : public Ship::GuiWindow {
   public:
-    using GuiWindow::GuiWindow;
+    using Ship::GuiWindow::GuiWindow;
 
     /** @brief Destroys the InputEditorWindow and releases any active rumble test state. */
     virtual ~InputEditorWindow();
@@ -188,7 +188,7 @@ class InputEditorWindow : public GuiWindow {
     int32_t mGameInputBlockTimer;
     int32_t mMappingInputBlockTimer;
     int32_t mRumbleTimer;
-    std::shared_ptr<ControllerRumbleMapping> mRumbleMappingToTest;
+    std::shared_ptr<Ship::ControllerRumbleMapping> mRumbleMappingToTest;
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;

@@ -165,9 +165,9 @@ void InputEditorWindow::DrawAnalogPreview(const char* label, ImVec2 stick, float
 #define BUTTON_COLOR_GAMEPAD_PURPLE ImVec4(0.431f, 0.369f, 0.706f, 0.5f)
 #define BUTTON_COLOR_GAMEPAD_PURPLE_HOVERED ImVec4(0.431f, 0.369f, 0.706f, 1.0f)
 
-void InputEditorWindow::GetButtonColorsForPhysicalDeviceType(Ship::PhysicalDeviceType lusIndex, ImVec4& buttonColor,
-                                                             ImVec4& buttonHoveredColor) {
-    switch (lusIndex) {
+void InputEditorWindow::GetButtonColorsForPhysicalDeviceType(Ship::PhysicalDeviceType physicalDeviceType,
+                                                             ImVec4& buttonColor, ImVec4& buttonHoveredColor) {
+    switch (physicalDeviceType) {
         case Ship::PhysicalDeviceType::Keyboard:
             buttonColor = BUTTON_COLOR_KEYBOARD_BEIGE;
             buttonHoveredColor = BUTTON_COLOR_KEYBOARD_BEIGE_HOVERED;
@@ -290,7 +290,7 @@ void InputEditorWindow::DrawButtonLineEditMappingButton(uint8_t port, CONTROLLER
     ImGui::PopStyleVar();
     ImGui::SameLine(0, 0);
 
-    auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<SDLAxisDirectionToButtonMapping>(mapping);
+    auto sdlAxisDirectionToButtonMapping = std::dynamic_pointer_cast<Ship::SDLAxisDirectionToButtonMapping>(mapping);
     if (sdlAxisDirectionToButtonMapping != nullptr) {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
         auto buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
@@ -482,7 +482,7 @@ void InputEditorWindow::DrawStickDirectionLineAddMappingButton(uint8_t port, uin
 
 void InputEditorWindow::DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Ship::Direction direction,
                                                                 std::string id) {
-    std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
+    std::shared_ptr<Ship::ControllerAxisDirectionMapping> mapping = nullptr;
     if (stick == Ship::LEFT) {
         mapping = Ship::Context::GetInstance()
                       ->GetControlDeck()
@@ -614,7 +614,7 @@ void InputEditorWindow::DrawStickDirectionLine(const char* axisDirectionName, ui
 
 void InputEditorWindow::DrawStickSection(uint8_t port, uint8_t stick, int32_t id, ImVec4 color = CHIP_COLOR_N64_GREY) {
     static int8_t sX, sY;
-    std::shared_ptr<ControllerStick> controllerStick = nullptr;
+    std::shared_ptr<Ship::ControllerStick> controllerStick = nullptr;
     if (stick == Ship::LEFT) {
         controllerStick = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick();
     } else {
@@ -771,9 +771,9 @@ void InputEditorWindow::UpdateBitmaskToMappingIds(uint8_t port) {
 void InputEditorWindow::UpdateStickDirectionToMappingIds(uint8_t port) {
     // todo: do we need this?
     for (auto stick :
-         { std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
+         { std::make_pair<uint8_t, std::shared_ptr<Ship::ControllerStick>>(
                Ship::LEFT, Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetLeftStick()),
-           std::make_pair<uint8_t, std::shared_ptr<ControllerStick>>(
+           std::make_pair<uint8_t, std::shared_ptr<Ship::ControllerStick>>(
                Ship::RIGHT,
                Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(port)->GetRightStick()) }) {
         for (auto direction : { Ship::LEFT, Ship::RIGHT, Ship::UP, Ship::DOWN }) {
