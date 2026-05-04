@@ -170,27 +170,23 @@ template <typename C = Part> class PartList : public Part {
 
   protected:
     /**
-     * @brief Direct access to the underlying vector for efficient iteration.
-     *
-     * Must only be called with the PartList mutex already held (via GetMutex())
-     * when COMPONENT_THREAD_SAFE is defined. Accessible from PartList subclasses
-     * only; external callers should use Get() which acquires the mutex internally.
-     * @return A mutable reference to the internal vector.
-     */
-    std::vector<std::shared_ptr<C>>& GetList();
-
-    /** @brief Direct const access to the underlying vector (subclass use only). */
-    const std::vector<std::shared_ptr<C>>& GetList() const;
-
-    /**
      * @brief Returns a reference to the internal mutex for synchronization.
      *
-     * Use this to hold the lock across multiple operations on GetList().
+     * Use this to hold the lock across multiple operations on the list.
      * Only available when COMPONENT_THREAD_SAFE is defined.
      */
 #ifdef COMPONENT_THREAD_SAFE
     std::recursive_mutex& GetMutex() const;
 #endif
+
+    /**
+     * @brief Sorts the list in-place using the given comparator, holding the mutex.
+     *
+     * @note Caches a reference to the internal list for in-place sorting; callers
+     *       must not hold the mutex before calling this (it is acquired internally).
+     * @tparam Compare A strict-weak-ordering comparator for shared_ptr<C>.
+     */
+    template <typename Compare> void Sort(Compare comp);
 
     /**
      * @brief Permission hook called before adding a Part. Override to deny.
@@ -525,19 +521,18 @@ template <typename C> ListReturnCode PartList<C>::Remove(const std::vector<uint6
     return result;
 }
 
-template <typename C> std::vector<std::shared_ptr<C>>& PartList<C>::GetList() {
-    return mList;
-}
-
-template <typename C> const std::vector<std::shared_ptr<C>>& PartList<C>::GetList() const {
-    return mList;
-}
-
 #ifdef COMPONENT_THREAD_SAFE
 template <typename C> std::recursive_mutex& PartList<C>::GetMutex() const {
     return mMutex;
 }
 #endif
+
+template <typename C> template <typename Compare> void PartList<C>::Sort(Compare comp) {
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#endif
+    std::stable_sort(mList.begin(), mList.end(), comp);
+}
 
 template <typename C> bool PartList<C>::CanAdd(std::shared_ptr<C> part) {
     return true;

@@ -73,20 +73,15 @@ void ComponentList::Removed(std::shared_ptr<Component> part, const bool forced) 
 }
 
 bool ComponentList::Has(const std::string& name) const {
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
-#endif
-    const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(),
-                        [&name](const std::shared_ptr<Component>& c) { return c->GetName() == name; }) != list.end();
+    auto snapshot = PartList<Component>::Get();
+    return std::find_if(snapshot->begin(), snapshot->end(), [&name](const std::shared_ptr<Component>& c) {
+               return c->GetName() == name;
+           }) != snapshot->end();
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Component>>> ComponentList::Get(const std::string& name) const {
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
-#endif
     auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : this->GetList()) {
+    for (const auto& c : *PartList<Component>::Get()) {
         if (c->GetName() == name) {
             result->push_back(c);
         }
@@ -96,11 +91,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Component>>> ComponentList::Get(cons
 
 std::shared_ptr<std::vector<std::shared_ptr<Component>>>
 ComponentList::Get(const std::vector<std::string>& names) const {
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
-#endif
     auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : this->GetList()) {
+    for (const auto& c : *PartList<Component>::Get()) {
         if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
             result->push_back(c);
         }

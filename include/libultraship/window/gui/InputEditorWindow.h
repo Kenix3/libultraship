@@ -8,6 +8,8 @@
 #include <vector>
 #include <set>
 #include "ship/controller/controldevice/controller/Controller.h"
+#include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/window/Window.h"
 
 namespace LUS {
 
@@ -228,6 +230,14 @@ class InputEditorWindow : public Ship::GuiWindow {
     std::set<CONTROLLERBUTTONS_T> mButtonsBitmasks;
     std::set<CONTROLLERBUTTONS_T> mDpadBitmasks;
     bool mInputEditorPopupOpen;
+
+    /** @brief Cached ControlDeck component. Caching this component makes InputEditorWindow require ControlDeck as a
+     * child of Context. */
+    std::shared_ptr<Ship::ControlDeck> mControlDeck;
+
+    /** @brief Cached Window component. Caching this component makes InputEditorWindow require Window as a child of
+     * Context. */
+    std::shared_ptr<Ship::Window> mWindow;
 
     /**
      * @brief Draws the "Set Defaults" button that restores default mappings for a port.

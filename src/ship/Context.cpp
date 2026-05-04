@@ -451,8 +451,7 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : Component(name), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
-      mShortName(std::move(shortName)) {
+    : Component(name), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
 std::string Context::GetName() const {

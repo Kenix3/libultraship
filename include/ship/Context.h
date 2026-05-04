@@ -203,7 +203,6 @@ class Context : public Component {
     static std::weak_ptr<Context> mContext;
 
     bool mOwnsLogger = false;
-    std::string mConfigFilePath;
     std::string mName;
     std::string mShortName;
 

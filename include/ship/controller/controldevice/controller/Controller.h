@@ -15,6 +15,7 @@
 #include "ControllerLED.h"
 #include "ship/controller/controldevice/ControlDevice.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
 
@@ -163,5 +164,9 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
     std::shared_ptr<ControllerLED> mLED;
+
+    /** @brief Cached ConsoleVariable component. Caching this component makes Controller require ConsoleVariable to be
+     * present as a child of Context. */
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship

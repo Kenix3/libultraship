@@ -26,6 +26,7 @@ Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitma
     mGyro = std::make_shared<ControllerGyro>(portIndex);
     mRumble = std::make_shared<ControllerRumble>(portIndex);
     mLED = std::make_shared<ControllerLED>(portIndex);
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
 }
 
 Controller::~Controller() {
@@ -67,8 +68,7 @@ uint8_t Controller::GetPortIndex() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(hasConfigCvarKey.c_str(),
-                                                                                               false);
+    return mConsoleVariable->GetInteger(hasConfigCvarKey.c_str(), false);
 }
 
 void Controller::ClearAllMappings() {
@@ -108,8 +108,8 @@ void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
 }
 
 void Controller::ReloadAllMappingsFromConfig() {

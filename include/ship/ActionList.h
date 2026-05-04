@@ -61,15 +61,15 @@ class ActionList : public PartList<Action> {
 };
 
 inline bool ActionList::Has(EventID eventId) const {
-    const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(), [eventId](const std::shared_ptr<Action>& action) {
+    auto snapshot = PartList<Action>::Get();
+    return std::find_if(snapshot->begin(), snapshot->end(), [eventId](const std::shared_ptr<Action>& action) {
                return action->GetEventId() == eventId;
-           }) != list.end();
+           }) != snapshot->end();
 }
 
 inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(EventID eventId) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
-    for (const auto& action : this->GetList()) {
+    for (const auto& action : *PartList<Action>::Get()) {
         if (action->GetEventId() == eventId) {
             result->push_back(action);
         }
@@ -80,7 +80,7 @@ inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(Eve
 inline std::shared_ptr<std::vector<std::shared_ptr<Action>>>
 ActionList::Get(const std::vector<EventID>& eventIds) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
-    for (const auto& action : this->GetList()) {
+    for (const auto& action : *PartList<Action>::Get()) {
         if (std::find(eventIds.begin(), eventIds.end(), action->GetEventId()) != eventIds.end()) {
             result->push_back(action);
         }

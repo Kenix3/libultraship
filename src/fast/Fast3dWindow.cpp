@@ -434,6 +434,52 @@ std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
     return mControlDeck;
 }
 
+std::string Fast3dWindow::GetWindowBackendName() {
+    switch (GetWindowBackend()) {
+        case WindowBackend::FAST3D_DXGI_DX11:
+            return "DirectX 11";
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            return "OpenGL";
+        case WindowBackend::FAST3D_SDL_METAL:
+            return "Metal";
+        default:
+            return "";
+    }
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
+    SetCurrentDimensions(width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) {
+    SetCurrentDimensions(isFullscreen, width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                        int32_t posY) {
+    if (!isFullscreen) {
+        GetConfig()->SetInt("Window.Width", static_cast<int32_t>(width));
+        GetConfig()->SetInt("Window.Height", static_cast<int32_t>(height));
+        GetConfig()->SetInt("Window.PositionX", posX);
+        GetConfig()->SetInt("Window.PositionY", posY);
+    } else {
+        GetConfig()->SetInt("Window.Fullscreen.Width", static_cast<int32_t>(width));
+        GetConfig()->SetInt("Window.Fullscreen.Height", static_cast<int32_t>(height));
+    }
+    mWindowManagerApi->SetFullscreen(isFullscreen);
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
+    return mWindowManagerApi->GetPrimaryMonitorRect();
+}
+
 const nlohmann::json& Fast3dWindow::GetDependencies() const {
     static const nlohmann::json deps = nlohmann::json::array({ "Config", "ConsoleVariable", "ControlDeck" });
     return deps;
