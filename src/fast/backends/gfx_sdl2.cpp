@@ -35,6 +35,7 @@
 #endif
 
 #include "ship/window/gui/Gui.h"
+#include "fast/Fast3dGui.h"
 
 #ifdef _WIN32
 #include <WTypesbase.h>
@@ -574,9 +575,15 @@ void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
 }
 
 void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
-    Ship::WindowEvent event_impl;
+    Fast::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->HandleWindowEvents(event_impl);
+    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+    auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(gui);
+    if (fast3dGui) {
+        fast3dGui->HandleWindowEvents(event_impl);
+    } else {
+        SPDLOG_ERROR("gfx_sdl2: Gui is not a Fast3dGui; cannot dispatch window event");
+    }
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259

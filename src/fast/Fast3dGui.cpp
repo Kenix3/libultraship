@@ -55,7 +55,7 @@ bool Fast3dGui::SupportsViewports() {
     return true;
 }
 
-void Fast3dGui::HandleWindowEvents(Ship::WindowEvent event) {
+void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
     auto window = Ship::Context::GetInstance()->GetWindow();
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:

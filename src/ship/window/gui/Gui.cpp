@@ -160,9 +160,6 @@ bool Gui::SupportsViewports() {
     return false;
 }
 
-void Gui::HandleWindowEvents(WindowEvent event) {
-}
-
 bool Gui::GamepadNavigationEnabled() {
     return mImGuiIo->ConfigFlags & ImGuiConfigFlags_NavEnableGamepad;
 }

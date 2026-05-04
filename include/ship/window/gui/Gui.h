@@ -60,27 +60,6 @@ typedef struct {
 } GuiWindowInitData;
 
 /**
- * @brief Platform-agnostic wrapper around a window system event.
- *
- * Passed to Gui::HandleWindowEvents() by the concrete Window subclass so that the
- * ImGui backend can process input events without depending on a specific windowing API.
- */
-typedef union {
-    struct {
-        void* Handle; ///< HWND
-        int Msg;      ///< Windows message ID.
-        int Param1;   ///< WPARAM
-        int Param2;   ///< LPARAM
-    } Win32;
-    struct {
-        void* Event; ///< SDL_Event*
-    } Sdl;
-    struct {
-        void* Input; ///< GX2 input structure pointer.
-    } Gx2;
-} WindowEvent;
-
-/**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
  *
  * Gui is the central hub for the in-game overlay system. It:
@@ -124,15 +103,6 @@ class Gui {
      * Must be called once per frame after all ImGui draw calls.
      */
     void EndDraw();
-
-    /**
-     * @brief Forwards a platform window event to the active ImGui backend for processing.
-     *
-     * The base implementation is a no-op. Concrete subclasses override this to
-     * dispatch events to the appropriate ImGui platform backend.
-     * @param event Platform event wrapped in a WindowEvent.
-     */
-    virtual void HandleWindowEvents(WindowEvent event);
 
     /**
      * @brief Schedules a CVar save to disk at the end of the current frame.
