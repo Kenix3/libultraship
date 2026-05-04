@@ -130,7 +130,7 @@ uint16_t Fast3dWindow::GetPixelDepth(float x, float y) {
 }
 
 void Fast3dWindow::InitWindowManager() {
-    SetWindowBackend(Ship::Context::GetInstance()->GetConfig()->GetWindowBackend());
+    SetWindowBackend(GetSavedWindowBackend());
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11

@@ -122,13 +122,29 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 
 void Window::SetWindowBackend(int32_t backend) {
     mWindowBackend = backend;
-    Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
-    Context::GetInstance()->GetConfig()->SetString("Window.Backend.Name", GetWindowBackendName());
-    Context::GetInstance()->GetConfig()->Save();
+    mConfig->SetInt("Window.Backend.Id", GetWindowBackend());
+    mConfig->SetString("Window.Backend.Name", GetWindowBackendName());
+    mConfig->Save();
 }
 
 void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
+}
+
+int32_t Window::GetSavedWindowBackend() {
+    auto backendId = mConfig->GetInt("Window.Backend.Id", -1);
+    if (IsAvailableWindowBackend(backendId)) {
+        return backendId;
+    }
+
+    SPDLOG_TRACE(
+        "Could not find available WindowBackend matching id from config file ({}). Returning default WindowBackend.",
+        backendId);
+
+    if (mAvailableWindowBackends && !mAvailableWindowBackends->empty()) {
+        return mAvailableWindowBackends->front();
+    }
+    return -1;
 }
 
 std::string Window::GetWindowBackendName() {

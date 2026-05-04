@@ -230,6 +230,13 @@ class Window {
      * @param backend Backend ID to mark as available.
      */
     void AddAvailableWindowBackend(int32_t backend);
+    /**
+     * @brief Reads the saved window backend identifier from the config.
+     *
+     * Reads Window.Backend.Id, validates it against the available backends, and falls back to
+     * the first registered backend if the saved value is not available.
+     */
+    int32_t GetSavedWindowBackend();
 
   private:
     std::shared_ptr<Gui> mGui;

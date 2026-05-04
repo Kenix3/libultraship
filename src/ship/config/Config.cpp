@@ -303,31 +303,6 @@ void Config::SetCurrentAudioBackend(AudioBackend backend) {
     }
 }
 
-int32_t Config::GetWindowBackend() {
-    auto backendId = GetInt("Window.Backend.Id", -1);
-    if (Context::GetInstance()->GetWindow()->IsAvailableWindowBackend(backendId)) {
-        return backendId;
-    }
-
-    SPDLOG_TRACE(
-        "Could not find available WindowBackend matching id from config file ({}). Returning default WindowBackend.",
-        backendId);
-
-    // Use the first available backend registered by the Window (added in priority order).
-    auto window = Context::GetInstance()->GetWindow();
-    if (window != nullptr) {
-        auto backends = window->GetAvailableWindowBackends();
-        if (backends && !backends->empty()) {
-            return backends->front();
-        }
-    }
-    return -1;
-}
-
-void Config::SetWindowBackend(int32_t backend) {
-    SetInt("Window.Backend.Id", backend);
-}
-
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
     auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);
     return emplaced;
