@@ -1,4 +1,5 @@
 #pragma once
+#include <SDL2/SDL.h>
 #include "ship/window/gui/Gui.h"
 #include "fast/WindowEvent.h"
 #include "fast/resource/type/Texture.h"
@@ -11,6 +12,37 @@
 
 namespace Fast {
 class Interpreter;
+
+/**
+ * @brief Backend-specific data required to initialise the ImGui rendering context.
+ *
+ * The active union member is selected based on the graphics backend:
+ * - Dx11   for DirectX 11 (Windows).
+ * - Opengl for OpenGL (Linux/macOS via SDL).
+ * - Metal  for Metal (macOS via SDL).
+ * - Gx2    for the GX2 API (Wii U / Café OS).
+ */
+typedef struct {
+    union {
+        struct {
+            void* Window;        ///< HWND
+            void* DeviceContext; ///< ID3D11DeviceContext*
+            void* Device;        ///< ID3D11Device*
+        } Dx11;
+        struct {
+            void* Window;  ///< SDL_Window*
+            void* Context; ///< SDL_GLContext
+        } Opengl;
+        struct {
+            void* Window;           ///< SDL_Window*
+            SDL_Renderer* Renderer; ///< SDL_Renderer* (for Metal layer)
+        } Metal;
+        struct {
+            uint32_t Width;  ///< Framebuffer width in pixels.
+            uint32_t Height; ///< Framebuffer height in pixels.
+        } Gx2;
+    };
+} GuiWindowInitData;
 
 /**
  * @brief Concrete Gui subclass for the Fast3D rendering backend.
@@ -29,6 +61,12 @@ class Fast3dGui : public Ship::Gui {
     ~Fast3dGui() override = default;
 
     bool SupportsViewports() override;
+
+    /**
+     * @brief Initialises the ImGui context with the given backend-specific handles.
+     * @param windowImpl Backend-specific handles required by the ImGui backend.
+     */
+    void Init(GuiWindowInitData windowImpl);
 
     /**
      * @brief Forwards a platform window event to the active ImGui backend.
@@ -115,6 +153,7 @@ class Fast3dGui : public Ship::Gui {
     ImTextureID GetTextureById(int32_t id);
 
     std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
+    GuiWindowInitData mImpl;                 ///< Backend-specific window/context handles passed to Init().
 
   private:
     /** @brief Applies any pending resolution or MSAA changes to the render target. */

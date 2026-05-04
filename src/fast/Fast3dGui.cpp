@@ -45,6 +45,11 @@ Fast3dGui::Fast3dGui() : Ship::Gui() {
 Fast3dGui::Fast3dGui(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows) : Ship::Gui(guiWindows) {
 }
 
+void Fast3dGui::Init(GuiWindowInitData windowImpl) {
+    mImpl = windowImpl;
+    Gui::Init();
+}
+
 bool Fast3dGui::SupportsViewports() {
 #ifdef __linux__
     const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");

@@ -27,6 +27,7 @@
 
 #include "fast/backends/gfx_screen_config.h"
 #include "ship/window/gui/Gui.h"
+#include "fast/Fast3dGui.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
@@ -354,9 +355,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     // Create ImGui
 
-    Ship::GuiWindowInitData window_impl;
+    Fast::GuiWindowInitData window_impl;
     window_impl.Dx11 = { mWindowBackend->GetWindowHandle(), mContext.Get(), mDevice.Get() };
-    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetWindow()->GetGui())->Init(window_impl);
 }
 
 int GfxRenderingAPIDX11::GetMaxTextureSize() {

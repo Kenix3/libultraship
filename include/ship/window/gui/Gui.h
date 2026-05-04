@@ -9,7 +9,6 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
-#include <SDL2/SDL.h>
 #include "ship/window/gui/ConsoleWindow.h"
 #include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
@@ -20,37 +19,6 @@
 
 namespace Ship {
 class Window;
-
-/**
- * @brief Backend-specific data required to initialise the ImGui rendering context.
- *
- * The active union member is selected based on the graphics backend:
- * - Dx11   for DirectX 11 (Windows).
- * - Opengl for OpenGL (Linux/macOS via SDL).
- * - Metal  for Metal (macOS via SDL).
- * - Gx2    for the GX2 API (Wii U / Café OS).
- */
-typedef struct {
-    union {
-        struct {
-            void* Window;        ///< HWND
-            void* DeviceContext; ///< ID3D11DeviceContext*
-            void* Device;        ///< ID3D11Device*
-        } Dx11;
-        struct {
-            void* Window;  ///< SDL_Window*
-            void* Context; ///< SDL_GLContext
-        } Opengl;
-        struct {
-            void* Window;           ///< SDL_Window*
-            SDL_Renderer* Renderer; ///< SDL_Renderer* (for Metal layer)
-        } Metal;
-        struct {
-            uint32_t Width;  ///< Framebuffer width in pixels.
-            uint32_t Height; ///< Framebuffer height in pixels.
-        } Gx2;
-    };
-} GuiWindowInitData;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -76,9 +44,8 @@ class Gui {
 
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
-     * @param windowImpl Backend-specific handles required by the ImGui backend.
      */
-    void Init(GuiWindowInitData windowImpl);
+    void Init();
 
     /**
      * @brief Begins a new ImGui frame.
@@ -254,7 +221,6 @@ class Gui {
     ImVec2 mTemporaryWindowPos; ///< Scratchpad position used when repositioning windows.
     ImGuiIO* mImGuiIo;          ///< Pointer to the active ImGuiIO context.
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
-    GuiWindowInitData mImpl; ///< Backend-specific window/context handles passed to Init().
 
   private:
     bool mNeedsConsoleVariableSave;

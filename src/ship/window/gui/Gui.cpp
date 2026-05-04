@@ -50,8 +50,7 @@ Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
 }
 
-void Gui::Init(GuiWindowInitData windowImpl) {
-    mImpl = windowImpl;
+void Gui::Init() {
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     mImGuiIo = &ImGui::GetIO();
@@ -95,7 +94,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     }
 
     GetGuiWindow("Stats")->Init();
-    GetGuiWindow("Input Editor")->Init();
     GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
 
