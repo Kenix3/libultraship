@@ -129,4 +129,35 @@ void Window::SetWindowBackend(int32_t backend) {
 void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
 }
+
+bool Window::SupportsViewports() {
+    return false;
+}
+
+void Window::HandleWindowEvents(WindowEvent event) {
+}
+
+void Window::ImGuiWMInit(GuiWindowInitData windowImpl) {
+}
+
+void Window::ImGuiWMShutdown() {
+}
+
+void Window::ImGuiBackendInit(GuiWindowInitData windowImpl) {
+}
+
+void Window::ImGuiBackendShutdown() {
+}
+
+void Window::ImGuiBackendNewFrame() {
+}
+
+void Window::ImGuiWMNewFrame() {
+}
+
+void Window::ImGuiRenderDrawData(ImDrawData* data) {
+}
+
+void Window::DrawFloatingWindows(GuiWindowInitData windowImpl) {
+}
 } // namespace Ship

@@ -63,6 +63,17 @@ class Fast3dWindow : public Ship::Window {
     uintptr_t GetGfxFrameBuffer() override;
     const char* GetKeyName(int32_t scancode) override;
 
+    bool SupportsViewports() override;
+    void HandleWindowEvents(Ship::WindowEvent event) override;
+    void ImGuiWMInit(Ship::GuiWindowInitData windowImpl) override;
+    void ImGuiWMShutdown() override;
+    void ImGuiBackendInit(Ship::GuiWindowInitData windowImpl) override;
+    void ImGuiBackendShutdown() override;
+    void ImGuiBackendNewFrame() override;
+    void ImGuiWMNewFrame() override;
+    void ImGuiRenderDrawData(ImDrawData* data) override;
+    void DrawFloatingWindows(Ship::GuiWindowInitData windowImpl) override;
+
     void InitWindowManager();
     int32_t GetTargetFps();
     void SetTargetFps(int32_t fps);

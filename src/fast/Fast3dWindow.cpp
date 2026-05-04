@@ -13,6 +13,33 @@
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
 
+#ifdef __APPLE__
+#include <SDL_hints.h>
+#include <SDL_video.h>
+#include <imgui_impl_metal.h>
+#include <imgui_impl_sdl2.h>
+#else
+#include <SDL2/SDL_hints.h>
+#include <SDL2/SDL_video.h>
+#endif
+
+#if defined(__ANDROID__) || defined(__IOS__)
+#include "ship/port/mobile/MobileImpl.h"
+#endif
+
+#ifdef ENABLE_OPENGL
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl2.h>
+#endif
+
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
+
+// NOLINTNEXTLINE
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
+
 #include <fstream>
 
 namespace Fast {
@@ -385,6 +412,230 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
 
 std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {
     return mInterpreter;
+}
+
+bool Fast3dWindow::SupportsViewports() {
+    return true;
+}
+
+void Fast3dWindow::HandleWindowEvents(Ship::WindowEvent event) {
+    switch (GetWindowBackend()) {
+        case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_METAL:
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+#if defined(__ANDROID__) || defined(__IOS__)
+            Mobile::ImGuiProcessEvent(ImGui::GetIO().WantTextInput);
+#endif
+            break;
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
+                                           event.Win32.Param2);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiWMInit(Ship::GuiWindowInitData windowImpl) {
+    switch (GetWindowBackend()) {
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+            }
+            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(windowImpl.Opengl.Window),
+                                         windowImpl.Opengl.Context);
+            break;
+#if __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+            if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+                SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+            }
+            ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(windowImpl.Metal.Window));
+            break;
+#endif
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplWin32_Init(windowImpl.Dx11.Window);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiWMShutdown() {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            ImGui_ImplSDL2_Shutdown();
+            break;
+#endif
+#if __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            ImGui_ImplSDL2_Shutdown();
+            break;
+#endif
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplWin32_Shutdown();
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiBackendInit(Ship::GuiWindowInitData windowImpl) {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+#ifdef __APPLE__
+            ImGui_ImplOpenGL3_Init("#version 410 core");
+#elif USE_OPENGLES
+            ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
+            ImGui_ImplOpenGL3_Init("#version 120");
+#endif
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter->GetCurrentRenderingAPI();
+            api->MetalInit(windowImpl.Metal.Renderer);
+            break;
+        }
+#endif
+
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplDX11_Init(static_cast<ID3D11Device*>(windowImpl.Dx11.Device),
+                                static_cast<ID3D11DeviceContext*>(windowImpl.Dx11.DeviceContext));
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiBackendShutdown() {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            ImGui_ImplOpenGL3_Shutdown();
+            break;
+#endif
+#if __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            ImGui_ImplMetal_Shutdown();
+            break;
+#endif
+#if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplDX11_Shutdown();
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiBackendNewFrame() {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            ImGui_ImplOpenGL3_NewFrame();
+            break;
+#endif
+
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplDX11_NewFrame();
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter->GetCurrentRenderingAPI();
+            api->NewFrame();
+            break;
+        }
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiWMNewFrame() {
+    switch (GetWindowBackend()) {
+        case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_METAL:
+            ImGui_ImplSDL2_NewFrame();
+            break;
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplWin32_NewFrame();
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::ImGuiRenderDrawData(ImDrawData* data) {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            ImGui_ImplOpenGL3_RenderDrawData(data);
+            break;
+#endif
+
+#ifdef __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL: {
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter->GetCurrentRenderingAPI();
+            api->RenderDrawData(data);
+            break;
+        }
+#endif
+
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            ImGui_ImplDX11_RenderDrawData(data);
+            break;
+#endif
+        default:
+            break;
+    }
+}
+
+void Fast3dWindow::DrawFloatingWindows(Ship::GuiWindowInitData windowImpl) {
+    // OpenGL requires extra platform handling for the GL context
+    if (GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL && windowImpl.Opengl.Context != nullptr) {
+        // Backup window and context before calling RenderPlatformWindowsDefault
+        SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+        SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
+
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+
+        // Restore GL context for next frame
+        SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
+    } else {
+#ifdef __APPLE__
+        // Metal requires additional frame setup to get ImGui ready for drawing floating windows
+        if (GetWindowBackend() == WindowBackend::FAST3D_SDL_METAL) {
+            GfxRenderingAPIMetal* api = (GfxRenderingAPIMetal*)mInterpreter->GetCurrentRenderingAPI();
+            api->SetupFloatingFrame();
+        }
+#endif
+
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 } // namespace Fast
