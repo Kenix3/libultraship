@@ -6,6 +6,7 @@
 #include "ship/audio/AudioPlayer.h"
 
 namespace Ship {
+class Config;
 
 /** @brief Identifies the audio backend implementation in use. */
 enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
@@ -71,10 +72,20 @@ class Audio {
     /** @brief (Re)initialises the AudioPlayer for the current backend and channel settings. */
     void InitAudioPlayer();
 
+    /**
+     * @brief Reads and validates the audio backend from the persisted config.
+     *
+     * Reads `Window.AudioBackend`, maps the stored string to an AudioBackend enum value,
+     * handles the "pulse" → SDL migration, and returns a platform-appropriate default when
+     * the stored value is absent or unrecognised.
+     */
+    AudioBackend GetSavedAudioBackend();
+
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     AudioBackend mAudioBackend;
     AudioSettings mAudioSettings;
     std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
+    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

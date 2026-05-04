@@ -5,6 +5,7 @@
 #endif
 
 #include "ship/Context.h"
+#include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
@@ -41,6 +42,8 @@ void Audio::InitAudioPlayer() {
 }
 
 void Audio::Init() {
+    mConfig = Context::GetInstance()->GetConfig();
+
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
@@ -51,7 +54,7 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
-    SetCurrentAudioBackend(Context::GetInstance()->GetConfig()->GetCurrentAudioBackend());
+    SetCurrentAudioBackend(GetSavedAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -62,10 +65,63 @@ AudioBackend Audio::GetCurrentAudioBackend() {
     return mAudioBackend;
 }
 
+AudioBackend Audio::GetSavedAudioBackend() {
+    std::string backendName = mConfig->GetString("Window.AudioBackend");
+    if (backendName == "wasapi") {
+        return AudioBackend::WASAPI;
+    }
+
+    // Migrate pulse player in config to sdl
+    if (backendName == "pulse") {
+        mConfig->SetString("Window.AudioBackend", "sdl");
+        return AudioBackend::SDL;
+    }
+
+    if (backendName == "coreaudio") {
+        return AudioBackend::COREAUDIO;
+    }
+
+    if (backendName == "sdl") {
+        return AudioBackend::SDL;
+    }
+
+    if (backendName == "null") {
+        return AudioBackend::NUL;
+    }
+
+    SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
+                 backendName);
+#ifdef _WIN32
+    return AudioBackend::WASAPI;
+#endif
+
+#ifdef __APPLE__
+    return AudioBackend::COREAUDIO;
+#endif
+
+    return AudioBackend::SDL;
+}
+
 void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     mAudioBackend = backend;
-    Context::GetInstance()->GetConfig()->SetCurrentAudioBackend(GetCurrentAudioBackend());
-    Context::GetInstance()->GetConfig()->Save();
+
+    switch (backend) {
+        case AudioBackend::WASAPI:
+            mConfig->SetString("Window.AudioBackend", "wasapi");
+            break;
+        case AudioBackend::COREAUDIO:
+            mConfig->SetString("Window.AudioBackend", "coreaudio");
+            break;
+        case AudioBackend::SDL:
+            mConfig->SetString("Window.AudioBackend", "sdl");
+            break;
+        case AudioBackend::NUL:
+            mConfig->SetString("Window.AudioBackend", "null");
+            break;
+        default:
+            mConfig->SetString("Window.AudioBackend", "");
+    }
+    mConfig->Save();
 
     InitAudioPlayer();
 }
