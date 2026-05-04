@@ -32,10 +32,6 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
         AddGuiWindow(std::make_shared<StatsWindow>(CVAR_STATS_WINDOW_OPEN, "Stats"));
     }
 
-    if (GetGuiWindow("Input Editor") == nullptr) {
-        AddGuiWindow(std::make_shared<InputEditorWindow>(CVAR_CONTROLLER_CONFIGURATION_WINDOW_OPEN, "Input Editor"));
-    }
-
     if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
         AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>("gOpenWindows.SDLAddRemoveDeviceEventHandler",
                                                                       "SDLAddRemoveDeviceEventHandler"));

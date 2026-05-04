@@ -1,4 +1,4 @@
-#include "ship/window/gui/InputEditorWindow.h"
+#include "libultraship/window/gui/InputEditorWindow.h"
 #include "ship/Context.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
@@ -9,7 +9,7 @@
 
 #define SCALE_IMGUI_SIZE(value) ((value / 13.0f) * ImGui::GetFontSize())
 
-namespace Ship {
+namespace LUS {
 
 InputEditorWindow::~InputEditorWindow() {
     SPDLOG_TRACE("destruct input editor window");
@@ -1406,4 +1406,4 @@ void InputEditorWindow::OffsetMappingPopup() {
     pos.x += HORIZONTAL_OFFSET;
     ImGui::SetNextWindowPos(pos);
 }
-} // namespace Ship
+} // namespace LUS

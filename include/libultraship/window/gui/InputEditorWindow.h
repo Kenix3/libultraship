@@ -9,7 +9,7 @@
 #include <set>
 #include "ship/controller/controldevice/controller/Controller.h"
 
-namespace Ship {
+namespace LUS {
 
 /**
  * @brief An ImGui window for editing, binding, and testing controller mappings.
@@ -248,4 +248,4 @@ class InputEditorWindow : public GuiWindow {
     /** @brief Adjusts the position of the active mapping popup so it stays on-screen. */
     void OffsetMappingPopup();
 };
-} // namespace Ship
+} // namespace LUS

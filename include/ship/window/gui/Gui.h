@@ -11,7 +11,6 @@
 #include <vector>
 #include <SDL2/SDL.h>
 #include "ship/window/gui/ConsoleWindow.h"
-#include "ship/window/gui/InputEditorWindow.h"
 #include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/window/gui/GameOverlay.h"
