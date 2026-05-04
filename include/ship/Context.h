@@ -180,11 +180,10 @@ class Context : public Component {
 
     /**
      * @brief Constructs a Context with the given identifiers but does not initialize subsystems.
-     * @param name           Human-readable application name.
-     * @param shortName      Short application identifier.
-     * @param configFilePath Path to the JSON configuration file.
+     * @param name      Human-readable application name.
+     * @param shortName Short application identifier.
      */
-    Context(std::string name, std::string shortName, std::string configFilePath);
+    Context(std::string name, std::string shortName);
     ~Context();
 
     /** @brief Returns the human-readable application name. */

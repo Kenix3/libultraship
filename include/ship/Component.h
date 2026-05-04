@@ -8,10 +8,6 @@
 #include <unordered_set>
 #include <nlohmann/json.hpp>
 
-#ifdef COMPONENT_THREAD_SAFE
-#include <shared_mutex>
-#endif
-
 #include "ship/Part.h"
 #include "ship/PartList.h"
 #include "ship/ComponentList.h"
@@ -19,13 +15,11 @@
 namespace Ship {
 
 /**
- * @brief A named Part with a parent/child hierarchy and optional thread safety.
+ * @brief A named Part with a parent/child hierarchy.
  *
  * Component extends Part with a human-readable name, a string representation,
  * and bidirectional parent/child relationships managed via ComponentList. Adding
- * a child automatically adds the corresponding parent, and vice versa. When the
- * COMPONENT_THREAD_SAFE preprocessor flag is defined, all relationship
- * mutations are guarded by a shared_mutex.
+ * a child automatically adds the corresponding parent, and vice versa.
  */
 class Component : public Part, public std::enable_shared_from_this<Component> {
   public:
@@ -94,16 +88,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 
     /** @brief Conversion operator to std::string; equivalent to ToString(). */
     explicit operator std::string() const;
-
-#ifdef COMPONENT_THREAD_SAFE
-    /**
-     * @brief Returns a reference to the Component's shared mutex.
-     *
-     * Only available when COMPONENT_THREAD_SAFE is defined. Callers can use
-     * this to synchronize external access to the Component.
-     */
-    std::shared_mutex& GetMutex() const;
-#endif
 
     // ---- Parent/child relationship accessors ----
 
@@ -182,9 +166,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     bool mIsInitialized = false;
     ComponentList mParents;
     ComponentList mChildren;
-#ifdef COMPONENT_THREAD_SAFE
-    mutable std::shared_mutex mMutex;
-#endif
 };
 
 // ---- Template BFS implementations ----

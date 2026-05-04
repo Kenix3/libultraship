@@ -434,7 +434,7 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
         return GetInstance();
     }
 
-    auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+    auto shared = std::make_shared<Context>(name, shortName);
     mContext = shared;
     return shared;
 }
@@ -450,7 +450,7 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
     return ctx;
 }
 
-Context::Context(std::string name, std::string shortName, std::string configFilePath)
+Context::Context(std::string name, std::string shortName)
     : Component(name), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
