@@ -14,6 +14,7 @@
 #include "fast/backends/gfx_window_manager_api.h"
 
 #include "fast/Fast3dGui.h"
+#include "libultraship/window/gui/GfxDebuggerWindow.h"
 
 #include <fstream>
 
@@ -111,6 +112,11 @@ void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
     mWindowManagerApi->SetMouseCallbacks(MouseButtonDown, MouseButtonUp);
 
     SetTextureFilter((FilteringMode)GetConsoleVariables()->GetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
+
+    // Register the GFX Debugger window if not already present.
+    if (GetGui() && GetGui()->GetGuiWindow("Gfx Debugger") == nullptr) {
+        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger"));
+    }
 }
 
 int32_t Fast3dWindow::GetTargetFps() {

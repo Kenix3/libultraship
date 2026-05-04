@@ -50,6 +50,9 @@ Fast3dGui::Fast3dGui(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows) :
 
 void Fast3dGui::Init(GuiWindowInitData windowImpl) {
     mImpl = windowImpl;
+    mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    mResourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>();
     Gui::Init();
 }
 
@@ -69,7 +72,7 @@ bool Fast3dGui::SupportsViewports() {
 }
 
 void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
@@ -90,13 +93,13 @@ void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
 }
 
 void Fast3dGui::ImGuiWMInit() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     mInterpreter = std::dynamic_pointer_cast<Fast3dWindow>(window)->GetInterpreterWeak();
 
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
@@ -104,7 +107,7 @@ void Fast3dGui::ImGuiWMInit() {
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
@@ -121,7 +124,7 @@ void Fast3dGui::ImGuiWMInit() {
 }
 
 void Fast3dGui::ImGuiWMShutdown() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -144,7 +147,7 @@ void Fast3dGui::ImGuiWMShutdown() {
 }
 
 void Fast3dGui::ImGuiBackendInit() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -178,7 +181,7 @@ void Fast3dGui::ImGuiBackendInit() {
 }
 
 void Fast3dGui::ImGuiBackendShutdown() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -201,7 +204,7 @@ void Fast3dGui::ImGuiBackendShutdown() {
 }
 
 void Fast3dGui::ImGuiBackendNewFrame() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -228,7 +231,7 @@ void Fast3dGui::ImGuiBackendNewFrame() {
 }
 
 void Fast3dGui::ImGuiWMNewFrame() {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
@@ -245,7 +248,7 @@ void Fast3dGui::ImGuiWMNewFrame() {
 }
 
 void Fast3dGui::ImGuiRenderDrawData(ImDrawData* data) {
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -276,7 +279,7 @@ void Fast3dGui::DrawFloatingWindows() {
         return;
     }
 
-    auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    auto window = mWindow;
     // OpenGL requires extra platform handling for the GL context
     if (window->GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
         // Backup window and context before calling RenderPlatformWindowsDefault
@@ -325,12 +328,12 @@ void Fast3dGui::CalculateGameViewport() {
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
     mInterpreter.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
+    if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
                                                                         0)) {
         ApplyResolutionChanges();
     }
 
-    switch (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_LOW_RES_MODE, 0)) {
+    switch (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0)) {
         case 1: { // N64 Mode
             mInterpreter.lock()->mCurDimensions.width = 320;
             mInterpreter.lock()->mCurDimensions.height = 240;
@@ -374,16 +377,16 @@ void Fast3dGui::DrawGame() {
     ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_LOW_RES_MODE, 0) ==
+    if (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0) ==
         1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
-    } else if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+    } else if (mConsoleVariables->GetInteger(
                    CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
-        if (!Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+        if (!mConsoleVariables->GetInteger(
                 CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
-            if (!Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+            if (!mConsoleVariables->GetInteger(
                     CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
                 float sWdth =
                     size.y * mInterpreter.lock()->mCurDimensions.width / mInterpreter.lock()->mCurDimensions.height;
@@ -411,7 +414,7 @@ void Fast3dGui::DrawGame() {
                           float(mInterpreter.lock()->mCurDimensions.height) * factor);
         }
     }
-    uintptr_t fb = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGfxFrameBuffer();
+    uintptr_t fb = mWindow->GetGfxFrameBuffer();
     if (fb) {
         ImGui::SetCursorPos(pos);
         ImGui::Image(reinterpret_cast<ImTextureID>(fb), size);
@@ -423,13 +426,13 @@ void Fast3dGui::DrawGame() {
 void Fast3dGui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetFloat(
+    const float aspectRatioX = mConsoleVariables->GetFloat(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
-    const float aspectRatioY = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetFloat(
+    const float aspectRatioY = mConsoleVariables->GetFloat(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+    const uint32_t verticalPixelCount = mConsoleVariables->GetInteger(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
-    const bool verticalResolutionToggle = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+    const bool verticalResolutionToggle = mConsoleVariables->GetInteger(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
@@ -480,12 +483,12 @@ void Fast3dGui::ApplyResolutionChanges() {
 }
 
 int16_t Fast3dGui::GetIntegerScaleFactor() {
-    if (!Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+    if (!mConsoleVariables->GetInteger(
             CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
-        int16_t factor = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+        int16_t factor = mConsoleVariables->GetInteger(
             CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
 
-        if (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+        if (mConsoleVariables->GetInteger(
                 CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
             if (((float)mInterpreter.lock()->mGameWindowViewport.height /
                  mInterpreter.lock()->mGameWindowViewport.width) <
@@ -517,7 +520,7 @@ int16_t Fast3dGui::GetIntegerScaleFactor() {
             factor = mInterpreter.lock()->mGameWindowViewport.width / mInterpreter.lock()->mCurDimensions.width;
         }
 
-        factor += Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+        factor += mConsoleVariables->GetInteger(
             CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
 
         if (factor < 1) {
@@ -557,7 +560,7 @@ void Fast3dGui::LoadTextureFromRawImage(const std::string& name, const std::stri
     initData->ResourceVersion = 0;
     initData->Path = path;
     auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, false, initData));
+        mResourceManager->LoadResource(path, false, initData));
 
     LoadTextureFromResource(name, guiTexture);
 }
@@ -710,7 +713,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
 
 void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
     const auto res =
-        static_cast<Fast::Texture*>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true).get());
+        static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
 
     LoadGuiTexture(name, *res, tint);
 }

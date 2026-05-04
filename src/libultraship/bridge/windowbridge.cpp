@@ -2,33 +2,43 @@
 #include "ship/window/Window.h"
 #include "ship/Context.h"
 
+static std::shared_ptr<Ship::Window> sWindow;
+
+static Ship::Window* GetWindow() {
+    if (!sWindow) {
+        sWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
+    }
+    return sWindow.get();
+}
+
+
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetWidth();
+    return GetWindow()->GetWidth();
 }
 
 uint32_t WindowGetHeight() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetHeight();
+    return GetWindow()->GetHeight();
 }
 
 float WindowGetAspectRatio() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetCurrentAspectRatio();
+    return GetWindow()->GetCurrentAspectRatio();
 }
 
 bool WindowIsRunning() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->IsRunning();
+    return GetWindow()->IsRunning();
 }
 
 int32_t WindowGetPosX() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetPosX();
+    return GetWindow()->GetPosX();
 }
 
 int32_t WindowGetPosY() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetPosY();
+    return GetWindow()->GetPosY();
 }
 
 bool WindowIsFullscreen() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->IsFullscreen();
+    return GetWindow()->IsFullscreen();
 }
 }

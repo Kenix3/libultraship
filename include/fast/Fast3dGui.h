@@ -5,6 +5,12 @@
 #include "fast/resource/type/Texture.h"
 #include "ship/window/gui/resource/GuiTexture.h"
 
+namespace Ship {
+class Window;
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
+
 // Fixes issue #926: HandleWindowEvents is only ever called from Fast3D backend code
 // (gfx_sdl2.cpp, gfx_dxgi.cpp) and must not be a virtual method on Ship::Gui.
 // The WindowEvent type has been moved to the Fast namespace so that ship code does
@@ -154,6 +160,9 @@ class Fast3dGui : public Ship::Gui {
 
     std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
     GuiWindowInitData mImpl;                 ///< Backend-specific window/context handles passed to Init().
+    std::shared_ptr<Ship::Window> mWindow;           ///< Cached Window component. @note Requires Window component in Context.
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables; ///< Cached ConsoleVariable component. @note Requires ConsoleVariable component in Context.
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager component. @note Requires ResourceManager component in Context.
 
   private:
     /** @brief Applies any pending resolution or MSAA changes to the render target. */

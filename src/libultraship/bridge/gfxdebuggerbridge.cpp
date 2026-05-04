@@ -2,15 +2,26 @@
 #include "ship/Context.h"
 #include "fast/debug/GfxDebugger.h"
 
+// Dependency: requires Fast::GfxDebugger component to be present in Ship::Context.
+
+static std::shared_ptr<Fast::GfxDebugger> sGfxDebugger;
+
+static Fast::GfxDebugger* GetGfxDebugger() {
+    if (!sGfxDebugger) {
+        sGfxDebugger = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
+    }
+    return sGfxDebugger.get();
+}
+
 void GfxDebuggerRequestDebugging() {
-    Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>()->RequestDebugging();
+    GetGfxDebugger()->RequestDebugging();
 }
 bool GfxDebuggerIsDebugging() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>()->IsDebugging();
+    return GetGfxDebugger()->IsDebugging();
 }
 bool GfxDebuggerIsDebuggingRequested() {
-    return Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>()->IsDebuggingRequested();
+    return GetGfxDebugger()->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>()->DebugDisplayList((Fast::F3DGfx*)cmds);
+    GetGfxDebugger()->DebugDisplayList((Fast::F3DGfx*)cmds);
 }

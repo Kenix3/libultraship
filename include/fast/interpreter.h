@@ -21,6 +21,11 @@
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
 
+namespace Ship {
+class ResourceManager;
+class ConsoleVariable;
+} // namespace Ship
+
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -522,6 +527,8 @@ class Interpreter {
     GfxWindowBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager, set in Init().
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable, set in Init().
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
 
