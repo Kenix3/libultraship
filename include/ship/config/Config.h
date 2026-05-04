@@ -4,7 +4,6 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-#include "ship/audio/AudioChannelsSetting.h"
 #include "ship/window/Window.h"
 
 namespace Ship {
@@ -177,9 +176,6 @@ class Config {
      * dot-notation key hierarchy as nested JSON objects.
      */
     nlohmann::json GetNestedJson();
-
-    /** @brief Returns the audio channel layout stored in the config. */
-    AudioChannelsSetting GetCurrentAudioChannelsSetting();
 
     /**
      * @brief Adds a ConfigVersionUpdater instance to the list to be run later via RunVersionUpdates

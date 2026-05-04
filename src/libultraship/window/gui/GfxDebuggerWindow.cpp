@@ -42,7 +42,7 @@ static const char* GetOpName(int8_t op) {
 void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGfx*>& gfxPath,
                                       float parentPosY = 0) const {
     const F3DGfx* dlStart = cmd;
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
 
     auto nodeWithText = [dbg, dlStart, parentPosY, this, &gfxPath](const F3DGfx* cmd, const std::string& text,
                                                                    const F3DGfx* sub = nullptr) mutable {
@@ -586,7 +586,7 @@ static bool bpEquals(const std::vector<const F3DGfx*>& x, const std::vector<cons
 
 void GfxDebuggerWindow::DrawDisas() {
 
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
     auto dlist = dbg->GetDisplayList();
     ImGui::Text("dlist: %p", dlist);
     std::string bp = "";
@@ -707,7 +707,7 @@ void GfxDebuggerWindow::DrawDisas() {
 }
 
 void GfxDebuggerWindow::DrawElement() {
-    auto dbg = Ship::Context::GetInstance()->GetGfxDebugger();
+    auto dbg = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow())->GetGfxDebugger();
     // const ImVec2 pos = ImGui::GetWindowPos();
     // const ImVec2 size = ImGui::GetWindowSize();
 

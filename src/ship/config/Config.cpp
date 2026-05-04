@@ -232,21 +232,6 @@ nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
 
-AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
-    int32_t channelsSetting =
-        GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
-    switch (channelsSetting) {
-        case AudioChannelsSetting::audioMatrix51:
-            return AudioChannelsSetting::audioMatrix51;
-        case AudioChannelsSetting::audioRaw51:
-            return AudioChannelsSetting::audioRaw51;
-        case AudioChannelsSetting::audioStereo:
-        case AudioChannelsSetting::audioMax:
-        default:
-            return AudioChannelsSetting::audioStereo;
-    }
-}
-
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
     auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);
     return emplaced;

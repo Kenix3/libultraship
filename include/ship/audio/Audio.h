@@ -81,6 +81,14 @@ class Audio {
      */
     AudioBackend GetSavedAudioBackend();
 
+    /**
+     * @brief Reads and validates the audio channel layout from the persisted config.
+     *
+     * Reads the channel setting CVar and maps it to a valid AudioChannelsSetting,
+     * defaulting to stereo when the stored value is absent or unrecognised.
+     */
+    AudioChannelsSetting GetSavedAudioChannelsSetting();
+
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;
     AudioBackend mAudioBackend;

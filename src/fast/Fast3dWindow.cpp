@@ -99,6 +99,8 @@ void Fast3dWindow::Init() {
         Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2));
 
     InitWindowManager();
+    mGfxDebugger = std::make_shared<GfxDebugger>();
+    mInterpreter->SetGfxDebugger(mGfxDebugger);
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
                        width, height, posX, posY);
     mWindowManagerApi->SetFullscreenChangedCallback(OnFullscreenChanged);
@@ -434,6 +436,10 @@ void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint3
 
 Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
     return mWindowManagerApi->GetPrimaryMonitorRect();
+}
+
+std::shared_ptr<GfxDebugger> Fast3dWindow::GetGfxDebugger() const {
+    return mGfxDebugger;
 }
 
 } // namespace Fast

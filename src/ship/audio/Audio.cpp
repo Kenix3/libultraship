@@ -55,6 +55,7 @@ void Audio::Init() {
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
     SetCurrentAudioBackend(GetSavedAudioBackend());
+    SetAudioChannels(GetSavedAudioChannelsSetting());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -143,6 +144,21 @@ void Audio::SetAudioChannels(AudioChannelsSetting channels) {
 
 AudioChannelsSetting Audio::GetAudioChannels() const {
     return mAudioSettings.ChannelSetting;
+}
+
+AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
+    int32_t channelsSetting =
+        mConfig->GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
+    switch (channelsSetting) {
+        case AudioChannelsSetting::audioMatrix51:
+            return AudioChannelsSetting::audioMatrix51;
+        case AudioChannelsSetting::audioRaw51:
+            return AudioChannelsSetting::audioRaw51;
+        case AudioChannelsSetting::audioStereo:
+        case AudioChannelsSetting::audioMax:
+        default:
+            return AudioChannelsSetting::audioStereo;
+    }
 }
 
 } // namespace Ship
