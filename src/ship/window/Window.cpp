@@ -123,6 +123,7 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 void Window::SetWindowBackend(int32_t backend) {
     mWindowBackend = backend;
     Context::GetInstance()->GetConfig()->SetWindowBackend(GetWindowBackend());
+    Context::GetInstance()->GetConfig()->SetString("Window.Backend.Name", GetWindowBackendName());
     Context::GetInstance()->GetConfig()->Save();
 }
 
@@ -130,34 +131,7 @@ void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 
-bool Window::SupportsViewports() {
-    return false;
-}
-
-void Window::HandleWindowEvents(WindowEvent event) {
-}
-
-void Window::ImGuiWMInit(GuiWindowInitData windowImpl) {
-}
-
-void Window::ImGuiWMShutdown() {
-}
-
-void Window::ImGuiBackendInit(GuiWindowInitData windowImpl) {
-}
-
-void Window::ImGuiBackendShutdown() {
-}
-
-void Window::ImGuiBackendNewFrame() {
-}
-
-void Window::ImGuiWMNewFrame() {
-}
-
-void Window::ImGuiRenderDrawData(ImDrawData* data) {
-}
-
-void Window::DrawFloatingWindows(GuiWindowInitData windowImpl) {
+std::string Window::GetWindowBackendName() {
+    return "";
 }
 } // namespace Ship

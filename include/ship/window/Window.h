@@ -153,72 +153,19 @@ class Window {
     /** @brief Returns a handle to the graphics API framebuffer object. */
     virtual uintptr_t GetGfxFrameBuffer() = 0;
 
-    /**
-     * @brief Returns true if the backend supports ImGui multi-viewport (floating) windows.
-     *
-     * The base implementation returns false. Concrete subclasses override this when their
-     * backend supports the feature.
-     */
-    virtual bool SupportsViewports();
-    /**
-     * @brief Forwards a platform event to the ImGui backend for input processing.
-     *
-     * Called by Gui::HandleWindowEvents(). The base implementation is a no-op.
-     * @param event Platform event wrapper (SDL event, Win32 message, etc.).
-     */
-    virtual void HandleWindowEvents(WindowEvent event);
-    /**
-     * @brief Initialises the window-manager (platform) ImGui backend.
-     *
-     * Called by Gui::Init() immediately after the ImGui context is created.
-     * The base implementation is a no-op.
-     * @param windowImpl Backend-specific window/context handles.
-     */
-    virtual void ImGuiWMInit(GuiWindowInitData windowImpl);
-    /**
-     * @brief Shuts down the window-manager (platform) ImGui backend.
-     *
-     * Called by Gui::ShutDownImGui(). The base implementation is a no-op.
-     */
-    virtual void ImGuiWMShutdown();
-    /**
-     * @brief Initialises the renderer ImGui backend (OpenGL / Metal / DX11).
-     *
-     * Called by Gui::Init() after ImGuiWMInit(). The base implementation is a no-op.
-     * @param windowImpl Backend-specific window/context handles.
-     */
-    virtual void ImGuiBackendInit(GuiWindowInitData windowImpl);
-    /**
-     * @brief Shuts down the renderer ImGui backend.
-     *
-     * Called by Gui::ShutDownImGui(). The base implementation is a no-op.
-     */
-    virtual void ImGuiBackendShutdown();
-    /** @brief Advances the renderer ImGui backend by one frame. The base implementation is a no-op. */
-    virtual void ImGuiBackendNewFrame();
-    /** @brief Advances the window-manager ImGui backend by one frame. The base implementation is a no-op. */
-    virtual void ImGuiWMNewFrame();
-    /**
-     * @brief Submits ImGui draw data to the renderer.
-     *
-     * The base implementation is a no-op.
-     * @param data Draw data produced by ImGui::Render().
-     */
-    virtual void ImGuiRenderDrawData(ImDrawData* data);
-    /**
-     * @brief Renders all floating ImGui windows (multi-viewport) with any backend-specific setup.
-     *
-     * Only called when ImGuiConfigFlags_ViewportsEnable is set. The base implementation is a no-op.
-     * @param windowImpl Backend-specific handles (e.g. OpenGL context for context-switching).
-     */
-    virtual void DrawFloatingWindows(GuiWindowInitData windowImpl);
-
     /** @brief Returns the current graphics backend identifier.
      *
      * See the window backend ID convention in the comment above this class:
      * negative = no backend available, 0 = no backend in use, positive = defined by subclass.
      */
     int32_t GetWindowBackend();
+    /**
+     * @brief Returns a human-readable name for the current window backend.
+     *
+     * The base implementation returns an empty string. Concrete subclasses (e.g. Fast3dWindow)
+     * override this to return backend-specific names such as "OpenGL", "Metal", or "DirectX 11".
+     */
+    virtual std::string GetWindowBackendName();
     /** @brief Returns the list of backends available on this platform. */
     std::shared_ptr<std::vector<int32_t>> GetAvailableWindowBackends();
     /**

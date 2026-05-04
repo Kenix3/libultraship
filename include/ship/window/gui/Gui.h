@@ -127,9 +127,12 @@ class Gui {
 
     /**
      * @brief Forwards a platform window event to the active ImGui backend for processing.
+     *
+     * The base implementation is a no-op. Concrete subclasses override this to
+     * dispatch events to the appropriate ImGui platform backend.
      * @param event Platform event wrapped in a WindowEvent.
      */
-    void HandleWindowEvents(WindowEvent event);
+    virtual void HandleWindowEvents(WindowEvent event);
 
     /**
      * @brief Schedules a CVar save to disk at the end of the current frame.
@@ -141,8 +144,11 @@ class Gui {
     /**
      * @brief Returns true if the ImGui multi-viewport / docking feature is supported
      * by the current backend.
+     *
+     * The base implementation returns false. Concrete subclasses (e.g. Fast3dGui)
+     * override this to report actual backend capabilities.
      */
-    bool SupportsViewports();
+    virtual bool SupportsViewports();
 
     /**
      * @brief Returns the ImGui ID of the main game viewport window.
@@ -288,8 +294,9 @@ class Gui {
     /** @brief Calls ImGui::Render() and submits draw data to the backend. */
     void EndFrame();
 
-    /** @brief Draws all registered floating GuiWindow instances. */
-    void DrawFloatingWindows();
+    /** @brief Draws all registered floating GuiWindow instances.
+     *  The base implementation is a no-op. Override in subclasses to provide viewport support. */
+    virtual void DrawFloatingWindows();
 
     /** @brief Draws the menu bar and/or full-screen menu window. Override to add custom menus. */
     virtual void DrawMenu();
@@ -300,23 +307,36 @@ class Gui {
     /** @brief Recalculates the game viewport rect to account for the menu bar and window size. */
     void CalculateGameViewport();
 
-    /** @brief Calls the appropriate ImGui backend New Frame function (DX11 / GL / Metal). */
-    void ImGuiBackendNewFrame();
+    /** @brief Calls the appropriate ImGui backend New Frame function (DX11 / GL / Metal).
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendNewFrame();
 
-    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent. */
-    void ImGuiWMNewFrame();
+    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMNewFrame();
 
-    /** @brief Initialises the platform/window-manager ImGui backend. */
-    void ImGuiWMInit();
+    /** @brief Initialises the platform/window-manager ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMInit();
 
-    /** @brief Initialises the renderer ImGui backend (DX11 / OpenGL / Metal). */
-    void ImGuiBackendInit();
+    /** @brief Shuts down the platform/window-manager ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMShutdown();
+
+    /** @brief Initialises the renderer ImGui backend (DX11 / OpenGL / Metal).
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendInit();
+
+    /** @brief Shuts down the renderer ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendShutdown();
 
     /**
      * @brief Submits the ImGui draw data to the active graphics backend.
+     * The base implementation is a no-op.
      * @param data Draw data produced by ImGui::Render().
      */
-    void ImGuiRenderDrawData(ImDrawData* data);
+    virtual void ImGuiRenderDrawData(ImDrawData* data);
 
     /**
      * @brief Returns the ImTextureID for a texture identified by its integer ID.
@@ -344,9 +364,9 @@ class Gui {
     ImGuiIO* mImGuiIo;          ///< Pointer to the active ImGuiIO context.
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
     std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the scripting interpreter, if active.
+    GuiWindowInitData mImpl; ///< Backend-specific window/context handles passed to Init().
 
   private:
-    GuiWindowInitData mImpl;
     bool mNeedsConsoleVariableSave;
     std::string mImGuiIniPath;
     std::string mImGuiLogPath;

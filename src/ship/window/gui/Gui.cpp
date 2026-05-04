@@ -16,7 +16,8 @@
 #include "ship/window/gui/Fonts.h"
 #include "ship/window/gui/resource/GuiTextureFactory.h"
 
-#include "fast/Fast3dWindow.h"
+#include "fast/interpreter.h"
+#include "fast/backends/gfx_rendering_api.h"
 
 namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
@@ -110,24 +111,25 @@ void Gui::Init(GuiWindowInitData windowImpl) {
         static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
 
     ImGuiWMInit();
-    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
     ImGuiBackendInit();
-
-    mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
 }
 
 void Gui::ImGuiWMInit() {
-    Context::GetInstance()->GetWindow()->ImGuiWMInit(mImpl);
 }
 
 void Gui::ShutDownImGui(Ship::Window* window) {
-    window->ImGuiWMShutdown();
-    window->ImGuiBackendShutdown();
+    ImGuiWMShutdown();
+    ImGuiBackendShutdown();
     ImGui::DestroyContext();
 }
 
+void Gui::ImGuiWMShutdown() {
+}
+
 void Gui::ImGuiBackendInit() {
-    Context::GetInstance()->GetWindow()->ImGuiBackendInit(mImpl);
+}
+
+void Gui::ImGuiBackendShutdown() {
 }
 
 void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& path) {
@@ -155,22 +157,10 @@ void Gui::LoadTextureFromResource(const std::string& name, std::shared_ptr<GuiTe
 }
 
 bool Gui::SupportsViewports() {
-#ifdef __linux__
-    const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");
-    if (currentDesktop && std::string(currentDesktop) == "gamescope") {
-        return false;
-    }
-#endif
-
-#if defined(__ANDROID__) || defined(__IOS__)
     return false;
-#endif
-
-    return Context::GetInstance()->GetWindow()->SupportsViewports();
 }
 
 void Gui::HandleWindowEvents(WindowEvent event) {
-    Context::GetInstance()->GetWindow()->HandleWindowEvents(event);
 }
 
 bool Gui::GamepadNavigationEnabled() {
@@ -202,11 +192,9 @@ ImGuiID Gui::GetMainGameWindowID() {
 }
 
 void Gui::ImGuiBackendNewFrame() {
-    Context::GetInstance()->GetWindow()->ImGuiBackendNewFrame();
 }
 
 void Gui::ImGuiWMNewFrame() {
-    Context::GetInstance()->GetWindow()->ImGuiWMNewFrame();
 }
 
 void Gui::ApplyResolutionChanges() {
@@ -555,9 +543,6 @@ void Gui::DrawGame() {
 }
 
 void Gui::DrawFloatingWindows() {
-    if (mImGuiIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        Context::GetInstance()->GetWindow()->DrawFloatingWindows(mImpl);
-    }
 }
 
 void Gui::CheckSaveCvars() {
@@ -611,7 +596,6 @@ ImVec2 Gui::GetTextureSize(const std::string& name) {
 }
 
 void Gui::ImGuiRenderDrawData(ImDrawData* data) {
-    Context::GetInstance()->GetWindow()->ImGuiRenderDrawData(data);
 }
 
 void Gui::SaveConsoleVariablesNextFrame() {
