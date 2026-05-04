@@ -4890,6 +4890,14 @@ GfxRenderingAPI* Interpreter::GetCurrentRenderingAPI() {
     return mRapi;
 }
 
+void Interpreter::SetGfxDebugger(std::shared_ptr<GfxDebugger> debugger) {
+    mGfxDebugger = std::move(debugger);
+}
+
+std::shared_ptr<GfxDebugger> Interpreter::GetGfxDebugger() const {
+    return mGfxDebugger;
+}
+
 void Interpreter::HandleWindowEvents() {
     mWapi->HandleEvents();
 }

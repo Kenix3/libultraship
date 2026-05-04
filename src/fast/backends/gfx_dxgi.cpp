@@ -33,6 +33,7 @@
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_screen_config.h"
 #include "fast/interpreter.h"
+#include "fast/Fast3dGui.h"
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "fast/backends/gfx_dxgi.h"
@@ -355,11 +356,14 @@ void GfxWindowBackendDXGI::HandleRawInputBuffered() {
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
 
     char fileName[256];
-    Ship::WindowEvent event_impl;
+    Fast::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
     auto ctx = Ship::Context::GetInstance();
     if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() && ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
-        ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()->HandleWindowEvents(event_impl);
+        auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(ctx->GetChildren().GetFirst<Ship::Window>()->GetGui());
+        if (fast3dGui) {
+            fast3dGui->HandleWindowEvents(event_impl);
+        }
     }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
     GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
@@ -732,6 +736,31 @@ void GfxWindowBackendDXGI::GetDimensions(uint32_t* width, uint32_t* height, int3
     *height = current_height;
     *posX = mPosX;
     *posY = mPosY;
+}
+
+void GfxWindowBackendDXGI::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    current_width = width;
+    current_height = height;
+    mPosX = posX;
+    mPosY = posY;
+    if (h_wnd) {
+        RECT wr = { mPosX, mPosY, mPosX + static_cast<int32_t>(current_width),
+                    mPosY + static_cast<int32_t>(current_height) };
+        if (!mFullScreen) {
+            AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+            SetWindowPos(h_wnd, nullptr, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+        }
+    }
+}
+
+Ship::WindowRect GfxWindowBackendDXGI::GetPrimaryMonitorRect() {
+    auto monitors = GetMonitorList();
+    for (const auto& [hmon, rect, isPrimary] : monitors) {
+        if (isPrimary) {
+            return { rect.left, rect.top, rect.right, rect.bottom };
+        }
+    }
+    return { 0, 0, 0, 0 };
 }
 
 void GfxWindowBackendDXGI::HandleEvents() {

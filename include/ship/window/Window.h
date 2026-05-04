@@ -13,8 +13,13 @@
 
 namespace Ship {
 
-/** @brief Identifies the graphics/windowing backend in use. */
-enum class WindowBackend { FAST3D_DXGI_DX11, FAST3D_SDL_OPENGL, FAST3D_SDL_METAL, WINDOW_BACKEND_COUNT };
+/** @brief Identifies the graphics/windowing backend in use.
+ *
+ * Window backend IDs use the following convention:
+ *  - Negative values indicate no Window backend is available (e.g. the Window is not initialized).
+ *  - Zero indicates no Window backend is in use.
+ *  - Positive values are backend IDs defined by the concrete Window subclass.
+ */
 
 /** @brief Integer pixel coordinates. */
 struct Coords {
@@ -26,6 +31,14 @@ struct Coords {
 struct CoordsF {
     float x;
     float y;
+};
+
+/** @brief Screen-space rectangle in integer pixels. */
+struct WindowRect {
+    int32_t Left;
+    int32_t Top;
+    int32_t Right;
+    int32_t Bottom;
 };
 
 class Config;
@@ -152,13 +165,61 @@ class Window : public Component {
     /** @brief Returns a handle to the graphics API framebuffer object. */
     virtual uintptr_t GetGfxFrameBuffer() = 0;
 
-    /** @brief Returns the current graphics backend identifier. */
-    WindowBackend GetWindowBackend();
+    /**
+     * @brief Sets the window dimensions (size and position) and applies them immediately.
+     * @param width  New client-area width in pixels.
+     * @param height New client-area height in pixels.
+     */
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height) = 0;
+    /**
+     * @brief Sets the window dimensions and position and applies them immediately.
+     * @param width  New client-area width in pixels.
+     * @param height New client-area height in pixels.
+     * @param posX   Left edge of the window in screen coordinates.
+     * @param posY   Top edge of the window in screen coordinates.
+     */
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
+    /**
+     * @brief Switches fullscreen state and sets the window dimensions.
+     * @param isFullscreen true to enter fullscreen, false for windowed.
+     * @param width        New client-area width in pixels.
+     * @param height       New client-area height in pixels.
+     */
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) = 0;
+    /**
+     * @brief Switches fullscreen state and sets the window dimensions and position.
+     * @param isFullscreen true to enter fullscreen, false for windowed.
+     * @param width        New client-area width in pixels.
+     * @param height       New client-area height in pixels.
+     * @param posX         Left edge of the window in screen coordinates.
+     * @param posY         Top edge of the window in screen coordinates.
+     */
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                      int32_t posY) = 0;
+    /**
+     * @brief Returns the bounding rectangle of the primary monitor.
+     * @return WindowRect containing Left, Top, Right, Bottom of the primary display.
+     */
+    virtual WindowRect GetPrimaryMonitorRect() = 0;
+
+    /** @brief Returns the current graphics backend identifier.
+     *
+     * See the window backend ID convention in the comment above this class:
+     * negative = no backend available, 0 = no backend in use, positive = defined by subclass.
+     */
+    int32_t GetWindowBackend();
+    /**
+     * @brief Returns a human-readable name for the current window backend.
+     *
+     * The base implementation returns an empty string. Concrete subclasses (e.g. Fast3dWindow)
+     * override this to return backend-specific names such as "OpenGL", "Metal", or "DirectX 11".
+     */
+    virtual std::string GetWindowBackendName();
     /** @brief Returns the list of backends available on this platform. */
-    std::shared_ptr<std::vector<WindowBackend>> GetAvailableWindowBackends();
+    std::shared_ptr<std::vector<int32_t>> GetAvailableWindowBackends();
     /**
      * @brief Returns true if the backend with the given ID is available on this platform.
-     * @param backendId WindowBackend cast to int.
+     * @param backendId Backend identifier to check.
      */
     bool IsAvailableWindowBackend(int32_t backendId);
     /** @brief Returns the scancode of the last key event received. */
@@ -210,14 +271,21 @@ class Window : public Component {
   protected:
     /**
      * @brief Records the active graphics backend. Called by subclass constructors.
-     * @param backend The backend in use.
+     * @param backend The backend ID in use.
      */
-    void SetWindowBackend(WindowBackend backend);
+    void SetWindowBackend(int32_t backend);
     /**
      * @brief Adds a backend to the list of backends available on this platform.
-     * @param backend Backend to mark as available.
+     * @param backend Backend ID to mark as available.
      */
-    void AddAvailableWindowBackend(WindowBackend backend);
+    void AddAvailableWindowBackend(int32_t backend);
+    /**
+     * @brief Reads the saved window backend identifier from the config.
+     *
+     * Reads Window.Backend.Id, validates it against the available backends, and falls back to
+     * the first registered backend if the saved value is not available.
+     */
+    int32_t GetSavedWindowBackend();
 
     /**
      * @brief Caches Config from the component hierarchy and throws if not found or uninitialized.
@@ -245,9 +313,9 @@ class Window : public Component {
   private:
     std::shared_ptr<Gui> mGui;
     int32_t mLastScancode = -1;
-    WindowBackend mWindowBackend;
+    int32_t mWindowBackend;
     std::shared_ptr<MouseStateManager> mMouseStateManager;
-    std::shared_ptr<std::vector<WindowBackend>> mAvailableWindowBackends;
+    std::shared_ptr<std::vector<int32_t>> mAvailableWindowBackends;
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;

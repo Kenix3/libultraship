@@ -9,7 +9,7 @@
 #include <set>
 #include "ship/controller/controldevice/controller/Controller.h"
 
-namespace Ship {
+namespace LUS {
 
 /**
  * @brief An ImGui window for editing, binding, and testing controller mappings.
@@ -24,9 +24,9 @@ namespace Ship {
  * The window is added to the GUI by Context::Init() and is accessible via
  * Gui::GetGuiWindow("Input Editor").
  */
-class InputEditorWindow : public GuiWindow {
+class InputEditorWindow : public Ship::GuiWindow {
   public:
-    using GuiWindow::GuiWindow;
+    using Ship::GuiWindow::GuiWindow;
 
     /** @brief Destroys the InputEditorWindow and releases any active rumble test state. */
     virtual ~InputEditorWindow();
@@ -74,7 +74,7 @@ class InputEditorWindow : public GuiWindow {
      * @param direction         Cardinal direction of the axis.
      * @param color             Colour used for the input chip.
      */
-    void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Direction direction,
+    void DrawStickDirectionLine(const char* axisDirectionName, uint8_t port, uint8_t stick, Ship::Direction direction,
                                 ImVec4 color);
 
     /**
@@ -108,7 +108,8 @@ class InputEditorWindow : public GuiWindow {
      * @param direction Cardinal direction of the axis.
      * @param id        Mapping identifier string.
      */
-    void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Direction direction, std::string id);
+    void DrawStickDirectionLineEditMappingButton(uint8_t port, uint8_t stick, Ship::Direction direction,
+                                                 std::string id);
 
     /**
      * @brief Draws the "+" button that opens the mapping-add popup for a stick direction.
@@ -116,7 +117,7 @@ class InputEditorWindow : public GuiWindow {
      * @param stick     Stick index (0 = left, 1 = right).
      * @param direction Cardinal direction of the axis.
      */
-    void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Direction direction);
+    void DrawStickDirectionLineAddMappingButton(uint8_t port, uint8_t stick, Ship::Direction direction);
 
     /**
      * @brief Draws the complete analog-stick section (direction lines, preview, and sensitivity controls).
@@ -187,13 +188,14 @@ class InputEditorWindow : public GuiWindow {
     int32_t mGameInputBlockTimer;
     int32_t mMappingInputBlockTimer;
     int32_t mRumbleTimer;
-    std::shared_ptr<ControllerRumbleMapping> mRumbleMappingToTest;
+    std::shared_ptr<Ship::ControllerRumbleMapping> mRumbleMappingToTest;
 
     // mBitmaskToMappingIds[port][bitmask] = { id0, id1, ... }
     std::unordered_map<uint8_t, std::unordered_map<CONTROLLERBUTTONS_T, std::vector<std::string>>> mBitmaskToMappingIds;
 
     // mStickDirectionToMappingIds[port][stick][direction] = { id0, id1, ... }
-    std::unordered_map<uint8_t, std::unordered_map<uint8_t, std::unordered_map<Direction, std::vector<std::string>>>>
+    std::unordered_map<uint8_t,
+                       std::unordered_map<uint8_t, std::unordered_map<Ship::Direction, std::vector<std::string>>>>
         mStickDirectionToMappingIds;
 
     /**
@@ -214,7 +216,7 @@ class InputEditorWindow : public GuiWindow {
      * @param buttonColor        Output normal-state colour.
      * @param buttonHoveredColor Output hovered-state colour.
      */
-    void GetButtonColorsForPhysicalDeviceType(PhysicalDeviceType physicalDeviceType, ImVec4& buttonColor,
+    void GetButtonColorsForPhysicalDeviceType(Ship::PhysicalDeviceType physicalDeviceType, ImVec4& buttonColor,
                                               ImVec4& buttonHoveredColor);
 
     /**
@@ -248,4 +250,4 @@ class InputEditorWindow : public GuiWindow {
     /** @brief Adjusts the position of the active mapping popup so it stays on-screen. */
     void OffsetMappingPopup();
 };
-} // namespace Ship
+} // namespace LUS

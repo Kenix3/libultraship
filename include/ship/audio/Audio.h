@@ -9,6 +9,7 @@
 #include "ship/config/Config.h"
 
 namespace Ship {
+class Config;
 
 /**
  * @brief Manages audio playback through a platform-specific AudioPlayer.
@@ -93,6 +94,16 @@ class Audio : public Component {
 
     /** @brief Declares Config as a dependency. */
     const nlohmann::json& GetDependencies() const override;
+
+    /**
+     * @brief Reads and validates the audio backend from the persisted config.
+     */
+    AudioBackend GetSavedAudioBackend();
+
+    /**
+     * @brief Reads and validates the audio channel layout from the persisted config.
+     */
+    AudioChannelsSetting GetSavedAudioChannelsSetting();
 
   private:
     std::shared_ptr<AudioPlayer> mAudioPlayer;

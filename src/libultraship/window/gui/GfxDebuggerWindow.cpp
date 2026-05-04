@@ -8,6 +8,7 @@
 #include "libultraship/bridge.h"
 #include "fast/interpreter.h"
 #include "fast/Fast3dWindow.h"
+#include "fast/Fast3dGui.h"
 #include <optional>
 #ifdef GFX_DEBUG_DISASSEMBLER
 #include <gfxd.h>
@@ -608,7 +609,7 @@ void GfxDebuggerWindow::DrawDisas() {
     std::string TO_LOAD_TEX = "GfxDebuggerWindowTextureToLoad";
 
     const F3DGfx* cmd = dlist;
-    auto gui = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui();
+    auto gui = std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui());
 
     ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
     {

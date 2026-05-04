@@ -9,10 +9,6 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
 
-#ifdef __APPLE__
-#include "fast/backends/gfx_metal.h"
-#endif
-
 namespace fs = std::filesystem;
 
 namespace Ship {
@@ -237,115 +233,6 @@ nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
 
-AudioBackend Config::GetCurrentAudioBackend() {
-    std::string backendName = GetString("Window.AudioBackend");
-    if (backendName == "wasapi") {
-        return AudioBackend::WASAPI;
-    }
-
-    // Migrate pulse player in config to sdl
-    if (backendName == "pulse") {
-        SetCurrentAudioBackend(AudioBackend::SDL);
-        return AudioBackend::SDL;
-    }
-
-    if (backendName == "coreaudio") {
-        return AudioBackend::COREAUDIO;
-    }
-
-    if (backendName == "sdl") {
-        return AudioBackend::SDL;
-    }
-
-    if (backendName == "null") {
-        return AudioBackend::NUL;
-    }
-
-    SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
-                 backendName);
-#ifdef _WIN32
-    return AudioBackend::WASAPI;
-#endif
-
-#ifdef __APPLE__
-    return AudioBackend::COREAUDIO;
-#endif
-
-    return AudioBackend::SDL;
-}
-
-AudioChannelsSetting Config::GetCurrentAudioChannelsSetting() {
-    int32_t channelsSetting =
-        GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
-    switch (channelsSetting) {
-        case AudioChannelsSetting::audioMatrix51:
-            return AudioChannelsSetting::audioMatrix51;
-        case AudioChannelsSetting::audioRaw51:
-            return AudioChannelsSetting::audioRaw51;
-        case AudioChannelsSetting::audioStereo:
-        case AudioChannelsSetting::audioMax:
-        default:
-            return AudioChannelsSetting::audioStereo;
-    }
-}
-
-void Config::SetCurrentAudioBackend(AudioBackend backend) {
-    switch (backend) {
-        case AudioBackend::WASAPI:
-            SetString("Window.AudioBackend", "wasapi");
-            break;
-        case AudioBackend::COREAUDIO:
-            SetString("Window.AudioBackend", "coreaudio");
-            break;
-        case AudioBackend::SDL:
-            SetString("Window.AudioBackend", "sdl");
-            break;
-        case AudioBackend::NUL:
-            SetString("Window.AudioBackend", "null");
-            break;
-        default:
-            SetString("Window.AudioBackend", "");
-    }
-}
-
-WindowBackend Config::GetWindowBackend() {
-    WindowBackend backend;
-    auto backendId = GetInt("Window.Backend.Id", -1);
-    if (Context::GetInstance()->GetChildren().GetFirst<Window>()->IsAvailableWindowBackend(backendId)) {
-        return static_cast<WindowBackend>(backendId);
-    }
-
-    SPDLOG_TRACE(
-        "Could not find available WindowBackend matching id from config file ({}). Returning default WindowBackend.",
-        backendId);
-#ifdef ENABLE_DX11
-    return WindowBackend::FAST3D_DXGI_DX11;
-#endif
-#ifdef __APPLE__
-    if (Metal_IsSupported()) {
-        return WindowBackend::FAST3D_SDL_METAL;
-    }
-#endif
-    return WindowBackend::FAST3D_SDL_OPENGL;
-}
-
-void Config::SetWindowBackend(WindowBackend backend) {
-    SetInt("Window.Backend.Id", static_cast<int>(backend));
-
-    switch (backend) {
-        case WindowBackend::FAST3D_DXGI_DX11:
-            SetString("Window.Backend.Name", "DirectX 11");
-            break;
-        case WindowBackend::FAST3D_SDL_OPENGL:
-            SetString("Window.Backend.Name", "OpenGL");
-            break;
-        case WindowBackend::FAST3D_SDL_METAL:
-            SetString("Window.Backend.Name", "Metal");
-            break;
-        default:
-            SetString("Window.Backend.Name", "");
-    }
-}
 
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
     auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);

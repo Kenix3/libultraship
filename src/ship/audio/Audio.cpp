@@ -6,6 +6,7 @@
 
 #include <stdexcept>
 #include "ship/Context.h"
+#include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
@@ -55,7 +56,7 @@ void Audio::OnInit(const nlohmann::json& /*initArgs*/) {
     // Dependencies (Config) are verified by Component::Init() via GetDependencies().
     // Just cache the reference here.
     mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
-    SetCurrentAudioBackend(mConfig->GetCurrentAudioBackend());
+    SetCurrentAudioBackend(GetSavedAudioBackend());
 }
 
 std::shared_ptr<AudioPlayer> Audio::GetAudioPlayer() {
@@ -66,10 +67,64 @@ AudioBackend Audio::GetCurrentAudioBackend() {
     return mAudioBackend;
 }
 
+AudioBackend Audio::GetSavedAudioBackend() {
+    std::string backendName = mConfig->GetString("Window.AudioBackend");
+    if (backendName == "wasapi") {
+        return AudioBackend::WASAPI;
+    }
+
+    // Migrate pulse player in config to sdl
+    if (backendName == "pulse") {
+        mConfig->SetString("Window.AudioBackend", "sdl");
+        mConfig->Save();
+        return AudioBackend::SDL;
+    }
+
+    if (backendName == "coreaudio") {
+        return AudioBackend::COREAUDIO;
+    }
+
+    if (backendName == "sdl") {
+        return AudioBackend::SDL;
+    }
+
+    if (backendName == "null") {
+        return AudioBackend::NUL;
+    }
+
+    SPDLOG_TRACE("Could not find AudioBackend matching value from config file ({}). Returning default AudioBackend.",
+                 backendName);
+#ifdef _WIN32
+    return AudioBackend::WASAPI;
+#endif
+
+#ifdef __APPLE__
+    return AudioBackend::COREAUDIO;
+#endif
+
+    return AudioBackend::SDL;
+}
+
 void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     mAudioBackend = backend;
-    GetConfig()->SetCurrentAudioBackend(GetCurrentAudioBackend());
-    GetConfig()->Save();
+
+    switch (backend) {
+        case AudioBackend::WASAPI:
+            mConfig->SetString("Window.AudioBackend", "wasapi");
+            break;
+        case AudioBackend::COREAUDIO:
+            mConfig->SetString("Window.AudioBackend", "coreaudio");
+            break;
+        case AudioBackend::SDL:
+            mConfig->SetString("Window.AudioBackend", "sdl");
+            break;
+        case AudioBackend::NUL:
+            mConfig->SetString("Window.AudioBackend", "null");
+            break;
+        default:
+            mConfig->SetString("Window.AudioBackend", "");
+    }
+    mConfig->Save();
 
     InitAudioPlayer();
 }
@@ -94,6 +149,21 @@ void Audio::SetAudioChannels(AudioChannelsSetting channels) {
 
 AudioChannelsSetting Audio::GetAudioChannels() const {
     return mAudioSettings.ChannelSetting;
+}
+
+AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
+    int32_t channelsSetting =
+        mConfig->GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
+    switch (channelsSetting) {
+        case AudioChannelsSetting::audioMatrix51:
+            return AudioChannelsSetting::audioMatrix51;
+        case AudioChannelsSetting::audioRaw51:
+            return AudioChannelsSetting::audioRaw51;
+        case AudioChannelsSetting::audioStereo:
+        case AudioChannelsSetting::audioMax:
+        default:
+            return AudioChannelsSetting::audioStereo;
+    }
 }
 
 const nlohmann::json& Audio::GetDependencies() const {

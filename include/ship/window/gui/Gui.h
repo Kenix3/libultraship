@@ -10,76 +10,16 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
-#include <SDL2/SDL.h>
 #include "ship/window/gui/ConsoleWindow.h"
-#include "ship/window/gui/InputEditorWindow.h"
 #include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/window/gui/GameOverlay.h"
 #include "ship/window/gui/StatsWindow.h"
 #include "ship/window/gui/GuiWindow.h"
 #include "ship/window/gui/GuiMenuBar.h"
-#include "fast/resource/type/Texture.h"
-#include "ship/window/gui/resource/GuiTexture.h"
-
-namespace Fast {
-class Interpreter;
-}
 
 namespace Ship {
 class Window;
-
-/**
- * @brief Backend-specific data required to initialise the ImGui rendering context.
- *
- * The active union member is selected based on the graphics backend:
- * - Dx11   for DirectX 11 (Windows).
- * - Opengl for OpenGL (Linux/macOS via SDL).
- * - Metal  for Metal (macOS via SDL).
- * - Gx2    for the GX2 API (Wii U / Café OS).
- */
-typedef struct {
-    union {
-        struct {
-            void* Window;        ///< HWND
-            void* DeviceContext; ///< ID3D11DeviceContext*
-            void* Device;        ///< ID3D11Device*
-        } Dx11;
-        struct {
-            void* Window;  ///< SDL_Window*
-            void* Context; ///< SDL_GLContext
-        } Opengl;
-        struct {
-            void* Window;           ///< SDL_Window*
-            SDL_Renderer* Renderer; ///< SDL_Renderer* (for Metal layer)
-        } Metal;
-        struct {
-            uint32_t Width;  ///< Framebuffer width in pixels.
-            uint32_t Height; ///< Framebuffer height in pixels.
-        } Gx2;
-    };
-} GuiWindowInitData;
-
-/**
- * @brief Platform-agnostic wrapper around a window system event.
- *
- * Passed to Gui::HandleWindowEvents() by the concrete Window subclass so that the
- * ImGui backend can process input events without depending on a specific windowing API.
- */
-typedef union {
-    struct {
-        void* Handle; ///< HWND
-        int Msg;      ///< Windows message ID.
-        int Param1;   ///< WPARAM
-        int Param2;   ///< LPARAM
-    } Win32;
-    struct {
-        void* Event; ///< SDL_Event*
-    } Sdl;
-    struct {
-        void* Input; ///< GX2 input structure pointer.
-    } Gx2;
-} WindowEvent;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -87,8 +27,6 @@ typedef union {
  * Gui is the central hub for the in-game overlay system. It:
  * - Initialises the ImGui backend for the active graphics API.
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
- * - Provides a texture cache (LoadGuiTexture / GetTextureByName) for images rendered
- *   via ImGui::Image().
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
  * GuiWindow children are accessible via `GetChildren().GetFirst<T>()`.
@@ -109,9 +47,8 @@ class Gui : public Component {
 
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
-     * @param windowImpl Backend-specific handles required by the ImGui backend.
      */
-    void Init(GuiWindowInitData windowImpl);
+    void Init();
 
     /**
      * @brief Begins a new ImGui frame.
@@ -129,12 +66,6 @@ class Gui : public Component {
     void EndDraw();
 
     /**
-     * @brief Forwards a platform window event to the active ImGui backend for processing.
-     * @param event Platform event wrapped in a WindowEvent.
-     */
-    void HandleWindowEvents(WindowEvent event);
-
-    /**
      * @brief Schedules a CVar save to disk at the end of the current frame.
      *
      * Calling this multiple times in the same frame is safe — the save occurs only once.
@@ -144,8 +75,11 @@ class Gui : public Component {
     /**
      * @brief Returns true if the ImGui multi-viewport / docking feature is supported
      * by the current backend.
+     *
+     * The base implementation returns false. Concrete subclasses (e.g. Fast3dGui)
+     * override this to report actual backend capabilities.
      */
-    bool SupportsViewports();
+    virtual bool SupportsViewports();
 
     /**
      * @brief Returns the ImGui ID of the main game viewport window.
@@ -180,62 +114,6 @@ class Gui : public Component {
 
     /** @brief Removes all registered GuiWindows from the draw loop. */
     void RemoveAllGuiWindows();
-
-    /**
-     * @brief Loads an image from an archive path and caches it under the given name.
-     * @param name Path/texture name used to reference the texture in GetTextureByName().
-     * @param path Virtual resource path of the source image.
-     * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
-     */
-    void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
-
-    /**
-     * @brief Returns true if a texture with the given name is already cached.
-     * @param name Texture cache key.
-     */
-    bool HasTextureByName(const std::string& name);
-
-    /**
-     * @brief Uploads a Fast::Texture object to the GPU and caches it under @p name.
-     * @param name Texture cache key.
-     * @param tex  Source texture data.
-     * @param tint RGBA tint.
-     */
-    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
-
-    /**
-     * @brief Removes the texture with the given name from the cache and frees GPU resources.
-     * @param name Texture cache key to remove.
-     */
-    void UnloadTexture(const std::string& name);
-
-    /**
-     * @brief Returns the ImGui texture handle for the given cache key.
-     * @param name Texture cache key.
-     * @return ImTextureID suitable for ImGui::Image(), or nullptr if not found.
-     */
-    ImTextureID GetTextureByName(const std::string& name);
-
-    /**
-     * @brief Returns the pixel dimensions of the cached texture.
-     * @param name Texture cache key.
-     * @return ImVec2 with the texture's width and height, or (0, 0) if not found.
-     */
-    ImVec2 GetTextureSize(const std::string& name);
-
-    /**
-     * @brief Loads a raw image file from the filesystem (not the archive) and caches it.
-     * @param name Cache key.
-     * @param path Absolute filesystem path to the image file (e.g. a PNG).
-     */
-    void LoadTextureFromRawImage(const std::string& name, const std::string& path);
-
-    /**
-     * @brief Uploads a pre-loaded GuiTexture resource to the GPU and caches it.
-     * @param name    Cache key.
-     * @param texture Loaded GuiTexture resource.
-     */
-    void LoadTextureFromResource(const std::string& name, std::shared_ptr<GuiTexture> texture);
 
     /** @brief Returns the GameOverlay instance used for on-screen text and notifications. */
     std::shared_ptr<GameOverlay> GetGameOverlay();
@@ -291,51 +169,51 @@ class Gui : public Component {
     /** @brief Calls ImGui::Render() and submits draw data to the backend. */
     void EndFrame();
 
-    /** @brief Draws all registered floating GuiWindow instances. */
-    void DrawFloatingWindows();
+    /** @brief Draws all registered floating GuiWindow instances.
+     *  The base implementation is a no-op. Override in subclasses to provide viewport support. */
+    virtual void DrawFloatingWindows();
 
     /** @brief Draws the menu bar and/or full-screen menu window. Override to add custom menus. */
     virtual void DrawMenu();
 
-    /** @brief Renders the game viewport inside the main docking space. */
-    void DrawGame();
+    /** @brief Renders the game viewport inside the main docking space.
+     *  The base implementation is a no-op. Override in subclasses to render the game framebuffer. */
+    virtual void DrawGame();
 
-    /** @brief Recalculates the game viewport rect to account for the menu bar and window size. */
-    void CalculateGameViewport();
+    /** @brief Recalculates the game viewport rect to account for the menu bar and window size.
+     *  The base implementation is a no-op. Override in subclasses to set up the game viewport. */
+    virtual void CalculateGameViewport();
 
-    /** @brief Calls the appropriate ImGui backend New Frame function (DX11 / GL / Metal). */
-    void ImGuiBackendNewFrame();
+    /** @brief Calls the appropriate ImGui backend New Frame function (DX11 / GL / Metal).
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendNewFrame();
 
-    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent. */
-    void ImGuiWMNewFrame();
+    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMNewFrame();
 
-    /** @brief Initialises the platform/window-manager ImGui backend. */
-    void ImGuiWMInit();
+    /** @brief Initialises the platform/window-manager ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMInit();
 
-    /** @brief Initialises the renderer ImGui backend (DX11 / OpenGL / Metal). */
-    void ImGuiBackendInit();
+    /** @brief Shuts down the platform/window-manager ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiWMShutdown();
+
+    /** @brief Initialises the renderer ImGui backend (DX11 / OpenGL / Metal).
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendInit();
+
+    /** @brief Shuts down the renderer ImGui backend.
+     *  The base implementation is a no-op. */
+    virtual void ImGuiBackendShutdown();
 
     /**
      * @brief Submits the ImGui draw data to the active graphics backend.
+     * The base implementation is a no-op.
      * @param data Draw data produced by ImGui::Render().
      */
-    void ImGuiRenderDrawData(ImDrawData* data);
-
-    /**
-     * @brief Returns the ImTextureID for a texture identified by its integer ID.
-     * @param id Internal texture registry ID.
-     * @return ImTextureID for use with ImGui::Image().
-     */
-    ImTextureID GetTextureById(int32_t id);
-
-    /** @brief Applies any pending resolution or MSAA changes to the render target. */
-    void ApplyResolutionChanges();
-
-    /**
-     * @brief Returns the integer scaling factor applied to the game viewport.
-     * @return Scaling multiplier (1 = native, 2 = 2×, etc.).
-     */
-    int16_t GetIntegerScaleFactor();
+    virtual void ImGuiRenderDrawData(ImDrawData* data);
 
     /** @brief Flushes CVars to disk if SaveConsoleVariablesNextFrame() was called. */
     void CheckSaveCvars();
@@ -346,17 +224,14 @@ class Gui : public Component {
     ImVec2 mTemporaryWindowPos; ///< Scratchpad position used when repositioning windows.
     ImGuiIO* mImGuiIo;          ///< Pointer to the active ImGuiIO context.
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
-    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the scripting interpreter, if active.
 
   private:
-    GuiWindowInitData mImpl;
     bool mNeedsConsoleVariableSave;
     std::string mImGuiIniPath;
     std::string mImGuiLogPath;
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
-    std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
 };
 } // namespace Ship
 
