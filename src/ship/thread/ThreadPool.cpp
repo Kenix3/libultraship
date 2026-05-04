@@ -7,7 +7,7 @@ ThreadPool::ThreadPool(size_t threadCount)
     MarkInitialized();
 }
 
-std::shared_ptr<BS::thread_pool> ThreadPool::GetPool() const {
+std::shared_ptr<BS::thread_pool> ThreadPool::Get() const {
     return mThreadPool;
 }
 

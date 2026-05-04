@@ -3,14 +3,14 @@
 
 namespace Ship {
 
-EventAction::EventAction(const std::string& eventName, std::shared_ptr<Tickable> tickable)
-    : Action(eventName, tickable) {
+EventAction::EventAction(EventID eventId, std::shared_ptr<Tickable> tickable)
+    : Action(eventId, tickable) {
 }
 
 bool EventAction::ActionRan(const double durationSinceLastTick) {
     auto tickable = GetTickable();
     if (auto* tc = dynamic_cast<TickableComponent*>(tickable.get())) {
-        return tc->ActionRan(GetEventName(), durationSinceLastTick);
+        return tc->ActionRan(GetEventId(), durationSinceLastTick);
     }
     return true;
 }

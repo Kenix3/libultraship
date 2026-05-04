@@ -8,9 +8,9 @@ namespace Ship {
 
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
-                                     const std::vector<std::string>& eventNames)
+                                     const std::vector<EventID>& eventIds)
     : Tickable(false), Component(name), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context),
-      mPendingEventNames(eventNames) {
+      mPendingEventIds(eventIds) {
     // Note: Actions and context registration are deferred to RegisterWithContext()
     // because shared_from_this() cannot be called in a constructor.
 }
@@ -36,12 +36,12 @@ void TickableComponent::InitWeakSelf(std::shared_ptr<TickableComponent> self) {
 void TickableComponent::RegisterWithContext(std::shared_ptr<TickableComponent> self) {
     InitWeakSelf(self);
 
-    // Create EventActions for all pending event names.
-    for (const auto& eventName : mPendingEventNames) {
-        GetActionList().Add(std::make_shared<EventAction>(eventName, self));
+    // Create EventActions for all pending EventIDs.
+    for (const auto& eventId : mPendingEventIds) {
+        GetActionList().Add(std::make_shared<EventAction>(eventId, self));
     }
 
-    if (!mPendingEventNames.empty()) {
+    if (!mPendingEventIds.empty()) {
         Start();
     }
 
@@ -96,7 +96,7 @@ TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> contex
     return *this;
 }
 
-bool TickableComponent::ActionRan(const std::string& eventName, const double durationSinceLastTick) {
+bool TickableComponent::ActionRan(EventID eventId, const double durationSinceLastTick) {
     return true;
 }
 

@@ -2,24 +2,24 @@
 
 #include <memory>
 #include <mutex>
-#include <string>
 #include <vector>
 #include <stdint.h>
 #include <stddef.h>
 
 #include "ship/Action.h"
 #include "ship/ActionList.h"
+#include "ship/events/EventTypes.h"
 
 namespace Ship {
 
 class Component;
 
 /**
- * @brief Manages a collection of Actions, executing them in type-sorted order.
+ * @brief Manages a collection of Actions, executing them in EventID order.
  *
  * A Tickable owns zero or more Actions and provides Run() methods that run all
  * (or a filtered subset of) those Actions each frame. Actions are executed in
- * ascending action-type order. Thread safety for the action list is handled
+ * ascending EventID order. Thread safety for the action list is handled
  * internally via a mutex.
  */
 class Tickable : public std::enable_shared_from_this<Tickable> {
@@ -56,7 +56,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     bool Stop(const bool force = false);
 
     /**
-     * @brief Runs all running Actions sorted by action type (low to high).
+     * @brief Runs all running Actions sorted by EventID (low to high).
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
@@ -71,38 +71,38 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     template <typename T> double Run(const double durationSinceLastTick);
 
     /**
-     * @brief Runs only Actions whose event name matches the given name.
+     * @brief Runs only Actions whose EventID matches the given ID.
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @param eventName The event name to include.
+     * @param eventId The EventID to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    double Run(const double durationSinceLastTick, const std::string& eventName);
+    double Run(const double durationSinceLastTick, EventID eventId);
 
     /**
-     * @brief Runs only Actions whose event name matches one of the given names.
+     * @brief Runs only Actions whose EventID matches one of the given IDs.
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @param eventNames The event names to include.
+     * @param eventIds The EventIDs to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    double Run(const double durationSinceLastTick, const std::vector<std::string>& eventNames);
+    double Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds);
 
     /**
-     * @brief Runs Actions matching both type T and one of the given event names.
+     * @brief Runs Actions matching both type T and one of the given EventIDs.
      * @tparam T The Action subtype to filter by.
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @param eventNames The event names to include.
+     * @param eventIds The EventIDs to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    template <typename T> double Run(const double durationSinceLastTick, const std::vector<std::string>& eventNames);
+    template <typename T> double Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds);
 
     /**
-     * @brief Runs Actions matching both type T and the given event name.
+     * @brief Runs Actions matching both type T and the given EventID.
      * @tparam T The Action subtype to filter by.
      * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @param eventName The event name to include.
+     * @param eventId The EventID to include.
      * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
      */
-    template <typename T> double Run(const double durationSinceLastTick, const std::string& eventName);
+    template <typename T> double Run(const double durationSinceLastTick, EventID eventId);
 
     /**
      * @brief Returns a mutable reference to the ActionList.
@@ -173,18 +173,8 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
-    {
-#ifdef COMPONENT_THREAD_SAFE
-        const std::lock_guard<std::recursive_mutex> lock(mActions.GetMutex());
-#endif
-        for (const auto& action : mActions.GetList()) {
-            if (std::dynamic_pointer_cast<T>(action)) {
-                result->push_back(action);
-            }
-        }
-    }
-    for (const auto& action : *result) {
+    auto allActions = mActions.Get<T>();
+    for (const auto& action : *allActions) {
         action->Run(durationSinceLastTick);
     }
 #ifdef INCLUDE_PROFILING
@@ -196,14 +186,14 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 }
 
 template <typename T>
-double Tickable::Run(const double durationSinceLastTick, const std::vector<std::string>& eventNames) {
+double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
     if (!mIsTicking) {
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    auto allActions = mActions.Get(eventNames);
+    auto allActions = mActions.Get(eventIds);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
             action->Run(durationSinceLastTick);
@@ -217,14 +207,14 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<std::
 #endif
 }
 
-template <typename T> double Tickable::Run(const double durationSinceLastTick, const std::string& eventName) {
+template <typename T> double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
     if (!mIsTicking) {
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    auto allActions = mActions.Get(eventName);
+    auto allActions = mActions.Get(eventId);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
             action->Run(durationSinceLastTick);

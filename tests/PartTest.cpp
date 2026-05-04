@@ -153,12 +153,12 @@ TEST(PartListTest, EmptyList) {
 TEST(PartListTest, DirectListAccess) {
     PartList<Part> list;
     list.Add(std::make_shared<Part>());
-    auto& vec = list.GetList();
-    EXPECT_EQ(vec.size(), 1u);
+    auto vec = list.Get();
+    EXPECT_EQ(vec->size(), 1u);
 
     const PartList<Part>& constList = list;
-    const auto& constVec = constList.GetList();
-    EXPECT_EQ(constVec.size(), 1u);
+    auto constVec = constList.Get();
+    EXPECT_EQ(constVec->size(), 1u);
 }
 
 // ---- GetFirst<T>() tests (with Component subclasses) ----

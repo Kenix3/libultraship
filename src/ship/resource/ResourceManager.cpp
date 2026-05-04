@@ -219,7 +219,7 @@ ResourceManager::LoadResourceAsync(const ResourceIdentifier& identifier, bool lo
         return promise->get_future().share();
     }
 
-    return GetThreadPool()->GetPool()->submit_task(
+    return GetThreadPool()->Get()->submit_task(
         [this, identifier, loadExact, initData]() -> std::shared_ptr<IResource> {
             return LoadResourceProcess(identifier, loadExact, initData);
         },
@@ -337,7 +337,7 @@ ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
 ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    return GetThreadPool()->GetPool()->submit_task(
+    return GetThreadPool()->Get()->submit_task(
         [this, filter]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
             return LoadResourcesProcess(filter);
         },
@@ -358,7 +358,7 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadRe
 }
 
 void ResourceManager::DirtyResources(const ResourceFilter& filter) {
-    GetThreadPool()->GetPool()->submit_task([this, filter]() -> void {
+    GetThreadPool()->Get()->submit_task([this, filter]() -> void {
         auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
         for (const auto& key : *list.get()) {
@@ -382,7 +382,7 @@ void ResourceManager::UnloadResourcesAsync(const std::string& searchMask, BS::pr
 }
 
 void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    GetThreadPool()->GetPool()->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
+    GetThreadPool()->Get()->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {

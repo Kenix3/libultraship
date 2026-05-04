@@ -3,12 +3,18 @@
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #ifdef __cplusplus
+#include <memory>
 #include "../interpreter.h"
 #include <cstdint>
 #include <string>
 #include "gfx_rendering_api.h"
 #include "d3d11.h"
 #include "d3dcompiler.h"
+
+namespace Ship {
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
 
 namespace Fast {
 
@@ -124,6 +130,9 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
     GfxWindowBackendDXGI* mWindowBackend = nullptr;
     D3D_FEATURE_LEVEL mFeatureLevel;
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager;
 
   private:
     void CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count, ID3D11DepthStencilView** view,

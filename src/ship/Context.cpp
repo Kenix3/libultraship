@@ -439,6 +439,17 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
     return shared;
 }
 
+std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
+                                                 const std::string& configFilePath,
+                                                 std::vector<std::shared_ptr<Component>> components) {
+    auto ctx = CreateInstance(name, shortName, configFilePath);
+    for (auto& component : components) {
+        ctx->GetChildren().Add(component);
+        component->Init();
+    }
+    return ctx;
+}
+
 Context::Context(std::string name, std::string shortName, std::string configFilePath)
     : Component(name), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
       mShortName(std::move(shortName)) {
@@ -450,10 +461,6 @@ std::string Context::GetName() const {
 
 std::string Context::GetShortName() const {
     return mShortName;
-}
-
-std::string Context::GetConfigFilePath() const {
-    return mConfigFilePath;
 }
 
 std::string Context::GetAppBundlePath() {

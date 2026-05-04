@@ -241,7 +241,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     mFullScreen = on;
 #else
     if (SDL_SetWindowFullscreen(
-            mWnd, on ? (Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
+            mWnd, on ? (mConsoleVariable->GetInteger(
                             CVAR_SDL_WINDOWED_FULLSCREEN, 0)
                             ? SDL_WINDOW_FULLSCREEN_DESKTOP
                             : SDL_WINDOW_FULLSCREEN)
@@ -254,11 +254,10 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
 #endif
 
     if (!on) {
-        auto conf = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>();
-        mWindowWidth = conf->GetInt("Window.Width", 640);
-        mWindowHeight = conf->GetInt("Window.Height", 480);
-        int32_t posX = conf->GetInt("Window.PositionX", 100);
-        int32_t posY = conf->GetInt("Window.PositionY", 100);
+        mWindowWidth = mConfig->GetInt("Window.Width", 640);
+        mWindowHeight = mConfig->GetInt("Window.Height", 480);
+        int32_t posX = mConfig->GetInt("Window.PositionX", 100);
+        int32_t posY = mConfig->GetInt("Window.PositionY", 100);
         if (display_in_use < 0) { // Fallback to default if out of bounds
             posX = 100;
             posY = 100;
@@ -435,7 +434,16 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         window_impl.Metal = { mWnd, mRenderer };
     }
 
-    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui())->Init(window_impl);
+    if (auto window = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()) {
+        mFast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(window->GetGui());
+        if (mFast3dGui) {
+            mFast3dGui->Init(window_impl);
+        }
+    }
+
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    mConfig = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>();
+    mFileDrop = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDrop>();
 
     for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
         mSdlToLusTable[lus_to_sdl_table[i]] = i;
@@ -601,10 +609,8 @@ void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
 void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
     Fast::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    auto gui = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>()->GetGui();
-    auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(gui);
-    if (fast3dGui) {
-        fast3dGui->HandleWindowEvents(event_impl);
+    if (mFast3dGui) {
+        mFast3dGui->HandleWindowEvents(event_impl);
     } else {
         SPDLOG_ERROR("gfx_sdl2: Gui is not a Fast3dGui; cannot dispatch window event");
     }
@@ -647,7 +653,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             }
             break;
         case SDL_DROPFILE:
-            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDrop>()->SetDroppedFile(event.drop.file);
+            mFileDrop->SetDroppedFile(event.drop.file);
             break;
         case SDL_QUIT:
             Close();
@@ -730,8 +736,7 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
 }
 
 void GfxWindowBackendSDL2::SwapBuffersBegin() {
-    bool nextVsyncEnabled = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(
-        CVAR_VSYNC_ENABLED, 1);
+    bool nextVsyncEnabled = mConsoleVariable->GetInteger(CVAR_VSYNC_ENABLED, 1);
 
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;

@@ -9,24 +9,23 @@ namespace Ship {
  *
  * EventAction replaces the former TickAction, DrawAction, and DrawDebugMenuAction
  * classes. It delegates execution to the owning TickableComponent's ActionRan()
- * virtual, passing the event name so the component can dispatch accordingly.
+ * virtual, passing the EventID so the component can dispatch accordingly.
  *
- * Event names (e.g. "Tick", "Draw", "DrawDebugMenu") are registered dynamically
- * with the Events component rather than being hardcoded enum values.
+ * EventIDs are registered dynamically with the Events component via REGISTER_EVENT.
  */
 class EventAction : public Action {
   public:
     /**
-     * @brief Constructs an EventAction for the given event name.
-     * @param eventName The event name this action handles (e.g. "Tick", "Draw").
+     * @brief Constructs an EventAction for the given EventID.
+     * @param eventId The EventID this action handles.
      * @param tickable  The Tickable that owns this Action.
      */
-    EventAction(const std::string& eventName, std::shared_ptr<Tickable> tickable);
+    EventAction(EventID eventId, std::shared_ptr<Tickable> tickable);
     virtual ~EventAction() = default;
 
   protected:
     /**
-     * @brief Delegates to TickableComponent::ActionRan() with the event name.
+     * @brief Delegates to TickableComponent::ActionRan() with the EventID.
      * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */

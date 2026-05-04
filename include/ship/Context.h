@@ -130,6 +130,23 @@ class Context : public Component {
                                                    const std::string& configFilePath);
 
     /**
+     * @brief Creates and stores the global Context instance with the given set of components.
+     *
+     * Each component in @p components is added via GetChildren().Add() and then initialized
+     * by calling Component::Init() on it. Components should be provided in dependency order
+     * (e.g. Config before Window).
+     *
+     * @param name           Human-readable application name.
+     * @param shortName      Short application identifier.
+     * @param configFilePath Path to the JSON configuration file.
+     * @param components     Ordered list of components to add and initialize.
+     * @return The newly created Context.
+     */
+    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
+                                                   const std::string& configFilePath,
+                                                   std::vector<std::shared_ptr<Component>> components);
+
+    /**
      * @brief Returns the platform-specific application bundle directory (e.g. the .app bundle on macOS).
      * @return Absolute path string, or an empty string on platforms without the concept of a bundle.
      */
@@ -174,8 +191,6 @@ class Context : public Component {
     std::string GetName() const;
     /** @brief Returns the short application identifier. */
     std::string GetShortName() const;
-    /** @brief Returns the path to the JSON configuration file. */
-    std::string GetConfigFilePath() const;
 
     // ---- TickableComponent list ----
     TickableList& GetTickableComponents();
@@ -193,7 +208,9 @@ class Context : public Component {
     std::string mShortName;
 
     TickableList mTickableComponents;
+#ifdef COMPONENT_THREAD_SAFE
     mutable std::mutex mTickableMutex;
+#endif
 };
 
 } // namespace Ship

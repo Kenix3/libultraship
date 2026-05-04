@@ -36,7 +36,7 @@ class ThreadPool : public Component {
      * @brief Returns the underlying thread pool.
      * @return A shared pointer to the BS::thread_pool.
      */
-    std::shared_ptr<BS::thread_pool> GetPool() const;
+    std::shared_ptr<BS::thread_pool> Get() const;
 
     /** @brief Pauses the thread pool, preventing it from picking up new tasks. */
     void Pause();

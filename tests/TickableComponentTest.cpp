@@ -14,12 +14,12 @@ class ConcreteTickable : public TickableComponent {
                                TickPriority tp = TickPriority::TickPriorityDefault)
         : TickableComponent("TestTC", ctx, tg, tp) {}
 
-    std::string mLastEventName;
+    EventID mLastEventId = -1;
     double mLastDuration = 0.0;
     bool mActionRanCalled = false;
 
-    bool ActionRan(const std::string& eventName, const double durationSinceLastTick) override {
-        mLastEventName = eventName;
+    bool ActionRan(EventID eventId, const double durationSinceLastTick) override {
+        mLastEventId = eventId;
         mLastDuration = durationSinceLastTick;
         mActionRanCalled = true;
         return true;
@@ -153,7 +153,7 @@ TEST_F(TickableComponentTest, TickableListSort) {
     list.Add(tc3);
     list.Sort();
 
-    const auto& sorted = list.GetList();
+    auto sorted = *list.Get();
     ASSERT_EQ(sorted.size(), 3u);
     EXPECT_EQ(sorted[0], tc2); // priority 1 (lowest order first)
     EXPECT_EQ(sorted[1], tc3); // priority 5
@@ -171,7 +171,7 @@ TEST_F(TickableComponentTest, MultipleComponentsDifferentOrdersSortCorrectly) {
     }
     list.Sort();
 
-    const auto& sorted = list.GetList();
+    auto sorted = *list.Get();
     ASSERT_EQ(sorted.size(), 10u);
     for (size_t i = 0; i + 1 < sorted.size(); ++i) {
         EXPECT_LE(sorted[i]->GetOrder(), sorted[i + 1]->GetOrder());
@@ -200,10 +200,11 @@ TEST_F(TickableComponentTest, TickableListHasReturnsFalseWhenNotPresent) {
 
 TEST_F(TickableComponentTest, ActionRanCallbackDispatches) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->ActionRan("Tick", 0.016);
+    static constexpr EventID kTickEvent = 1;
+    tc->ActionRan(kTickEvent, 0.016);
 
     EXPECT_TRUE(tc->mActionRanCalled);
-    EXPECT_EQ(tc->mLastEventName, "Tick");
+    EXPECT_EQ(tc->mLastEventId, kTickEvent);
     EXPECT_DOUBLE_EQ(tc->mLastDuration, 0.016);
 }
 
@@ -214,7 +215,8 @@ TEST_F(TickableComponentTest, DefaultActionRanReturnsTrue) {
     // Base TickableComponent::ActionRan returns true
     TickableComponent* base = tc.get();
     // Call through the ConcreteTickable which overrides, so test base separately
-    EXPECT_TRUE(tc->ActionRan("DrawDebugMenu", 0.033));
+    static constexpr EventID kDrawDebugMenuEvent = 3;
+    EXPECT_TRUE(tc->ActionRan(kDrawDebugMenuEvent, 0.033));
 }
 
 // ---- Test 15: Constructor with explicit actions list registers with context ----
@@ -226,7 +228,7 @@ class ConcreteTickableWithActions : public TickableComponent {
                             TickPriority::TickPriorityDefault,
                             std::vector<std::shared_ptr<Action>>{}) {}
 
-    bool ActionRan(const std::string& eventName, const double durationSinceLastTick) override {
+    bool ActionRan(EventID eventId, const double durationSinceLastTick) override {
         return true;
     }
 };

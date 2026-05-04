@@ -1,14 +1,20 @@
 #include <gtest/gtest.h>
 #include "ship/Action.h"
 #include "ship/Tickable.h"
+#include "ship/events/EventTypes.h"
 
 using namespace Ship;
+
+// Test EventIDs used throughout this file
+static constexpr EventID kTickEvent = 1;
+static constexpr EventID kDrawEvent = 2;
+static constexpr EventID kDrawDebugMenuEvent = 3;
 
 // A concrete Action for testing.
 class TestAction : public Action {
   public:
-    TestAction(const std::string& eventName, std::shared_ptr<Tickable> tickable)
-        : Action(eventName, tickable), mRunCount(0), mLastDuration(0.0) {
+    TestAction(EventID eventId, std::shared_ptr<Tickable> tickable)
+        : Action(eventId, tickable), mRunCount(0), mLastDuration(0.0) {
     }
 
     int mRunCount;
@@ -25,8 +31,8 @@ class TestAction : public Action {
 // A derived TestAction for type filtering.
 class DerivedTestAction : public TestAction {
   public:
-    DerivedTestAction(const std::string& eventName, std::shared_ptr<Tickable> tickable)
-        : TestAction(eventName, tickable) {
+    DerivedTestAction(EventID eventId, std::shared_ptr<Tickable> tickable)
+        : TestAction(eventId, tickable) {
     }
 };
 
@@ -41,16 +47,16 @@ class TestTickable : public Tickable {
 
 TEST(ActionTest, InitialState) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
 
     EXPECT_FALSE(action->IsRunning());
-    EXPECT_EQ(action->GetEventName(), "Tick");
+    EXPECT_EQ(action->GetEventId(), kTickEvent);
     EXPECT_NE(action->GetTickable(), nullptr);
 }
 
 TEST(ActionTest, StartStop) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
 
     EXPECT_TRUE(action->Start());
     EXPECT_TRUE(action->IsRunning());
@@ -61,7 +67,7 @@ TEST(ActionTest, StartStop) {
 
 TEST(ActionTest, StartWhenAlreadyStarted) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
     action->Start();
     EXPECT_TRUE(action->Start()); // idempotent
     EXPECT_TRUE(action->IsRunning());
@@ -69,14 +75,14 @@ TEST(ActionTest, StartWhenAlreadyStarted) {
 
 TEST(ActionTest, StopWhenAlreadyStopped) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
     EXPECT_TRUE(action->Stop()); // idempotent
     EXPECT_FALSE(action->IsRunning());
 }
 
 TEST(ActionTest, RunWhenRunning) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
     action->Start();
 
     EXPECT_TRUE(action->Run(0.016));
@@ -86,27 +92,26 @@ TEST(ActionTest, RunWhenRunning) {
 
 TEST(ActionTest, RunWhenNotRunning) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
 
     EXPECT_FALSE(action->Run(0.016));
     EXPECT_EQ(action->mRunCount, 0);
 }
 
-TEST(ActionTest, GetEventName) {
+TEST(ActionTest, GetEventId) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action1 = std::make_shared<TestAction>("Tick", tickable);
-    auto action2 = std::make_shared<TestAction>("Draw", tickable);
+    auto action1 = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action2 = std::make_shared<TestAction>(kDrawEvent, tickable);
 
-    EXPECT_EQ(action1->GetEventName(), "Tick");
-    EXPECT_EQ(action2->GetEventName(), "Draw");
+    EXPECT_EQ(action1->GetEventId(), kTickEvent);
+    EXPECT_EQ(action2->GetEventId(), kDrawEvent);
 }
 
-TEST(ActionTest, DifferentEventNamesHaveDifferentTypes) {
+TEST(ActionTest, DifferentEventIdsAreDifferent) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action1 = std::make_shared<TestAction>("Tick", tickable);
-    auto action2 = std::make_shared<TestAction>("Draw", tickable);
-    // Hash-based types should differ for different event names
-    EXPECT_NE(action1->GetType(), action2->GetType());
+    auto action1 = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action2 = std::make_shared<TestAction>(kDrawEvent, tickable);
+    EXPECT_NE(action1->GetEventId(), action2->GetEventId());
 }
 
 // ---- Weak reference tests (Action -> Tickable) ----
@@ -115,7 +120,7 @@ TEST(ActionTest, TickableWeakReference) {
     std::shared_ptr<TestAction> action;
     {
         auto tickable = std::make_shared<TestTickable>();
-        action = std::make_shared<TestAction>("Tick", tickable);
+        action = std::make_shared<TestAction>(kTickEvent, tickable);
         EXPECT_NE(action->GetTickable(), nullptr);
     }
     // After tickable is destroyed, GetTickable() should return nullptr.
@@ -124,8 +129,8 @@ TEST(ActionTest, TickableWeakReference) {
 
 TEST(ActionTest, UniqueIds) {
     auto tickable = std::make_shared<TestTickable>();
-    auto a1 = std::make_shared<TestAction>("Tick", tickable);
-    auto a2 = std::make_shared<TestAction>("Tick", tickable);
+    auto a1 = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto a2 = std::make_shared<TestAction>(kTickEvent, tickable);
     EXPECT_NE(a1->GetId(), a2->GetId());
 }
 
@@ -133,35 +138,35 @@ TEST(ActionTest, UniqueIds) {
 
 #include "ship/ActionList.h"
 
-TEST(ActionListTest, AddAndGetByEventName) {
+TEST(ActionListTest, AddAndGetByEventId) {
     ActionList list;
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>("Tick", tickable);
+    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
     list.Add(action);
 
-    auto tickActions = list.Get(std::string("Tick"));
+    auto tickActions = list.Get(kTickEvent);
     EXPECT_EQ(tickActions->size(), 1u);
 
-    auto drawActions = list.Get(std::string("Draw"));
+    auto drawActions = list.Get(kDrawEvent);
     EXPECT_EQ(drawActions->size(), 0u);
 }
 
-TEST(ActionListTest, GetByMultipleEventNames) {
+TEST(ActionListTest, GetByMultipleEventIds) {
     ActionList list;
     auto tickable = std::make_shared<TestTickable>();
-    list.Add(std::make_shared<TestAction>("Tick", tickable));
-    list.Add(std::make_shared<TestAction>("Draw", tickable));
-    list.Add(std::make_shared<TestAction>("DrawDebugMenu", tickable));
+    list.Add(std::make_shared<TestAction>(kTickEvent, tickable));
+    list.Add(std::make_shared<TestAction>(kDrawEvent, tickable));
+    list.Add(std::make_shared<TestAction>(kDrawDebugMenuEvent, tickable));
 
-    auto result = list.Get(std::vector<std::string>{ "Tick", "DrawDebugMenu" });
+    auto result = list.Get(std::vector<EventID>{ kTickEvent, kDrawDebugMenuEvent });
     EXPECT_EQ(result->size(), 2u);
 }
 
-TEST(ActionListTest, HasByEventName) {
+TEST(ActionListTest, HasByEventId) {
     ActionList list;
     auto tickable = std::make_shared<TestTickable>();
-    list.Add(std::make_shared<TestAction>("Tick", tickable));
+    list.Add(std::make_shared<TestAction>(kTickEvent, tickable));
 
-    EXPECT_TRUE(list.Has(std::string("Tick")));
-    EXPECT_FALSE(list.Has(std::string("Draw")));
+    EXPECT_TRUE(list.Has(kTickEvent));
+    EXPECT_FALSE(list.Has(kDrawEvent));
 }

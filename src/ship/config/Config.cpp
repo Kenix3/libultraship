@@ -21,6 +21,10 @@ Config::~Config() {
     SPDLOG_TRACE("destruct config");
 }
 
+std::string Config::GetPath() const {
+    return mPath;
+}
+
 std::string Config::FormatNestedKey(const std::string& key) {
     std::vector<std::string> dots = StringHelper::Split(key, ".");
 

@@ -4,9 +4,8 @@
 
 namespace Ship {
 
-Action::Action(const std::string& eventName, std::shared_ptr<Tickable> tickable)
-    : Part(), mEventName(eventName), mActionType(static_cast<uint32_t>(std::hash<std::string>{}(eventName))),
-      mTickable(tickable), mIsActionRunning(false)
+Action::Action(EventID eventId, std::shared_ptr<Tickable> tickable)
+    : Part(), mEventId(eventId), mTickable(tickable), mIsActionRunning(false)
 #ifdef INCLUDE_PROFILING
       ,
       mClocks()
@@ -14,12 +13,8 @@ Action::Action(const std::string& eventName, std::shared_ptr<Tickable> tickable)
 {
 }
 
-uint32_t Action::GetType() const {
-    return mActionType;
-}
-
-const std::string& Action::GetEventName() const {
-    return mEventName;
+EventID Action::GetEventId() const {
+    return mEventId;
 }
 
 std::shared_ptr<Tickable> Action::GetTickable() const {

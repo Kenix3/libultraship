@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <atomic>
-#include <string>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -11,6 +10,7 @@
 #endif
 
 #include "ship/Part.h"
+#include "ship/events/EventTypes.h"
 
 namespace Ship {
 
@@ -28,29 +28,23 @@ class Tickable;
 /**
  * @brief Represents a discrete, repeatable operation run by a Tickable.
  *
- * Actions are owned by a Tickable and executed each frame/tick in type-sorted order.
- * Each Action is identified by a string event name (e.g. "Tick", "Draw") which is
- * registered with the Events component.  There are no built-in action types — all
- * event names are registered dynamically.
- *
- * The numeric type value is derived from the event name's hash for efficient sorting
- * and lookup.
+ * Actions are owned by a Tickable and executed each frame/tick in numeric-order.
+ * Each Action is identified by a numeric EventID (from the Events component).
+ * There are no built-in action types — all event IDs are registered dynamically
+ * with EventSystem.
  */
 class Action : public Part {
   public:
     /**
-     * @brief Constructs an Action with the given event name, associated with a Tickable.
-     * @param eventName The event name this action corresponds to (registered with Events).
+     * @brief Constructs an Action with the given event ID, associated with a Tickable.
+     * @param eventId The EventID this action corresponds to (registered with Events).
      * @param tickable The Tickable that owns and will run this Action.
      */
-    Action(const std::string& eventName, std::shared_ptr<Tickable> tickable);
+    Action(EventID eventId, std::shared_ptr<Tickable> tickable);
     virtual ~Action() = default;
 
-    /** @brief Returns the numeric type derived from the event name hash (for sorting). */
-    uint32_t GetType() const;
-
-    /** @brief Returns the event name this action corresponds to. */
-    const std::string& GetEventName() const;
+    /** @brief Returns the EventID this action corresponds to. */
+    EventID GetEventId() const;
 
     /** @brief Returns the Tickable that owns this Action, or nullptr if expired. */
     std::shared_ptr<Tickable> GetTickable() const;
@@ -122,8 +116,7 @@ class Action : public Part {
     Action& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
 #endif
 
-    std::string mEventName;
-    uint32_t mActionType;
+    EventID mEventId;
     std::weak_ptr<Tickable> mTickable;
     bool mIsActionRunning;
 

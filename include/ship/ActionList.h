@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include <string>
 #include <stdint.h>
 
 #include "ship/PartList.h"
@@ -12,10 +11,10 @@
 namespace Ship {
 
 /**
- * @brief Extends PartList<Action> with event-name-based and type-based lookup helpers.
+ * @brief Extends PartList<Action> with EventID-based lookup helpers.
  *
  * Provides overloaded Has() and Get() methods that filter Actions by their
- * event name or numeric type hash. Automatically starts Actions when added
+ * numeric EventID. Automatically starts Actions when added
  * and stops them when removed.
  */
 class ActionList : public PartList<Action> {
@@ -25,25 +24,25 @@ class ActionList : public PartList<Action> {
     using PartList<Action>::Get;
 
     /**
-     * @brief Checks whether any Action with the given event name is in the list.
-     * @param eventName The event name to search for.
+     * @brief Checks whether any Action with the given EventID is in the list.
+     * @param eventId The EventID to search for.
      * @return True if at least one matching Action is present.
      */
-    bool Has(const std::string& eventName) const;
+    bool Has(EventID eventId) const;
 
     /**
-     * @brief Returns all Actions with the given event name.
-     * @param eventName The event name to filter by.
+     * @brief Returns all Actions with the given EventID.
+     * @param eventId The EventID to filter by.
      * @return A vector of matching Actions.
      */
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::string& eventName) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(EventID eventId) const;
 
     /**
-     * @brief Returns all Actions matching any of the given event names.
-     * @param eventNames A vector of event names to filter by.
+     * @brief Returns all Actions matching any of the given EventIDs.
+     * @param eventIds A vector of EventIDs to filter by.
      * @return A vector of matching Actions.
      */
-    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<std::string>& eventNames) const;
+    std::shared_ptr<std::vector<std::shared_ptr<Action>>> Get(const std::vector<EventID>& eventIds) const;
 
   protected:
     /**
@@ -61,17 +60,17 @@ class ActionList : public PartList<Action> {
     void Removed(std::shared_ptr<Action> action, const bool forced) override;
 };
 
-inline bool ActionList::Has(const std::string& eventName) const {
+inline bool ActionList::Has(EventID eventId) const {
     const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(), [&eventName](const std::shared_ptr<Action>& action) {
-               return action->GetEventName() == eventName;
+    return std::find_if(list.begin(), list.end(), [eventId](const std::shared_ptr<Action>& action) {
+               return action->GetEventId() == eventId;
            }) != list.end();
 }
 
-inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(const std::string& eventName) const {
+inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(EventID eventId) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : this->GetList()) {
-        if (action->GetEventName() == eventName) {
+        if (action->GetEventId() == eventId) {
             result->push_back(action);
         }
     }
@@ -79,10 +78,10 @@ inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> ActionList::Get(con
 }
 
 inline std::shared_ptr<std::vector<std::shared_ptr<Action>>>
-ActionList::Get(const std::vector<std::string>& eventNames) const {
+ActionList::Get(const std::vector<EventID>& eventIds) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     for (const auto& action : this->GetList()) {
-        if (std::find(eventNames.begin(), eventNames.end(), action->GetEventName()) != eventNames.end()) {
+        if (std::find(eventIds.begin(), eventIds.end(), action->GetEventId()) != eventIds.end()) {
             result->push_back(action);
         }
     }

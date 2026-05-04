@@ -21,6 +21,12 @@
 #include <ship/resource/ResourceManager.h>
 #include "spdlog/spdlog.h"
 #include "fast/interpreter.h"
+
+static std::shared_ptr<Ship::ResourceManager> sMetalResourceManager;
+
+void gfx_metal_shader_set_resource_manager(std::shared_ptr<Ship::ResourceManager> resourceManager) {
+    sMetalResourceManager = std::move(resourceManager);
+}
 // MARK: - String Helpers
 
 #define RAND_NOISE                                                                                                  \
@@ -190,7 +196,7 @@ std::optional<std::string> metal_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
+        sMetalResourceManager->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -262,7 +268,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>()->LoadResource(path, true, init));
+        sMetalResourceManager->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");

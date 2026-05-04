@@ -3,11 +3,11 @@
 #include <stdint.h>
 #include <memory>
 #include <vector>
-#include <string>
 
 #include "ship/Tickable.h"
 #include "ship/Component.h"
 #include "ship/Action.h"
+#include "ship/events/EventTypes.h"
 
 namespace Ship {
 
@@ -42,19 +42,19 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
 class TickableComponent : public Tickable, public Component {
   public:
     /**
-     * @brief Constructs a TickableComponent with event name subscriptions.
+     * @brief Constructs a TickableComponent with EventID subscriptions.
      *
      * Call RegisterWithContext() after the object is owned by a shared_ptr.
      * @param name Human-readable name for the Component.
      * @param context The Context to register with.
      * @param tickGroup The TickGroup this component belongs to.
      * @param tickPriority Execution priority within the TickGroup.
-     * @param eventNames List of event names to create EventActions for (e.g. {"Tick", "Draw"}).
+     * @param eventIds List of EventIDs to create EventActions for.
      */
     TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                       const TickGroup tickGroup = TickGroup::TickGroupDefault,
                       const TickPriority tickPriority = TickPriority::TickPriorityDefault,
-                      const std::vector<std::string>& eventNames = {});
+                      const std::vector<EventID>& eventIds = {});
 
     /**
      * @brief Constructs a TickableComponent with an explicit list of Actions.
@@ -127,12 +127,12 @@ class TickableComponent : public Tickable, public Component {
     /**
      * @brief Virtual hook invoked when an EventAction runs on this component.
      *
-     * Subclasses override this to respond to specific event names.
-     * @param eventName The event name that executed (e.g. "Tick", "Draw").
+     * Subclasses override this to respond to specific EventIDs.
+     * @param eventId The EventID that executed.
      * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
-    virtual bool ActionRan(const std::string& eventName, const double durationSinceLastTick);
+    virtual bool ActionRan(EventID eventId, const double durationSinceLastTick);
 
     /**
      * @brief Returns a shared_ptr to this Component via the stored mWeakSelf.
@@ -147,7 +147,7 @@ class TickableComponent : public Tickable, public Component {
     TickGroup mTickGroup;
     TickPriority mTickPriority;
     std::shared_ptr<Context> mContext;
-    std::vector<std::string> mPendingEventNames;
+    std::vector<EventID> mPendingEventIds;
     std::weak_ptr<TickableComponent> mWeakSelf;
 };
 

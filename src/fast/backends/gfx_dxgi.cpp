@@ -164,11 +164,10 @@ void GfxWindowBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool ca
             ShowWindow(h_wnd, SW_MAXIMIZE);
         } else {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Config>();
-            current_width = conf->GetInt("Window.Width", 640);
-            current_height = conf->GetInt("Window.Height", 480);
-            mPosX = conf->GetInt("Window.PositionX", 100);
-            mPosY = conf->GetInt("Window.PositionY", 100);
+            current_width = mConfig->GetInt("Window.Width", 640);
+            current_height = mConfig->GetInt("Window.Height", 480);
+            mPosX = mConfig->GetInt("Window.PositionX", 100);
+            mPosY = mConfig->GetInt("Window.PositionY", 100);
             if (!GetMonitorAtCoords(monitor_list, mPosX, mPosY, current_width, current_height,
                                     Monitor)) { // Fallback to default when out of bounds.
                 mPosX = 100;
@@ -358,15 +357,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     char fileName[256];
     Fast::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    auto ctx = Ship::Context::GetInstance();
-    if (ctx && ctx->GetChildren().GetFirst<Ship::Window>() && ctx->GetChildren().GetFirst<Ship::Window>()->GetGui()) {
-        auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(ctx->GetChildren().GetFirst<Ship::Window>()->GetGui());
-        if (fast3dGui) {
-            fast3dGui->HandleWindowEvents(event_impl);
-        }
+    GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
+    if (self && self->mFast3dGui) {
+        self->mFast3dGui->HandleWindowEvents(event_impl);
     }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
-    GfxWindowBackendDXGI* self = reinterpret_cast<GfxWindowBackendDXGI*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
     switch (message) {
         case WM_CREATE: {
             LPCREATESTRUCT lpcs = reinterpret_cast<LPCREATESTRUCT>(l_param);
@@ -487,7 +482,9 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::FileDrop>()->SetDroppedFile(fileName);
+            if (self && self->mFileDrop) {
+                self->mFileDrop->SetDroppedFile(fileName);
+            }
             break;
         case WM_DISPLAYCHANGE:
             self->monitor_list = GetMonitorList();
@@ -503,9 +500,8 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_KILLFOCUS:
-            if (auto ctx = Ship::Context::GetInstance(); ctx && ctx->GetChildren().GetFirst<Ship::ConsoleVariable>()) {
-                if (!ctx->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS,
-                                                                                      1)) {
+            if (self && self->mConsoleVariable) {
+                if (!self->mConsoleVariable->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                     ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
                 }
             }
@@ -618,6 +614,14 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
     mRawInputDevice[0].dwFlags = RIDEV_INPUTSINK;
     mRawInputDevice[0].hwndTarget = h_wnd;
     RegisterRawInputDevices(mRawInputDevice, 1, sizeof(mRawInputDevice[0]));
+
+    auto ctx = Ship::Context::GetInstance();
+    mConfig = ctx->GetChildren().GetFirst<Ship::Config>();
+    mFileDrop = ctx->GetChildren().GetFirst<Ship::FileDrop>();
+    mConsoleVariable = ctx->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    if (auto window = ctx->GetChildren().GetFirst<Ship::Window>()) {
+        mFast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(window->GetGui());
+    }
 }
 
 void GfxWindowBackendDXGI::SetFullscreenChangedCallback(void (*mOnFullscreenChanged)(bool is_now_fullscreen)) {
@@ -913,10 +917,7 @@ void GfxWindowBackendDXGI::SwapBuffersBegin() {
     // mLengthInVsyncFrames (now mVsyncEnabled) was used as present interval. Present interval >1 (aka fractional
     // V-Sync) breaks VRR and introduces even more input lag than capping via normal V-Sync does. Get the present
     // interval the user wants instead (V-Sync toggle).
-    mVsyncEnabled =
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>()->GetInteger(CVAR_VSYNC_ENABLED, 1)
-            ? 1
-            : 0;
+    mVsyncEnabled = mConsoleVariable->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
 
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);

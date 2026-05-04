@@ -106,7 +106,7 @@ double Tickable::Run(const double durationSinceLastTick) {
     auto actions = mActions.Get();
     std::stable_sort(
         actions->begin(), actions->end(),
-        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetEventId() < b->GetEventId(); });
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
@@ -119,17 +119,17 @@ double Tickable::Run(const double durationSinceLastTick) {
 #endif
 }
 
-double Tickable::Run(const double durationSinceLastTick, const std::vector<std::string>& eventNames) {
+double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
     if (!mIsTicking) {
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    auto actions = mActions.Get(eventNames);
+    auto actions = mActions.Get(eventIds);
     std::stable_sort(
         actions->begin(), actions->end(),
-        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetType() < b->GetType(); });
+        [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) { return a->GetEventId() < b->GetEventId(); });
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
@@ -141,14 +141,14 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<std::
 #endif
 }
 
-double Tickable::Run(const double durationSinceLastTick, const std::string& eventName) {
+double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
     if (!mIsTicking) {
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
-    auto actions = mActions.Get(eventName);
+    auto actions = mActions.Get(eventId);
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }

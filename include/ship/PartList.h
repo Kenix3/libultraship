@@ -168,23 +168,25 @@ template <typename C = Part> class PartList : public Part {
      */
     ListReturnCode Remove(const std::vector<uint64_t>& ids, const bool force = false);
 
+  protected:
     /**
      * @brief Direct access to the underlying vector for efficient iteration.
      *
-     * The caller must hold the PartList mutex (via GetMutex()) when using this
-     * reference to ensure thread safety.
+     * Must only be called with the PartList mutex already held (via GetMutex())
+     * when COMPONENT_THREAD_SAFE is defined. Accessible from PartList subclasses
+     * only; external callers should use Get() which acquires the mutex internally.
      * @return A mutable reference to the internal vector.
      */
     std::vector<std::shared_ptr<C>>& GetList();
 
-    /** @brief Direct const access to the underlying vector. */
+    /** @brief Direct const access to the underlying vector (subclass use only). */
     const std::vector<std::shared_ptr<C>>& GetList() const;
 
     /**
-     * @brief Returns a reference to the internal mutex for external synchronization.
+     * @brief Returns a reference to the internal mutex for synchronization.
      *
-     * Use this when you need to hold the lock across multiple operations, e.g.
-     * iterating via GetList(). Only available when COMPONENT_THREAD_SAFE is defined.
+     * Use this to hold the lock across multiple operations on GetList().
+     * Only available when COMPONENT_THREAD_SAFE is defined.
      */
 #ifdef COMPONENT_THREAD_SAFE
     std::recursive_mutex& GetMutex() const;
