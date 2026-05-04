@@ -11,16 +11,13 @@ static Ship::ControlDeck* GetControlDeck() {
     return sControlDeck.get();
 }
 
-
 extern "C" {
 
 void ControllerBlockGameInput(uint16_t inputBlockId) {
-    GetControlDeck()->BlockGameInput(
-        static_cast<int32_t>(inputBlockId));
+    GetControlDeck()->BlockGameInput(static_cast<int32_t>(inputBlockId));
 }
 
 void ControllerUnblockGameInput(uint16_t inputBlockId) {
-    GetControlDeck()->UnblockGameInput(
-        static_cast<int32_t>(inputBlockId));
+    GetControlDeck()->UnblockGameInput(static_cast<int32_t>(inputBlockId));
 }
 }

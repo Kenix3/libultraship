@@ -405,8 +405,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 if (texAddr == 0) {
                     nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: clear all entries"));
                 } else {
-                    if (((uintptr_t)texAddr & 1) == 0 && mResourceManager
-                                                             ->OtrSignatureCheck(texAddr)) {
+                    if (((uintptr_t)texAddr & 1) == 0 && mResourceManager->OtrSignatureCheck(texAddr)) {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: {}", texAddr));
                     } else {
                         nodeWithText(cmd0, fmt::format("G_INVALTEXCACHE: 0x{:x}", (uintptr_t)texAddr));
@@ -527,8 +526,7 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 uint8_t* mask = (uint8_t*)cmd->words.w0;
                 uint8_t* replacementTex = (uint8_t*)cmd->words.w1;
 
-                if (mResourceManager->OtrSignatureCheck(
-                        timg)) {
+                if (mResourceManager->OtrSignatureCheck(timg)) {
                     timg += 7;
                     nodeWithText(cmd0, fmt::format("G_REGBLENDEDTEX: src {}, mask {}, blended {}", timg, (void*)mask,
                                                    (void*)replacementTex));

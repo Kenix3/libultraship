@@ -11,7 +11,6 @@ static Ship::CrashHandler* GetCrashHandler() {
     return sCrashHandler.get();
 }
 
-
 void CrashHandlerRegisterCallback(CrashHandlerCallback callback) {
     GetCrashHandler()->RegisterCallback(callback);
 }

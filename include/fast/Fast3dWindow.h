@@ -128,7 +128,7 @@ class Fast3dWindow : public Ship::Window {
     GfxRenderingAPI* mRenderingApi;
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
-std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
     std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
 

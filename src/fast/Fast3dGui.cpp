@@ -328,8 +328,7 @@ void Fast3dGui::CalculateGameViewport() {
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
     mInterpreter.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
-    if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
-                                                                        0)) {
+    if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
@@ -377,17 +376,13 @@ void Fast3dGui::DrawGame() {
     ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0) ==
-        1) { // N64 Mode takes priority
+    if (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
-    } else if (mConsoleVariables->GetInteger(
-                   CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
-        if (!mConsoleVariables->GetInteger(
-                CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
-            if (!mConsoleVariables->GetInteger(
-                    CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
+    } else if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+        if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
+            if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
                 float sWdth =
                     size.y * mInterpreter.lock()->mCurDimensions.width / mInterpreter.lock()->mCurDimensions.height;
                 float sHght =
@@ -426,14 +421,12 @@ void Fast3dGui::DrawGame() {
 void Fast3dGui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = mConsoleVariables->GetFloat(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
-    const float aspectRatioY = mConsoleVariables->GetFloat(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = mConsoleVariables->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
-    const bool verticalResolutionToggle = mConsoleVariables->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
+    const float aspectRatioX = mConsoleVariables->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
+    const float aspectRatioY = mConsoleVariables->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
+    const uint32_t verticalPixelCount =
+        mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
+    const bool verticalResolutionToggle =
+        mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -483,13 +476,10 @@ void Fast3dGui::ApplyResolutionChanges() {
 }
 
 int16_t Fast3dGui::GetIntegerScaleFactor() {
-    if (!mConsoleVariables->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
-        int16_t factor = mConsoleVariables->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
+    if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
 
-        if (mConsoleVariables->GetInteger(
-                CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
+        if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
             if (((float)mInterpreter.lock()->mGameWindowViewport.height /
                  mInterpreter.lock()->mGameWindowViewport.width) <
                 ((float)mInterpreter.lock()->mCurDimensions.height / mInterpreter.lock()->mCurDimensions.width)) {
@@ -520,8 +510,7 @@ int16_t Fast3dGui::GetIntegerScaleFactor() {
             factor = mInterpreter.lock()->mGameWindowViewport.width / mInterpreter.lock()->mCurDimensions.width;
         }
 
-        factor += mConsoleVariables->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
+        factor += mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
 
         if (factor < 1) {
             factor = 1;
@@ -559,8 +548,7 @@ void Fast3dGui::LoadTextureFromRawImage(const std::string& name, const std::stri
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
     initData->ResourceVersion = 0;
     initData->Path = path;
-    auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(
-        mResourceManager->LoadResource(path, false, initData));
+    auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(mResourceManager->LoadResource(path, false, initData));
 
     LoadTextureFromResource(name, guiTexture);
 }
@@ -712,8 +700,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
 }
 
 void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
-    const auto res =
-        static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
+    const auto res = static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
 
     LoadGuiTexture(name, *res, tint);
 }

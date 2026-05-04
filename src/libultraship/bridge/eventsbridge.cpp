@@ -11,7 +11,6 @@ static Ship::Events* GetEvents() {
     return sEvents.get();
 }
 
-
 extern "C" {
 
 EventID EventSystemRegisterEvent(const char* name) {
@@ -20,8 +19,7 @@ EventID EventSystemRegisterEvent(const char* name) {
 
 ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file,
                                        int line) {
-    return GetEvents()->RegisterListener(id, callback,
-                                                                                                  priority, file, line);
+    return GetEvents()->RegisterListener(id, callback, priority, file, line);
 }
 
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {
@@ -29,7 +27,6 @@ void EventSystemUnregisterListener(EventID ev, ListenerID id) {
 }
 
 void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key) {
-    GetEvents()->CallEvent(id, static_cast<IEvent*>(event),
-                                                                                    file, line, key);
+    GetEvents()->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
 }
 }

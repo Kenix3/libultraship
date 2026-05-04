@@ -420,7 +420,8 @@ TEST(ComponentTest, GetCountReflectsAddAndRemove) {
 // A component that tracks how many times OnInit() was called.
 class TrackingComponent : public Component {
   public:
-    explicit TrackingComponent(const std::string& name = "TrackingComponent") : Component(name) {}
+    explicit TrackingComponent(const std::string& name = "TrackingComponent") : Component(name) {
+    }
     int onInitCallCount = 0;
 
   protected:
@@ -440,7 +441,8 @@ class AutoInitComponent : public Component {
 // A component whose OnInit() throws.
 class ThrowingComponent : public Component {
   public:
-    explicit ThrowingComponent() : Component("ThrowingComponent") {}
+    explicit ThrowingComponent() : Component("ThrowingComponent") {
+    }
 
   protected:
     void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
@@ -487,9 +489,14 @@ TEST(ComponentInitTest, MarkInitializedPreventsOnInitFromBeingCalledByInit) {
     class CountingAutoInit : public Component {
       public:
         int onInitCallCount = 0;
-        CountingAutoInit() : Component("CountingAutoInit") { MarkInitialized(); }
+        CountingAutoInit() : Component("CountingAutoInit") {
+            MarkInitialized();
+        }
+
       protected:
-        void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override { onInitCallCount++; }
+        void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
+            onInitCallCount++;
+        }
     };
     auto c = std::make_shared<CountingAutoInit>();
     c->Init(); // should be a no-op since already marked
@@ -510,11 +517,14 @@ TEST(ComponentInitTest, InitCanRetryAfterOnInitThrows) {
       public:
         bool shouldThrow = true;
         int callCount = 0;
-        ConditionalThrow() : Component("ConditionalThrow") {}
+        ConditionalThrow() : Component("ConditionalThrow") {
+        }
+
       protected:
         void OnInit(const nlohmann::json& /*initArgs*/ = nlohmann::json::object()) override {
             callCount++;
-            if (shouldThrow) throw std::runtime_error("not ready");
+            if (shouldThrow)
+                throw std::runtime_error("not ready");
         }
     };
     auto c = std::make_shared<ConditionalThrow>();
@@ -551,8 +561,11 @@ class DependentComponent : public Component {
     }
 
   protected:
-    const nlohmann::json& GetDependencies() const override { return mDepsJson; }
-    void OnInit(const nlohmann::json& /*initArgs*/) override {}
+    const nlohmann::json& GetDependencies() const override {
+        return mDepsJson;
+    }
+    void OnInit(const nlohmann::json& /*initArgs*/) override {
+    }
 
   private:
     nlohmann::json mDepsJson;
@@ -560,7 +573,7 @@ class DependentComponent : public Component {
 
 TEST(ComponentDependencyTest, ThrowsWhenDependencyNotPresent) {
     auto parent = std::make_shared<TestComponent>("Parent");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"MissingDep"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "MissingDep" });
     parent->GetChildren().Add(child);
 
     EXPECT_THROW(child->Init(), std::runtime_error);
@@ -570,7 +583,7 @@ TEST(ComponentDependencyTest, ThrowsWhenDependencyNotPresent) {
 TEST(ComponentDependencyTest, ThrowsWhenDependencyNotInitialized) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto dep = std::make_shared<TestComponent>("TheDep");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"TheDep"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "TheDep" });
     parent->GetChildren().Add(dep);
     parent->GetChildren().Add(child);
 
@@ -582,7 +595,7 @@ TEST(ComponentDependencyTest, ThrowsWhenDependencyNotInitialized) {
 TEST(ComponentDependencyTest, SucceedsWhenDependencyIsInitialized) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto dep = std::make_shared<TestComponent>("TheDep");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"TheDep"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "TheDep" });
     parent->GetChildren().Add(dep);
     parent->GetChildren().Add(child);
 
@@ -593,7 +606,7 @@ TEST(ComponentDependencyTest, SucceedsWhenDependencyIsInitialized) {
 
 TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForMissingDependency) {
     auto parent = std::make_shared<TestComponent>("Parent");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"NoDep"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "NoDep" });
     parent->GetChildren().Add(child);
 
     try {
@@ -609,7 +622,7 @@ TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForMissingDependency) {
 TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForUninitializedDependency) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto dep = std::make_shared<TestComponent>("NotReady");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"NotReady"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "NotReady" });
     parent->GetChildren().Add(dep);
     parent->GetChildren().Add(child);
 
@@ -628,7 +641,7 @@ TEST(ComponentDependencyTest, MultipleDependenciesAllMustBeReady) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto dep1 = std::make_shared<TestComponent>("Dep1");
     auto dep2 = std::make_shared<TestComponent>("Dep2");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"Dep1", "Dep2"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "Dep1", "Dep2" });
     parent->GetChildren().Add(dep1);
     parent->GetChildren().Add(dep2);
     parent->GetChildren().Add(child);
@@ -648,7 +661,7 @@ TEST(ComponentDependencyTest, DependencyFoundInAncestorHierarchy) {
     // Root -> Mid -> Leaf, where Leaf depends on "Root"
     auto root = std::make_shared<TestComponent>("Root");
     auto mid = std::make_shared<TestComponent>("Mid");
-    auto leaf = std::make_shared<DependentComponent>("Leaf", std::vector<std::string>{"Root"});
+    auto leaf = std::make_shared<DependentComponent>("Leaf", std::vector<std::string>{ "Root" });
     root->GetChildren().Add(mid);
     mid->GetChildren().Add(leaf);
     root->Init(); // Mark root as initialized
@@ -660,7 +673,7 @@ TEST(ComponentDependencyTest, DependencyFoundInAncestorHierarchy) {
 TEST(ComponentDependencyTest, DependencyFoundAsSibling) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto sibling = std::make_shared<TestComponent>("Sibling");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{"Sibling"});
+    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "Sibling" });
     parent->GetChildren().Add(sibling);
     parent->GetChildren().Add(child);
     sibling->Init();
@@ -674,7 +687,9 @@ TEST(ComponentDependencyTest, DependencyFoundAsSibling) {
 class InitArgsCapture : public Component {
   public:
     nlohmann::json capturedArgs;
-    explicit InitArgsCapture(const std::string& name = "InitArgsCapture") : Component(name) {}
+    explicit InitArgsCapture(const std::string& name = "InitArgsCapture") : Component(name) {
+    }
+
   protected:
     void OnInit(const nlohmann::json& initArgs) override {
         capturedArgs = initArgs;
@@ -683,7 +698,7 @@ class InitArgsCapture : public Component {
 
 TEST(ComponentInitArgsTest, InitPassesArgsToOnInit) {
     auto c = std::make_shared<InitArgsCapture>("Capture");
-    nlohmann::json args = {{"key", "value"}, {"count", 42}};
+    nlohmann::json args = { { "key", "value" }, { "count", 42 } };
     c->Init(args);
     EXPECT_TRUE(c->IsInitialized());
     EXPECT_EQ(c->capturedArgs["key"], "value");
@@ -769,12 +784,7 @@ TEST(BuildComponentsFromJsonTest, ReturnsFalseForMissingComponentsArray) {
 // Config must be present first because ConsoleVariable::Load() looks it up via the context.
 TEST(BuildComponentsFromJsonTest, ShipNamespaceConsoleVariableIsCreated) {
     auto ctx = MakeTestContext();
-    nlohmann::json spec = {
-        {"components", {
-            {{"type", "Config"}},
-            {{"type", "ConsoleVariable"}}
-        }}
-    };
+    nlohmann::json spec = { { "components", { { { "type", "Config" } }, { { "type", "ConsoleVariable" } } } } };
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
     // The component was added and initialized; look it up by type.
     auto cv = ctx->GetFirstInChildren<Ship::ConsoleVariable>();
@@ -786,9 +796,7 @@ TEST(BuildComponentsFromJsonTest, ShipNamespaceConsoleVariableIsCreated) {
 // This specifically exercises the cross-namespace path in BuildComponentsFromJson.
 TEST(BuildComponentsFromJsonTest, FastNamespaceGfxDebuggerIsCreated) {
     auto ctx = MakeTestContext();
-    nlohmann::json spec = {
-        {"components", {{{"type", "GfxDebugger"}}}}
-    };
+    nlohmann::json spec = { { "components", { { { "type", "GfxDebugger" } } } } };
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
     // GetFirstInChildren uses the C++ type, verifying the correct concrete class.
     auto dbg = ctx->GetFirstInChildren<Fast::GfxDebugger>();
@@ -801,11 +809,7 @@ TEST(BuildComponentsFromJsonTest, FastNamespaceGfxDebuggerIsCreated) {
 TEST(BuildComponentsFromJsonTest, MixedNamespaceComponentsCoexist) {
     auto ctx = MakeTestContext();
     nlohmann::json spec = {
-        {"components", {
-            {{"type", "Config"}},
-            {{"type", "ConsoleVariable"}},
-            {{"type", "GfxDebugger"}}
-        }}
+        { "components", { { { "type", "Config" } }, { { "type", "ConsoleVariable" } }, { { "type", "GfxDebugger" } } } }
     };
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
 
@@ -816,12 +820,8 @@ TEST(BuildComponentsFromJsonTest, MixedNamespaceComponentsCoexist) {
 // An unknown type string logs a warning and returns true (the rest of the spec is processed).
 TEST(BuildComponentsFromJsonTest, UnknownTypeIsSkipped) {
     auto ctx = MakeTestContext();
-    nlohmann::json spec = {
-        {"components", {
-            {{"type", "ThisTypeDoesNotExist"}},
-            {{"type", "GfxDebugger"}}
-        }}
-    };
+    nlohmann::json spec = { { "components",
+                              { { { "type", "ThisTypeDoesNotExist" } }, { { "type", "GfxDebugger" } } } } };
     // BuildComponentsFromJson should not fail for an unknown type.
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
     // The known type must still have been added despite the unknown one preceding it.
