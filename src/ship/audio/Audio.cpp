@@ -74,6 +74,7 @@ AudioBackend Audio::GetSavedAudioBackend() {
     // Migrate pulse player in config to sdl
     if (backendName == "pulse") {
         mConfig->SetString("Window.AudioBackend", "sdl");
+        mConfig->Save();
         return AudioBackend::SDL;
     }
 

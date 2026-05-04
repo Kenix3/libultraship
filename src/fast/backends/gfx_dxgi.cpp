@@ -364,7 +364,11 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         if (fast3dGui) {
             fast3dGui->HandleWindowEvents(event_impl);
         } else {
-            SPDLOG_ERROR("gfx_dxgi: Gui is not a Fast3dGui; cannot dispatch window event");
+            static bool sWarnedOnce = false;
+            if (!sWarnedOnce) {
+                SPDLOG_ERROR("gfx_dxgi: Gui is not a Fast3dGui; cannot dispatch window event");
+                sWarnedOnce = true;
+            }
         }
     }
     std::tuple<HMONITOR, RECT, BOOL> newMonitor;
