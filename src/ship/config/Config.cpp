@@ -237,7 +237,6 @@ nlohmann::json Config::GetNestedJson() {
     return mNestedJson;
 }
 
-
 bool Config::RegisterVersionUpdater(std::shared_ptr<ConfigVersionUpdater> versionUpdater) {
     auto [_, emplaced] = mVersionUpdaters.emplace(versionUpdater->GetVersion(), versionUpdater);
     return emplaced;

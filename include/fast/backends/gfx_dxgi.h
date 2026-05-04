@@ -85,6 +85,11 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     bool mInFocus;
     bool mHasMousePosition;
 
+    // These need to be public to be accessible in the window callback
+    std::shared_ptr<Ship::FileDrop> mFileDrop;
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;
+
   private:
     void LoadDxgi();
     void ApplyMaxFrameLatency(bool first);
@@ -121,9 +126,6 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     POINT mPrevMouseCursorPos;
 
     std::shared_ptr<Ship::Config> mConfig;
-    std::shared_ptr<Ship::FileDrop> mFileDrop;
-    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
-    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;
 };
 
 } // namespace Fast
