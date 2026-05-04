@@ -18,12 +18,6 @@
 #include "ship/window/gui/StatsWindow.h"
 #include "ship/window/gui/GuiWindow.h"
 #include "ship/window/gui/GuiMenuBar.h"
-#include "fast/resource/type/Texture.h"
-#include "ship/window/gui/resource/GuiTexture.h"
-
-namespace Fast {
-class Interpreter;
-}
 
 namespace Ship {
 class Window;
@@ -65,8 +59,6 @@ typedef struct {
  * Gui is the central hub for the in-game overlay system. It:
  * - Initialises the ImGui backend for the active graphics API.
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
- * - Provides a texture cache (LoadGuiTexture / GetTextureByName) for images rendered
- *   via ImGui::Image().
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
  * Obtain the instance from Window::GetGui().
@@ -154,62 +146,6 @@ class Gui {
     /** @brief Removes all registered GuiWindows from the draw loop. */
     void RemoveAllGuiWindows();
 
-    /**
-     * @brief Loads an image from an archive path and caches it under the given name.
-     * @param name Path/texture name used to reference the texture in GetTextureByName().
-     * @param path Virtual resource path of the source image.
-     * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
-     */
-    void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
-
-    /**
-     * @brief Returns true if a texture with the given name is already cached.
-     * @param name Texture cache key.
-     */
-    bool HasTextureByName(const std::string& name);
-
-    /**
-     * @brief Uploads a Fast::Texture object to the GPU and caches it under @p name.
-     * @param name Texture cache key.
-     * @param tex  Source texture data.
-     * @param tint RGBA tint.
-     */
-    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
-
-    /**
-     * @brief Removes the texture with the given name from the cache and frees GPU resources.
-     * @param name Texture cache key to remove.
-     */
-    void UnloadTexture(const std::string& name);
-
-    /**
-     * @brief Returns the ImGui texture handle for the given cache key.
-     * @param name Texture cache key.
-     * @return ImTextureID suitable for ImGui::Image(), or nullptr if not found.
-     */
-    ImTextureID GetTextureByName(const std::string& name);
-
-    /**
-     * @brief Returns the pixel dimensions of the cached texture.
-     * @param name Texture cache key.
-     * @return ImVec2 with the texture's width and height, or (0, 0) if not found.
-     */
-    ImVec2 GetTextureSize(const std::string& name);
-
-    /**
-     * @brief Loads a raw image file from the filesystem (not the archive) and caches it.
-     * @param name Cache key.
-     * @param path Absolute filesystem path to the image file (e.g. a PNG).
-     */
-    void LoadTextureFromRawImage(const std::string& name, const std::string& path);
-
-    /**
-     * @brief Uploads a pre-loaded GuiTexture resource to the GPU and caches it.
-     * @param name    Cache key.
-     * @param texture Loaded GuiTexture resource.
-     */
-    void LoadTextureFromResource(const std::string& name, std::shared_ptr<GuiTexture> texture);
-
     /** @brief Returns the GameOverlay instance used for on-screen text and notifications. */
     std::shared_ptr<GameOverlay> GetGameOverlay();
 
@@ -271,11 +207,13 @@ class Gui {
     /** @brief Draws the menu bar and/or full-screen menu window. Override to add custom menus. */
     virtual void DrawMenu();
 
-    /** @brief Renders the game viewport inside the main docking space. */
-    void DrawGame();
+    /** @brief Renders the game viewport inside the main docking space.
+     *  The base implementation is a no-op. Override in subclasses to render the game framebuffer. */
+    virtual void DrawGame();
 
-    /** @brief Recalculates the game viewport rect to account for the menu bar and window size. */
-    void CalculateGameViewport();
+    /** @brief Recalculates the game viewport rect to account for the menu bar and window size.
+     *  The base implementation is a no-op. Override in subclasses to set up the game viewport. */
+    virtual void CalculateGameViewport();
 
     /** @brief Calls the appropriate ImGui backend New Frame function (DX11 / GL / Metal).
      *  The base implementation is a no-op. */
@@ -308,22 +246,6 @@ class Gui {
      */
     virtual void ImGuiRenderDrawData(ImDrawData* data);
 
-    /**
-     * @brief Returns the ImTextureID for a texture identified by its integer ID.
-     * @param id Internal texture registry ID.
-     * @return ImTextureID for use with ImGui::Image().
-     */
-    ImTextureID GetTextureById(int32_t id);
-
-    /** @brief Applies any pending resolution or MSAA changes to the render target. */
-    void ApplyResolutionChanges();
-
-    /**
-     * @brief Returns the integer scaling factor applied to the game viewport.
-     * @return Scaling multiplier (1 = native, 2 = 2×, etc.).
-     */
-    int16_t GetIntegerScaleFactor();
-
     /** @brief Flushes CVars to disk if SaveConsoleVariablesNextFrame() was called. */
     void CheckSaveCvars();
 
@@ -333,7 +255,6 @@ class Gui {
     ImVec2 mTemporaryWindowPos; ///< Scratchpad position used when repositioning windows.
     ImGuiIO* mImGuiIo;          ///< Pointer to the active ImGuiIO context.
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
-    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the scripting interpreter, if active.
     GuiWindowInitData mImpl;                       ///< Backend-specific window/context handles passed to Init().
 
   private:
@@ -343,7 +264,6 @@ class Gui {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
-    std::unordered_map<std::string, GuiTextureMetadata> mGuiTextures;
 };
 } // namespace Ship
 
