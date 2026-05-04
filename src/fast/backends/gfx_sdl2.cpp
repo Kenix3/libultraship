@@ -528,6 +528,29 @@ void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int3
     SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
+void GfxWindowBackendSDL2::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowWidth = width;
+    mWindowHeight = height;
+    if (mWnd) {
+        SDL_SetWindowPosition(mWnd, posX, posY);
+        SDL_SetWindowSize(mWnd, mWindowWidth, mWindowHeight);
+    }
+}
+
+Ship::WindowRect GfxWindowBackendSDL2::GetPrimaryMonitorRect() {
+    SDL_DisplayMode mode;
+    int display_in_use = mWnd ? SDL_GetWindowDisplayIndex(mWnd) : 0;
+    if (display_in_use < 0) {
+        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
+        display_in_use = 0;
+    }
+    if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+        return { 0, 0, mode.w, mode.h };
+    }
+    SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
+    return { 0, 0, 0, 0 };
+}
+
 int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
     if (scancode < 512) {
         return mSdlToLusTable[scancode];

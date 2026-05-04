@@ -65,6 +65,13 @@ class Fast3dWindow : public Ship::Window {
 
     std::string GetWindowBackendName() override;
 
+    void SetCurrentDimensions(uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) override;
+    void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                              int32_t posY) override;
+    Ship::WindowRect GetPrimaryMonitorRect() override;
+
     void InitWindowManager();
     int32_t GetTargetFps();
     void SetTargetFps(int32_t fps);

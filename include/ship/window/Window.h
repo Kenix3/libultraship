@@ -32,6 +32,14 @@ struct CoordsF {
     float y;
 };
 
+/** @brief Screen-space rectangle in integer pixels. */
+struct WindowRect {
+    int32_t Left;
+    int32_t Top;
+    int32_t Right;
+    int32_t Bottom;
+};
+
 class Config;
 
 /**
@@ -152,6 +160,43 @@ class Window {
     virtual const char* GetKeyName(int32_t scancode) = 0;
     /** @brief Returns a handle to the graphics API framebuffer object. */
     virtual uintptr_t GetGfxFrameBuffer() = 0;
+
+    /**
+     * @brief Sets the window dimensions (size and position) and applies them immediately.
+     * @param width  New client-area width in pixels.
+     * @param height New client-area height in pixels.
+     */
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height) = 0;
+    /**
+     * @brief Sets the window dimensions and position and applies them immediately.
+     * @param width  New client-area width in pixels.
+     * @param height New client-area height in pixels.
+     * @param posX   Left edge of the window in screen coordinates.
+     * @param posY   Top edge of the window in screen coordinates.
+     */
+    virtual void SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) = 0;
+    /**
+     * @brief Switches fullscreen state and sets the window dimensions.
+     * @param isFullscreen true to enter fullscreen, false for windowed.
+     * @param width        New client-area width in pixels.
+     * @param height       New client-area height in pixels.
+     */
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) = 0;
+    /**
+     * @brief Switches fullscreen state and sets the window dimensions and position.
+     * @param isFullscreen true to enter fullscreen, false for windowed.
+     * @param width        New client-area width in pixels.
+     * @param height       New client-area height in pixels.
+     * @param posX         Left edge of the window in screen coordinates.
+     * @param posY         Top edge of the window in screen coordinates.
+     */
+    virtual void SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                      int32_t posY) = 0;
+    /**
+     * @brief Returns the bounding rectangle of the primary monitor.
+     * @return WindowRect containing Left, Top, Right, Bottom of the primary display.
+     */
+    virtual WindowRect GetPrimaryMonitorRect() = 0;
 
     /** @brief Returns the current graphics backend identifier.
      *

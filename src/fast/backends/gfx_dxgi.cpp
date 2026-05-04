@@ -739,6 +739,31 @@ void GfxWindowBackendDXGI::GetDimensions(uint32_t* width, uint32_t* height, int3
     *posY = mPosY;
 }
 
+void GfxWindowBackendDXGI::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    current_width = width;
+    current_height = height;
+    mPosX = posX;
+    mPosY = posY;
+    if (h_wnd) {
+        RECT wr = { mPosX, mPosY, mPosX + static_cast<int32_t>(current_width),
+                    mPosY + static_cast<int32_t>(current_height) };
+        if (!mFullScreen) {
+            AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+            SetWindowPos(h_wnd, nullptr, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+        }
+    }
+}
+
+Ship::WindowRect GfxWindowBackendDXGI::GetPrimaryMonitorRect() {
+    auto monitors = GetMonitorList();
+    for (const auto& [hmon, rect, isPrimary] : monitors) {
+        if (isPrimary) {
+            return { rect.left, rect.top, rect.right, rect.bottom };
+        }
+    }
+    return { 0, 0, 0, 0 };
+}
+
 void GfxWindowBackendDXGI::HandleEvents() {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {

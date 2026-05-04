@@ -402,4 +402,38 @@ std::string Fast3dWindow::GetWindowBackendName() {
     }
 }
 
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
+    SetCurrentDimensions(width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) {
+    SetCurrentDimensions(isFullscreen, width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                        int32_t posY) {
+    auto config = Ship::Context::GetInstance()->GetConfig();
+    if (!isFullscreen) {
+        config->SetInt("Window.Width", static_cast<int32_t>(width));
+        config->SetInt("Window.Height", static_cast<int32_t>(height));
+        config->SetInt("Window.PositionX", posX);
+        config->SetInt("Window.PositionY", posY);
+    } else {
+        config->SetInt("Window.Fullscreen.Width", static_cast<int32_t>(width));
+        config->SetInt("Window.Fullscreen.Height", static_cast<int32_t>(height));
+    }
+    mWindowManagerApi->SetFullscreen(isFullscreen);
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+    SaveWindowToConfig();
+}
+
+Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
+    return mWindowManagerApi->GetPrimaryMonitorRect();
+}
+
 } // namespace Fast
