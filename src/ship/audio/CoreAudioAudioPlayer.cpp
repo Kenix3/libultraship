@@ -5,14 +5,14 @@
 
 namespace Ship {
 
-CoreAudioAudioPlayer::CoreAudioAudioPlayer(AudioSettings settings) : AudioPlayer(settings), mInitialized(false) {
-    pthread_mutex_init(&mMutex, NULL);
+CoreAudioAudioPlayer::CoreAudioAudioPlayer(AudioSettings settings)
+    : AudioPlayer(settings), mAudioUnit(nullptr), mNumChannels(0), mRingBuffer(nullptr), mRingBufferSize(0),
+      mRingBufferReadPos(0), mRingBufferWritePos(0), mInitialized(false) {
 }
 
 CoreAudioAudioPlayer::~CoreAudioAudioPlayer() {
     SPDLOG_TRACE("destruct CoreAudio audio player");
     DoClose();
-    pthread_mutex_destroy(&mMutex);
 }
 
 void CoreAudioAudioPlayer::DoClose() {
@@ -32,15 +32,18 @@ void CoreAudioAudioPlayer::DoClose() {
 bool CoreAudioAudioPlayer::DoInit() {
     OSStatus status;
 
-    mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::audioStereo ? 2 : 6;
+    mNumChannels = GetNumOutputChannels();
 
     const size_t bytesPerSample = sizeof(int16_t);
     const size_t bytesPerFrame = bytesPerSample * mNumChannels;
 
-    mRingBufferSize = 6000 * bytesPerFrame;
+    // Reserve one extra frame so write == read unambiguously means "empty";
+    // a buffer is full when (write + frame) % size == read. Usable capacity
+    // stays at 6000 frames, matching the prior implementation.
+    mRingBufferSize = (6000 + 1) * bytesPerFrame;
     mRingBuffer = new uint8_t[mRingBufferSize];
-    mRingBufferReadPos = 0;
-    mRingBufferWritePos = 0;
+    mRingBufferReadPos.store(0, std::memory_order_relaxed);
+    mRingBufferWritePos.store(0, std::memory_order_relaxed);
 
     AudioComponentDescription desc;
     desc.componentType = kAudioUnitType_Output;
@@ -114,50 +117,34 @@ bool CoreAudioAudioPlayer::DoInit() {
 }
 
 int CoreAudioAudioPlayer::Buffered() {
-    pthread_mutex_lock(&mMutex);
-    size_t buffered;
-
-    if (mRingBufferWritePos >= mRingBufferReadPos) {
-        buffered = mRingBufferWritePos - mRingBufferReadPos;
-    } else {
-        buffered = mRingBufferSize - (mRingBufferReadPos - mRingBufferWritePos);
-    }
-
-    const size_t bytesPerFrame = sizeof(int16_t) * mNumChannels;
-    int samples = buffered / bytesPerFrame;
-
-    pthread_mutex_unlock(&mMutex);
-    return samples;
+    size_t r = mRingBufferReadPos.load(std::memory_order_acquire);
+    size_t w = mRingBufferWritePos.load(std::memory_order_acquire);
+    size_t buffered = (w >= r) ? (w - r) : (mRingBufferSize - (r - w));
+    return buffered / (sizeof(int16_t) * mNumChannels);
 }
 
 void CoreAudioAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
-    pthread_mutex_lock(&mMutex);
-
     const size_t bytesPerFrame = sizeof(int16_t) * mNumChannels;
-    const size_t maxBuffered = 6000 * bytesPerFrame;
+    size_t r = mRingBufferReadPos.load(std::memory_order_acquire);
+    size_t w = mRingBufferWritePos.load(std::memory_order_relaxed);
+    // free space leaves one frame reserved so write can never collide with read
+    size_t freeSpace = (w >= r) ? (mRingBufferSize - (w - r) - bytesPerFrame)
+                                : (r - w - bytesPerFrame);
 
-    size_t available;
-    if (mRingBufferWritePos >= mRingBufferReadPos) {
-        available = mRingBufferSize - (mRingBufferWritePos - mRingBufferReadPos);
+    size_t toWrite = len <= freeSpace ? len : freeSpace;
+    if (toWrite == 0) {
+        return;
+    }
+
+    size_t writeEnd = w + toWrite;
+    if (writeEnd <= mRingBufferSize) {
+        memcpy(mRingBuffer + w, buf, toWrite);
     } else {
-        available = mRingBufferReadPos - mRingBufferWritePos;
+        size_t firstChunk = mRingBufferSize - w;
+        memcpy(mRingBuffer + w, buf, firstChunk);
+        memcpy(mRingBuffer, buf + firstChunk, toWrite - firstChunk);
     }
-
-    if (available >= len) {
-        size_t writeEnd = mRingBufferWritePos + len;
-
-        if (writeEnd <= mRingBufferSize) {
-            memcpy(mRingBuffer + mRingBufferWritePos, buf, len);
-        } else {
-            size_t firstChunk = mRingBufferSize - mRingBufferWritePos;
-            memcpy(mRingBuffer + mRingBufferWritePos, buf, firstChunk);
-            memcpy(mRingBuffer, buf + firstChunk, len - firstChunk);
-        }
-
-        mRingBufferWritePos = (mRingBufferWritePos + len) % mRingBufferSize;
-    }
-
-    pthread_mutex_unlock(&mMutex);
+    mRingBufferWritePos.store((w + toWrite) % mRingBufferSize, std::memory_order_release);
 }
 
 OSStatus CoreAudioAudioPlayer::CoreAudioRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags,
@@ -170,14 +157,9 @@ OSStatus CoreAudioAudioPlayer::CoreAudioRenderCallback(void* inRefCon, AudioUnit
         UInt8* outputBuffer = static_cast<UInt8*>(buffer->mData);
         UInt32 bytesToWrite = buffer->mDataByteSize;
 
-        pthread_mutex_lock(&player->mMutex);
-
-        size_t available;
-        if (player->mRingBufferWritePos >= player->mRingBufferReadPos) {
-            available = player->mRingBufferWritePos - player->mRingBufferReadPos;
-        } else {
-            available = player->mRingBufferSize - (player->mRingBufferReadPos - player->mRingBufferWritePos);
-        }
+        size_t r = player->mRingBufferReadPos.load(std::memory_order_relaxed);
+        size_t w = player->mRingBufferWritePos.load(std::memory_order_acquire);
+        size_t available = (w >= r) ? (w - r) : (player->mRingBufferSize - (r - w));
 
         UInt32 bytesToCopy = bytesToWrite;
         if (bytesToCopy > available) {
@@ -185,24 +167,21 @@ OSStatus CoreAudioAudioPlayer::CoreAudioRenderCallback(void* inRefCon, AudioUnit
         }
 
         if (bytesToCopy > 0) {
-            size_t readEnd = player->mRingBufferReadPos + bytesToCopy;
-
+            size_t readEnd = r + bytesToCopy;
             if (readEnd <= player->mRingBufferSize) {
-                memcpy(outputBuffer, player->mRingBuffer + player->mRingBufferReadPos, bytesToCopy);
+                memcpy(outputBuffer, player->mRingBuffer + r, bytesToCopy);
             } else {
-                size_t firstChunk = player->mRingBufferSize - player->mRingBufferReadPos;
-                memcpy(outputBuffer, player->mRingBuffer + player->mRingBufferReadPos, firstChunk);
+                size_t firstChunk = player->mRingBufferSize - r;
+                memcpy(outputBuffer, player->mRingBuffer + r, firstChunk);
                 memcpy(outputBuffer + firstChunk, player->mRingBuffer, bytesToCopy - firstChunk);
             }
-
-            player->mRingBufferReadPos = (player->mRingBufferReadPos + bytesToCopy) % player->mRingBufferSize;
+            player->mRingBufferReadPos.store((r + bytesToCopy) % player->mRingBufferSize,
+                                             std::memory_order_release);
         }
 
         if (bytesToCopy < bytesToWrite) {
             memset(outputBuffer + bytesToCopy, 0, bytesToWrite - bytesToCopy);
         }
-
-        pthread_mutex_unlock(&player->mMutex);
     }
 
     return noErr;
