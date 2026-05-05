@@ -16,7 +16,6 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
     Color_RGB8 savedColor = consoleVariable->GetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), { 0, 0, 0 });
-    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
 
     if (colorSource != LED_COLOR_SOURCE_OFF && colorSource != LED_COLOR_SOURCE_SET &&
         colorSource != LED_COLOR_SOURCE_GAME) {
