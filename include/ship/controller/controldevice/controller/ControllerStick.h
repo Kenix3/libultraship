@@ -7,6 +7,8 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
+class Window;
 
 /** @brief Default stick sensitivity as a percentage of full scale. */
 #define DEFAULT_STICK_SENSITIVITY_PERCENTAGE 100
@@ -222,5 +224,8 @@ class ControllerStick {
     bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
+
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

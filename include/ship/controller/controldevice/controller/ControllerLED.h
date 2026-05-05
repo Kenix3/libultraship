@@ -8,6 +8,7 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 
 namespace Ship {
+class ConsoleVariable;
 /**
  * @brief Aggregates LED output mappings and drives controller lighting hardware.
  *
@@ -91,5 +92,6 @@ class ControllerLED {
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> mLEDMappings;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship

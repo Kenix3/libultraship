@@ -17,6 +17,7 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
 
 /**
  * @brief Represents a single logical controller connected to a ControlPort.
@@ -163,5 +164,6 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
     std::shared_ptr<ControllerLED> mLED;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship

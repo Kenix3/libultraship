@@ -7,6 +7,7 @@
 
 namespace Ship {
 ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
 }
 
 ControllerGyro::~ControllerGyro() {
@@ -34,8 +35,8 @@ bool ControllerGyro::SetGyroMappingFromRawPress() {
     SaveGyroMappingIdToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
     return true;
 }
 
@@ -52,14 +53,14 @@ void ControllerGyro::SaveGyroMappingIdToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+        mConsoleVariable->ClearVariable(
             gyroMappingIdCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+        mConsoleVariable->SetString(
             gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
     }
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void ControllerGyro::ClearGyroMapping() {
@@ -76,7 +77,7 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
-    std::string id = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+    std::string id = mConsoleVariable->GetString(
         gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {
         mGyroMapping = nullptr;

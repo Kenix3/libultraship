@@ -6,6 +6,7 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
 namespace Ship {
+class ConsoleVariable;
 /**
  * @brief Manages the single gyroscope (motion sensor) mapping for a controller port.
  *
@@ -64,5 +65,6 @@ class ControllerGyro {
   private:
     uint8_t mPortIndex;
     std::shared_ptr<ControllerGyroMapping> mGyroMapping;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship

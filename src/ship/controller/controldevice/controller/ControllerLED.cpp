@@ -10,6 +10,7 @@
 
 namespace Ship {
 ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
 }
 
 ControllerLED::~ControllerLED() {
@@ -32,14 +33,14 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+        mConsoleVariable->ClearVariable(
             ledMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+        mConsoleVariable->SetString(
             ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void ControllerLED::AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping) {
@@ -104,7 +105,7 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     std::stringstream ledMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(ledMappingIdsCvarKey.c_str(),
+        mConsoleVariable->GetString(ledMappingIdsCvarKey.c_str(),
                                                                                            ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
@@ -130,8 +131,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     SaveLEDMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
     return true;
 }
 
