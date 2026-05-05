@@ -53,6 +53,11 @@ Gui::~Gui() {
 }
 
 void Gui::Init() {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
+    mConfig = Ship::Context::GetInstance()->GetChildren().GetFirst<Config>();
+    mResourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
     mImGuiIo = &ImGui::GetIO();
@@ -83,12 +88,12 @@ void Gui::Init() {
     mImGuiIo->IniFilename = mImGuiIniPath.c_str();
     mImGuiIo->LogFilename = mImGuiLogPath.c_str();
 
-    if (SupportsViewports() && Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+    if (SupportsViewports() && mConsoleVariable->GetInteger(
                                    CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
                                                                                             0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -100,7 +105,7 @@ void Gui::Init() {
     GetGuiWindow("Console")->Init();
     GetGameOverlay()->Init();
 
-    Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetResourceLoader()->RegisterResourceFactory(
+    mResourceManager->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
         static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
 
@@ -139,7 +144,7 @@ void Gui::BlockGamepadNavigation() {
 }
 
 void Gui::UnblockGamepadNavigation() {
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
                                                                                             0) &&
         GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -166,8 +171,8 @@ void Gui::ImGuiWMNewFrame() {
 }
 
 void Gui::DrawMenu() {
-    const std::shared_ptr<Window> wnd = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    const std::shared_ptr<Config> conf = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    const std::shared_ptr<Window> wnd = mWindow;
+    const std::shared_ptr<Config> conf = mConfig;
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground |
                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
@@ -206,7 +211,7 @@ void Gui::DrawMenu() {
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false) ||
         (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) &&
-         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
+         mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
                                                                                              0))) {
         if ((ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) && GetMenu()) {
             GetMenu()->ToggleVisibility();
@@ -214,8 +219,8 @@ void Gui::DrawMenu() {
                    GetMenuBar()) {
             GetMenuBar()->ToggleVisibility();
         }
-        Ship::Context::GetInstance()->GetChildren().GetFirst<Window>()->GetMouseStateManager()->UpdateMouseCapture();
-        if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        mWindow->GetMouseStateManager()->UpdateMouseCapture();
+        if (mConsoleVariable->GetInteger(
                 CVAR_IMGUI_CONTROLLER_NAV, 0) &&
             GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -228,7 +233,7 @@ void Gui::DrawMenu() {
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
         std::reinterpret_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"))
+            mWindow->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 
@@ -255,7 +260,7 @@ void Gui::HandleMouseCapture() {
     for (auto windowIter : ImGui::GetCurrentContext()->WindowsById.Data) {
         if (windowIter.key != GetMainGameWindowID() && windowIter.key != GetGameOverlay()->GetID()) {
             ImGuiWindow* window = (ImGuiWindow*)windowIter.val_p;
-            if (Context::GetInstance()->GetChildren().GetFirst<Window>()->IsMouseCaptured()) {
+            if (mWindow->IsMouseCaptured()) {
                 window->Flags |= flags;
             } else {
                 window->Flags &= ~(flags);
@@ -289,7 +294,7 @@ void Gui::DrawFloatingWindows() {
 
 void Gui::CheckSaveCvars() {
     if (mNeedsConsoleVariableSave) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+        mConsoleVariable->Save();
         mNeedsConsoleVariableSave = false;
     }
 }

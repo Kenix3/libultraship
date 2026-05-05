@@ -20,6 +20,9 @@
 
 namespace Ship {
 class Window;
+class ConsoleVariable;
+class Config;
+class ResourceManager;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -232,6 +235,10 @@ class Gui : public Component {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<Config> mConfig;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship
 
