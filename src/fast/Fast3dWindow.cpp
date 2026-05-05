@@ -22,6 +22,8 @@ namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
+static Fast3dWindow* sInstance = nullptr;
+
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager)
     : Ship::Window(gui, mouseStateManager) {
     mWindowManagerApi = nullptr;
@@ -61,6 +63,7 @@ Fast3dWindow::~Fast3dWindow() {
 void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
     Window::OnInit(initArgs);
 
+    sInstance = this;
     mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     mControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
 
@@ -349,77 +352,65 @@ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
 }
 
 bool Fast3dWindow::KeyUp(int32_t scancode) {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return false;
     }
 
-    if (scancode == wnd->GetFullscreenScancode()) {
-        wnd->ToggleFullscreen();
+    if (scancode == sInstance->GetFullscreenScancode()) {
+        sInstance->ToggleFullscreen();
     }
 
-    if (scancode == wnd->GetMouseCaptureScancode()) {
-        wnd->GetMouseStateManager()->ToggleMouseCaptureOverride();
+    if (scancode == sInstance->GetMouseCaptureScancode()) {
+        sInstance->GetMouseStateManager()->ToggleMouseCaptureOverride();
     }
 
-    wnd->SetLastScancode(-1);
-    return wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_UP,
-                                                       static_cast<Ship::KbScancode>(scancode));
+    sInstance->SetLastScancode(-1);
+    return sInstance->mControlDeck->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_UP,
+                                                         static_cast<Ship::KbScancode>(scancode));
 }
 
 bool Fast3dWindow::KeyDown(int32_t scancode) {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return false;
     }
 
-    bool isProcessed = wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_DOWN,
-                                                                   static_cast<Ship::KbScancode>(scancode));
-    wnd->SetLastScancode(scancode);
+    bool isProcessed = sInstance->mControlDeck->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_DOWN,
+                                                                     static_cast<Ship::KbScancode>(scancode));
+    sInstance->SetLastScancode(scancode);
     return isProcessed;
 }
 
 void Fast3dWindow::AllKeysUp() {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return;
     }
 
-    wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
-                                                Ship::KbScancode::LUS_KB_UNKNOWN);
+    sInstance->mControlDeck->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
+                                                  Ship::KbScancode::LUS_KB_UNKNOWN);
 }
 
 bool Fast3dWindow::MouseButtonUp(int button) {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return false;
     }
 
-    return wnd->GetControlDeck()->ProcessMouseButtonEvent(false, static_cast<Ship::MouseBtn>(button));
+    return sInstance->mControlDeck->ProcessMouseButtonEvent(false, static_cast<Ship::MouseBtn>(button));
 }
 
 bool Fast3dWindow::MouseButtonDown(int button) {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return false;
     }
 
-    return wnd->GetControlDeck()->ProcessMouseButtonEvent(true, static_cast<Ship::MouseBtn>(button));
+    return sInstance->mControlDeck->ProcessMouseButtonEvent(true, static_cast<Ship::MouseBtn>(button));
 }
 
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
-    auto wnd =
-        std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
-    if (!wnd) {
+    if (!sInstance) {
         return;
     }
 
-    wnd->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
+    sInstance->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
 }
 
 std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {
