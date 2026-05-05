@@ -131,20 +131,21 @@ void CoreAudioAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     size_t freeSpace = (w >= r) ? (mRingBufferSize - (w - r) - bytesPerFrame)
                                 : (r - w - bytesPerFrame);
 
-    size_t toWrite = len <= freeSpace ? len : freeSpace;
-    if (toWrite == 0) {
+    // Preserve producer chunk boundaries. Splitting an audio-engine buffer here
+    // drops the tail of already-generated PCM and creates a discontinuity.
+    if (len > freeSpace) {
         return;
     }
 
-    size_t writeEnd = w + toWrite;
+    size_t writeEnd = w + len;
     if (writeEnd <= mRingBufferSize) {
-        memcpy(mRingBuffer + w, buf, toWrite);
+        memcpy(mRingBuffer + w, buf, len);
     } else {
         size_t firstChunk = mRingBufferSize - w;
         memcpy(mRingBuffer + w, buf, firstChunk);
-        memcpy(mRingBuffer, buf + firstChunk, toWrite - firstChunk);
+        memcpy(mRingBuffer, buf + firstChunk, len - firstChunk);
     }
-    mRingBufferWritePos.store((w + toWrite) % mRingBufferSize, std::memory_order_release);
+    mRingBufferWritePos.store((w + len) % mRingBufferSize, std::memory_order_release);
 }
 
 OSStatus CoreAudioAudioPlayer::CoreAudioRenderCallback(void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags,
