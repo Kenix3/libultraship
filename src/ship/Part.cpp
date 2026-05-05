@@ -13,4 +13,10 @@ uint64_t Part::GetId() const {
 bool Part::operator==(const Part& other) const {
     return GetId() == other.GetId();
 }
+
+void Part::OnAdded(bool /*forced*/) {
+}
+
+void Part::OnRemoved(bool /*forced*/) {
+}
 } // namespace Ship

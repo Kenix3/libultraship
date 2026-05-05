@@ -30,6 +30,29 @@ class Part {
      */
     bool operator==(const Part& other) const;
 
+  protected:
+    /**
+     * @brief Called after this Part has been added to a PartList.
+     *
+     * Override in subclasses to react to being added (e.g. caching siblings).
+     * The default implementation is a no-op.
+     *
+     * @param forced Whether the addition bypassed permission checks.
+     */
+    virtual void OnAdded(bool forced);
+
+    /**
+     * @brief Called after this Part has been removed from a PartList.
+     *
+     * Override in subclasses to react to being removed (e.g. clearing caches).
+     * The default implementation is a no-op.
+     *
+     * @param forced Whether the removal bypassed permission checks.
+     */
+    virtual void OnRemoved(bool forced);
+
+    template <typename> friend class PartList;
+
   private:
     static std::atomic<uint64_t> sNextPartId;
     uint64_t mId;

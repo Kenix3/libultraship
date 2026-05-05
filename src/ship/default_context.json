@@ -23,8 +23,7 @@
         },
         {
             "type": "ResourceManager",
-            "name": "ResourceManager",
-            "dependencies": ["ThreadPool"]
+            "name": "ResourceManager"
         },
         {
             "type": "ControlDeck",
@@ -40,13 +39,11 @@
         },
         {
             "type": "Window",
-            "name": "Window",
-            "dependencies": ["Config"]
+            "name": "Window"
         },
         {
             "type": "Audio",
-            "name": "Audio",
-            "dependencies": ["Config"]
+            "name": "Audio"
         },
         {
             "type": "GfxDebugger",
@@ -58,8 +55,7 @@
         },
         {
             "type": "FileDrop",
-            "name": "FileDrop",
-            "dependencies": ["Window"]
+            "name": "FileDrop"
         },
         {
             "type": "ScriptLoader",

@@ -360,6 +360,7 @@ template <typename C> ListReturnCode PartList<C>::Add(std::shared_ptr<C> part, c
     const bool forced = !canAdd && force;
     mList.push_back(part);
     Added(part, forced);
+    part->OnAdded(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
@@ -402,6 +403,7 @@ template <typename C> ListReturnCode PartList<C>::Remove(std::shared_ptr<C> part
     const bool forced = !canRemove && force;
     mList.erase(it);
     Removed(part, forced);
+    part->OnRemoved(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
@@ -422,6 +424,7 @@ template <typename C> ListReturnCode PartList<C>::Remove(const uint64_t id, cons
     const bool forced = !canRemove && force;
     mList.erase(it);
     Removed(part, forced);
+    part->OnRemoved(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 

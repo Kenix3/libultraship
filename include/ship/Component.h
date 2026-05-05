@@ -149,6 +149,29 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      */
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> GetInChildren() const;
 
+    // ---- Breadth-first ancestor search ----
+
+    /**
+     * @brief Checks whether any ancestor Component matches type T via BFS.
+     * @tparam T The derived type to search for via dynamic_cast.
+     * @return True if at least one matching ancestor is found.
+     */
+    template <typename T> bool HasInParents() const;
+
+    /**
+     * @brief Returns the first ancestor that matches type T via BFS.
+     * @tparam T The derived type to search for via dynamic_cast.
+     * @return The first matching ancestor, or nullptr if none found.
+     */
+    template <typename T> std::shared_ptr<T> GetFirstInParents() const;
+
+    /**
+     * @brief Returns all ancestors that match type T via BFS.
+     * @tparam T The derived type to filter by via dynamic_cast.
+     * @return A vector of all matching ancestors.
+     */
+    template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> GetInParents() const;
+
   protected:
     /**
      * @brief Override this to implement component-specific initialization logic.
@@ -281,6 +304,106 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
                     result->push_back(typed);
                 }
                 queue.push(child.get());
+            }
+        }
+    }
+    return result;
+}
+
+// ---- Template BFS implementations (parents) ----
+
+template <typename T> bool Component::HasInParents() const {
+    std::queue<const Component*> queue;
+    std::unordered_set<uint64_t> visited;
+    visited.insert(GetId());
+
+    auto directParents = GetParents().Get();
+    for (const auto& parent : *directParents) {
+        if (visited.insert(parent->GetId()).second) {
+            if (std::dynamic_pointer_cast<T>(parent)) {
+                return true;
+            }
+            queue.push(parent.get());
+        }
+    }
+
+    while (!queue.empty()) {
+        const Component* current = queue.front();
+        queue.pop();
+        auto grandParents = current->GetParents().Get();
+        for (const auto& parent : *grandParents) {
+            if (visited.insert(parent->GetId()).second) {
+                if (std::dynamic_pointer_cast<T>(parent)) {
+                    return true;
+                }
+                queue.push(parent.get());
+            }
+        }
+    }
+    return false;
+}
+
+template <typename T> std::shared_ptr<T> Component::GetFirstInParents() const {
+    std::queue<const Component*> queue;
+    std::unordered_set<uint64_t> visited;
+    visited.insert(GetId());
+
+    auto directParents = GetParents().Get();
+    for (const auto& parent : *directParents) {
+        if (visited.insert(parent->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(parent);
+            if (typed) {
+                return typed;
+            }
+            queue.push(parent.get());
+        }
+    }
+
+    while (!queue.empty()) {
+        const Component* current = queue.front();
+        queue.pop();
+        auto grandParents = current->GetParents().Get();
+        for (const auto& parent : *grandParents) {
+            if (visited.insert(parent->GetId()).second) {
+                auto typed = std::dynamic_pointer_cast<T>(parent);
+                if (typed) {
+                    return typed;
+                }
+                queue.push(parent.get());
+            }
+        }
+    }
+    return nullptr;
+}
+
+template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component::GetInParents() const {
+    auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
+    std::queue<const Component*> queue;
+    std::unordered_set<uint64_t> visited;
+    visited.insert(GetId());
+
+    auto directParents = GetParents().Get();
+    for (const auto& parent : *directParents) {
+        if (visited.insert(parent->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(parent);
+            if (typed) {
+                result->push_back(typed);
+            }
+            queue.push(parent.get());
+        }
+    }
+
+    while (!queue.empty()) {
+        const Component* current = queue.front();
+        queue.pop();
+        auto grandParents = current->GetParents().Get();
+        for (const auto& parent : *grandParents) {
+            if (visited.insert(parent->GetId()).second) {
+                auto typed = std::dynamic_pointer_cast<T>(parent);
+                if (typed) {
+                    result->push_back(typed);
+                }
+                queue.push(parent.get());
             }
         }
     }
