@@ -64,14 +64,14 @@ class Config : public Component {
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).
      * @param path Filesystem path to the JSON configuration file.
      */
-    Config(std::string path);
+    Config(const std::string& path);
     ~Config();
 
     /**
      * @brief Returns the filesystem path to the JSON configuration file.
      * @return The path that was passed to the constructor (resolved by the caller).
      */
-    std::string GetPath() const;
+    const std::string& GetPath() const;
 
     /**
      * @brief Returns the string value for @p key, or @p defaultValue if absent.

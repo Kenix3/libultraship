@@ -31,7 +31,7 @@ class TickableComponentTest : public ::testing::Test {
     std::shared_ptr<Context> mContext;
 
     void SetUp() override {
-        mContext = Context::CreateInstance("test", "t", "");
+        mContext = Context::CreateInstance("test", "t");
     }
 
     void TearDown() override {
@@ -67,7 +67,7 @@ TEST_F(TickableComponentTest, UnregisterFromContextRemovesFromTickableList) {
 TEST_F(TickableComponentTest, SetContextMovesFromOldToNew) {
     // Construct a second Context directly; CreateInstance would return the existing
     // singleton while mContext is still alive.
-    auto ctx2 = std::make_shared<Context>("test2", "t2", "");
+    auto ctx2 = std::make_shared<Context>("test2", "t2");
 
     auto tc = std::make_shared<ConcreteTickable>(mContext);
     tc->RegisterWithContext(tc);

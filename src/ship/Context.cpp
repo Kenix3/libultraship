@@ -86,7 +86,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         return GetInstance();
     }
 
-    auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+    auto shared = std::make_shared<Context>(name, shortName);
     mContext = shared;
 
     // ---- Logging ----
@@ -427,22 +427,20 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
     return true;
 }
 
-std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
-                                                 const std::string& configFilePath) {
+std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName) {
     if (!mContext.expired()) {
         SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
         return GetInstance();
     }
 
-    auto shared = std::make_shared<Context>(name, shortName, configFilePath);
+    auto shared = std::make_shared<Context>(name, shortName);
     mContext = shared;
     return shared;
 }
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName,
-                                                 const std::string& configFilePath,
                                                  std::vector<std::shared_ptr<Component>> components) {
-    auto ctx = CreateInstance(name, shortName, configFilePath);
+    auto ctx = CreateInstance(name, shortName);
     for (auto& component : components) {
         ctx->GetChildren().Add(component);
         component->Init();
@@ -450,16 +448,15 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
     return ctx;
 }
 
-Context::Context(std::string name, std::string shortName, std::string configFilePath)
-    : Component(name), mConfigFilePath(std::move(configFilePath)), mName(std::move(name)),
-      mShortName(std::move(shortName)) {
+Context::Context(std::string name, std::string shortName)
+    : Component(name), mName(std::move(name)), mShortName(std::move(shortName)) {
 }
 
-std::string Context::GetName() const {
+const std::string& Context::GetName() const {
     return mName;
 }
 
-std::string Context::GetShortName() const {
+const std::string& Context::GetShortName() const {
     return mShortName;
 }
 

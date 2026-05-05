@@ -126,8 +126,7 @@ class Context : public Component {
      *
      * Consumers should add their own components via GetChildren().Add() after creation.
      */
-    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
-                                                   const std::string& configFilePath);
+    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName);
 
     /**
      * @brief Creates and stores the global Context instance with the given set of components.
@@ -143,7 +142,6 @@ class Context : public Component {
      * @return The newly created Context.
      */
     static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
-                                                   const std::string& configFilePath,
                                                    std::vector<std::shared_ptr<Component>> components);
 
     /**
@@ -182,15 +180,14 @@ class Context : public Component {
      * @brief Constructs a Context with the given identifiers but does not initialize subsystems.
      * @param name           Human-readable application name.
      * @param shortName      Short application identifier.
-     * @param configFilePath Path to the JSON configuration file.
      */
-    Context(std::string name, std::string shortName, std::string configFilePath);
+    Context(std::string name, std::string shortName);
     ~Context();
 
     /** @brief Returns the human-readable application name. */
-    std::string GetName() const;
+    const std::string& GetName() const;
     /** @brief Returns the short application identifier. */
-    std::string GetShortName() const;
+    const std::string& GetShortName() const;
 
     // ---- TickableComponent list ----
     TickableList& GetTickableComponents();
@@ -203,7 +200,6 @@ class Context : public Component {
     static std::weak_ptr<Context> mContext;
 
     bool mOwnsLogger = false;
-    std::string mConfigFilePath;
     std::string mName;
     std::string mShortName;
 

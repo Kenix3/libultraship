@@ -422,6 +422,52 @@ void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
     wnd->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
 }
 
+std::shared_ptr<GfxDebugger> Fast3dWindow::GetGfxDebugger() const {
+    return mGfxDebugger;
+}
+
+std::string Fast3dWindow::GetWindowBackendName() {
+    switch (GetWindowBackend()) {
+#ifdef ENABLE_DX11
+        case WindowBackend::FAST3D_DXGI_DX11:
+            return "DirectX 11";
+#endif
+#ifdef ENABLE_OPENGL
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            return "OpenGL";
+#endif
+#ifdef __APPLE__
+        case WindowBackend::FAST3D_SDL_METAL:
+            return "Metal";
+#endif
+        default:
+            return "";
+    }
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
+    mWindowManagerApi->SetDimensions(width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) {
+    SetFullscreen(isFullscreen);
+    mWindowManagerApi->SetDimensions(width, height, GetPosX(), GetPosY());
+}
+
+void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
+                                        int32_t posY) {
+    SetFullscreen(isFullscreen);
+    mWindowManagerApi->SetDimensions(width, height, posX, posY);
+}
+
+Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
+    return mWindowManagerApi->GetPrimaryMonitorRect();
+}
+
 std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {
     return mInterpreter;
 }

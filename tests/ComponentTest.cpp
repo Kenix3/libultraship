@@ -755,7 +755,7 @@ TEST(ComponentSearchTest, GetInChildrenFindsAll) {
 // The context singleton is a weak_ptr; when the returned shared_ptr goes out of scope at
 // the end of the test, the weak_ptr expires and the next test can create a fresh one.
 static std::shared_ptr<Ship::Context> MakeTestContext() {
-    return Ship::Context::CreateInstance("TestApp", "test", "");
+    return Ship::Context::CreateInstance("TestApp", "test");
 }
 
 // BuildComponentsFromJson should return false when the JSON has no "components" array.
