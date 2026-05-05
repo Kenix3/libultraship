@@ -24,9 +24,10 @@ class TickableList : public PartList<TickableComponent> {
 };
 
 inline TickableList& TickableList::Sort() {
-    this->Sort([](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {
-        return a->GetOrder() < b->GetOrder();
-    });
+    PartList<TickableComponent>::Sort(
+        [](const std::shared_ptr<TickableComponent>& a, const std::shared_ptr<TickableComponent>& b) {
+            return a->GetOrder() < b->GetOrder();
+        });
     return *this;
 }
 
