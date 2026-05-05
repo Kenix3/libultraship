@@ -10,6 +10,9 @@
 
 namespace Ship {
 
+class ConsoleVariable;
+class Window;
+
 /** @brief Identifies the type of an overlay item rendered by GameOverlay. */
 enum class OverlayType {
     TEXT,         ///< A fixed-position text label.
@@ -130,6 +133,10 @@ class GameOverlay {
     std::unordered_map<std::string, Overlay> mRegisteredOverlays;
     std::string mCurrentFont = "Default";
     bool mNeedsCleanup = false;
+
+    std::shared_ptr<ResourceManager> mResourceManager;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<Window> mWindow;
 
     /** @brief Removes expired notification overlays from mRegisteredOverlays. */
     void CleanupNotifications();

@@ -17,6 +17,7 @@ namespace Ship {
 
 struct File;
 struct ResourceInitData;
+class ResourceManager;
 
 /**
  * @brief Metadata block embedded in an archive's manifest file.
@@ -187,6 +188,8 @@ class Archive : public std::enable_shared_from_this<Archive> {
     void IndexFile(const std::string& filePath);
     /** @brief Validates the manifest checksum and signature, setting mIsSigned / mIsChecksumValid. */
     void Validate();
+
+    std::shared_ptr<ResourceManager> mResourceManager;
 
   private:
     bool mIsLoaded;

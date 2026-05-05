@@ -2,7 +2,6 @@
 
 #include "ship/resource/archive/OtrArchive.h"
 
-#include "ship/Context.h"
 #include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/ArchiveManager.h"
@@ -63,7 +62,7 @@ std::shared_ptr<File> OtrArchive::LoadFile(const std::string& filePath) {
 
 std::shared_ptr<File> OtrArchive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

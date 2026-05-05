@@ -4,7 +4,6 @@
 
 #include "ship/resource/archive/FolderArchive.h"
 
-#include "ship/Context.h"
 #include "spdlog/spdlog.h"
 #include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
@@ -45,7 +44,7 @@ std::shared_ptr<File> Ship::FolderArchive::LoadFile(const std::string& filePath)
 
 std::shared_ptr<File> Ship::FolderArchive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *mResourceManager->GetArchiveManager()->HashToString(hash);
 
     return LoadFileRaw(filePath);
 }
@@ -68,7 +67,7 @@ std::shared_ptr<File> FolderArchive::LoadFileRaw(const std::string& filePath) {
 
 std::shared_ptr<File> FolderArchive::LoadFileRaw(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *mResourceManager->GetArchiveManager()->HashToString(hash);
 
     return LoadFileRaw(filePath);
 }

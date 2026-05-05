@@ -80,7 +80,7 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
 
 void EventDebuggerWindow::DrawElement() {
     bool collapseLogic = false;
-    auto events = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Events>()->GetEventRegistrations();
+    auto events = mEvents->GetEventRegistrations();
     bool doingCollapseOrExpand = hookOptExpandAll || hookOptCollapseAll;
 
     if (ImGui::Button("Expand All")) {
@@ -119,6 +119,7 @@ void EventDebuggerWindow::DrawElement() {
 }
 
 void EventDebuggerWindow::InitElement() {
+    mEvents = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Events>();
     hookOptExpandAll = false;
     hookOptCollapseAll = false;
 }

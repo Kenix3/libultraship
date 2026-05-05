@@ -1,8 +1,7 @@
 #include "ship/resource/archive/O2rArchive.h"
 
-#include "ship/Context.h"
-#include "ship/window/Window.h"
 #include "spdlog/spdlog.h"
+#include "ship/resource/ResourceManager.h"
 #include <unordered_map>
 
 namespace Ship {
@@ -36,7 +35,7 @@ void O2rArchive::ReleaseZipHandle(zip_t* handle) {
 
 std::shared_ptr<File> O2rArchive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

@@ -26,7 +26,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
     initData->ResourceVersion = 0;
     initData->Path = identifier.Path;
     std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadResource(identifier, false, initData));
+        mResourceManager->LoadResource(identifier, false, initData));
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -45,7 +45,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
     initData->ResourceVersion = 0;
     initData->Path = path;
     std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->LoadResource(path, false, initData));
+        mResourceManager->LoadResource(path, false, initData));
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -157,7 +157,11 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 }
 
 void GameOverlay::Init() {
-    Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetResourceLoader()->RegisterResourceFactory(
+    mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
+
+    mResourceManager->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
         static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
 }
@@ -169,9 +173,8 @@ void GameOverlay::SetCurrentFont(const std::string& name) {
     }
 
     mCurrentFont = name;
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(CVAR_GAME_OVERLAY_FONT,
-                                                                                       name.c_str());
-    Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->SaveConsoleVariablesNextFrame();
+    mConsoleVariables->SetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
+    mWindow->GetGui()->SaveConsoleVariablesNextFrame();
 }
 
 void GameOverlay::DrawSettings() {
@@ -205,7 +208,7 @@ void GameOverlay::Draw() {
 
         if (overlay.Type == OverlayType::TEXT) {
             const char* text = overlay.Value.c_str();
-            const auto var = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Get(text);
+            const auto var = mConsoleVariables->Get(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             switch (var->Type) {

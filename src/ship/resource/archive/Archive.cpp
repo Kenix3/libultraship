@@ -38,6 +38,8 @@ bool Archive::operator==(const Archive& rhs) const {
 void Archive::Load() {
     bool opened = Open();
 
+    mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+
     auto t = LoadFile("version");
     bool isGameVersionValid = false;
     if (t != nullptr && t->IsLoaded) {
@@ -47,9 +49,7 @@ void Archive::Load() {
         Endianness endianness = (Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
-        isGameVersionValid =
-            Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->IsGameVersionValid(
-                GetGameVersion());
+        isGameVersionValid = mResourceManager->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
 
         if (!isGameVersionValid) {
             SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(), GetGameVersion());
@@ -79,10 +79,7 @@ void Archive::Load() {
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
                 SetGameVersion(mManifest.GameVersion);
-                isGameVersionValid = Context::GetInstance()
-                                         ->GetChildren()
-                                         .GetFirst<ResourceManager>()
-                                         ->GetArchiveManager()
+                isGameVersionValid = mResourceManager->GetArchiveManager()
                                          ->IsGameVersionValid(GetGameVersion());
 
                 if (!isGameVersionValid) {
@@ -111,7 +108,7 @@ void Archive::Unload() {
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()->HashToString(hash);
+        *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 
@@ -191,7 +188,7 @@ void Archive::Validate() {
     }
 
     auto keystore = Context::GetInstance()->GetChildren().GetFirst<Keystore>();
-    auto manager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager();
+    auto manager = mResourceManager->GetArchiveManager();
     std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
 
     if (!keystore->HasKey(manifestKey)) {

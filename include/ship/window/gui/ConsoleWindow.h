@@ -12,6 +12,8 @@
 
 namespace Ship {
 
+class ConsoleVariable;
+
 /**
  * @brief An ImGui window that provides an in-game developer console.
  *
@@ -166,5 +168,8 @@ class ConsoleWindow : public GuiWindow {
         ImVec4(0.0f, 0.0f, 0.0f, 0.0f)      // OFF
     };
     static constexpr size_t gMaxBufferSize = 255;
+
+    std::shared_ptr<Console> mConsole;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
 };
 } // namespace Ship

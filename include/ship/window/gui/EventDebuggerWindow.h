@@ -5,6 +5,8 @@
 
 namespace Ship {
 
+class Events;
+
 /**
  * @brief An ImGui window for inspecting and debugging engine events at runtime.
  *
@@ -24,6 +26,9 @@ class EventDebuggerWindow final : public GuiWindow {
 
     /** @brief No-op update; event data is read directly during draw. */
     void UpdateElement() override{};
+
+  private:
+    std::shared_ptr<Events> mEvents;
 };
 
 } // namespace Ship

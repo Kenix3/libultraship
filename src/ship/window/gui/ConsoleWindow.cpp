@@ -202,12 +202,12 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
 
     int vType = CheckVarType(args[2]);
 
+    auto consoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+
     if (vType == VARTYPE_STRING) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(args[1].c_str(),
-                                                                                           args[2].c_str());
+        consoleVariables->SetString(args[1].c_str(), args[2].c_str());
     } else if (vType == VARTYPE_FLOAT) {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat((char*)args[1].c_str(),
-                                                                                          std::stof(args[2]));
+        consoleVariables->SetFloat((char*)args[1].c_str(), std::stof(args[2]));
     } else if (vType == VARTYPE_RGBA) {
         uint32_t val = std::stoul(&args[2].c_str()[1], nullptr, 16);
         Color_RGBA8 clr;
@@ -215,13 +215,12 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
         clr.g = val >> 16;
         clr.b = val >> 8;
         clr.a = val & 0xFF;
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetColor((char*)args[1].c_str(), clr);
+        consoleVariables->SetColor((char*)args[1].c_str(), clr);
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(args[1].c_str(),
-                                                                                            std::stoi(args[2]));
+        consoleVariables->SetInteger(args[1].c_str(), std::stoi(args[2]));
     }
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    consoleVariables->Save();
 
     return 0;
 }
@@ -304,22 +303,25 @@ void ConsoleWindow::InitElement() {
     mFilterBuffer = new char[gMaxBufferSize];
     strcpy(mFilterBuffer, "");
 
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole = Context::GetInstance()->GetChildren().GetFirst<Console>();
+    mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+
+    mConsole->AddCommand(
         "set", { SetCommand,
                  "Sets a console variable.",
                  { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole->AddCommand(
         "get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand("help",
-                                                                          { HelpCommand, "Shows all the commands" });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole->AddCommand("help",
+                         { HelpCommand, "Shows all the commands" });
+    mConsole->AddCommand(
         "clear", { ClearCommand, "Clear the console history" });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole->AddCommand(
         "unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole->AddCommand(
         "bind",
         { BindCommand, "Binds key to commands", { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetChildren().GetFirst<Console>()->AddCommand(
+    mConsole->AddCommand(
         "bind-toggle", { BindToggleCommand,
                          "Bind key as a bool toggle",
                          { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
@@ -334,9 +336,7 @@ void ConsoleWindow::UpdateElement() {
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
             Dispatch("set " + var + " " +
-                     std::to_string(!static_cast<bool>(
-                         Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
-                             var.c_str(), 0))));
+                     std::to_string(!static_cast<bool>(mConsoleVariables->GetInteger(var.c_str(), 0))));
         }
     }
 }
@@ -348,7 +348,7 @@ void ConsoleWindow::DrawElement() {
 
     // Renders autocomplete window
     if (mOpenAutocomplete) {
-        auto console = Context::GetInstance()->GetChildren().GetFirst<Console>();
+        auto console = mConsole;
 
         ImGui::SetNextWindowSize(ImVec2(350, std::min(static_cast<int>(mAutoComplete.size()), 3) * 20.f),
                                  ImGuiCond_Once);
@@ -398,7 +398,7 @@ void ConsoleWindow::DrawElement() {
         ClearLogs(mCurrentChannel);
     }
 
-    if (Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger("gSinkEnabled", 0)) {
+    if (mConsoleVariables->GetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", mCurrentChannel.c_str())) {
@@ -551,7 +551,7 @@ void ConsoleWindow::Dispatch(const std::string& line) {
     mHistoryIndex = -1;
     mHistory.push_back(line);
     SendInfoMessage("> " + line);
-    auto console = Context::GetInstance()->GetChildren().GetFirst<Console>();
+    auto console = mConsole;
     const std::vector<std::string> cmdArgs = StringHelper::Split(line, " ");
     if (console->HasCommand(cmdArgs[0])) {
         const CommandEntry entry = console->GetCommand(cmdArgs[0]);
@@ -582,7 +582,7 @@ void ConsoleWindow::Dispatch(const std::string& line) {
 int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
     const auto instance = static_cast<ConsoleWindow*>(data->UserData);
     const bool emptyHistory = instance->mHistory.empty();
-    auto console = Context::GetInstance()->GetChildren().GetFirst<Console>();
+    auto console = instance->mConsole;
     std::string history;
 
     switch (data->EventKey) {
