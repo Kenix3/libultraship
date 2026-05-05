@@ -210,28 +210,24 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 #endif
 };
 
-// ---- Template BFS implementations ----
+// ---- Template BFS implementations (children) ----
+// All three methods perform a full breadth-first traversal through the entire
+// descendant tree. Every node's children are enqueued for further exploration,
+// so the search is not limited to any particular depth.
 
 template <typename T> bool Component::HasInChildren() const {
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
+    queue.push(this);
 
-    auto directChildren = GetChildren().Get();
-    for (const auto& child : *directChildren) {
-        if (visited.insert(child->GetId()).second) {
-            if (std::dynamic_pointer_cast<T>(child)) {
-                return true;
-            }
-            queue.push(child.get());
-        }
-    }
-
+    // BFS: process every node, enqueue its children so we reach all depths.
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandChildren = current->GetChildren().Get();
-        for (const auto& child : *grandChildren) {
+
+        auto currentChildren = current->GetChildren().Get();
+        for (const auto& child : *currentChildren) {
             if (visited.insert(child->GetId()).second) {
                 if (std::dynamic_pointer_cast<T>(child)) {
                     return true;
@@ -247,23 +243,14 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInChildren() const {
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-
-    auto directChildren = GetChildren().Get();
-    for (const auto& child : *directChildren) {
-        if (visited.insert(child->GetId()).second) {
-            auto typed = std::dynamic_pointer_cast<T>(child);
-            if (typed) {
-                return typed;
-            }
-            queue.push(child.get());
-        }
-    }
+    queue.push(this);
 
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandChildren = current->GetChildren().Get();
-        for (const auto& child : *grandChildren) {
+
+        auto currentChildren = current->GetChildren().Get();
+        for (const auto& child : *currentChildren) {
             if (visited.insert(child->GetId()).second) {
                 auto typed = std::dynamic_pointer_cast<T>(child);
                 if (typed) {
@@ -281,23 +268,14 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-
-    auto directChildren = GetChildren().Get();
-    for (const auto& child : *directChildren) {
-        if (visited.insert(child->GetId()).second) {
-            auto typed = std::dynamic_pointer_cast<T>(child);
-            if (typed) {
-                result->push_back(typed);
-            }
-            queue.push(child.get());
-        }
-    }
+    queue.push(this);
 
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandChildren = current->GetChildren().Get();
-        for (const auto& child : *grandChildren) {
+
+        auto currentChildren = current->GetChildren().Get();
+        for (const auto& child : *currentChildren) {
             if (visited.insert(child->GetId()).second) {
                 auto typed = std::dynamic_pointer_cast<T>(child);
                 if (typed) {
@@ -311,27 +289,20 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 }
 
 // ---- Template BFS implementations (parents) ----
+// Mirror of the InChildren methods, but traversing upward through parents.
 
 template <typename T> bool Component::HasInParents() const {
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-
-    auto directParents = GetParents().Get();
-    for (const auto& parent : *directParents) {
-        if (visited.insert(parent->GetId()).second) {
-            if (std::dynamic_pointer_cast<T>(parent)) {
-                return true;
-            }
-            queue.push(parent.get());
-        }
-    }
+    queue.push(this);
 
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandParents = current->GetParents().Get();
-        for (const auto& parent : *grandParents) {
+
+        auto currentParents = current->GetParents().Get();
+        for (const auto& parent : *currentParents) {
             if (visited.insert(parent->GetId()).second) {
                 if (std::dynamic_pointer_cast<T>(parent)) {
                     return true;
@@ -347,23 +318,14 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInParents() const {
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-
-    auto directParents = GetParents().Get();
-    for (const auto& parent : *directParents) {
-        if (visited.insert(parent->GetId()).second) {
-            auto typed = std::dynamic_pointer_cast<T>(parent);
-            if (typed) {
-                return typed;
-            }
-            queue.push(parent.get());
-        }
-    }
+    queue.push(this);
 
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandParents = current->GetParents().Get();
-        for (const auto& parent : *grandParents) {
+
+        auto currentParents = current->GetParents().Get();
+        for (const auto& parent : *currentParents) {
             if (visited.insert(parent->GetId()).second) {
                 auto typed = std::dynamic_pointer_cast<T>(parent);
                 if (typed) {
@@ -381,23 +343,14 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
     std::queue<const Component*> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-
-    auto directParents = GetParents().Get();
-    for (const auto& parent : *directParents) {
-        if (visited.insert(parent->GetId()).second) {
-            auto typed = std::dynamic_pointer_cast<T>(parent);
-            if (typed) {
-                result->push_back(typed);
-            }
-            queue.push(parent.get());
-        }
-    }
+    queue.push(this);
 
     while (!queue.empty()) {
         const Component* current = queue.front();
         queue.pop();
-        auto grandParents = current->GetParents().Get();
-        for (const auto& parent : *grandParents) {
+
+        auto currentParents = current->GetParents().Get();
+        for (const auto& parent : *currentParents) {
             if (visited.insert(parent->GetId()).second) {
                 auto typed = std::dynamic_pointer_cast<T>(parent);
                 if (typed) {

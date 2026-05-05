@@ -8,22 +8,23 @@
 namespace Ship {
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
+    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + id;
-    const std::string mappingClass = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+    const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
     int32_t lowFrequencyIntensityPercentage =
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
     int32_t highFrequencyIntensityPercentage =
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
 
     if (lowFrequencyIntensityPercentage < 0 || lowFrequencyIntensityPercentage > 100 ||
         highFrequencyIntensityPercentage < 0 || highFrequencyIntensityPercentage > 100) {
         // something about this mapping is invalid
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mappingCvarKey.c_str());
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+        consoleVariable->ClearVariable(mappingCvarKey.c_str());
+        consoleVariable->Save();
         return nullptr;
     }
 
@@ -44,12 +45,10 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physical
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : Context::GetInstance()
-                                          ->GetChildren()
-                                          .GetFirst<ControlDeck>()
-                                          ->GetConnectedPhysicalDeviceManager()
+    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
                                           ->GetConnectedSDLGamepadsForPort(portIndex)) {
         if (!SDL_GameControllerHasRumble(gamepad)) {
             continue;

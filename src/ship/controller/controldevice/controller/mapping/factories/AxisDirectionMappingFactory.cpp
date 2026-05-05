@@ -19,24 +19,25 @@ namespace Ship {
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, StickIndex stickIndex,
                                                                   std::string id) {
+    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + id;
-    const std::string mappingClass = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+    const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
     if (mappingClass == "SDLAxisDirectionToAxisDirectionMapping") {
-        int32_t direction = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t direction = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t sdlControllerAxis = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t sdlControllerAxis = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t axisDirection = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t axisDirection = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerAxis == -1 || (axisDirection != NEGATIVE && axisDirection != POSITIVE)) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            consoleVariable->ClearVariable(
                 mappingCvarKey.c_str());
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+            consoleVariable->Save();
             return nullptr;
         }
 
@@ -45,18 +46,18 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
-        int32_t direction = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t direction = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
         int32_t sdlControllerButton =
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+            consoleVariable->GetInteger(
                 StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if ((direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) ||
             sdlControllerButton == -1) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            consoleVariable->ClearVariable(
                 mappingCvarKey.c_str());
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+            consoleVariable->Save();
             return nullptr;
         }
 
@@ -65,16 +66,16 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
-        int32_t direction = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t direction = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int32_t scancode = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t scancode = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            consoleVariable->ClearVariable(
                 mappingCvarKey.c_str());
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+            consoleVariable->Save();
             return nullptr;
         }
 
@@ -83,16 +84,16 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "MouseButtonToAxisDirectionMapping") {
-        int32_t direction = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t direction = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int mouseButton = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int mouseButton = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            consoleVariable->ClearVariable(
                 mappingCvarKey.c_str());
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+            consoleVariable->Save();
             return nullptr;
         }
 
@@ -101,16 +102,16 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
     }
 
     if (mappingClass == "MouseWheelToAxisDirectionMapping") {
-        int32_t direction = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int32_t direction = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), -1);
-        int wheelDirection = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+        int wheelDirection = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if (direction != LEFT && direction != RIGHT && direction != UP && direction != DOWN) {
             // something about this mapping is invalid
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+            consoleVariable->ClearVariable(
                 mappingCvarKey.c_str());
-            Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+            consoleVariable->Save();
             return nullptr;
         }
 
@@ -123,12 +124,10 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
 
-    auto defaultsForStick = Context::GetInstance()
-                                ->GetChildren()
-                                .GetFirst<ControlDeck>()
-                                ->GetControllerDefaultMappings()
+    auto defaultsForStick = controlDeck->GetControllerDefaultMappings()
                                 ->GetDefaultKeyboardKeyToAxisDirectionMappings()[stickIndex];
 
     for (const auto& [direction, scancode] : defaultsForStick) {
@@ -141,12 +140,10 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
 
-    auto defaultButtonsForStick = Context::GetInstance()
-                                      ->GetChildren()
-                                      .GetFirst<ControlDeck>()
-                                      ->GetControllerDefaultMappings()
+    auto defaultButtonsForStick = controlDeck->GetControllerDefaultMappings()
                                       ->GetDefaultSDLButtonToAxisDirectionMappings()[stickIndex];
 
     for (const auto& [direction, sdlGamepadButton] : defaultButtonsForStick) {
@@ -154,10 +151,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
             std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stickIndex, direction, sdlGamepadButton));
     }
 
-    auto defaultAxisDirectionsForStick = Context::GetInstance()
-                                             ->GetChildren()
-                                             .GetFirst<ControlDeck>()
-                                             ->GetControllerDefaultMappings()
+    auto defaultAxisDirectionsForStick = controlDeck->GetControllerDefaultMappings()
                                              ->GetDefaultSDLAxisDirectionToAxisDirectionMappings()[stickIndex];
 
     for (const auto& [direction, sdlGamepadAxisDirection] : defaultAxisDirectionsForStick) {
@@ -172,12 +166,10 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
                                                                     Direction direction) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : Context::GetInstance()
-                                          ->GetChildren()
-                                          .GetFirst<ControlDeck>()
-                                          ->GetConnectedPhysicalDeviceManager()
+    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
                                           ->GetConnectedSDLGamepadsForPort(portIndex)) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {

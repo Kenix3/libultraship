@@ -742,6 +742,106 @@ TEST(ComponentSearchTest, GetInChildrenFindsAll) {
     EXPECT_EQ(all->size(), 2u);
 }
 
+// ---- Deep BFS recursion tests (InChildren and InParents) ----
+
+TEST(ComponentSearchTest, HasInChildrenFindsAtDepthFour) {
+    // Build a chain: root -> a -> b -> c -> leaf (depth 4)
+    auto root = std::make_shared<TestComponent>("Root");
+    auto a = std::make_shared<TestComponent>("A");
+    auto b = std::make_shared<TestComponent>("B");
+    auto c = std::make_shared<TestComponent>("C");
+    auto leaf = std::make_shared<DerivedComponent>("DeepLeaf");
+    root->GetChildren().Add(a);
+    a->GetChildren().Add(b);
+    b->GetChildren().Add(c);
+    c->GetChildren().Add(leaf);
+
+    EXPECT_TRUE(root->HasInChildren<DerivedComponent>());
+}
+
+TEST(ComponentSearchTest, GetFirstInChildrenFindsAtDepthFour) {
+    auto root = std::make_shared<TestComponent>("Root");
+    auto a = std::make_shared<TestComponent>("A");
+    auto b = std::make_shared<TestComponent>("B");
+    auto c = std::make_shared<TestComponent>("C");
+    auto leaf = std::make_shared<DerivedComponent>("DeepLeaf");
+    root->GetChildren().Add(a);
+    a->GetChildren().Add(b);
+    b->GetChildren().Add(c);
+    c->GetChildren().Add(leaf);
+
+    auto found = root->GetFirstInChildren<DerivedComponent>();
+    ASSERT_NE(found, nullptr);
+    EXPECT_EQ(found->GetName(), "DeepLeaf");
+}
+
+TEST(ComponentSearchTest, GetInChildrenFindsAllAtMultipleDepths) {
+    // root -> a -> d1, a -> b -> d2, b -> c -> d3
+    auto root = std::make_shared<TestComponent>("Root");
+    auto a = std::make_shared<TestComponent>("A");
+    auto b = std::make_shared<TestComponent>("B");
+    auto c = std::make_shared<TestComponent>("C");
+    auto d1 = std::make_shared<DerivedComponent>("D1");
+    auto d2 = std::make_shared<DerivedComponent>("D2");
+    auto d3 = std::make_shared<DerivedComponent>("D3");
+    root->GetChildren().Add(a);
+    a->GetChildren().Add(d1);
+    a->GetChildren().Add(b);
+    b->GetChildren().Add(d2);
+    b->GetChildren().Add(c);
+    c->GetChildren().Add(d3);
+
+    auto all = root->GetInChildren<DerivedComponent>();
+    EXPECT_EQ(all->size(), 3u);
+}
+
+// ---- InParents tests ----
+
+TEST(ComponentSearchTest, HasInParentsFindsDeepAncestor) {
+    auto root = std::make_shared<DerivedComponent>("Root");
+    auto mid = std::make_shared<TestComponent>("Mid");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+    root->GetChildren().Add(mid);
+    mid->GetChildren().Add(leaf);
+
+    EXPECT_TRUE(leaf->HasInParents<DerivedComponent>());
+}
+
+TEST(ComponentSearchTest, HasInParentsReturnsFalseWhenAbsent) {
+    auto root = std::make_shared<TestComponent>("Root");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+    root->GetChildren().Add(leaf);
+
+    EXPECT_FALSE(leaf->HasInParents<DerivedComponent>());
+}
+
+TEST(ComponentSearchTest, GetFirstInParentsFindsAtDepthFour) {
+    auto root = std::make_shared<DerivedComponent>("TopAncestor");
+    auto a = std::make_shared<TestComponent>("A");
+    auto b = std::make_shared<TestComponent>("B");
+    auto c = std::make_shared<TestComponent>("C");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+    root->GetChildren().Add(a);
+    a->GetChildren().Add(b);
+    b->GetChildren().Add(c);
+    c->GetChildren().Add(leaf);
+
+    auto found = leaf->GetFirstInParents<DerivedComponent>();
+    ASSERT_NE(found, nullptr);
+    EXPECT_EQ(found->GetName(), "TopAncestor");
+}
+
+TEST(ComponentSearchTest, GetInParentsFindsAllAncestors) {
+    auto root = std::make_shared<DerivedComponent>("D_Root");
+    auto mid = std::make_shared<DerivedComponent>("D_Mid");
+    auto leaf = std::make_shared<TestComponent>("Leaf");
+    root->GetChildren().Add(mid);
+    mid->GetChildren().Add(leaf);
+
+    auto all = leaf->GetInParents<DerivedComponent>();
+    EXPECT_EQ(all->size(), 2u);
+}
+
 // ---- BuildComponentsFromJson cross-namespace tests ----
 //
 // These tests verify that Context::BuildComponentsFromJson correctly instantiates

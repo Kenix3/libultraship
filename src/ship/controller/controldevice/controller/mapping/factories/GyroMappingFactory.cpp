@@ -8,25 +8,26 @@
 namespace Ship {
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromConfig(uint8_t portIndex,
                                                                                        std::string id) {
+    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + id;
-    const std::string mappingClass = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+    const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    float sensitivity = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetFloat(
+    float sensitivity = consoleVariable->GetFloat(
         StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), 2.0f);
     if (sensitivity < 0.0f || sensitivity > 1.0f) {
         // something about this mapping is invalid
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mappingCvarKey.c_str());
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+        consoleVariable->ClearVariable(mappingCvarKey.c_str());
+        consoleVariable->Save();
         return nullptr;
     }
 
     if (mappingClass == "SDLGyroMapping") {
-        float neutralPitch = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetFloat(
+        float neutralPitch = consoleVariable->GetFloat(
             StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralYaw = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetFloat(
+        float neutralYaw = consoleVariable->GetFloat(
             StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), 0.0f);
-        float neutralRoll = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetFloat(
+        float neutralRoll = consoleVariable->GetFloat(
             StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), 0.0f);
 
         return std::make_shared<SDLGyroMapping>(portIndex, sensitivity, neutralPitch, neutralYaw, neutralRoll);
@@ -36,12 +37,10 @@ std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFrom
 }
 
 std::shared_ptr<ControllerGyroMapping> GyroMappingFactory::CreateGyroMappingFromSDLInput(uint8_t portIndex) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : Context::GetInstance()
-                                          ->GetChildren()
-                                          .GetFirst<ControlDeck>()
-                                          ->GetConnectedPhysicalDeviceManager()
+    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
                                           ->GetConnectedSDLGamepadsForPort(portIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;

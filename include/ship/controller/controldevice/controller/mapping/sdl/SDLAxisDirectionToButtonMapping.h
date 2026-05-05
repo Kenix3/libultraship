@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLAxisDirectionToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad axis direction to a virtual controller button.
@@ -44,5 +47,8 @@ class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, pu
 
     /** @brief Returns the human-readable name of the bound axis and direction. */
     std::string GetPhysicalInputName() override;
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

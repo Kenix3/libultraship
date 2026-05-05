@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 #include "SDLMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad's LED to a controller LED output.
@@ -36,5 +39,8 @@ class SDLLEDMapping final : public ControllerLEDMapping {
 
     /** @brief Returns the human-readable name of the SDL gamepad device. */
     std::string GetPhysicalDeviceName() override;
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

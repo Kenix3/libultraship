@@ -11,10 +11,12 @@ MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLL
                                                      WheelDirection wheelDirection)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseWheelToAnyMapping(wheelDirection),
       ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
 void MouseWheelToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
-    if (Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->MouseGameInputBlocked()) {
+    if (mControlDeck->MouseGameInputBlocked()) {
         return;
     }
 
@@ -34,26 +36,26 @@ std::string MouseWheelToButtonMapping::GetButtonMappingId() {
 
 void MouseWheelToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+    mConsoleVariable->SetString(
         StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "MouseWheelToButtonMapping");
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), static_cast<int>(mWheelDirection));
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void MouseWheelToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 std::string MouseWheelToButtonMapping::GetPhysicalDeviceName() {

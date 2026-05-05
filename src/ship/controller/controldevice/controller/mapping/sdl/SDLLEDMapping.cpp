@@ -8,6 +8,8 @@
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor)
     : ControllerLEDMapping(PhysicalDeviceType::SDLGamepad, portIndex, colorSource, savedColor) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
 void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
@@ -19,10 +21,7 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         color = mSavedColor;
     }
 
-    for (const auto& [instanceId, gamepad] : Context::GetInstance()
-                                                 ->GetChildren()
-                                                 .GetFirst<ControlDeck>()
-                                                 ->GetConnectedPhysicalDeviceManager()
+    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
                                                  ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;
@@ -38,26 +37,26 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+    mConsoleVariable->SetString(
         StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetColor24(
+    mConsoleVariable->SetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 std::string SDLLEDMapping::GetPhysicalDeviceName() {

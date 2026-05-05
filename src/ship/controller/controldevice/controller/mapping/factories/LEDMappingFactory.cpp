@@ -7,20 +7,22 @@
 
 namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
+    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + id;
-    const std::string mappingClass = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetString(
+    const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t colorSource = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetInteger(
+    int32_t colorSource = consoleVariable->GetInteger(
         StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
-    Color_RGB8 savedColor = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->GetColor24(
+    Color_RGB8 savedColor = consoleVariable->GetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), { 0, 0, 0 });
+    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
 
     if (colorSource != LED_COLOR_SOURCE_OFF && colorSource != LED_COLOR_SOURCE_SET &&
         colorSource != LED_COLOR_SOURCE_GAME) {
         // something about this mapping is invalid
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(mappingCvarKey.c_str());
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+        consoleVariable->ClearVariable(mappingCvarKey.c_str());
+        consoleVariable->Save();
         return nullptr;
     }
 
@@ -32,12 +34,10 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 }
 
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
+    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : Context::GetInstance()
-                                          ->GetChildren()
-                                          .GetFirst<ControlDeck>()
-                                          ->GetConnectedPhysicalDeviceManager()
+    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
                                           ->GetConnectedSDLGamepadsForPort(portIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;

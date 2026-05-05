@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps a keyboard key to a virtual controller button.
@@ -42,5 +45,8 @@ class KeyboardKeyToButtonMapping final : public KeyboardKeyToAnyMapping, public 
 
     /** @brief Returns the human-readable name of the bound key. */
     std::string GetPhysicalInputName() override;
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

@@ -11,10 +11,12 @@ MouseButtonToAxisDirectionMapping::MouseButtonToAxisDirectionMapping(uint8_t por
                                                                      Direction direction, MouseBtn button)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseButtonToAnyMapping(button),
       ControllerAxisDirectionMapping(PhysicalDeviceType::Mouse, portIndex, stickIndex, direction) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
 float MouseButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->MouseGameInputBlocked()) {
+    if (mControlDeck->MouseGameInputBlocked()) {
         return 0.0f;
     }
 
@@ -27,29 +29,29 @@ std::string MouseButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void MouseButtonToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+    mConsoleVariable->SetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
         "MouseButtonToAxisDirectionMapping");
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(
+    mConsoleVariable->SetInteger(
         StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), static_cast<int>(mButton));
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void MouseButtonToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 int8_t MouseButtonToAxisDirectionMapping::GetMappingType() {

@@ -13,13 +13,12 @@ SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutr
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
       ControllerGyroMapping(PhysicalDeviceType::SDLGamepad, portIndex, sensitivity), mNeutralPitch(neutralPitch),
       mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
+    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
 void SDLGyroMapping::Recalibrate() {
-    for (const auto& [instanceId, gamepad] : Context::GetInstance()
-                                                 ->GetChildren()
-                                                 .GetFirst<ControlDeck>()
-                                                 ->GetConnectedPhysicalDeviceManager()
+    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
                                                  ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
@@ -43,16 +42,13 @@ void SDLGyroMapping::Recalibrate() {
 }
 
 void SDLGyroMapping::UpdatePad(float& x, float& y) {
-    if (Context::GetInstance()->GetChildren().GetFirst<ControlDeck>()->GamepadGameInputBlocked()) {
+    if (mControlDeck->GamepadGameInputBlocked()) {
         x = 0;
         y = 0;
         return;
     }
 
-    for (const auto& [instanceId, gamepad] : Context::GetInstance()
-                                                 ->GetChildren()
-                                                 .GetFirst<ControlDeck>()
-                                                 ->GetConnectedPhysicalDeviceManager()
+    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
                                                  ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
@@ -80,35 +76,35 @@ std::string SDLGyroMapping::GetGyroMappingId() {
 void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
+    mConsoleVariable->SetString(
         StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat(
+    mConsoleVariable->SetFloat(
         StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat(
+    mConsoleVariable->SetFloat(
         StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat(
+    mConsoleVariable->SetFloat(
         StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetFloat(
+    mConsoleVariable->SetFloat(
         StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 void SDLGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str());
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    mConsoleVariable->Save();
 }
 
 std::string SDLGyroMapping::GetPhysicalDeviceName() {

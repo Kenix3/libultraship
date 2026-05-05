@@ -3,8 +3,11 @@
 #include "MouseWheelToAnyMapping.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps a mouse scroll-wheel direction to a virtual analog stick direction.
@@ -44,5 +47,8 @@ class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, pu
 
     /** @brief Returns the human-readable name of the bound wheel direction. */
     std::string GetPhysicalInputName() override;
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

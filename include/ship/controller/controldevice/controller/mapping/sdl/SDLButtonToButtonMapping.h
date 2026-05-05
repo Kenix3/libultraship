@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad button to a virtual controller button.
@@ -42,5 +45,8 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
 
     /** @brief Returns the human-readable name of the bound button. */
     std::string GetPhysicalInputName() override;
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship
