@@ -8,6 +8,7 @@
 
 namespace Ship {
 struct File;
+class ResourceManager;
 
 /**
  * @brief Cache key that uniquely identifies a ResourceFactory by format, type, and version.
@@ -172,5 +173,6 @@ class ResourceLoader {
     std::string DecodeASCII(uint32_t value);
     std::unordered_map<std::string, uint32_t> mResourceTypes;
     std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>, ResourceFactoryKeyHash> mFactories;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship

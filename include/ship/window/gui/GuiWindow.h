@@ -1,12 +1,15 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "ship/window/gui/GuiElement.h"
 #include <stdint.h>
 
 namespace Ship {
+class ConsoleVariable;
+class Window;
 /**
  * @brief A floating ImGui window managed by the Ship Gui layer.
  *
@@ -120,5 +123,7 @@ class GuiWindow : public GuiElement {
     ImVector<ImRect> mGroupPanelLabelStack;
     ImVec2 mOriginalSize;
     uint32_t mWindowFlags;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

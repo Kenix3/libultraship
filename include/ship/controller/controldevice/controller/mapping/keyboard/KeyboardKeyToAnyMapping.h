@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
 #include "ship/controller/controldevice/controller/mapping/ControllerInputMapping.h"
 #include "KeyboardScancodes.h"
 
 namespace Ship {
+class Window;
 
 /**
  * @brief Base class for mappings that bind a keyboard key to any controller input.
@@ -40,5 +42,6 @@ class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
   protected:
     KbScancode mKeyboardScancode;
     bool mKeyPressed;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

@@ -157,7 +157,10 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
                                                                        std::shared_ptr<File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
-    auto resourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    if (!mResourceManager) {
+        mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    }
+    auto resourceManager = mResourceManager;
 
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
     // that causes nlohmann to fail parsing, following the pattern used for
@@ -191,7 +194,10 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
     }
 
     if (initData == nullptr) {
-        auto resourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+        if (!mResourceManager) {
+            mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+        }
+        auto resourceManager = mResourceManager;
         auto metaFilePath = filePath + ".meta";
         auto metaFileToLoad = resourceManager->LoadFileProcess(metaFilePath);
 
@@ -288,8 +294,10 @@ ResourceLoader::ReadResourceInitDataXml(const std::string& filePath, std::shared
     resourceInitData->Format = RESOURCE_FORMAT_XML;
 
     auto root = document->FirstChildElement();
-    auto resourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
-    resourceInitData->Type = resourceManager->GetResourceLoader()->GetResourceType(root->Name());
+    if (!mResourceManager) {
+        mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    }
+    resourceInitData->Type = mResourceManager->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
     return resourceInitData;

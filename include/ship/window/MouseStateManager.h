@@ -3,6 +3,7 @@
 #include <memory>
 
 namespace Ship {
+class Window;
 
 /**
  * @brief Manages mouse capture and cursor visibility state for the application window.
@@ -70,6 +71,8 @@ class MouseStateManager {
   protected:
     /** @brief Decrements the cursor visibility timeout counter by one tick. */
     void CursorVisibilityTimeoutTick();
+
+    std::shared_ptr<Window> mWindow; ///< Cached Window component, lazily initialized.
 
   private:
     bool mAutoCaptureMouse = false;

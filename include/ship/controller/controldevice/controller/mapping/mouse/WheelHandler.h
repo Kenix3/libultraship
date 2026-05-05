@@ -75,5 +75,6 @@ class WheelHandler {
     WheelDirections mDirections;
     CoordsF mCoords;
     CoordsF mBufferedCoords;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

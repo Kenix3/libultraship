@@ -7,6 +7,9 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+class Window;
 
 /**
  * @brief Aggregates all ControllerButtonMapping instances for a single logical button.
@@ -145,5 +148,9 @@ class ControllerButton {
     bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
+
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

@@ -3,10 +3,12 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <memory>
 #include <unordered_map>
 #include "ship/Component.h"
 
 namespace Ship {
+class Config;
 
 /**
  * @brief Describes where a key originated.
@@ -99,6 +101,7 @@ class Keystore : public Component {
 
   private:
     std::unordered_map<std::string, KeystoreEntry> mKeys;
+    std::shared_ptr<Config> mConfig;
 };
 
 } // namespace Ship

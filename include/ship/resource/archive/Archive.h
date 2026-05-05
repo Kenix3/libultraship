@@ -12,6 +12,7 @@ class XMLElement;
 } // namespace tinyxml2
 
 namespace Ship {
+class Keystore;
 /** @brief Byte size of the fixed OTR archive header block. */
 #define OTR_HEADER_SIZE ((size_t)64)
 
@@ -190,6 +191,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
     void Validate();
 
     std::shared_ptr<ResourceManager> mResourceManager;
+    std::shared_ptr<Keystore> mKeystore;
 
   private:
     bool mIsLoaded;

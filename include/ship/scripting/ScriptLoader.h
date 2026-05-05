@@ -109,6 +109,7 @@ class ScriptLoader : public Component {
     std::unordered_map<std::string, std::string> mCompileDefines;
     std::unordered_map<std::string, Scripting::LibraryLoader> mLoadedScripts;
     std::vector<std::shared_ptr<Archive>> mLoadedArchives;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 
 } // namespace Ship

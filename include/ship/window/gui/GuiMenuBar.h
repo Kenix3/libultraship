@@ -1,9 +1,12 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "ship/window/gui/GuiElement.h"
 
 namespace Ship {
+class ConsoleVariable;
+class Window;
 /**
  * @brief The application's main ImGui menu bar rendered at the top of the screen.
  *
@@ -48,5 +51,7 @@ class GuiMenuBar : public GuiElement {
     /** @brief Reads the CVar and updates mIsVisible accordingly. */
     void SyncVisibilityConsoleVariable();
     std::string mVisibilityConsoleVariable;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

@@ -240,7 +240,10 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
 
 void ScriptLoader::CompileAll(const std::optional<std::function<void(const std::shared_ptr<Archive>&)>>& preCallback,
                               const std::optional<std::function<void()>>& postCallback) {
-    auto archive = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>()->GetArchiveManager();
+    if (!mResourceManager) {
+        mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    }
+    auto archive = mResourceManager->GetArchiveManager();
     auto list = archive->GetArchives();
 
     for (const auto& entry : *list) {

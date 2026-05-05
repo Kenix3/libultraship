@@ -8,13 +8,14 @@
 namespace Ship {
 KeyboardKeyToAnyMapping::KeyboardKeyToAnyMapping(KbScancode scancode)
     : ControllerInputMapping(PhysicalDeviceType::Keyboard), mKeyboardScancode(scancode), mKeyPressed(false) {
+    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
 
 KeyboardKeyToAnyMapping::~KeyboardKeyToAnyMapping() {
 }
 
 std::string KeyboardKeyToAnyMapping::GetPhysicalInputName() {
-    return Context::GetInstance()->GetChildren().GetFirst<Window>()->GetKeyName(mKeyboardScancode);
+    return mWindow->GetKeyName(mKeyboardScancode);
 }
 
 bool KeyboardKeyToAnyMapping::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {

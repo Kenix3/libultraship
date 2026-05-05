@@ -39,6 +39,7 @@ void Archive::Load() {
     bool opened = Open();
 
     mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+    mKeystore = Context::GetInstance()->GetChildren().GetFirst<Keystore>();
 
     auto t = LoadFile("version");
     bool isGameVersionValid = false;
@@ -79,8 +80,7 @@ void Archive::Load() {
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
                 SetGameVersion(mManifest.GameVersion);
-                isGameVersionValid = mResourceManager->GetArchiveManager()
-                                         ->IsGameVersionValid(GetGameVersion());
+                isGameVersionValid = mResourceManager->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
 
                 if (!isGameVersionValid) {
                     SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(),
@@ -107,8 +107,7 @@ void Archive::Unload() {
 }
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
-    const std::string& filePath =
-        *mResourceManager->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath = *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 
@@ -187,7 +186,7 @@ void Archive::Validate() {
         return;
     }
 
-    auto keystore = Context::GetInstance()->GetChildren().GetFirst<Keystore>();
+    auto keystore = mKeystore;
     auto manager = mResourceManager->GetArchiveManager();
     std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
 

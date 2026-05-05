@@ -154,7 +154,8 @@ class Controller : public ControlDevice {
 
   protected:
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>>
-        mButtons; ///< Button subsystems keyed by bitmask.
+        mButtons;                                      ///< Button subsystems keyed by bitmask.
+    std::shared_ptr<ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable component.
 
   private:
     void LoadButtonMappingFromConfig(std::string id);
@@ -164,6 +165,5 @@ class Controller : public ControlDevice {
     std::shared_ptr<ControllerGyro> mGyro;
     std::shared_ptr<ControllerRumble> mRumble;
     std::shared_ptr<ControllerLED> mLED;
-    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship
