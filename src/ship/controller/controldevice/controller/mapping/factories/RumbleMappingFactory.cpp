@@ -10,15 +10,13 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
                                                                                              std::string id) {
     auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + id;
-    const std::string mappingClass = consoleVariable->GetString(
-        StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    const std::string mappingClass =
+        consoleVariable->GetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t lowFrequencyIntensityPercentage =
-        consoleVariable->GetInteger(
-            StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
-    int32_t highFrequencyIntensityPercentage =
-        consoleVariable->GetInteger(
-            StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t lowFrequencyIntensityPercentage = consoleVariable->GetInteger(
+        StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t highFrequencyIntensityPercentage = consoleVariable->GetInteger(
+        StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(), -1);
 
     if (lowFrequencyIntensityPercentage < 0 || lowFrequencyIntensityPercentage > 100 ||
         highFrequencyIntensityPercentage < 0 || highFrequencyIntensityPercentage > 100) {
@@ -48,8 +46,8 @@ std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappi
     auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
-                                          ->GetConnectedSDLGamepadsForPort(portIndex)) {
+    for (auto [instanceId, gamepad] :
+         controlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(portIndex)) {
         if (!SDL_GameControllerHasRumble(gamepad)) {
             continue;
         }

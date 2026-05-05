@@ -18,15 +18,15 @@ SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntens
 }
 
 void SDLRumbleMapping::StartRumble() {
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         SDL_GameControllerRumble(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
     }
 }
 
 void SDLRumbleMapping::StopRumble() {
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         SDL_GameControllerRumble(gamepad, 0, 0, 0);
     }
 }
@@ -47,26 +47,21 @@ std::string SDLRumbleMapping::GetRumbleMappingId() {
 
 void SDLRumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
-        mLowFrequencyIntensityPercentage);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
-        mHighFrequencyIntensityPercentage);
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLRumbleMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                                 mLowFrequencyIntensityPercentage);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                                 mHighFrequencyIntensityPercentage);
     mConsoleVariable->Save();
 }
 
 void SDLRumbleMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
 
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str());
 
     mConsoleVariable->Save();
 }

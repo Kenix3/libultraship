@@ -97,11 +97,10 @@ void ControllerStick::SaveAxisDirectionMappingIdsToConfig() {
             CVAR_PREFIX_CONTROLLERS ".Port%d.%s.%sAxisDirectionMappingIds", mPortIndex + 1,
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
         if (axisDirectionMappingIdListString == "") {
-            mConsoleVariable->ClearVariable(
-                axisDirectionMappingIdsCvarKey.c_str());
+            mConsoleVariable->ClearVariable(axisDirectionMappingIdsCvarKey.c_str());
         } else {
-            mConsoleVariable->SetString(
-                axisDirectionMappingIdsCvarKey.c_str(), axisDirectionMappingIdListString.c_str());
+            mConsoleVariable->SetString(axisDirectionMappingIdsCvarKey.c_str(),
+                                        axisDirectionMappingIdListString.c_str());
         }
     }
 
@@ -176,8 +175,7 @@ void ControllerStick::ReloadAllMappingsFromConfig() {
             stickIndexToConfigStickIndexName[mStickIndex].c_str(), directionToConfigDirectionName[direction].c_str());
 
         std::stringstream axisDirectionMappingIdsStringStream(
-            mConsoleVariable->GetString(
-                axisDirectionMappingIdsCvarKey.c_str(), ""));
+            mConsoleVariable->GetString(axisDirectionMappingIdsCvarKey.c_str(), ""));
         std::string axisDirectionMappingIdString;
         while (getline(axisDirectionMappingIdsStringStream, axisDirectionMappingIdString, ',')) {
             LoadAxisDirectionMappingFromConfig(axisDirectionMappingIdString);
@@ -283,8 +281,7 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                       mKeyboardScancodeForNewMapping);
-    } else if (!mWindow->GetGui()->IsMouseOverAnyGuiItem() &&
-               mWindow->GetGui()->IsMouseOverActivePopup()) {
+    } else if (!mWindow->GetGui()->IsMouseOverAnyGuiItem() && mWindow->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
                                                                           mMouseButtonForNewMapping);
@@ -391,11 +388,11 @@ bool ControllerStick::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) {
 void ControllerStick::SetSensitivity(uint8_t sensitivityPercentage) {
     mSensitivityPercentage = sensitivityPercentage;
     mSensitivity = sensitivityPercentage / 100.0f;
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage", mPortIndex + 1,
-                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
-            .c_str(),
-        mSensitivityPercentage);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.SensitivityPercentage",
+                                                       mPortIndex + 1,
+                                                       stickIndexToConfigStickIndexName[mStickIndex].c_str())
+                                     .c_str(),
+                                 mSensitivityPercentage);
     mConsoleVariable->Save();
 }
 
@@ -414,11 +411,11 @@ bool ControllerStick::SensitivityIsDefault() {
 void ControllerStick::SetDeadzone(uint8_t deadzonePercentage) {
     mDeadzonePercentage = deadzonePercentage;
     mDeadzone = MAX_AXIS_RANGE * (deadzonePercentage / 100.0f);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage", mPortIndex + 1,
-                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
-            .c_str(),
-        mDeadzonePercentage);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.DeadzonePercentage",
+                                                       mPortIndex + 1,
+                                                       stickIndexToConfigStickIndexName[mStickIndex].c_str())
+                                     .c_str(),
+                                 mDeadzonePercentage);
     mConsoleVariable->Save();
 }
 
@@ -436,11 +433,11 @@ bool ControllerStick::DeadzoneIsDefault() {
 
 void ControllerStick::SetNotchSnapAngle(uint8_t notchSnapAngle) {
     mNotchSnapAngle = notchSnapAngle;
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle", mPortIndex + 1,
-                              stickIndexToConfigStickIndexName[mStickIndex].c_str())
-            .c_str(),
-        mNotchSnapAngle);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.%s.NotchSnapAngle",
+                                                       mPortIndex + 1,
+                                                       stickIndexToConfigStickIndexName[mStickIndex].c_str())
+                                     .c_str(),
+                                 mNotchSnapAngle);
     mConsoleVariable->Save();
 }
 

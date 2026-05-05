@@ -306,25 +306,19 @@ void ConsoleWindow::InitElement() {
     mConsole = Context::GetInstance()->GetChildren().GetFirst<Console>();
     mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
 
-    mConsole->AddCommand(
-        "set", { SetCommand,
-                 "Sets a console variable.",
-                 { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
-    mConsole->AddCommand(
-        "get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
-    mConsole->AddCommand("help",
-                         { HelpCommand, "Shows all the commands" });
-    mConsole->AddCommand(
-        "clear", { ClearCommand, "Clear the console history" });
-    mConsole->AddCommand(
-        "unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
+    mConsole->AddCommand("set", { SetCommand,
+                                  "Sets a console variable.",
+                                  { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
+    mConsole->AddCommand("get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
+    mConsole->AddCommand("help", { HelpCommand, "Shows all the commands" });
+    mConsole->AddCommand("clear", { ClearCommand, "Clear the console history" });
+    mConsole->AddCommand("unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
     mConsole->AddCommand(
         "bind",
         { BindCommand, "Binds key to commands", { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
-    mConsole->AddCommand(
-        "bind-toggle", { BindToggleCommand,
-                         "Bind key as a bool toggle",
-                         { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
+    mConsole->AddCommand("bind-toggle", { BindToggleCommand,
+                                          "Bind key as a bool toggle",
+                                          { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
 }
 
 void ConsoleWindow::UpdateElement() {

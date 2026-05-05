@@ -9,6 +9,11 @@
 #include <set>
 #include "ship/controller/controldevice/controller/Controller.h"
 
+namespace Ship {
+class ControlDeck;
+class Window;
+} // namespace Ship
+
 namespace LUS {
 
 /**
@@ -249,5 +254,8 @@ class InputEditorWindow : public Ship::GuiWindow {
 
     /** @brief Adjusts the position of the active mapping popup so it stays on-screen. */
     void OffsetMappingPopup();
+
+    std::shared_ptr<Ship::ControlDeck> mControlDeck;
+    std::shared_ptr<Ship::Window> mWindow;
 };
 } // namespace LUS

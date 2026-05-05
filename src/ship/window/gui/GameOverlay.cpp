@@ -25,8 +25,8 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
     initData->Path = identifier.Path;
-    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        mResourceManager->LoadResource(identifier, false, initData));
+    std::shared_ptr<Font> font =
+        std::static_pointer_cast<Font>(mResourceManager->LoadResource(identifier, false, initData));
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -44,8 +44,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
     initData->Path = path;
-    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        mResourceManager->LoadResource(path, false, initData));
+    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(mResourceManager->LoadResource(path, false, initData));
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -161,9 +160,9 @@ void GameOverlay::Init() {
     mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
 
-    mResourceManager->GetResourceLoader()->RegisterResourceFactory(
-        std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
-        static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
+    mResourceManager->GetResourceLoader()->RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryFontV0>(),
+                                                                   RESOURCE_FORMAT_BINARY, "Font",
+                                                                   static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
 }
 
 void GameOverlay::SetCurrentFont(const std::string& name) {

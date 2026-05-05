@@ -18,8 +18,8 @@ SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutr
 }
 
 void SDLGyroMapping::Recalibrate() {
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
         }
@@ -48,8 +48,8 @@ void SDLGyroMapping::UpdatePad(float& x, float& y) {
         return;
     }
 
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO)) {
             continue;
         }
@@ -76,16 +76,12 @@ std::string SDLGyroMapping::GetGyroMappingId() {
 void SDLGyroMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(), "SDLGyroMapping");
-    mConsoleVariable->SetFloat(
-        StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
-    mConsoleVariable->SetFloat(
-        StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
-    mConsoleVariable->SetFloat(
-        StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
-    mConsoleVariable->SetFloat(
-        StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLGyroMapping");
+    mConsoleVariable->SetFloat(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str(), mSensitivity);
+    mConsoleVariable->SetFloat(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str(), mNeutralPitch);
+    mConsoleVariable->SetFloat(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str(), mNeutralYaw);
+    mConsoleVariable->SetFloat(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str(), mNeutralRoll);
 
     mConsoleVariable->Save();
 }
@@ -93,16 +89,11 @@ void SDLGyroMapping::SaveToConfig() {
 void SDLGyroMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GyroMappings." + GetGyroMappingId();
 
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.GyroMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Sensitivity", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.NeutralPitch", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.NeutralYaw", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.NeutralRoll", mappingCvarKey.c_str()).c_str());
 
     mConsoleVariable->Save();
 }

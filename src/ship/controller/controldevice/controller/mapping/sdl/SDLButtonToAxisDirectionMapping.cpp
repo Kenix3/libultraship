@@ -23,8 +23,8 @@ float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
         return 0.0f;
     }
 
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (SDL_GameControllerGetButton(gamepad, mControllerButton)) {
             return MAX_AXIS_RANGE;
         }
@@ -39,28 +39,22 @@ std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
-        "SDLButtonToAxisDirectionMapping");
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLButtonToAxisDirectionMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(),
+                                 mControllerButton);
     mConsoleVariable->Save();
 }
 
 void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
     mConsoleVariable->Save();
 }
 

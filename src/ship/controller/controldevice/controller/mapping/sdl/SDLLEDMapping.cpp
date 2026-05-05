@@ -21,8 +21,8 @@ void SDLLEDMapping::SetLEDColor(Color_RGB8 color) {
         color = mSavedColor;
     }
 
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;
         }
@@ -37,24 +37,19 @@ std::string SDLLEDMapping::GetLEDMappingId() {
 
 void SDLLEDMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "SDLLEDMapping");
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
-    mConsoleVariable->SetColor24(
-        StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLLEDMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), mColorSource);
+    mConsoleVariable->SetColor24(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), mSavedColor);
     mConsoleVariable->Save();
 }
 
 void SDLLEDMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + GetLEDMappingId();
 
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str());
 
     mConsoleVariable->Save();
 }

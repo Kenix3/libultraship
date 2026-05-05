@@ -53,11 +53,9 @@ void ControllerGyro::SaveGyroMappingIdToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
     if (mGyroMapping == nullptr) {
-        mConsoleVariable->ClearVariable(
-            gyroMappingIdCvarKey.c_str());
+        mConsoleVariable->ClearVariable(gyroMappingIdCvarKey.c_str());
     } else {
-        mConsoleVariable->SetString(
-            gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
+        mConsoleVariable->SetString(gyroMappingIdCvarKey.c_str(), mGyroMapping->GetGyroMappingId().c_str());
     }
 
     mConsoleVariable->Save();
@@ -77,8 +75,7 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
     const std::string gyroMappingIdCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Gyro.GyroMappingId", mPortIndex + 1);
 
-    std::string id = mConsoleVariable->GetString(
-        gyroMappingIdCvarKey.c_str(), "");
+    std::string id = mConsoleVariable->GetString(gyroMappingIdCvarKey.c_str(), "");
     if (id == "") {
         mGyroMapping = nullptr;
         return;

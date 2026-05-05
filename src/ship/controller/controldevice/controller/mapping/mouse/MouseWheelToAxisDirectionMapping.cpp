@@ -35,28 +35,22 @@ std::string MouseWheelToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void MouseWheelToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
-        "MouseWheelToAxisDirectionMapping");
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), static_cast<int>(mWheelDirection));
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "MouseWheelToAxisDirectionMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(),
+                                 static_cast<int>(mWheelDirection));
     mConsoleVariable->Save();
 }
 
 void MouseWheelToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
     mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
     mConsoleVariable->Save();
 }
 

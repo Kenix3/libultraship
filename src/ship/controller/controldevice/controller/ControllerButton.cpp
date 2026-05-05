@@ -79,15 +79,14 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
+    auto cv = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     if (buttonMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->ClearVariable(
-            buttonMappingIdsCvarKey.c_str());
+        cv->ClearVariable(buttonMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetString(
-            buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
+        cv->SetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    cv->Save();
 }
 
 void ControllerButton::ReloadAllMappingsFromConfig() {
@@ -154,14 +153,14 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
-    }
-
-    else if (!Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverAnyGuiItem() &&
-             Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->IsMouseOverActivePopup()) {
-        if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-            mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
-        } else {
-            mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+    } else {
+        auto gui = Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui();
+        if (!gui->IsMouseOverAnyGuiItem() && gui->IsMouseOverActivePopup()) {
+            if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+                mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+            } else {
+                mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+            }
         }
     }
 
@@ -186,8 +185,9 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     SaveButtonMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Save();
+    auto cv = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    cv->SetInteger(hasConfigCvarKey.c_str(), true);
+    cv->Save();
     return true;
 }
 

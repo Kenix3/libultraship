@@ -23,15 +23,13 @@ void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons)
 
     int32_t axisThresholdPercentage = 25;
     if (AxisIsStick()) {
-        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()
-                                      ->GetStickAxisThresholdPercentage();
+        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()->GetStickAxisThresholdPercentage();
     } else if (AxisIsTrigger()) {
-        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()
-                                      ->GetTriggerAxisThresholdPercentage();
+        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()->GetTriggerAxisThresholdPercentage();
     }
 
-    for (const auto& [instanceId, gamepad] : mControlDeck->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
         auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);
@@ -53,28 +51,22 @@ std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    mConsoleVariable->SetString(
-        StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
-        "SDLAxisDirectionToButtonMapping");
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
-    mConsoleVariable->SetInteger(
-        StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLAxisDirectionToButtonMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(),
+                                 mControllerAxis);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(),
+                                 mAxisDirection);
     mConsoleVariable->Save();
 }
 
 void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
-    mConsoleVariable->ClearVariable(
-        StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
     mConsoleVariable->Save();
 }
 

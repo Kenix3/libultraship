@@ -9,11 +9,11 @@ namespace Ship {
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
     auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + id;
-    const std::string mappingClass = consoleVariable->GetString(
-        StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    const std::string mappingClass =
+        consoleVariable->GetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t colorSource = consoleVariable->GetInteger(
-        StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
+    int32_t colorSource =
+        consoleVariable->GetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
     Color_RGB8 savedColor = consoleVariable->GetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), { 0, 0, 0 });
 
@@ -36,8 +36,8 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
     auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : controlDeck->GetConnectedPhysicalDeviceManager()
-                                          ->GetConnectedSDLGamepadsForPort(portIndex)) {
+    for (auto [instanceId, gamepad] :
+         controlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(portIndex)) {
         if (!SDL_GameControllerHasLED(gamepad)) {
             continue;
         }

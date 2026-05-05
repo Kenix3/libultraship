@@ -88,14 +88,11 @@ void Gui::Init() {
     mImGuiIo->IniFilename = mImGuiIniPath.c_str();
     mImGuiIo->LogFilename = mImGuiLogPath.c_str();
 
-    if (SupportsViewports() && mConsoleVariable->GetInteger(
-                                   CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
+    if (SupportsViewports() && mConsoleVariable->GetInteger(CVAR_ENABLE_MULTI_VIEWPORTS, 1)) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
 
-    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
-                                                                                            0) &&
-        GetMenuOrMenubarVisible()) {
+    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     } else {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -144,9 +141,7 @@ void Gui::BlockGamepadNavigation() {
 }
 
 void Gui::UnblockGamepadNavigation() {
-    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
-                                                                                            0) &&
-        GetMenuOrMenubarVisible()) {
+    if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     }
 }
@@ -210,9 +205,7 @@ void Gui::DrawMenu() {
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(ImGuiKey_Escape, false) ||
-        (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) &&
-         mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV,
-                                                                                             0))) {
+        (ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false) && mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0))) {
         if ((ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) && GetMenu()) {
             GetMenu()->ToggleVisibility();
         } else if ((ImGui::IsKeyPressed(TOGGLE_BTN, false) || ImGui::IsKeyPressed(TOGGLE_PAD_BTN, false)) &&
@@ -220,9 +213,7 @@ void Gui::DrawMenu() {
             GetMenuBar()->ToggleVisibility();
         }
         mWindow->GetMouseStateManager()->UpdateMouseCapture();
-        if (mConsoleVariable->GetInteger(
-                CVAR_IMGUI_CONTROLLER_NAV, 0) &&
-            GetMenuOrMenubarVisible()) {
+        if (mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) && GetMenuOrMenubarVisible()) {
             mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         } else {
             mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
@@ -232,9 +223,7 @@ void Gui::DrawMenu() {
     // Mac interprets this as cmd+r when io.ConfigMacOSXBehavior is on (on by default)
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<ConsoleWindow>(
-            mWindow->GetGui()->GetGuiWindow("Console"))
-            ->Dispatch("reset");
+        std::reinterpret_pointer_cast<ConsoleWindow>(mWindow->GetGui()->GetGuiWindow("Console"))->Dispatch("reset");
     }
 
     if (GetMenuBar()) {

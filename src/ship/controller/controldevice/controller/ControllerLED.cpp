@@ -33,11 +33,9 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        mConsoleVariable->ClearVariable(
-            ledMappingIdsCvarKey.c_str());
+        mConsoleVariable->ClearVariable(ledMappingIdsCvarKey.c_str());
     } else {
-        mConsoleVariable->SetString(
-            ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
+        mConsoleVariable->SetString(ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
     mConsoleVariable->Save();
@@ -104,9 +102,7 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
-    std::stringstream ledMappingIdsStringStream(
-        mConsoleVariable->GetString(ledMappingIdsCvarKey.c_str(),
-                                                                                           ""));
+    std::stringstream ledMappingIdsStringStream(mConsoleVariable->GetString(ledMappingIdsCvarKey.c_str(), ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
         LoadLEDMappingFromConfig(ledMappingIdString);
