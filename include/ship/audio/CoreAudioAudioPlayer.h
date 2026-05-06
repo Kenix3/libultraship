@@ -4,7 +4,7 @@
 
 #include "AudioPlayer.h"
 #include <AudioToolbox/AudioToolbox.h>
-#include <pthread.h>
+#include <atomic>
 
 namespace Ship {
 /**
@@ -55,7 +55,8 @@ class CoreAudioAudioPlayer : public AudioPlayer {
      * @brief Core Audio render callback that pulls samples from the ring buffer.
      *
      * Called on the audio thread by the output AudioUnit whenever it needs more
-     * sample data. Reads from the ring buffer under the mutex lock.
+     * sample data. Reads lock-free from the ring buffer using atomic read/write
+     * indices (SPSC).
      *
      * @param inRefCon Pointer to the owning CoreAudioAudioPlayer instance.
      * @param ioActionFlags Render action flags (unused).
@@ -71,11 +72,14 @@ class CoreAudioAudioPlayer : public AudioPlayer {
 
     AudioUnit mAudioUnit;
     int32_t mNumChannels;
-    uint8_t* mRingBuffer;       ///< Lock-protected circular buffer for audio samples.
-    size_t mRingBufferSize;     ///< Total size of the ring buffer in bytes.
-    size_t mRingBufferReadPos;  ///< Current read position in the ring buffer.
-    size_t mRingBufferWritePos; ///< Current write position in the ring buffer.
-    pthread_mutex_t mMutex;     ///< Guards concurrent access to the ring buffer.
+    uint8_t* mRingBuffer;   ///< SPSC circular buffer for audio samples (no locking).
+    size_t mRingBufferSize; ///< Total size of the ring buffer in bytes.
+    /// Read position. Written only by the consumer (render callback);
+    /// read by both with acquire/release ordering.
+    std::atomic<size_t> mRingBufferReadPos;
+    /// Write position. Written only by the producer (DoPlay);
+    /// read by both with acquire/release ordering.
+    std::atomic<size_t> mRingBufferWritePos;
     bool mInitialized;
 };
 } // namespace Ship
