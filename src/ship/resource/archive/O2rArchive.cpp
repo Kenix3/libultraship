@@ -34,8 +34,7 @@ void O2rArchive::ReleaseZipHandle(zip_t* handle) {
 }
 
 std::shared_ptr<File> O2rArchive::LoadFile(uint64_t hash) {
-    const std::string& filePath =
-        *mResourceManager->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath = *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

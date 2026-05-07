@@ -3,8 +3,7 @@
 
 namespace Ship {
 
-EventAction::EventAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-    : Action(eventId, tickable) {
+EventAction::EventAction(EventID eventId, std::shared_ptr<Tickable> tickable) : Action(eventId, tickable) {
 }
 
 bool EventAction::ActionRan(const double durationSinceLastTick) {

@@ -44,6 +44,7 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
 
     /** @brief Returns the human-readable name of the bound button. */
     std::string GetPhysicalInputName() override;
+
   protected:
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;

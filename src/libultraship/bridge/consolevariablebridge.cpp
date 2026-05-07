@@ -10,15 +10,13 @@ static Ship::ConsoleVariable* GetConsoleVariable() {
     return sConsoleVariable.get();
 }
 
-
 std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
     return GetConsoleVariable()->Get(name);
 }
 
 extern "C" {
 int32_t CVarGetInteger(const char* name, int32_t defaultValue) {
-    return GetConsoleVariable()->GetInteger(name,
-                                                                                                     defaultValue);
+    return GetConsoleVariable()->GetInteger(name, defaultValue);
 }
 
 float CVarGetFloat(const char* name, float defaultValue) {
@@ -34,8 +32,7 @@ Color_RGBA8 CVarGetColor(const char* name, Color_RGBA8 defaultValue) {
 }
 
 Color_RGB8 CVarGetColor24(const char* name, Color_RGB8 defaultValue) {
-    return GetConsoleVariable()->GetColor24(name,
-                                                                                                     defaultValue);
+    return GetConsoleVariable()->GetColor24(name, defaultValue);
 }
 
 void CVarSetInteger(const char* name, int32_t value) {

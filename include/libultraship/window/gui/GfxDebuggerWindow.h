@@ -58,10 +58,14 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {}; ///< Last captured display list command buffer.
-    std::weak_ptr<Fast::Interpreter> mInterpreter;         ///< Weak reference to the Fast3D interpreter. @note Requires Window (Fast3dWindow) to be initialized first.
-    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;       ///< Cached GfxDebugger component. @note Requires GfxDebugger component to be in Context.
-    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;            ///< Cached Fast3dGui reference. @note Requires Window (Fast3dWindow) to be initialized first.
-    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager component. @note Requires ResourceManager component to be in Context.
+    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the Fast3D interpreter. @note Requires Window
+                                                   ///< (Fast3dWindow) to be initialized first.
+    std::shared_ptr<Fast::GfxDebugger>
+        mGfxDebugger; ///< Cached GfxDebugger component. @note Requires GfxDebugger component to be in Context.
+    std::shared_ptr<Fast::Fast3dGui>
+        mFast3dGui; ///< Cached Fast3dGui reference. @note Requires Window (Fast3dWindow) to be initialized first.
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager component. @note Requires
+                                                             ///< ResourceManager component to be in Context.
 };
 
 } // namespace LUS

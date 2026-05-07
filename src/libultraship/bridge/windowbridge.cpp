@@ -11,7 +11,6 @@ static Ship::Window* GetWindow() {
     return sWindow.get();
 }
 
-
 extern "C" {
 
 uint32_t WindowGetWidth() {

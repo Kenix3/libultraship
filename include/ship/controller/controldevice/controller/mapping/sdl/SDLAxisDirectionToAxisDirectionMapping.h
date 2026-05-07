@@ -46,6 +46,7 @@ class SDLAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirect
 
     /** @brief Returns the human-readable name of the bound axis and direction. */
     std::string GetPhysicalInputName() override;
+
   protected:
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;

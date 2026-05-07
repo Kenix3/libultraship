@@ -11,7 +11,6 @@ static Ship::Audio* GetAudio() {
     return sAudio.get();
 }
 
-
 // Audio bridge functions require a Ship::Audio component as a direct child of the Context.
 
 extern "C" {

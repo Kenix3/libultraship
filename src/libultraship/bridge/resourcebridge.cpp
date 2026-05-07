@@ -15,7 +15,6 @@ static Ship::ResourceManager* GetResourceManager() {
     return sResourceManager.get();
 }
 
-
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {
     return GetResourceManager()->LoadResource(name);
 }
@@ -31,9 +30,7 @@ uint64_t ResourceGetCrcByName(const char* name) {
 }
 
 const char* ResourceGetNameByCrc(uint64_t crc) {
-    return GetResourceManager()
-        ->GetArchiveManager()
-        ->HashToCString(crc);
+    return GetResourceManager()->GetArchiveManager()->HashToCString(crc);
 }
 
 size_t ResourceGetSizeByName(const char* name) {
@@ -127,9 +124,7 @@ size_t ResourceGetTexSizeByCrc(uint64_t crc) {
 }
 
 void ResourceGetGameVersions(uint32_t* versions, size_t versionsSize, size_t* versionsCount) {
-    auto list = GetResourceManager()
-                    ->GetArchiveManager()
-                    ->GetGameVersions();
+    auto list = GetResourceManager()->GetArchiveManager()->GetGameVersions();
     memcpy(versions, list.data(), std::min(versionsSize, list.size() * sizeof(uint32_t)));
     *versionsCount = list.size();
 }
@@ -139,9 +134,7 @@ void ResourceLoadDirectoryAsync(const char* name) {
 }
 
 uint32_t ResourceHasGameVersion(uint32_t hash) {
-    auto list = GetResourceManager()
-                    ->GetArchiveManager()
-                    ->GetGameVersions();
+    auto list = GetResourceManager()->GetArchiveManager()->GetGameVersions();
     return std::find(list.begin(), list.end(), hash) != list.end();
 }
 

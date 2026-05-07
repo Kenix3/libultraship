@@ -160,9 +160,11 @@ class Fast3dGui : public Ship::Gui {
 
     std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
     GuiWindowInitData mImpl;                 ///< Backend-specific window/context handles passed to Init().
-    std::shared_ptr<Ship::Window> mWindow;           ///< Cached Window component. @note Requires Window component in Context.
-    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables; ///< Cached ConsoleVariable component. @note Requires ConsoleVariable component in Context.
-    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager component. @note Requires ResourceManager component in Context.
+    std::shared_ptr<Ship::Window> mWindow;   ///< Cached Window component. @note Requires Window component in Context.
+    std::shared_ptr<Ship::ConsoleVariable>
+        mConsoleVariables; ///< Cached ConsoleVariable component. @note Requires ConsoleVariable component in Context.
+    std::shared_ptr<Ship::ResourceManager>
+        mResourceManager; ///< Cached ResourceManager component. @note Requires ResourceManager component in Context.
 
   private:
     /** @brief Applies any pending resolution or MSAA changes to the render target. */

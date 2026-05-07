@@ -47,6 +47,7 @@ class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, pu
 
     /** @brief Returns the human-readable name of the bound wheel direction. */
     std::string GetPhysicalInputName() override;
+
   protected:
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;

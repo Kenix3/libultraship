@@ -46,6 +46,7 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
 
     /** @brief Returns the human-readable name of the bound mouse button. */
     std::string GetPhysicalInputName() override;
+
   protected:
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;

@@ -39,6 +39,7 @@ class SDLLEDMapping final : public ControllerLEDMapping {
 
     /** @brief Returns the human-readable name of the SDL gamepad device. */
     std::string GetPhysicalDeviceName() override;
+
   protected:
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;
