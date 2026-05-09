@@ -15,8 +15,8 @@ enum class WindowBackend {
     FAST3D_DXGI_DX11,
     FAST3D_SDL_OPENGL,
     FAST3D_SDL_METAL,
-    WINDOW_BACKEND_COUNT,
-    FAST3D_SDL_VULKAN
+    FAST3D_SDL_VULKAN,
+    WINDOW_BACKEND_COUNT
 };
 
 struct Coords {

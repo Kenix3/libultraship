@@ -44,6 +44,9 @@ typedef struct {
             SDL_Renderer* Renderer;
         } Metal;
         struct {
+            void* Window;
+        } Vulkan;
+        struct {
             uint32_t Width;
             uint32_t Height;
         } Gx2;

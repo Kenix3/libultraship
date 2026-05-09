@@ -2,6 +2,12 @@
 
 #include "gfx_window_manager_api.h"
 namespace Fast {
+enum class SDLGraphicsApi {
+    OpenGL,
+    Metal,
+    Vulkan,
+};
+
 class GfxWindowBackendSDL2 final : public GfxWindowBackend {
   public:
     GfxWindowBackendSDL2() = default;
@@ -49,12 +55,14 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void OnMouseButtonDown(int btn) const;
     void OnMouseButtonUp(int btn) const;
     void SyncFramerateWithTime() const;
+    void GetDrawableSize(int* width, int* height) const;
 
-    SDL_Window* mWnd;
+    SDLGraphicsApi mGraphicsApi = SDLGraphicsApi::OpenGL;
+    SDL_Window* mWnd = nullptr;
     SDL_Rect mCursorClip;
-    SDL_GLContext mCtx;
-    SDL_Renderer* mRenderer;
-    int mSdlToLusTable[512];
+    SDL_GLContext mCtx = nullptr;
+    SDL_Renderer* mRenderer = nullptr;
+    int mSdlToLusTable[512] = {};
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
     // OTRTODO: These are redundant. Info can be queried from SDL.

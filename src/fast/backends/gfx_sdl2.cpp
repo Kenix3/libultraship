@@ -17,14 +17,17 @@
 #if FOR_WINDOWS
 #include <GL/glew.h>
 #include "SDL.h"
+#include "SDL_vulkan.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
 #elif __APPLE__
 #include <SDL.h>
+#include <SDL_vulkan.h>
 #include "fast/backends/gfx_metal.h"
 #include "ship/utils/macUtils.h"
 #else
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
 #endif
@@ -313,6 +316,13 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
                                 uint32_t height, int32_t posX, int32_t posY) {
     mWindowWidth = width;
     mWindowHeight = height;
+    mGraphicsApi = SDLGraphicsApi::OpenGL;
+
+    if (strcmp(gfxApiName, "Vulkan") == 0) {
+        mGraphicsApi = SDLGraphicsApi::Vulkan;
+    } else if (strcmp(gfxApiName, "Metal") == 0) {
+        mGraphicsApi = SDLGraphicsApi::Metal;
+    }
 
 #if SDL_VERSION_ATLEAST(2, 24, 0)
     /* fix DPI scaling issues on Windows */
@@ -323,25 +333,23 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
-#if defined(__APPLE__)
-    bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
-#else
-    constexpr bool use_opengl = true;
-#endif
+    bool use_opengl = mGraphicsApi == SDLGraphicsApi::OpenGL;
 
     if (use_opengl) {
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    } else {
+    } else if (mGraphicsApi == SDLGraphicsApi::Metal) {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     }
 
 #if defined(__APPLE__)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    if (use_opengl) {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    }
 #endif
 
 #ifdef _WIN32
@@ -364,8 +372,10 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 
     if (use_opengl) {
         flags = flags | SDL_WINDOW_OPENGL;
-    } else {
+    } else if (mGraphicsApi == SDLGraphicsApi::Metal) {
         flags = flags | SDL_WINDOW_METAL;
+    } else if (mGraphicsApi == SDLGraphicsApi::Vulkan) {
+        flags = flags | SDL_WINDOW_VULKAN;
     }
 
     mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
@@ -388,7 +398,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     }
 
     if (use_opengl) {
-        SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+        GetDrawableSize(&mWindowWidth, &mWindowHeight);
 
         if (startFullScreen) {
             SetFullscreenImpl(true, false);
@@ -400,7 +410,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
 
         window_impl.Opengl = { mWnd, mCtx };
-    } else {
+    } else if (mGraphicsApi == SDLGraphicsApi::Metal) {
         uint32_t flags = SDL_RENDERER_ACCELERATED;
         if (mVsyncEnabled) {
             flags |= SDL_RENDERER_PRESENTVSYNC;
@@ -417,6 +427,13 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 
         SDL_GetRendererOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
         window_impl.Metal = { mWnd, mRenderer };
+    } else if (mGraphicsApi == SDLGraphicsApi::Vulkan) {
+        if (startFullScreen) {
+            SetFullscreenImpl(true, false);
+        }
+
+        GetDrawableSize(&mWindowWidth, &mWindowHeight);
+        window_impl.Vulkan = { mWnd };
     }
 
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
@@ -505,12 +522,22 @@ void GfxWindowBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn),
 }
 
 void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
-#ifdef __APPLE__
-    SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
-#else
-    SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
-#endif
+    GetDrawableSize(static_cast<int*>((void*)width), static_cast<int*>((void*)height));
     SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
+}
+
+void GfxWindowBackendSDL2::GetDrawableSize(int* width, int* height) const {
+    switch (mGraphicsApi) {
+        case SDLGraphicsApi::OpenGL:
+            SDL_GL_GetDrawableSize(mWnd, width, height);
+            break;
+        case SDLGraphicsApi::Vulkan:
+            SDL_Vulkan_GetDrawableSize(mWnd, width, height);
+            break;
+        case SDLGraphicsApi::Metal:
+            SDL_GetWindowSize(mWnd, width, height);
+            break;
+    }
 }
 
 int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
@@ -586,11 +613,7 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
         case SDL_WINDOWEVENT:
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
-#ifdef __APPLE__
-                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
-#else
-                    SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
-#endif
+                    GetDrawableSize(&mWindowWidth, &mWindowHeight);
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
                     if (event.window.windowID == SDL_GetWindowID(mWnd)) {
@@ -688,12 +711,17 @@ void GfxWindowBackendSDL2::SwapBuffersBegin() {
 
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;
-        SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
-        SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+        if (mGraphicsApi == SDLGraphicsApi::OpenGL) {
+            SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
+        } else if (mGraphicsApi == SDLGraphicsApi::Metal && mRenderer != nullptr) {
+            SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+        }
     }
 
     SyncFramerateWithTime();
-    SDL_GL_SwapWindow(mWnd);
+    if (mGraphicsApi == SDLGraphicsApi::OpenGL) {
+        SDL_GL_SwapWindow(mWnd);
+    }
 }
 
 void GfxWindowBackendSDL2::SwapBuffersEnd() {
@@ -729,9 +757,18 @@ bool GfxWindowBackendSDL2::IsRunning() {
 
 void GfxWindowBackendSDL2::Destroy() {
     // TODO: destroy _any_ resources used by SDL
-    SDL_GL_DeleteContext(mCtx);
-    SDL_DestroyWindow(mWnd);
-    SDL_DestroyRenderer(mRenderer);
+    if (mCtx != nullptr) {
+        SDL_GL_DeleteContext(mCtx);
+        mCtx = nullptr;
+    }
+    if (mRenderer != nullptr) {
+        SDL_DestroyRenderer(mRenderer);
+        mRenderer = nullptr;
+    }
+    if (mWnd != nullptr) {
+        SDL_DestroyWindow(mWnd);
+        mWnd = nullptr;
+    }
     SDL_Quit();
 }
 

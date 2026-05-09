@@ -23,7 +23,7 @@ target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Re
 
 #=================== Graphic ===================
 
-file(GLOB Source_Files__Graphic RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "backends/*.cpp")
+file(GLOB Source_Files__Graphic CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "backends/*.cpp")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_dxgi*")

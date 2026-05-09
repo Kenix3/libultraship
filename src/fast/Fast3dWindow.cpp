@@ -9,6 +9,7 @@
 #include "fast/backends/gfx_dxgi.h"
 #include "fast/backends/gfx_opengl.h"
 #include "fast/backends/gfx_metal.h"
+#include "fast/backends/gfx_vulkan.h"
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
@@ -35,6 +36,7 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
     }
 #endif
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_VULKAN);
 }
 
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
@@ -149,6 +151,10 @@ void Fast3dWindow::InitWindowManager() {
             mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
 #endif
+        case Ship::WindowBackend::FAST3D_SDL_VULKAN:
+            mRenderingApi = new GfxRenderingAPIVulkan();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
+            break;
         default:
             SPDLOG_ERROR("Could not load the correct rendering backend");
             break;

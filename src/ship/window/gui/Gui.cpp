@@ -156,11 +156,16 @@ void Gui::Init(GuiWindowInitData windowImpl) {
 void Gui::ImGuiWMInit() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
+        case WindowBackend::FAST3D_SDL_VULKAN:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_VULKAN) {
+                ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
+            } else {
+                ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            }
             break;
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
@@ -189,6 +194,9 @@ void Gui::ShutDownImGui(Ship::Window* window) {
             ImGui_ImplOpenGL3_Shutdown();
             break;
 #endif
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            ImGui_ImplSDL2_Shutdown();
+            break;
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             ImGui_ImplSDL2_Shutdown();
@@ -218,6 +226,9 @@ void Gui::ImGuiBackendInit() {
 #endif
             break;
 #endif
+
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            break;
 
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL: {
@@ -282,6 +293,8 @@ bool Gui::SupportsViewports() {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
             return true;
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            return false;
         default:
             return false;
     }
@@ -291,6 +304,7 @@ void Gui::HandleWindowEvents(WindowEvent event) {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
+        case WindowBackend::FAST3D_SDL_VULKAN:
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
             Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
@@ -343,6 +357,14 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #endif
 
+        case WindowBackend::FAST3D_SDL_VULKAN: {
+            unsigned char* pixels;
+            int width;
+            int height;
+            mImGuiIo->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+            break;
+        }
+
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplDX11_NewFrame();
@@ -367,6 +389,7 @@ void Gui::ImGuiWMNewFrame() {
     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
+        case WindowBackend::FAST3D_SDL_VULKAN:
             ImGui_ImplSDL2_NewFrame();
             break;
 #ifdef ENABLE_DX11
