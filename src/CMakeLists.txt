@@ -65,6 +65,7 @@ endif()
 
 find_package(Vulkan REQUIRED)
 target_link_libraries(libultraship PRIVATE Vulkan::Vulkan)
+target_link_libraries(libultraship PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)

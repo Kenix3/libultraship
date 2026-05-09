@@ -10,6 +10,7 @@
 #include <vector>
 
 struct ImDrawData;
+struct VmaAllocator_T;
 
 namespace Fast {
 
@@ -82,6 +83,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateCommandBuffers();
     void CreateSyncObjects();
     void CleanupSwapchainSyncObjects();
+    void CreateAllocator();
     void DestroyVulkanObjects();
 
     GfxWindowBackendSDL2* mWindowBackend = nullptr;
@@ -90,6 +92,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkSurfaceKHR mSurface = VK_NULL_HANDLE;
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mDevice = VK_NULL_HANDLE;
+    VmaAllocator_T* mAllocator = nullptr;
     VkQueue mGraphicsQueue = VK_NULL_HANDLE;
     VkQueue mPresentQueue = VK_NULL_HANDLE;
     Vulkan::QueueFamilyIndices mQueueFamilies;

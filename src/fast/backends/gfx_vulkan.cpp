@@ -9,7 +9,11 @@
 #include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
 
+#include <imgui.h>
 #include <imgui_impl_vulkan.h>
+
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 
 #include <algorithm>
 #include <array>
@@ -120,6 +124,7 @@ void GfxRenderingAPIVulkan::Init() {
     mPhysicalDevice = deviceSelection.physicalDevice;
     mQueueFamilies = deviceSelection.queueFamilies;
     mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
+    CreateAllocator();
     CreateSwapchain();
     CreateImageViews();
     CreateCommandPool();
@@ -162,7 +167,7 @@ void GfxRenderingAPIVulkan::StartFrame() {
 
     VkImageMemoryBarrier2 colorAttachmentBarrier = {};
     colorAttachmentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    colorAttachmentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    colorAttachmentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     colorAttachmentBarrier.srcAccessMask = VK_ACCESS_2_NONE;
     colorAttachmentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     colorAttachmentBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
@@ -414,6 +419,20 @@ void GfxRenderingAPIVulkan::RenderDrawData(ImDrawData* drawData) {
         return;
     }
 
+    ImTextureID fallbackTextureId = ImGui::GetIO().Fonts->TexID;
+    if (fallbackTextureId != 0) {
+        for (int listIndex = 0; listIndex < drawData->CmdListsCount; listIndex++) {
+            ImDrawList* drawList = drawData->CmdLists[listIndex];
+            for (int commandIndex = 0; commandIndex < drawList->CmdBuffer.Size; commandIndex++) {
+                ImDrawCmd& command = drawList->CmdBuffer[commandIndex];
+                if (command.UserCallback == nullptr && command.TextureId == 0) {
+                    command.TextureId = fallbackTextureId;
+                    command.ElemCount = 0;
+                }
+            }
+        }
+    }
+
     ImGui_ImplVulkan_RenderDrawData(drawData, mCurrentCommandBuffer);
 }
 
@@ -562,6 +581,19 @@ void GfxRenderingAPIVulkan::CleanupSwapchainSyncObjects() {
     mRenderFinishedSemaphores.clear();
 }
 
+void GfxRenderingAPIVulkan::CreateAllocator() {
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    allocatorInfo.physicalDevice = mPhysicalDevice;
+    allocatorInfo.device = mDevice;
+    allocatorInfo.instance = mInstance;
+    allocatorInfo.vulkanApiVersion = Vulkan::MinimumApiVersion;
+
+    if (vmaCreateAllocator(&allocatorInfo, &mAllocator) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan memory allocator");
+    }
+}
+
 void GfxRenderingAPIVulkan::CleanupSwapchain() {
     if (mDevice == VK_NULL_HANDLE) {
         return;
@@ -626,6 +658,10 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         if (mCommandPool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
             mCommandPool = VK_NULL_HANDLE;
+        }
+        if (mAllocator != nullptr) {
+            vmaDestroyAllocator(mAllocator);
+            mAllocator = nullptr;
         }
         vkDestroyDevice(mDevice, nullptr);
         mDevice = VK_NULL_HANDLE;
