@@ -263,9 +263,11 @@ void GfxRenderingAPIVulkan::CreateSwapchain() {
     auto presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes);
     auto extent = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, mWindowBackend->GetWindow());
 
-    if ((swapchainSupport.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-        // TODO: Add a dynamic-rendering clear path for platforms whose swapchain images cannot be transfer targets.
-        throw std::runtime_error("Vulkan swapchain images do not support transfer clear");
+    constexpr VkImageUsageFlags requiredImageUsage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if ((swapchainSupport.capabilities.supportedUsageFlags & requiredImageUsage) != requiredImageUsage) {
+        // TODO: Add alternate paths for platforms whose swapchain images cannot be transfer targets or attachments.
+        throw std::runtime_error("Vulkan swapchain images do not support required usage flags");
     }
 
     uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
@@ -281,7 +283,7 @@ void GfxRenderingAPIVulkan::CreateSwapchain() {
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    createInfo.imageUsage = requiredImageUsage;
 
     std::array<uint32_t, 2> queueFamilyIndices = { *mQueueFamilies.graphicsFamily, *mQueueFamilies.presentFamily };
     if (mQueueFamilies.graphicsFamily != mQueueFamilies.presentFamily) {
