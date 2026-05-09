@@ -214,15 +214,54 @@ bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Que
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                              VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                              const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) {
-    (void)messageTypes;
     (void)userData;
 
+    std::string messageType;
+    if ((messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) != 0) {
+        messageType += "GENERAL";
+    }
+    if ((messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) != 0) {
+        messageType += messageType.empty() ? "VALIDATION" : "|VALIDATION";
+    }
+    if ((messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
+        messageType += messageType.empty() ? "PERFORMANCE" : "|PERFORMANCE";
+    }
+    if (messageType.empty()) {
+        messageType = "UNKNOWN";
+    }
+
+    const char* severity = "UNKNOWN";
+    switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            severity = "VERBOSE";
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            severity = "INFO";
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            severity = "WARNING";
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            severity = "ERROR";
+            break;
+        default:
+            break;
+    }
+
+    const char* messageId = callbackData != nullptr && callbackData->pMessageIdName != nullptr
+                                ? callbackData->pMessageIdName
+                                : "no-message-id";
+    const char* message =
+        callbackData != nullptr && callbackData->pMessage != nullptr ? callbackData->pMessage : "No message provided";
+
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        SPDLOG_ERROR("Vulkan validation: {}", callbackData->pMessage);
+        SPDLOG_ERROR("[VULKAN] [{}][{}][{}] {}", severity, messageType, messageId, message);
     } else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        SPDLOG_WARN("Vulkan validation: {}", callbackData->pMessage);
+        SPDLOG_WARN("[VULKAN] [{}][{}][{}] {}", severity, messageType, messageId, message);
+    } else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        SPDLOG_INFO("[VULKAN] [{}][{}][{}] {}", severity, messageType, messageId, message);
     } else {
-        SPDLOG_INFO("Vulkan validation: {}", callbackData->pMessage);
+        SPDLOG_DEBUG("[VULKAN] [{}][{}][{}] {}", severity, messageType, messageId, message);
     }
 
     return VK_FALSE;
@@ -232,6 +271,7 @@ VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo() {
     VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
