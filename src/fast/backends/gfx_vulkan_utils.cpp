@@ -181,6 +181,29 @@ bool CheckRequiredFeatures(VkPhysicalDevice physicalDevice) {
            vulkan13Features.dynamicRendering == VK_TRUE && vulkan13Features.synchronization2 == VK_TRUE;
 }
 
+std::string MakeSingleLineMessage(const char* message) {
+    if (message == nullptr) {
+        return "No message provided";
+    }
+
+    std::string singleLineMessage;
+    bool pendingWhitespace = false;
+    for (const char* current = message; *current != '\0'; current++) {
+        if (*current == '\r' || *current == '\n') {
+            pendingWhitespace = true;
+            continue;
+        }
+
+        if (pendingWhitespace && !singleLineMessage.empty() && *current != ' ' && *current != '\t') {
+            singleLineMessage += ' ';
+        }
+        pendingWhitespace = false;
+        singleLineMessage += *current;
+    }
+
+    return singleLineMessage;
+}
+
 bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, QueueFamilyIndices* queueFamilies) {
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(physicalDevice, &properties);
@@ -251,8 +274,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
     const char* messageId = callbackData != nullptr && callbackData->pMessageIdName != nullptr
                                 ? callbackData->pMessageIdName
                                 : "no-message-id";
-    const char* message =
-        callbackData != nullptr && callbackData->pMessage != nullptr ? callbackData->pMessage : "No message provided";
+    std::string message = MakeSingleLineMessage(callbackData != nullptr ? callbackData->pMessage : nullptr);
 
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         SPDLOG_ERROR("[VULKAN] [{}][{}][{}] {}", severity, messageType, messageId, message);
@@ -271,7 +293,6 @@ VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo() {
     VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
