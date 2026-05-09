@@ -25,10 +25,32 @@ namespace Fast {
 namespace {
 
 constexpr uint32_t ImGuiDescriptorPoolSize = 64;
+constexpr uint32_t PreferredBindlessTextureCount = 4096;
 
 void CheckImGuiVkResult(VkResult result) {
     if (result != VK_SUCCESS) {
         throw std::runtime_error("ImGui Vulkan backend call failed with VkResult " + std::to_string(result));
+    }
+}
+
+void CheckVk(VkResult result, const char* message) {
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error(std::string(message) + " (VkResult " + std::to_string(result) + ")");
+    }
+}
+
+VkSamplerAddressMode GfxCmToVulkan(uint32_t value) {
+    switch (value) {
+        case G_TX_NOMIRROR | G_TX_CLAMP:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case G_TX_MIRROR | G_TX_WRAP:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case G_TX_MIRROR | G_TX_CLAMP:
+            return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+        case G_TX_NOMIRROR | G_TX_WRAP:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        default:
+            throw std::runtime_error("Unsupported Vulkan texture address mode");
     }
 }
 
@@ -81,16 +103,67 @@ void GfxRenderingAPIVulkan::ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs
 }
 
 uint32_t GfxRenderingAPIVulkan::NewTexture() {
-    return mNextTextureId++;
+    if (mTextures.size() >= mMaxBindlessTextures) {
+        throw std::runtime_error("Vulkan bindless texture descriptor array is full");
+    }
+    mTextures.emplace_back();
+    return static_cast<uint32_t>(mTextures.size() - 1);
 }
 
 void GfxRenderingAPIVulkan::SelectTexture(int tile, uint32_t textureId) {
+    if (tile < 0 || tile >= SHADER_MAX_TEXTURES) {
+        throw std::runtime_error("Invalid Vulkan texture tile index");
+    }
+    GetTexture(textureId);
+    mCurrentTile = tile;
+    mCurrentTextureIds[tile] = textureId;
 }
 
 void GfxRenderingAPIVulkan::UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) {
+    if (rgba32Buf == nullptr || width == 0 || height == 0) {
+        throw std::runtime_error("Cannot upload empty Vulkan texture");
+    }
+
+    uint32_t textureId = mCurrentTextureIds[mCurrentTile];
+    VulkanTexture& texture = GetTexture(textureId);
+    UploadTextureToGpu(texture, rgba32Buf, width, height);
+    WriteBindlessTextureDescriptor(textureId);
 }
 
-void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) {
+void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linearFilter, uint32_t cms, uint32_t cmt) {
+    if (sampler < 0 || sampler >= SHADER_MAX_TEXTURES) {
+        throw std::runtime_error("Invalid Vulkan sampler tile index");
+    }
+
+    VulkanTexture& texture = GetTexture(mCurrentTextureIds[sampler]);
+    texture.linearFiltering = linearFilter;
+    texture.cms = cms;
+    texture.cmt = cmt;
+
+    if (texture.sampler != VK_NULL_HANDLE) {
+        vkDestroySampler(mDevice, texture.sampler, nullptr);
+        texture.sampler = VK_NULL_HANDLE;
+    }
+
+    VkFilter filter = linearFilter && mCurrentFilterMode == FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = filter;
+    samplerInfo.minFilter = filter;
+    samplerInfo.mipmapMode =
+        filter == VK_FILTER_LINEAR ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.addressModeU = GfxCmToVulkan(cms);
+    samplerInfo.addressModeV = GfxCmToVulkan(cmt);
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    CheckVk(vkCreateSampler(mDevice, &samplerInfo, nullptr, &texture.sampler),
+            "Failed to create Vulkan texture sampler");
+
+    if (texture.uploaded) {
+        WriteBindlessTextureDescriptor(mCurrentTextureIds[sampler]);
+    }
 }
 
 void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool depth_test, bool z_upd) {
@@ -125,9 +198,11 @@ void GfxRenderingAPIVulkan::Init() {
     mQueueFamilies = deviceSelection.queueFamilies;
     mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
     CreateAllocator();
+    CreateTextureDescriptorResources();
     CreateSwapchain();
     CreateImageViews();
     CreateCommandPool();
+    CreateUploadCommandPool();
     CreateCommandBuffers();
     CreateSyncObjects();
 
@@ -340,6 +415,7 @@ void GfxRenderingAPIVulkan::SelectTextureFb(int fbId) {
 }
 
 void GfxRenderingAPIVulkan::DeleteTexture(uint32_t texId) {
+    (void)texId;
 }
 
 void GfxRenderingAPIVulkan::SetTextureFilter(FilteringMode mode) {
@@ -355,7 +431,12 @@ void GfxRenderingAPIVulkan::SetSrgbMode() {
 }
 
 ImTextureID GfxRenderingAPIVulkan::GetTextureById(int id) {
-    return nullptr;
+    if (id < 0) {
+        throw std::runtime_error("Invalid negative Vulkan texture id");
+    }
+
+    EnsureImGuiTextureDescriptor(static_cast<uint32_t>(id));
+    return reinterpret_cast<ImTextureID>(GetTexture(static_cast<uint32_t>(id)).imguiDescriptorSet);
 }
 
 bool GfxRenderingAPIVulkan::InitImGui() {
@@ -403,6 +484,9 @@ void GfxRenderingAPIVulkan::ShutdownImGui() {
     }
     ImGui_ImplVulkan_Shutdown();
     mImGuiInitialized = false;
+    for (auto& texture : mTextures) {
+        texture.imguiDescriptorSet = VK_NULL_HANDLE;
+    }
 }
 
 void GfxRenderingAPIVulkan::NewFrame() {
@@ -532,6 +616,16 @@ void GfxRenderingAPIVulkan::CreateCommandPool() {
     }
 }
 
+void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    poolInfo.queueFamilyIndex = *mQueueFamilies.graphicsFamily;
+
+    CheckVk(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mUploadCommandPool),
+            "Failed to create Vulkan upload command pool");
+}
+
 void GfxRenderingAPIVulkan::CreateCommandBuffers() {
     mCommandBuffers.resize(mSwapchainImages.size());
 
@@ -594,6 +688,363 @@ void GfxRenderingAPIVulkan::CreateAllocator() {
     }
 }
 
+void GfxRenderingAPIVulkan::CreateTextureDescriptorResources() {
+    VkPhysicalDeviceDescriptorIndexingProperties indexingProperties = {};
+    indexingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES;
+
+    VkPhysicalDeviceProperties2 properties = {};
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    properties.pNext = &indexingProperties;
+    vkGetPhysicalDeviceProperties2(mPhysicalDevice, &properties);
+
+    uint32_t deviceLimit =
+        std::min({ indexingProperties.maxDescriptorSetUpdateAfterBindSampledImages,
+                   indexingProperties.maxDescriptorSetUpdateAfterBindSamplers,
+                   indexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages,
+                   indexingProperties.maxPerStageDescriptorUpdateAfterBindSamplers });
+    if (deviceLimit == 0) {
+        throw std::runtime_error("Vulkan device does not expose update-after-bind sampled image descriptors");
+    }
+    mMaxBindlessTextures = std::min(PreferredBindlessTextureCount, deviceLimit);
+
+    VkDescriptorSetLayoutBinding textureBinding = {};
+    textureBinding.binding = 0;
+    textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureBinding.descriptorCount = mMaxBindlessTextures;
+    textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+                                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                                            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo = {};
+    bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    bindingFlagsInfo.bindingCount = 1;
+    bindingFlagsInfo.pBindingFlags = &bindingFlags;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.pNext = &bindingFlagsInfo;
+    layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &textureBinding;
+    CheckVk(vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mTextureDescriptorSetLayout),
+            "Failed to create Vulkan texture descriptor set layout");
+
+    VkDescriptorPoolSize poolSize = {};
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = mMaxBindlessTextures;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    CheckVk(vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mTextureDescriptorPool),
+            "Failed to create Vulkan texture descriptor pool");
+
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variableCountInfo = {};
+    variableCountInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+    variableCountInfo.descriptorSetCount = 1;
+    variableCountInfo.pDescriptorCounts = &mMaxBindlessTextures;
+
+    VkDescriptorSetAllocateInfo allocateInfo = {};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocateInfo.pNext = &variableCountInfo;
+    allocateInfo.descriptorPool = mTextureDescriptorPool;
+    allocateInfo.descriptorSetCount = 1;
+    allocateInfo.pSetLayouts = &mTextureDescriptorSetLayout;
+    CheckVk(vkAllocateDescriptorSets(mDevice, &allocateInfo, &mTextureDescriptorSet),
+            "Failed to allocate Vulkan texture descriptor set");
+}
+
+void GfxRenderingAPIVulkan::DestroyTextureDescriptorResources() {
+    if (mTextureDescriptorPool != VK_NULL_HANDLE) {
+        vkDestroyDescriptorPool(mDevice, mTextureDescriptorPool, nullptr);
+        mTextureDescriptorPool = VK_NULL_HANDLE;
+    }
+    if (mTextureDescriptorSetLayout != VK_NULL_HANDLE) {
+        vkDestroyDescriptorSetLayout(mDevice, mTextureDescriptorSetLayout, nullptr);
+        mTextureDescriptorSetLayout = VK_NULL_HANDLE;
+    }
+    mTextureDescriptorSet = VK_NULL_HANDLE;
+    mMaxBindlessTextures = 0;
+}
+
+VkCommandBuffer GfxRenderingAPIVulkan::BeginImmediateCommands() {
+    VkCommandBufferAllocateInfo allocateInfo = {};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = mUploadCommandPool;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    CheckVk(vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer),
+            "Failed to allocate Vulkan immediate command buffer");
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    CheckVk(vkBeginCommandBuffer(commandBuffer, &beginInfo), "Failed to begin Vulkan immediate command buffer");
+    return commandBuffer;
+}
+
+void GfxRenderingAPIVulkan::EndImmediateCommands(VkCommandBuffer commandBuffer) {
+    CheckVk(vkEndCommandBuffer(commandBuffer), "Failed to end Vulkan immediate command buffer");
+
+    VkCommandBufferSubmitInfo commandBufferInfo = {};
+    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    commandBufferInfo.commandBuffer = commandBuffer;
+
+    VkSubmitInfo2 submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    submitInfo.commandBufferInfoCount = 1;
+    submitInfo.pCommandBufferInfos = &commandBufferInfo;
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence = VK_NULL_HANDLE;
+    CheckVk(vkCreateFence(mDevice, &fenceInfo, nullptr, &fence), "Failed to create Vulkan immediate fence");
+
+    CheckVk(vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, fence), "Failed to submit Vulkan immediate command buffer");
+    CheckVk(vkWaitForFences(mDevice, 1, &fence, VK_TRUE, UINT64_MAX), "Failed to wait for Vulkan immediate fence");
+    vkDestroyFence(mDevice, fence, nullptr);
+    vkFreeCommandBuffers(mDevice, mUploadCommandPool, 1, &commandBuffer);
+}
+
+VulkanTexture& GfxRenderingAPIVulkan::GetTexture(uint32_t textureId) {
+    if (textureId >= mTextures.size()) {
+        throw std::runtime_error("Vulkan texture id does not exist");
+    }
+    return mTextures[textureId];
+}
+
+void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width,
+                                               uint32_t height) {
+    if (mAllocator == nullptr) {
+        throw std::runtime_error("Cannot upload Vulkan texture before VMA allocator creation");
+    }
+
+    VkDeviceSize uploadSize = static_cast<VkDeviceSize>(width) * static_cast<VkDeviceSize>(height) * 4;
+
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = uploadSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo stagingAllocInfo = {};
+    stagingAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                             VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VmaAllocation stagingAllocation = nullptr;
+    VmaAllocationInfo stagingInfo = {};
+    CheckVk(vmaCreateBuffer(mAllocator, &bufferInfo, &stagingAllocInfo, &stagingBuffer, &stagingAllocation,
+                            &stagingInfo),
+            "Failed to create Vulkan texture staging buffer");
+    std::memcpy(stagingInfo.pMappedData, rgba32Buf, static_cast<size_t>(uploadSize));
+
+    VkImage oldImage = texture.image;
+    VmaAllocation oldAllocation = texture.allocation;
+    VkImageView oldImageView = texture.imageView;
+    VkSampler oldSampler = texture.sampler;
+    VkDescriptorSet oldImGuiDescriptorSet = texture.imguiDescriptorSet;
+
+    texture.image = VK_NULL_HANDLE;
+    texture.allocation = nullptr;
+    texture.imageView = VK_NULL_HANDLE;
+    texture.sampler = VK_NULL_HANDLE;
+    texture.imguiDescriptorSet = VK_NULL_HANDLE;
+    texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    texture.uploaded = false;
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent = { width, height, 1 };
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo imageAllocInfo = {};
+    imageAllocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    CheckVk(vmaCreateImage(mAllocator, &imageInfo, &imageAllocInfo, &texture.image, &texture.allocation, nullptr),
+            "Failed to create Vulkan texture image");
+
+    VkCommandBuffer commandBuffer = BeginImmediateCommands();
+
+    VkImageMemoryBarrier2 transferBarrier = {};
+    transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    transferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    transferBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+    transferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    transferBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transferBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transferBarrier.image = texture.image;
+    transferBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transferBarrier.subresourceRange.baseMipLevel = 0;
+    transferBarrier.subresourceRange.levelCount = 1;
+    transferBarrier.subresourceRange.baseArrayLayer = 0;
+    transferBarrier.subresourceRange.layerCount = 1;
+
+    VkDependencyInfo transferDependency = {};
+    transferDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    transferDependency.imageMemoryBarrierCount = 1;
+    transferDependency.pImageMemoryBarriers = &transferBarrier;
+    vkCmdPipelineBarrier2(commandBuffer, &transferDependency);
+
+    VkBufferImageCopy copyRegion = {};
+    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.imageSubresource.mipLevel = 0;
+    copyRegion.imageSubresource.baseArrayLayer = 0;
+    copyRegion.imageSubresource.layerCount = 1;
+    copyRegion.imageExtent = { width, height, 1 };
+    vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, texture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                           &copyRegion);
+
+    VkImageMemoryBarrier2 shaderReadBarrier = {};
+    shaderReadBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    shaderReadBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    shaderReadBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    shaderReadBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    shaderReadBarrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    shaderReadBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    shaderReadBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    shaderReadBarrier.image = texture.image;
+    shaderReadBarrier.subresourceRange = transferBarrier.subresourceRange;
+
+    VkDependencyInfo shaderReadDependency = {};
+    shaderReadDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    shaderReadDependency.imageMemoryBarrierCount = 1;
+    shaderReadDependency.pImageMemoryBarriers = &shaderReadBarrier;
+    vkCmdPipelineBarrier2(commandBuffer, &shaderReadDependency);
+
+    EndImmediateCommands(commandBuffer);
+    vmaDestroyBuffer(mAllocator, stagingBuffer, stagingAllocation);
+
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = texture.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    CheckVk(vkCreateImageView(mDevice, &viewInfo, nullptr, &texture.imageView),
+            "Failed to create Vulkan texture image view");
+
+    VkFilter filter =
+        texture.linearFiltering && mCurrentFilterMode == FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = filter;
+    samplerInfo.minFilter = filter;
+    samplerInfo.mipmapMode =
+        filter == VK_FILTER_LINEAR ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.addressModeU = GfxCmToVulkan(texture.cms);
+    samplerInfo.addressModeV = GfxCmToVulkan(texture.cmt);
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    CheckVk(vkCreateSampler(mDevice, &samplerInfo, nullptr, &texture.sampler),
+            "Failed to create Vulkan texture sampler");
+
+    texture.width = width;
+    texture.height = height;
+    texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texture.uploaded = true;
+
+    if (oldImGuiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
+        ImGui_ImplVulkan_RemoveTexture(oldImGuiDescriptorSet);
+    }
+    if (oldSampler != VK_NULL_HANDLE) {
+        vkDestroySampler(mDevice, oldSampler, nullptr);
+    }
+    if (oldImageView != VK_NULL_HANDLE) {
+        vkDestroyImageView(mDevice, oldImageView, nullptr);
+    }
+    if (oldImage != VK_NULL_HANDLE) {
+        vmaDestroyImage(mAllocator, oldImage, oldAllocation);
+    }
+}
+
+void GfxRenderingAPIVulkan::WriteBindlessTextureDescriptor(uint32_t textureId) {
+    VulkanTexture& texture = GetTexture(textureId);
+    if (!texture.uploaded || texture.imageView == VK_NULL_HANDLE || texture.sampler == VK_NULL_HANDLE) {
+        throw std::runtime_error("Cannot write descriptor for incomplete Vulkan texture");
+    }
+
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.sampler = texture.sampler;
+    imageInfo.imageView = texture.imageView;
+    imageInfo.imageLayout = texture.layout;
+
+    VkWriteDescriptorSet descriptorWrite = {};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = mTextureDescriptorSet;
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = textureId;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(mDevice, 1, &descriptorWrite, 0, nullptr);
+}
+
+void GfxRenderingAPIVulkan::EnsureImGuiTextureDescriptor(uint32_t textureId) {
+    VulkanTexture& texture = GetTexture(textureId);
+    if (!texture.uploaded || texture.imageView == VK_NULL_HANDLE || texture.sampler == VK_NULL_HANDLE) {
+        throw std::runtime_error("Vulkan texture has not been uploaded");
+    }
+    if (texture.imguiDescriptorSet != VK_NULL_HANDLE) {
+        return;
+    }
+    if (!mImGuiInitialized && !InitImGui()) {
+        throw std::runtime_error("Cannot create ImGui descriptor for Vulkan texture before ImGui initialization");
+    }
+    texture.imguiDescriptorSet =
+        ImGui_ImplVulkan_AddTexture(texture.sampler, texture.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void GfxRenderingAPIVulkan::DestroyTexture(VulkanTexture& texture) {
+    if (texture.imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
+        ImGui_ImplVulkan_RemoveTexture(texture.imguiDescriptorSet);
+    }
+    texture.imguiDescriptorSet = VK_NULL_HANDLE;
+    if (texture.sampler != VK_NULL_HANDLE) {
+        vkDestroySampler(mDevice, texture.sampler, nullptr);
+        texture.sampler = VK_NULL_HANDLE;
+    }
+    if (texture.imageView != VK_NULL_HANDLE) {
+        vkDestroyImageView(mDevice, texture.imageView, nullptr);
+        texture.imageView = VK_NULL_HANDLE;
+    }
+    if (texture.image != VK_NULL_HANDLE) {
+        vmaDestroyImage(mAllocator, texture.image, texture.allocation);
+        texture.image = VK_NULL_HANDLE;
+        texture.allocation = nullptr;
+    }
+    texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    texture.uploaded = false;
+}
+
+void GfxRenderingAPIVulkan::DestroyTextures() {
+    for (auto& texture : mTextures) {
+        DestroyTexture(texture);
+    }
+    mTextures.clear();
+}
+
 void GfxRenderingAPIVulkan::CleanupSwapchain() {
     if (mDevice == VK_NULL_HANDLE) {
         return;
@@ -647,6 +1098,8 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         vkDeviceWaitIdle(mDevice);
         ShutdownImGui();
         CleanupSwapchain();
+        DestroyTextures();
+        DestroyTextureDescriptorResources();
         if (mInFlightFence != VK_NULL_HANDLE) {
             vkDestroyFence(mDevice, mInFlightFence, nullptr);
             mInFlightFence = VK_NULL_HANDLE;
@@ -654,6 +1107,10 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         if (mImageAvailableSemaphore != VK_NULL_HANDLE) {
             vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
             mImageAvailableSemaphore = VK_NULL_HANDLE;
+        }
+        if (mUploadCommandPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(mDevice, mUploadCommandPool, nullptr);
+            mUploadCommandPool = VK_NULL_HANDLE;
         }
         if (mCommandPool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(mDevice, mCommandPool, nullptr);

@@ -10,6 +10,7 @@
 #include <vector>
 
 struct ImDrawData;
+struct VmaAllocation_T;
 struct VmaAllocator_T;
 
 namespace Fast {
@@ -19,6 +20,21 @@ class GfxWindowBackendSDL2;
 struct VulkanShaderProgram {
     uint8_t numInputs = 0;
     bool usedTextures[SHADER_MAX_TEXTURES] = {};
+};
+
+struct VulkanTexture {
+    VkImage image = VK_NULL_HANDLE;
+    VmaAllocation_T* allocation = nullptr;
+    VkImageView imageView = VK_NULL_HANDLE;
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkDescriptorSet imguiDescriptorSet = VK_NULL_HANDLE;
+    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    bool uploaded = false;
+    bool linearFiltering = false;
+    uint32_t cms = 0;
+    uint32_t cmt = 0;
 };
 
 class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
@@ -84,6 +100,17 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateSyncObjects();
     void CleanupSwapchainSyncObjects();
     void CreateAllocator();
+    void CreateUploadCommandPool();
+    void CreateTextureDescriptorResources();
+    void DestroyTextureDescriptorResources();
+    void DestroyTexture(VulkanTexture& texture);
+    void DestroyTextures();
+    void UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
+    void WriteBindlessTextureDescriptor(uint32_t textureId);
+    void EnsureImGuiTextureDescriptor(uint32_t textureId);
+    VkCommandBuffer BeginImmediateCommands();
+    void EndImmediateCommands(VkCommandBuffer commandBuffer);
+    VulkanTexture& GetTexture(uint32_t textureId);
     void DestroyVulkanObjects();
 
     GfxWindowBackendSDL2* mWindowBackend = nullptr;
@@ -103,6 +130,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkImageLayout> mSwapchainImageLayouts;
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
+    VkCommandPool mUploadCommandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> mCommandBuffers;
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
@@ -115,7 +143,13 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
 
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;
     std::vector<uint32_t> mFramebuffers;
-    uint32_t mNextTextureId = 1;
+    std::vector<VulkanTexture> mTextures;
+    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};
+    int mCurrentTile = 0;
+    uint32_t mMaxBindlessTextures = 0;
+    VkDescriptorSetLayout mTextureDescriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorPool mTextureDescriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSet mTextureDescriptorSet = VK_NULL_HANDLE;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
 };
 
