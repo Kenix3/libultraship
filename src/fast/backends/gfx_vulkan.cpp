@@ -158,7 +158,7 @@ void GfxRenderingAPIVulkan::FinishRender() {
 
     VkSemaphoreSubmitInfo signalSemaphoreInfo = {};
     signalSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphore;
+    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphores[imageIndex];
     signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     VkSubmitInfo2 submitInfo = {};
@@ -177,7 +177,7 @@ void GfxRenderingAPIVulkan::FinishRender() {
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphore;
+    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphores[imageIndex];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &mSwapchain;
     presentInfo.pImageIndices = &imageIndex;
@@ -371,11 +371,31 @@ void GfxRenderingAPIVulkan::CreateSyncObjects() {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan synchronization objects");
+    if (mImageAvailableSemaphore == VK_NULL_HANDLE &&
+        vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan image-available semaphore");
     }
+
+    if (mInFlightFence == VK_NULL_HANDLE &&
+        vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan in-flight fence");
+    }
+
+    mRenderFinishedSemaphores.resize(mSwapchainImages.size(), VK_NULL_HANDLE);
+    for (auto& renderFinishedSemaphore : mRenderFinishedSemaphores) {
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan swapchain synchronization objects");
+        }
+    }
+}
+
+void GfxRenderingAPIVulkan::CleanupSwapchainSyncObjects() {
+    for (auto renderFinishedSemaphore : mRenderFinishedSemaphores) {
+        if (renderFinishedSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, renderFinishedSemaphore, nullptr);
+        }
+    }
+    mRenderFinishedSemaphores.clear();
 }
 
 void GfxRenderingAPIVulkan::RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -388,7 +408,7 @@ void GfxRenderingAPIVulkan::RecordClearCommandBuffer(VkCommandBuffer commandBuff
 
     VkImageMemoryBarrier2 transferBarrier = {};
     transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    transferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    transferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
     transferBarrier.srcAccessMask = VK_ACCESS_2_NONE;
     transferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
     transferBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
@@ -446,6 +466,8 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
         return;
     }
 
+    CleanupSwapchainSyncObjects();
+
     if (!mCommandBuffers.empty()) {
         vkFreeCommandBuffers(mDevice, mCommandPool, static_cast<uint32_t>(mCommandBuffers.size()),
                              mCommandBuffers.data());
@@ -474,6 +496,7 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
     CreateSwapchain();
     CreateImageViews();
     CreateCommandBuffers();
+    CreateSyncObjects();
 }
 
 void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
@@ -485,10 +508,6 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         if (mInFlightFence != VK_NULL_HANDLE) {
             vkDestroyFence(mDevice, mInFlightFence, nullptr);
             mInFlightFence = VK_NULL_HANDLE;
-        }
-        if (mRenderFinishedSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
-            mRenderFinishedSemaphore = VK_NULL_HANDLE;
         }
         if (mImageAvailableSemaphore != VK_NULL_HANDLE) {
             vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);

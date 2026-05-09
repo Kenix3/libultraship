@@ -51,8 +51,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
                                      bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                      bool can_extract_depth) override;
     void StartDrawToFramebuffer(int fbId, float noiseScale) override;
-    void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0,
-                         int dstY0, int dstX1, int dstY1) override;
+    void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
+                         int dstX1, int dstY1) override;
     void ClearFramebuffer(bool color, bool depth) override;
     void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) override;
     void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) override;
@@ -74,6 +74,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
+    void CleanupSwapchainSyncObjects();
     void RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void DestroyVulkanObjects();
 
@@ -95,7 +96,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> mCommandBuffers;
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
+    std::vector<VkSemaphore> mRenderFinishedSemaphores;
     VkFence mInFlightFence = VK_NULL_HANDLE;
     bool mFramebufferResized = false;
 
