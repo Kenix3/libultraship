@@ -18,13 +18,14 @@
 
 #include "libultraship/window/gui/GfxDebuggerWindow.h"
 #include "fast/Fast3dWindow.h"
+#include "fast/backends/gfx_vulkan.h"
+#include <imgui_impl_sdl2.h>
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
 
 #include "fast/backends/gfx_metal.h"
 #include <imgui_impl_metal.h>
-#include <imgui_impl_sdl2.h>
 #else
 #include <SDL2/SDL_hints.h>
 #include <SDL2/SDL_video.h>
@@ -36,7 +37,6 @@
 
 #ifdef ENABLE_OPENGL
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl2.h>
 
 #endif
 
@@ -195,6 +195,7 @@ void Gui::ShutDownImGui(Ship::Window* window) {
             break;
 #endif
         case WindowBackend::FAST3D_SDL_VULKAN:
+            ((Fast::GfxRenderingAPIVulkan*)mInterpreter.lock()->GetCurrentRenderingAPI())->ShutdownImGui();
             ImGui_ImplSDL2_Shutdown();
             break;
 #if __APPLE__
@@ -228,6 +229,7 @@ void Gui::ImGuiBackendInit() {
 #endif
 
         case WindowBackend::FAST3D_SDL_VULKAN:
+            ((Fast::GfxRenderingAPIVulkan*)mInterpreter.lock()->GetCurrentRenderingAPI())->InitImGui();
             break;
 
 #ifdef __APPLE__
@@ -358,10 +360,9 @@ void Gui::ImGuiBackendNewFrame() {
 #endif
 
         case WindowBackend::FAST3D_SDL_VULKAN: {
-            unsigned char* pixels;
-            int width;
-            int height;
-            mImGuiIo->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+            Fast::GfxRenderingAPIVulkan* api =
+                (Fast::GfxRenderingAPIVulkan*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            api->NewFrame();
             break;
         }
 
@@ -844,6 +845,13 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             break;
         }
 #endif
+
+        case WindowBackend::FAST3D_SDL_VULKAN: {
+            Fast::GfxRenderingAPIVulkan* api =
+                (Fast::GfxRenderingAPIVulkan*)mInterpreter.lock()->GetCurrentRenderingAPI();
+            api->RenderDrawData(data);
+            break;
+        }
 
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:

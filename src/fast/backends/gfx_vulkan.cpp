@@ -9,12 +9,26 @@
 #include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
 
+#include <imgui_impl_vulkan.h>
+
 #include <algorithm>
 #include <array>
 #include <cstring>
 #include <stdexcept>
+#include <string>
 
 namespace Fast {
+namespace {
+
+constexpr uint32_t ImGuiDescriptorPoolSize = 64;
+
+void CheckImGuiVkResult(VkResult result) {
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("ImGui Vulkan backend call failed with VkResult " + std::to_string(result));
+    }
+}
+
+} // namespace
 
 GfxRenderingAPIVulkan::GfxRenderingAPIVulkan(GfxWindowBackendSDL2* windowBackend) : mWindowBackend(windowBackend) {
 }
@@ -120,21 +134,14 @@ void GfxRenderingAPIVulkan::OnResize() {
 }
 
 void GfxRenderingAPIVulkan::StartFrame() {
-}
-
-void GfxRenderingAPIVulkan::EndFrame() {
-}
-
-void GfxRenderingAPIVulkan::FinishRender() {
-    if (mSwapchain == VK_NULL_HANDLE) {
+    if (mSwapchain == VK_NULL_HANDLE || mFrameActive) {
         return;
     }
 
     vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
 
-    uint32_t imageIndex = 0;
-    VkResult acquireResult =
-        vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    VkResult acquireResult = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore,
+                                                   VK_NULL_HANDLE, &mCurrentImageIndex);
     if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
         RecreateSwapchain();
         return;
@@ -144,21 +151,109 @@ void GfxRenderingAPIVulkan::FinishRender() {
     }
 
     vkResetFences(mDevice, 1, &mInFlightFence);
-    vkResetCommandBuffer(mCommandBuffers[imageIndex], 0);
-    RecordClearCommandBuffer(mCommandBuffers[imageIndex], imageIndex);
+    mCurrentCommandBuffer = mCommandBuffers[mCurrentImageIndex];
+    vkResetCommandBuffer(mCurrentCommandBuffer, 0);
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if (vkBeginCommandBuffer(mCurrentCommandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to begin Vulkan command buffer");
+    }
+
+    VkImageMemoryBarrier2 colorAttachmentBarrier = {};
+    colorAttachmentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    colorAttachmentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    colorAttachmentBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+    colorAttachmentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    colorAttachmentBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    colorAttachmentBarrier.oldLayout = mSwapchainImageLayouts[mCurrentImageIndex];
+    colorAttachmentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachmentBarrier.image = mSwapchainImages[mCurrentImageIndex];
+    colorAttachmentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    colorAttachmentBarrier.subresourceRange.baseMipLevel = 0;
+    colorAttachmentBarrier.subresourceRange.levelCount = 1;
+    colorAttachmentBarrier.subresourceRange.baseArrayLayer = 0;
+    colorAttachmentBarrier.subresourceRange.layerCount = 1;
+
+    VkDependencyInfo colorAttachmentDependency = {};
+    colorAttachmentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    colorAttachmentDependency.imageMemoryBarrierCount = 1;
+    colorAttachmentDependency.pImageMemoryBarriers = &colorAttachmentBarrier;
+    vkCmdPipelineBarrier2(mCurrentCommandBuffer, &colorAttachmentDependency);
+
+    VkClearValue clearValue = {};
+    clearValue.color = { { 0.02f, 0.02f, 0.04f, 1.0f } };
+
+    VkRenderingAttachmentInfo colorAttachment = {};
+    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAttachment.imageView = mSwapchainImageViews[mCurrentImageIndex];
+    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.clearValue = clearValue;
+
+    VkRenderingInfo renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    renderingInfo.renderArea.offset = { 0, 0 };
+    renderingInfo.renderArea.extent = mSwapchainExtent;
+    renderingInfo.layerCount = 1;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &colorAttachment;
+    vkCmdBeginRendering(mCurrentCommandBuffer, &renderingInfo);
+
+    mSwapchainImageLayouts[mCurrentImageIndex] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    mFrameActive = true;
+}
+
+void GfxRenderingAPIVulkan::EndFrame() {
+}
+
+void GfxRenderingAPIVulkan::FinishRender() {
+    if (mSwapchain == VK_NULL_HANDLE || !mFrameActive) {
+        return;
+    }
+
+    vkCmdEndRendering(mCurrentCommandBuffer);
+
+    VkImageMemoryBarrier2 presentBarrier = {};
+    presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    presentBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    presentBarrier.dstAccessMask = VK_ACCESS_2_NONE;
+    presentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    presentBarrier.image = mSwapchainImages[mCurrentImageIndex];
+    presentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    presentBarrier.subresourceRange.baseMipLevel = 0;
+    presentBarrier.subresourceRange.levelCount = 1;
+    presentBarrier.subresourceRange.baseArrayLayer = 0;
+    presentBarrier.subresourceRange.layerCount = 1;
+
+    VkDependencyInfo presentDependency = {};
+    presentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    presentDependency.imageMemoryBarrierCount = 1;
+    presentDependency.pImageMemoryBarriers = &presentBarrier;
+    vkCmdPipelineBarrier2(mCurrentCommandBuffer, &presentDependency);
+
+    if (vkEndCommandBuffer(mCurrentCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to record Vulkan command buffer");
+    }
+    mSwapchainImageLayouts[mCurrentImageIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    mFrameActive = false;
 
     VkCommandBufferSubmitInfo commandBufferInfo = {};
     commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    commandBufferInfo.commandBuffer = mCommandBuffers[imageIndex];
+    commandBufferInfo.commandBuffer = mCurrentCommandBuffer;
 
     VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
     waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     waitSemaphoreInfo.semaphore = mImageAvailableSemaphore;
-    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     VkSemaphoreSubmitInfo signalSemaphoreInfo = {};
     signalSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphores[imageIndex];
+    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphores[mCurrentImageIndex];
     signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     VkSubmitInfo2 submitInfo = {};
@@ -171,18 +266,19 @@ void GfxRenderingAPIVulkan::FinishRender() {
     submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
     if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, mInFlightFence) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to submit Vulkan clear command buffer");
+        throw std::runtime_error("Failed to submit Vulkan command buffer");
     }
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphores[imageIndex];
+    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphores[mCurrentImageIndex];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &mSwapchain;
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pImageIndices = &mCurrentImageIndex;
 
     VkResult presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    mCurrentCommandBuffer = VK_NULL_HANDLE;
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
         RecreateSwapchain();
@@ -255,6 +351,74 @@ void GfxRenderingAPIVulkan::SetSrgbMode() {
 
 ImTextureID GfxRenderingAPIVulkan::GetTextureById(int id) {
     return nullptr;
+}
+
+bool GfxRenderingAPIVulkan::InitImGui() {
+    if (mImGuiInitialized) {
+        return true;
+    }
+    if (mInstance == VK_NULL_HANDLE || mPhysicalDevice == VK_NULL_HANDLE || mDevice == VK_NULL_HANDLE ||
+        mGraphicsQueue == VK_NULL_HANDLE || mSwapchainImages.empty()) {
+        return false;
+    }
+
+    ImGui_ImplVulkan_InitInfo initInfo = {};
+    initInfo.ApiVersion = Vulkan::MinimumApiVersion;
+    initInfo.Instance = mInstance;
+    initInfo.PhysicalDevice = mPhysicalDevice;
+    initInfo.Device = mDevice;
+    initInfo.QueueFamily = *mQueueFamilies.graphicsFamily;
+    initInfo.Queue = mGraphicsQueue;
+    initInfo.DescriptorPoolSize = ImGuiDescriptorPoolSize;
+    initInfo.MinImageCount = GetMinImageCount();
+    initInfo.ImageCount = static_cast<uint32_t>(mSwapchainImages.size());
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.UseDynamicRendering = true;
+    initInfo.CheckVkResultFn = CheckImGuiVkResult;
+#ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
+    initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &mSwapchainImageFormat;
+#endif
+
+    mImGuiInitialized = ImGui_ImplVulkan_Init(&initInfo);
+    if (mImGuiInitialized) {
+        ImGui_ImplVulkan_CreateFontsTexture();
+    }
+    return mImGuiInitialized;
+}
+
+void GfxRenderingAPIVulkan::ShutdownImGui() {
+    if (!mImGuiInitialized) {
+        return;
+    }
+
+    if (mDevice != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(mDevice);
+    }
+    ImGui_ImplVulkan_Shutdown();
+    mImGuiInitialized = false;
+}
+
+void GfxRenderingAPIVulkan::NewFrame() {
+    if (!mImGuiInitialized) {
+        InitImGui();
+    }
+    if (mImGuiInitialized) {
+        ImGui_ImplVulkan_NewFrame();
+    }
+}
+
+void GfxRenderingAPIVulkan::RenderDrawData(ImDrawData* drawData) {
+    if (!mImGuiInitialized || !mFrameActive || mCurrentCommandBuffer == VK_NULL_HANDLE) {
+        return;
+    }
+
+    ImGui_ImplVulkan_RenderDrawData(drawData, mCurrentCommandBuffer);
+}
+
+uint32_t GfxRenderingAPIVulkan::GetMinImageCount() const {
+    return std::max(2u, static_cast<uint32_t>(mSwapchainImages.size()));
 }
 
 void GfxRenderingAPIVulkan::CreateSwapchain() {
@@ -398,69 +562,6 @@ void GfxRenderingAPIVulkan::CleanupSwapchainSyncObjects() {
     mRenderFinishedSemaphores.clear();
 }
 
-void GfxRenderingAPIVulkan::RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to begin Vulkan command buffer");
-    }
-
-    VkImageMemoryBarrier2 transferBarrier = {};
-    transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    transferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
-    transferBarrier.srcAccessMask = VK_ACCESS_2_NONE;
-    transferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
-    transferBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    transferBarrier.oldLayout = mSwapchainImageLayouts[imageIndex];
-    transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    transferBarrier.image = mSwapchainImages[imageIndex];
-    transferBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    transferBarrier.subresourceRange.baseMipLevel = 0;
-    transferBarrier.subresourceRange.levelCount = 1;
-    transferBarrier.subresourceRange.baseArrayLayer = 0;
-    transferBarrier.subresourceRange.layerCount = 1;
-
-    VkDependencyInfo transferDependency = {};
-    transferDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    transferDependency.imageMemoryBarrierCount = 1;
-    transferDependency.pImageMemoryBarriers = &transferBarrier;
-    vkCmdPipelineBarrier2(commandBuffer, &transferDependency);
-
-    VkClearColorValue clearColor = { { 0.02f, 0.02f, 0.04f, 1.0f } };
-    VkImageSubresourceRange clearRange = {};
-    clearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    clearRange.baseMipLevel = 0;
-    clearRange.levelCount = 1;
-    clearRange.baseArrayLayer = 0;
-    clearRange.layerCount = 1;
-    vkCmdClearColorImage(commandBuffer, mSwapchainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor,
-                         1, &clearRange);
-
-    VkImageMemoryBarrier2 presentBarrier = {};
-    presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
-    presentBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
-    presentBarrier.dstAccessMask = VK_ACCESS_2_NONE;
-    presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    presentBarrier.image = mSwapchainImages[imageIndex];
-    presentBarrier.subresourceRange = clearRange;
-
-    VkDependencyInfo presentDependency = {};
-    presentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    presentDependency.imageMemoryBarrierCount = 1;
-    presentDependency.pImageMemoryBarriers = &presentBarrier;
-    vkCmdPipelineBarrier2(commandBuffer, &presentDependency);
-
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to record Vulkan command buffer");
-    }
-
-    mSwapchainImageLayouts[imageIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-}
-
 void GfxRenderingAPIVulkan::CleanupSwapchain() {
     if (mDevice == VK_NULL_HANDLE) {
         return;
@@ -488,15 +589,23 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
     mSwapchainImageLayouts.clear();
     mSwapchainImageFormat = VK_FORMAT_UNDEFINED;
     mSwapchainExtent = {};
+    mCurrentCommandBuffer = VK_NULL_HANDLE;
+    mFrameActive = false;
 }
 
 void GfxRenderingAPIVulkan::RecreateSwapchain() {
     vkDeviceWaitIdle(mDevice);
+
+    bool restoreImGui = mImGuiInitialized;
+    ShutdownImGui();
     CleanupSwapchain();
     CreateSwapchain();
     CreateImageViews();
     CreateCommandBuffers();
     CreateSyncObjects();
+    if (restoreImGui) {
+        InitImGui();
+    }
 }
 
 void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
@@ -504,6 +613,7 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
 
     if (mDevice != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(mDevice);
+        ShutdownImGui();
         CleanupSwapchain();
         if (mInFlightFence != VK_NULL_HANDLE) {
             vkDestroyFence(mDevice, mInFlightFence, nullptr);

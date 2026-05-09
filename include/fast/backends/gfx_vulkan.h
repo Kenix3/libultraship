@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+struct ImDrawData;
+
 namespace Fast {
 
 class GfxWindowBackendSDL2;
@@ -65,8 +67,13 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     FilteringMode GetTextureFilter() override;
     void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
+    bool InitImGui();
+    void ShutdownImGui();
+    void NewFrame();
+    void RenderDrawData(ImDrawData* drawData);
 
   private:
+    uint32_t GetMinImageCount() const;
     void CreateSwapchain();
     void CleanupSwapchain();
     void RecreateSwapchain();
@@ -75,7 +82,6 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateCommandBuffers();
     void CreateSyncObjects();
     void CleanupSwapchainSyncObjects();
-    void RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void DestroyVulkanObjects();
 
     GfxWindowBackendSDL2* mWindowBackend = nullptr;
@@ -98,6 +104,10 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
     VkFence mInFlightFence = VK_NULL_HANDLE;
+    uint32_t mCurrentImageIndex = 0;
+    VkCommandBuffer mCurrentCommandBuffer = VK_NULL_HANDLE;
+    bool mFrameActive = false;
+    bool mImGuiInitialized = false;
     bool mFramebufferResized = false;
 
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;

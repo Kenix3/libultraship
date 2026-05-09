@@ -25,6 +25,7 @@ target_sources(ImGui
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
 target_sources(ImGui
@@ -33,7 +34,12 @@ target_sources(ImGui
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
 )
 
+find_package(Vulkan QUIET)
 target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+if (Vulkan_FOUND)
+    target_include_directories(ImGui PRIVATE ${Vulkan_INCLUDE_DIRS})
+    target_compile_definitions(ImGui PRIVATE IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
+endif()
 
 # ========= StormLib =============
 if(INCLUDE_MPQ_SUPPORT)
@@ -102,6 +108,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ThreadPool)
 
 list(APPEND ADDITIONAL_LIB_INCLUDES ${threadpool_SOURCE_DIR}/include)
+
+#=========== VMA (Vulkan Memory Allocator) ===========
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG v3.1.0
+)
+FetchContent_MakeAvailable(vma)
 
 #=========== prism ===========
 option(PRISM_STANDALONE "Build prism as a standalone library" OFF)
