@@ -67,6 +67,14 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     ImTextureID GetTextureById(int id) override;
 
   private:
+    void CreateSwapchain();
+    void CleanupSwapchain();
+    void RecreateSwapchain();
+    void CreateImageViews();
+    void CreateCommandPool();
+    void CreateCommandBuffers();
+    void CreateSyncObjects();
+    void RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void DestroyVulkanObjects();
 
     GfxWindowBackendSDL2* mWindowBackend = nullptr;
@@ -78,6 +86,18 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkQueue mGraphicsQueue = VK_NULL_HANDLE;
     VkQueue mPresentQueue = VK_NULL_HANDLE;
     Vulkan::QueueFamilyIndices mQueueFamilies;
+    VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;
+    VkFormat mSwapchainImageFormat = VK_FORMAT_UNDEFINED;
+    VkExtent2D mSwapchainExtent = {};
+    std::vector<VkImage> mSwapchainImages;
+    std::vector<VkImageView> mSwapchainImageViews;
+    std::vector<VkImageLayout> mSwapchainImageLayouts;
+    VkCommandPool mCommandPool = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> mCommandBuffers;
+    VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
+    VkFence mInFlightFence = VK_NULL_HANDLE;
+    bool mFramebufferResized = false;
 
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;
     std::vector<uint32_t> mFramebuffers;

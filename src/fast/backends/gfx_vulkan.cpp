@@ -9,6 +9,8 @@
 #include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
 
+#include <algorithm>
+#include <array>
 #include <cstring>
 #include <stdexcept>
 
@@ -104,11 +106,17 @@ void GfxRenderingAPIVulkan::Init() {
     mPhysicalDevice = deviceSelection.physicalDevice;
     mQueueFamilies = deviceSelection.queueFamilies;
     mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
+    CreateSwapchain();
+    CreateImageViews();
+    CreateCommandPool();
+    CreateCommandBuffers();
+    CreateSyncObjects();
 
     CreateFramebuffer();
 }
 
 void GfxRenderingAPIVulkan::OnResize() {
+    mFramebufferResized = true;
 }
 
 void GfxRenderingAPIVulkan::StartFrame() {
@@ -118,6 +126,71 @@ void GfxRenderingAPIVulkan::EndFrame() {
 }
 
 void GfxRenderingAPIVulkan::FinishRender() {
+    if (mSwapchain == VK_NULL_HANDLE) {
+        return;
+    }
+
+    vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+
+    uint32_t imageIndex = 0;
+    VkResult acquireResult =
+        vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
+        RecreateSwapchain();
+        return;
+    }
+    if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("Failed to acquire Vulkan swapchain image");
+    }
+
+    vkResetFences(mDevice, 1, &mInFlightFence);
+    vkResetCommandBuffer(mCommandBuffers[imageIndex], 0);
+    RecordClearCommandBuffer(mCommandBuffers[imageIndex], imageIndex);
+
+    VkCommandBufferSubmitInfo commandBufferInfo = {};
+    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    commandBufferInfo.commandBuffer = mCommandBuffers[imageIndex];
+
+    VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
+    waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    waitSemaphoreInfo.semaphore = mImageAvailableSemaphore;
+    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+
+    VkSemaphoreSubmitInfo signalSemaphoreInfo = {};
+    signalSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphore;
+    signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    submitInfo.waitSemaphoreInfoCount = 1;
+    submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
+    submitInfo.commandBufferInfoCount = 1;
+    submitInfo.pCommandBufferInfos = &commandBufferInfo;
+    submitInfo.signalSemaphoreInfoCount = 1;
+    submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
+
+    if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, mInFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit Vulkan clear command buffer");
+    }
+
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphore;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &mSwapchain;
+    presentInfo.pImageIndices = &imageIndex;
+
+    VkResult presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
+        mFramebufferResized = false;
+        RecreateSwapchain();
+        return;
+    }
+    if (presentResult != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present Vulkan swapchain image");
+    }
 }
 
 int GfxRenderingAPIVulkan::CreateFramebuffer() {
@@ -125,9 +198,9 @@ int GfxRenderingAPIVulkan::CreateFramebuffer() {
     return static_cast<int>(mFramebuffers.size() - 1);
 }
 
-void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height,
-                                                        uint32_t msaa_level, bool opengl_invertY, bool render_target,
-                                                        bool has_depth_buffer, bool can_extract_depth) {
+void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+                                                        bool opengl_invertY, bool render_target, bool has_depth_buffer,
+                                                        bool can_extract_depth) {
 }
 
 void GfxRenderingAPIVulkan::StartDrawToFramebuffer(int fbId, float noiseScale) {
@@ -184,9 +257,245 @@ ImTextureID GfxRenderingAPIVulkan::GetTextureById(int id) {
     return nullptr;
 }
 
+void GfxRenderingAPIVulkan::CreateSwapchain() {
+    auto swapchainSupport = Vulkan::QuerySwapchainSupport(mPhysicalDevice, mSurface);
+    auto surfaceFormat = Vulkan::ChooseSwapSurfaceFormat(swapchainSupport.formats);
+    auto presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes);
+    auto extent = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, mWindowBackend->GetWindow());
+
+    if ((swapchainSupport.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+        // TODO: Add a dynamic-rendering clear path for platforms whose swapchain images cannot be transfer targets.
+        throw std::runtime_error("Vulkan swapchain images do not support transfer clear");
+    }
+
+    uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
+    if (swapchainSupport.capabilities.maxImageCount > 0 && imageCount > swapchainSupport.capabilities.maxImageCount) {
+        imageCount = swapchainSupport.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = mSurface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    std::array<uint32_t, 2> queueFamilyIndices = { *mQueueFamilies.graphicsFamily, *mQueueFamilies.presentFamily };
+    if (mQueueFamilies.graphicsFamily != mQueueFamilies.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
+        createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    createInfo.preTransform = swapchainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapchain) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan swapchain");
+    }
+
+    vkGetSwapchainImagesKHR(mDevice, mSwapchain, &imageCount, nullptr);
+    mSwapchainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(mDevice, mSwapchain, &imageCount, mSwapchainImages.data());
+
+    mSwapchainImageFormat = surfaceFormat.format;
+    mSwapchainExtent = extent;
+    mSwapchainImageLayouts.assign(mSwapchainImages.size(), VK_IMAGE_LAYOUT_UNDEFINED);
+}
+
+void GfxRenderingAPIVulkan::CreateImageViews() {
+    mSwapchainImageViews.resize(mSwapchainImages.size());
+
+    for (size_t i = 0; i < mSwapchainImages.size(); i++) {
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = mSwapchainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = mSwapchainImageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapchainImageViews[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan swapchain image view");
+        }
+    }
+}
+
+void GfxRenderingAPIVulkan::CreateCommandPool() {
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = *mQueueFamilies.graphicsFamily;
+
+    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan command pool");
+    }
+}
+
+void GfxRenderingAPIVulkan::CreateCommandBuffers() {
+    mCommandBuffers.resize(mSwapchainImages.size());
+
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = mCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(mCommandBuffers.size());
+
+    if (vkAllocateCommandBuffers(mDevice, &allocInfo, mCommandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate Vulkan command buffers");
+    }
+}
+
+void GfxRenderingAPIVulkan::CreateSyncObjects() {
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan synchronization objects");
+    }
+}
+
+void GfxRenderingAPIVulkan::RecordClearCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to begin Vulkan command buffer");
+    }
+
+    VkImageMemoryBarrier2 transferBarrier = {};
+    transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    transferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    transferBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+    transferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    transferBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transferBarrier.oldLayout = mSwapchainImageLayouts[imageIndex];
+    transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transferBarrier.image = mSwapchainImages[imageIndex];
+    transferBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transferBarrier.subresourceRange.baseMipLevel = 0;
+    transferBarrier.subresourceRange.levelCount = 1;
+    transferBarrier.subresourceRange.baseArrayLayer = 0;
+    transferBarrier.subresourceRange.layerCount = 1;
+
+    VkDependencyInfo transferDependency = {};
+    transferDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    transferDependency.imageMemoryBarrierCount = 1;
+    transferDependency.pImageMemoryBarriers = &transferBarrier;
+    vkCmdPipelineBarrier2(commandBuffer, &transferDependency);
+
+    VkClearColorValue clearColor = { { 0.02f, 0.02f, 0.04f, 1.0f } };
+    VkImageSubresourceRange clearRange = {};
+    clearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearRange.baseMipLevel = 0;
+    clearRange.levelCount = 1;
+    clearRange.baseArrayLayer = 0;
+    clearRange.layerCount = 1;
+    vkCmdClearColorImage(commandBuffer, mSwapchainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor,
+                         1, &clearRange);
+
+    VkImageMemoryBarrier2 presentBarrier = {};
+    presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    presentBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    presentBarrier.dstAccessMask = VK_ACCESS_2_NONE;
+    presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    presentBarrier.image = mSwapchainImages[imageIndex];
+    presentBarrier.subresourceRange = clearRange;
+
+    VkDependencyInfo presentDependency = {};
+    presentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    presentDependency.imageMemoryBarrierCount = 1;
+    presentDependency.pImageMemoryBarriers = &presentBarrier;
+    vkCmdPipelineBarrier2(commandBuffer, &presentDependency);
+
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to record Vulkan command buffer");
+    }
+
+    mSwapchainImageLayouts[imageIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+}
+
+void GfxRenderingAPIVulkan::CleanupSwapchain() {
+    if (mDevice == VK_NULL_HANDLE) {
+        return;
+    }
+
+    if (!mCommandBuffers.empty()) {
+        vkFreeCommandBuffers(mDevice, mCommandPool, static_cast<uint32_t>(mCommandBuffers.size()),
+                             mCommandBuffers.data());
+        mCommandBuffers.clear();
+    }
+
+    for (auto imageView : mSwapchainImageViews) {
+        vkDestroyImageView(mDevice, imageView, nullptr);
+    }
+    mSwapchainImageViews.clear();
+
+    if (mSwapchain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
+        mSwapchain = VK_NULL_HANDLE;
+    }
+
+    mSwapchainImages.clear();
+    mSwapchainImageLayouts.clear();
+    mSwapchainImageFormat = VK_FORMAT_UNDEFINED;
+    mSwapchainExtent = {};
+}
+
+void GfxRenderingAPIVulkan::RecreateSwapchain() {
+    vkDeviceWaitIdle(mDevice);
+    CleanupSwapchain();
+    CreateSwapchain();
+    CreateImageViews();
+    CreateCommandBuffers();
+}
+
 void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
+    // TODO: use destructor queue
+
     if (mDevice != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(mDevice);
+        CleanupSwapchain();
+        if (mInFlightFence != VK_NULL_HANDLE) {
+            vkDestroyFence(mDevice, mInFlightFence, nullptr);
+            mInFlightFence = VK_NULL_HANDLE;
+        }
+        if (mRenderFinishedSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+            mRenderFinishedSemaphore = VK_NULL_HANDLE;
+        }
+        if (mImageAvailableSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
+            mImageAvailableSemaphore = VK_NULL_HANDLE;
+        }
+        if (mCommandPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+            mCommandPool = VK_NULL_HANDLE;
+        }
         vkDestroyDevice(mDevice, nullptr);
         mDevice = VK_NULL_HANDLE;
     }

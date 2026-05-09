@@ -106,6 +106,34 @@ bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice) {
     return true;
 }
 
+SwapchainSupport QuerySwapchainSupportInternal(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    SwapchainSupport support;
+
+    CheckVk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &support.capabilities),
+            "Failed to query Vulkan surface capabilities");
+
+    uint32_t formatCount = 0;
+    CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr),
+            "Failed to query Vulkan surface format count");
+    support.formats.resize(formatCount);
+    if (formatCount > 0) {
+        CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, support.formats.data()),
+                "Failed to query Vulkan surface formats");
+    }
+
+    uint32_t presentModeCount = 0;
+    CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr),
+            "Failed to query Vulkan present mode count");
+    support.presentModes.resize(presentModeCount);
+    if (presentModeCount > 0) {
+        CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount,
+                                                          support.presentModes.data()),
+                "Failed to query Vulkan present modes");
+    }
+
+    return support;
+}
+
 QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
@@ -165,6 +193,11 @@ bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Que
         return false;
     }
 
+    auto swapchainSupport = QuerySwapchainSupportInternal(physicalDevice, surface);
+    if (swapchainSupport.formats.empty() || swapchainSupport.presentModes.empty()) {
+        return false;
+    }
+
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
     if (!indices.IsComplete()) {
         return false;
@@ -180,8 +213,7 @@ bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Que
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                              VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                             const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                             void* userData) {
+                                             const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) {
     (void)messageTypes;
     (void)userData;
 
@@ -390,6 +422,53 @@ VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, const QueueFamilyI
     vkGetDeviceQueue(device, *queueFamilies.presentFamily, 0, presentQueue);
 
     return device;
+}
+
+SwapchainSupport QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    return QuerySwapchainSupportInternal(physicalDevice, surface);
+}
+
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+    for (const auto& availableFormat : availableFormats) {
+        // TODO: is this the best format we can use that is guaranteed to be
+        // supported?
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+            availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return availableFormat;
+        }
+    }
+
+    return availableFormats[0];
+}
+
+VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+    // TODO: will need to couple this to vsync/fps settings
+
+    for (const auto& availablePresentMode : availablePresentModes) {
+        // TODO: why prefer mailbox???
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return availablePresentMode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window) {
+    if (capabilities.currentExtent.width != UINT32_MAX) {
+        return capabilities.currentExtent;
+    }
+
+    int width = 0;
+    int height = 0;
+    SDL_Vulkan_GetDrawableSize(window, &width, &height);
+
+    VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+    actualExtent.width =
+        std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    actualExtent.height =
+        std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    return actualExtent;
 }
 
 } // namespace Vulkan

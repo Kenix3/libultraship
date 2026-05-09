@@ -24,6 +24,12 @@ struct DeviceSelection {
     QueueFamilyIndices queueFamilies;
 };
 
+struct SwapchainSupport {
+    VkSurfaceCapabilitiesKHR capabilities = {};
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
 std::vector<const char*> GetValidationLayers();
 std::vector<const char*> GetRequiredDeviceExtensions();
 
@@ -34,6 +40,10 @@ VkSurfaceKHR CreateSurface(VkInstance instance, SDL_Window* window);
 DeviceSelection PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, const QueueFamilyIndices& queueFamilies,
                              VkQueue* graphicsQueue, VkQueue* presentQueue);
+SwapchainSupport QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window);
 
 } // namespace Vulkan
 } // namespace Fast
