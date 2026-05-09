@@ -44,6 +44,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     bool IsRunning() override;
     void Destroy() override;
     bool IsFullscreen() override;
+    SDL_Window* GetWindow() const;
 
   private:
     void SetFullscreenImpl(bool on, bool call_callback);

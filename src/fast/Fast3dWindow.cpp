@@ -152,8 +152,8 @@ void Fast3dWindow::InitWindowManager() {
             break;
 #endif
         case Ship::WindowBackend::FAST3D_SDL_VULKAN:
-            mRenderingApi = new GfxRenderingAPIVulkan();
             mWindowManagerApi = new GfxWindowBackendSDL2();
+            mRenderingApi = new GfxRenderingAPIVulkan(static_cast<GfxWindowBackendSDL2*>(mWindowManagerApi));
             break;
         default:
             SPDLOG_ERROR("Could not load the correct rendering backend");

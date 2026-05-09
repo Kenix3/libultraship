@@ -63,6 +63,9 @@ if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
 endif()
 
+find_package(Vulkan REQUIRED)
+target_link_libraries(libultraship PRIVATE Vulkan::Vulkan)
+
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 
@@ -227,4 +230,3 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
     )
     endif()
 endif()
-

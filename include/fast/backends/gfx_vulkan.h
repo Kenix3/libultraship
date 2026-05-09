@@ -2,6 +2,7 @@
 
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
+#include "gfx_vulkan_utils.h"
 
 #include <map>
 #include <memory>
@@ -10,6 +11,8 @@
 
 namespace Fast {
 
+class GfxWindowBackendSDL2;
+
 struct VulkanShaderProgram {
     uint8_t numInputs = 0;
     bool usedTextures[SHADER_MAX_TEXTURES] = {};
@@ -17,7 +20,7 @@ struct VulkanShaderProgram {
 
 class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
   public:
-    GfxRenderingAPIVulkan() = default;
+    explicit GfxRenderingAPIVulkan(GfxWindowBackendSDL2* windowBackend);
     ~GfxRenderingAPIVulkan() override;
 
     const char* GetName() override;
@@ -64,6 +67,18 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     ImTextureID GetTextureById(int id) override;
 
   private:
+    void DestroyVulkanObjects();
+
+    GfxWindowBackendSDL2* mWindowBackend = nullptr;
+    VkInstance mInstance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
+    VkSurfaceKHR mSurface = VK_NULL_HANDLE;
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice mDevice = VK_NULL_HANDLE;
+    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+    VkQueue mPresentQueue = VK_NULL_HANDLE;
+    Vulkan::QueueFamilyIndices mQueueFamilies;
+
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;
     std::vector<uint32_t> mFramebuffers;
     uint32_t mNextTextureId = 1;

@@ -540,6 +540,10 @@ void GfxWindowBackendSDL2::GetDrawableSize(int* width, int* height) const {
     }
 }
 
+SDL_Window* GfxWindowBackendSDL2::GetWindow() const {
+    return mWnd;
+}
+
 int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
     if (scancode < 512) {
         return mSdlToLusTable[scancode];

@@ -1,12 +1,25 @@
 #include "fast/backends/gfx_vulkan.h"
 
+#ifdef _WIN32
+#include <SDL.h>
+#else
+#include <SDL2/SDL.h>
+#endif
+
+#include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
 
 #include <cstring>
+#include <stdexcept>
 
 namespace Fast {
 
-GfxRenderingAPIVulkan::~GfxRenderingAPIVulkan() = default;
+GfxRenderingAPIVulkan::GfxRenderingAPIVulkan(GfxWindowBackendSDL2* windowBackend) : mWindowBackend(windowBackend) {
+}
+
+GfxRenderingAPIVulkan::~GfxRenderingAPIVulkan() {
+    DestroyVulkanObjects();
+}
 
 const char* GfxRenderingAPIVulkan::GetName() {
     return "Vulkan";
@@ -79,6 +92,19 @@ void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, s
 }
 
 void GfxRenderingAPIVulkan::Init() {
+    if (mWindowBackend == nullptr || mWindowBackend->GetWindow() == nullptr) {
+        throw std::runtime_error("Vulkan backend requires an initialized SDL window");
+    }
+
+    mInstance = Vulkan::CreateInstance(mWindowBackend->GetWindow());
+    mDebugMessenger = Vulkan::CreateDebugMessenger(mInstance);
+    mSurface = Vulkan::CreateSurface(mInstance, mWindowBackend->GetWindow());
+
+    auto deviceSelection = Vulkan::PickPhysicalDevice(mInstance, mSurface);
+    mPhysicalDevice = deviceSelection.physicalDevice;
+    mQueueFamilies = deviceSelection.queueFamilies;
+    mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
+
     CreateFramebuffer();
 }
 
@@ -156,6 +182,33 @@ void GfxRenderingAPIVulkan::SetSrgbMode() {
 
 ImTextureID GfxRenderingAPIVulkan::GetTextureById(int id) {
     return nullptr;
+}
+
+void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
+    if (mDevice != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(mDevice);
+        vkDestroyDevice(mDevice, nullptr);
+        mDevice = VK_NULL_HANDLE;
+    }
+
+    if (mSurface != VK_NULL_HANDLE) {
+        vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
+        mSurface = VK_NULL_HANDLE;
+    }
+
+    if (mDebugMessenger != VK_NULL_HANDLE) {
+        Vulkan::DestroyDebugMessenger(mInstance, mDebugMessenger);
+        mDebugMessenger = VK_NULL_HANDLE;
+    }
+
+    if (mInstance != VK_NULL_HANDLE) {
+        vkDestroyInstance(mInstance, nullptr);
+        mInstance = VK_NULL_HANDLE;
+    }
+
+    mPhysicalDevice = VK_NULL_HANDLE;
+    mGraphicsQueue = VK_NULL_HANDLE;
+    mPresentQueue = VK_NULL_HANDLE;
 }
 
 } // namespace Fast
