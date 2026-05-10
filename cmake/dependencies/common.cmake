@@ -2,6 +2,19 @@ include(FetchContent)
 
 find_package(OpenGL QUIET)
 
+#=================== Tracy ===================
+if (ENABLE_TRACY_PROFILER)
+    set(TRACY_ENABLE ON CACHE BOOL "Enable Tracy profiling" FORCE)
+    set(TRACY_ON_DEMAND ON CACHE BOOL "Enable Tracy on-demand profiling" FORCE)
+    FetchContent_Declare(
+        tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG v0.13.1
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(tracy)
+endif()
+
 #=================== ImGui ===================
 set(imgui_fixes_and_config_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/imgui-fixes-and-config.patch)
 set(imgui_apply_patch_command ${CMAKE_COMMAND} -Dpatch_file=${imgui_fixes_and_config_patch_file} -Dwith_reset=TRUE -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/git-patch.cmake)

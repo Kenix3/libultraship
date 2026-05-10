@@ -59,6 +59,17 @@ target_link_libraries(libultraship
 
 target_link_libraries(libultraship PRIVATE stb)
 
+if (ENABLE_TRACY_PROFILER)
+    if (TARGET Tracy::TracyClient)
+        target_link_libraries(libultraship PRIVATE Tracy::TracyClient)
+    elseif (TARGET TracyClient)
+        target_link_libraries(libultraship PRIVATE TracyClient)
+    else()
+        message(FATAL_ERROR "ENABLE_TRACY_PROFILER is ON, but Tracy client target was not created")
+    endif()
+    target_compile_definitions(libultraship PRIVATE LUS_ENABLE_TRACY)
+endif()
+
 if (GFX_DEBUG_DISASSEMBLER)
     target_link_libraries(libultraship PRIVATE libgfxd)
 endif()

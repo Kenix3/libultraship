@@ -18,6 +18,9 @@
 #include <prism/processor.h>
 #include <shaderc/shaderc.hpp>
 #include <spdlog/spdlog.h>
+#ifdef LUS_ENABLE_TRACY
+#include <tracy/Tracy.hpp>
+#endif
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -30,6 +33,19 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
+#ifdef LUS_ENABLE_TRACY
+#define LUS_TRACY_ZONE(name) ZoneScopedN(name)
+#define LUS_TRACY_PLOT(name, value) TracyPlot(name, value)
+#define LUS_TRACY_ZONE_TEXT(text) ZoneText((text).data(), (text).size())
+#define LUS_TRACY_FRAME_MARK FrameMark
+#else
+#define LUS_TRACY_ZONE(name) ((void)0)
+#define LUS_TRACY_PLOT(name, value) ((void)0)
+#define LUS_TRACY_ZONE_TEXT(text) ((void)0)
+#define LUS_TRACY_FRAME_MARK ((void)0)
+#endif
 
 namespace Fast {
 namespace {
@@ -579,23 +595,60 @@ void GfxRenderingAPIVulkan::LoadShader(ShaderProgram* newPrg) {
 }
 
 ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) {
-    CCFeatures ccFeatures;
-    gfx_cc_get_features(shaderId0, shaderId1, &ccFeatures);
+    LUS_TRACY_ZONE("Vulkan CreateAndLoadNewShader");
+    mTracyShaderCreatesThisFrame++;
 
-    const auto vertexSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.vert", ccFeatures, true);
+#ifdef LUS_ENABLE_TRACY
+    const std::string tracyShaderKey =
+        "shaderId0=" + std::to_string(shaderId0) + " shaderId1=" + std::to_string(shaderId1);
+    LUS_TRACY_ZONE_TEXT(tracyShaderKey);
+#endif
+
+    CCFeatures ccFeatures;
+    {
+        LUS_TRACY_ZONE("Vulkan Shader GetFeatures");
+        gfx_cc_get_features(shaderId0, shaderId1, &ccFeatures);
+    }
+
+    std::string vertexSource;
+    {
+        LUS_TRACY_ZONE("Vulkan Build Vertex Shader Source");
+        vertexSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.vert", ccFeatures, true);
+    }
     size_t numFloats = rawNumFloats;
-    const auto fragmentSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.frag", ccFeatures, false);
-    const auto vertexSpirv =
-        CompileVulkanGlslToSpirv(vertexSource, shaderc_vertex_shader, "shaders/vulkan/default.shader.vert");
-    const auto fragmentSpirv =
-        CompileVulkanGlslToSpirv(fragmentSource, shaderc_fragment_shader, "shaders/vulkan/default.shader.frag");
+    std::string fragmentSource;
+    {
+        LUS_TRACY_ZONE("Vulkan Build Fragment Shader Source");
+        fragmentSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.frag", ccFeatures, false);
+    }
+    std::vector<uint32_t> vertexSpirv;
+    {
+        LUS_TRACY_ZONE("Vulkan Compile Vertex Shader");
+        vertexSpirv =
+            CompileVulkanGlslToSpirv(vertexSource, shaderc_vertex_shader, "shaders/vulkan/default.shader.vert");
+    }
+    std::vector<uint32_t> fragmentSpirv;
+    {
+        LUS_TRACY_ZONE("Vulkan Compile Fragment Shader");
+        fragmentSpirv =
+            CompileVulkanGlslToSpirv(fragmentSource, shaderc_fragment_shader, "shaders/vulkan/default.shader.frag");
+    }
 
     auto key = std::make_pair(shaderId0, shaderId1);
-    auto [it, _] = mShaderProgramPool.emplace(key, std::make_unique<VulkanShaderProgram>());
+    decltype(mShaderProgramPool)::iterator it;
+    {
+        LUS_TRACY_ZONE("Vulkan Shader Pool Insert");
+        auto [insertedIt, _] = mShaderProgramPool.emplace(key, std::make_unique<VulkanShaderProgram>());
+        it = insertedIt;
+    }
     VulkanShaderProgram* prg = it->second.get();
-    prg->vertexShaderModule = CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan vertex shader module");
-    prg->fragmentShaderModule =
-        CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan fragment shader module");
+    {
+        LUS_TRACY_ZONE("Vulkan Create Shader Modules");
+        prg->vertexShaderModule =
+            CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan vertex shader module");
+        prg->fragmentShaderModule =
+            CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan fragment shader module");
+    }
     prg->numInputs = ccFeatures.numInputs;
     prg->usedTextures[0] = ccFeatures.usedTextures[0];
     prg->usedTextures[1] = ccFeatures.usedTextures[1];
@@ -604,8 +657,14 @@ ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0,
     prg->usedTextures[4] = ccFeatures.used_blend[0];
     prg->usedTextures[5] = ccFeatures.used_blend[1];
     prg->numFloats = numFloats;
-    prg->pipelineLayout = CreatePipelineLayout();
-    prg->pipeline = CreateGraphicsPipeline(*prg, ccFeatures, ccFeatures.opt_alpha);
+    {
+        LUS_TRACY_ZONE("Vulkan Create Pipeline Layout");
+        prg->pipelineLayout = CreatePipelineLayout();
+    }
+    {
+        LUS_TRACY_ZONE("Vulkan Create Graphics Pipeline");
+        prg->pipeline = CreateGraphicsPipeline(*prg, ccFeatures, ccFeatures.opt_alpha);
+    }
     LoadShader(reinterpret_cast<ShaderProgram*>(prg));
     return reinterpret_cast<ShaderProgram*>(it->second.get());
 }
@@ -643,10 +702,12 @@ void GfxRenderingAPIVulkan::SelectTexture(int tile, uint32_t textureId) {
 }
 
 void GfxRenderingAPIVulkan::UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) {
+    LUS_TRACY_ZONE("Vulkan UploadTexture");
     if (rgba32Buf == nullptr || width == 0 || height == 0) {
         throw std::runtime_error("Cannot upload empty Vulkan texture");
     }
 
+    mTracyTextureUploadsThisFrame++;
     uint32_t textureId = mCurrentTextureIds[mCurrentTile];
     VulkanTexture& texture = GetTexture(textureId);
     UploadTextureToGpu(texture, rgba32Buf, width, height);
@@ -654,10 +715,12 @@ void GfxRenderingAPIVulkan::UploadTexture(const uint8_t* rgba32Buf, uint32_t wid
 }
 
 void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linearFilter, uint32_t cms, uint32_t cmt) {
+    LUS_TRACY_ZONE("Vulkan SetSamplerParameters");
     if (sampler < 0 || sampler >= SHADER_MAX_TEXTURES) {
         throw std::runtime_error("Invalid Vulkan sampler tile index");
     }
 
+    mTracySamplerRecreatesThisFrame++;
     VulkanTexture& texture = GetTexture(mCurrentTextureIds[sampler]);
     texture.linearFiltering = linearFilter;
     texture.filtering = !linearFilter ? FILTER_LINEAR : FILTER_THREE_POINT;
@@ -738,11 +801,13 @@ void GfxRenderingAPIVulkan::SetUseAlpha(bool useAlpha) {
 }
 
 void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+    LUS_TRACY_ZONE("Vulkan DrawTriangles");
     if (!mFrameActive || !mRenderingActive || mCurrentCommandBuffer == VK_NULL_HANDLE || mShaderProgram == nullptr ||
         buf_vbo_len == 0 || buf_vbo_num_tris == 0) {
         return;
     }
 
+    mTracyDrawCallsThisFrame++;
     VkDeviceSize vertexBufferSize = static_cast<VkDeviceSize>(buf_vbo_len * sizeof(float));
     auto allocation = mVertexRingBuffer.Allocate(vertexBufferSize, alignof(float));
     std::memcpy(allocation.mapped, buf_vbo, static_cast<size_t>(vertexBufferSize));
@@ -818,12 +883,20 @@ void GfxRenderingAPIVulkan::OnResize() {
 }
 
 void GfxRenderingAPIVulkan::StartFrame() {
+    LUS_TRACY_ZONE("Vulkan StartFrame");
     if (mSwapchain == VK_NULL_HANDLE || mFrameActive) {
         return;
     }
 
+    mTracyDrawCallsThisFrame = 0;
+    mTracyTextureUploadsThisFrame = 0;
+    mTracySamplerRecreatesThisFrame = 0;
+    mTracyShaderCreatesThisFrame = 0;
+    mTracyImmediateSubmitsThisFrame = 0;
+
     mCurrentFrame = &mFrames[mCurrentFrameIndex];
     if (mCurrentFrame->renderFinishedTimelineValue > 0) {
+        LUS_TRACY_ZONE("Vulkan Wait Frame Timeline");
         VkSemaphoreWaitInfo waitInfo = {};
         waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
         waitInfo.semaphoreCount = 1;
@@ -833,10 +906,18 @@ void GfxRenderingAPIVulkan::StartFrame() {
     }
 
     mFrameCount++;
-    mVertexRingBuffer.BeginFrame();
+    {
+        LUS_TRACY_ZONE("Vulkan VertexRing BeginFrame");
+        mVertexRingBuffer.BeginFrame();
+    }
 
-    VkResult acquireResult = vkAcquireNextImageKHR(
-        mDevice, mSwapchain, UINT64_MAX, mCurrentFrame->imageAvailableSemaphore, VK_NULL_HANDLE, &mCurrentImageIndex);
+    VkResult acquireResult = VK_SUCCESS;
+    {
+        LUS_TRACY_ZONE("Vulkan AcquireNextImage");
+        acquireResult = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX,
+                                              mCurrentFrame->imageAvailableSemaphore, VK_NULL_HANDLE,
+                                              &mCurrentImageIndex);
+    }
     if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
         mCurrentFrame = nullptr;
         RecreateSwapchain();
@@ -849,12 +930,18 @@ void GfxRenderingAPIVulkan::StartFrame() {
     mSwapchainImageAccessMasks[mCurrentImageIndex] = VK_ACCESS_2_NONE;
 
     mCurrentCommandBuffer = mCurrentFrame->commandBuffer;
-    vkResetCommandBuffer(mCurrentCommandBuffer, 0);
+    {
+        LUS_TRACY_ZONE("Vulkan ResetCommandBuffer");
+        vkResetCommandBuffer(mCurrentCommandBuffer, 0);
+    }
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    if (vkBeginCommandBuffer(mCurrentCommandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to begin Vulkan command buffer");
+    {
+        LUS_TRACY_ZONE("Vulkan BeginCommandBuffer");
+        if (vkBeginCommandBuffer(mCurrentCommandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to begin Vulkan command buffer");
+        }
     }
 
     mFrameActive = true;
@@ -868,6 +955,7 @@ void GfxRenderingAPIVulkan::EndFrame() {
 }
 
 void GfxRenderingAPIVulkan::FinishRender() {
+    LUS_TRACY_ZONE("Vulkan FinishRender");
     if (mSwapchain == VK_NULL_HANDLE || !mFrameActive) {
         return;
     }
@@ -914,8 +1002,11 @@ void GfxRenderingAPIVulkan::FinishRender() {
     submitInfo.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
     submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
 
-    if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to submit Vulkan command buffer");
+    {
+        LUS_TRACY_ZONE("Vulkan QueueSubmit Frame");
+        if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to submit Vulkan command buffer");
+        }
     }
 
     VkPresentInfoKHR presentInfo = {};
@@ -926,10 +1017,20 @@ void GfxRenderingAPIVulkan::FinishRender() {
     presentInfo.pSwapchains = &mSwapchain;
     presentInfo.pImageIndices = &mCurrentImageIndex;
 
-    VkResult presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    VkResult presentResult = VK_SUCCESS;
+    {
+        LUS_TRACY_ZONE("Vulkan QueuePresent");
+        presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    }
     mCurrentCommandBuffer = VK_NULL_HANDLE;
     mCurrentFrame = nullptr;
     mCurrentFrameIndex = (mCurrentFrameIndex + 1) % FRAMES_IN_FLIGHT;
+    LUS_TRACY_PLOT("Vulkan draw calls/frame", static_cast<int64_t>(mTracyDrawCallsThisFrame));
+    LUS_TRACY_PLOT("Vulkan texture uploads/frame", static_cast<int64_t>(mTracyTextureUploadsThisFrame));
+    LUS_TRACY_PLOT("Vulkan sampler recreates/frame", static_cast<int64_t>(mTracySamplerRecreatesThisFrame));
+    LUS_TRACY_PLOT("Vulkan shader creates/frame", static_cast<int64_t>(mTracyShaderCreatesThisFrame));
+    LUS_TRACY_PLOT("Vulkan immediate submits/frame", static_cast<int64_t>(mTracyImmediateSubmitsThisFrame));
+    LUS_TRACY_FRAME_MARK;
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
         RecreateSwapchain();
@@ -1817,6 +1918,7 @@ void GfxRenderingAPIVulkan::DestroyShaderPrograms() {
 }
 
 VkCommandBuffer GfxRenderingAPIVulkan::BeginImmediateCommands() {
+    LUS_TRACY_ZONE("Vulkan BeginImmediateCommands");
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool = mUploadCommandPool;
@@ -1835,6 +1937,9 @@ VkCommandBuffer GfxRenderingAPIVulkan::BeginImmediateCommands() {
 }
 
 void GfxRenderingAPIVulkan::EndImmediateCommands(VkCommandBuffer commandBuffer) {
+    LUS_TRACY_ZONE("Vulkan EndImmediateCommands");
+    mTracyImmediateSubmitsThisFrame++;
+
     CheckVk(vkEndCommandBuffer(commandBuffer), "Failed to end Vulkan immediate command buffer");
 
     VkCommandBufferSubmitInfo commandBufferInfo = {};
@@ -1851,8 +1956,15 @@ void GfxRenderingAPIVulkan::EndImmediateCommands(VkCommandBuffer commandBuffer) 
     VkFence fence = VK_NULL_HANDLE;
     CheckVk(vkCreateFence(mDevice, &fenceInfo, nullptr, &fence), "Failed to create Vulkan immediate fence");
 
-    CheckVk(vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, fence), "Failed to submit Vulkan immediate command buffer");
-    CheckVk(vkWaitForFences(mDevice, 1, &fence, VK_TRUE, UINT64_MAX), "Failed to wait for Vulkan immediate fence");
+    {
+        LUS_TRACY_ZONE("Vulkan QueueSubmit Immediate");
+        CheckVk(vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, fence),
+                "Failed to submit Vulkan immediate command buffer");
+    }
+    {
+        LUS_TRACY_ZONE("Vulkan Wait Immediate Fence");
+        CheckVk(vkWaitForFences(mDevice, 1, &fence, VK_TRUE, UINT64_MAX), "Failed to wait for Vulkan immediate fence");
+    }
     vkDestroyFence(mDevice, fence, nullptr);
     vkFreeCommandBuffers(mDevice, mUploadCommandPool, 1, &commandBuffer);
 }
@@ -2169,6 +2281,7 @@ void GfxRenderingAPIVulkan::CreateFramebufferDepthResources(VulkanFramebuffer& f
 
 void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width,
                                                uint32_t height) {
+    LUS_TRACY_ZONE("Vulkan UploadTextureToGpu");
     if (mAllocator == nullptr) {
         throw std::runtime_error("Cannot upload Vulkan texture before VMA allocator creation");
     }
@@ -2190,10 +2303,16 @@ void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uin
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VmaAllocation stagingAllocation = nullptr;
     VmaAllocationInfo stagingInfo = {};
-    CheckVk(vmaCreateBuffer(mAllocator, &bufferInfo, &stagingAllocInfo, &stagingBuffer, &stagingAllocation,
-                            &stagingInfo),
-            "Failed to create Vulkan texture staging buffer");
-    std::memcpy(stagingInfo.pMappedData, rgba32Buf, static_cast<size_t>(uploadSize));
+    {
+        LUS_TRACY_ZONE("Vulkan Create Texture Staging Buffer");
+        CheckVk(vmaCreateBuffer(mAllocator, &bufferInfo, &stagingAllocInfo, &stagingBuffer, &stagingAllocation,
+                                &stagingInfo),
+                "Failed to create Vulkan texture staging buffer");
+    }
+    {
+        LUS_TRACY_ZONE("Vulkan Copy Texture To Staging");
+        std::memcpy(stagingInfo.pMappedData, rgba32Buf, static_cast<size_t>(uploadSize));
+    }
 
     VkImage oldImage = texture.image;
     VmaAllocation oldAllocation = texture.allocation;
@@ -2224,8 +2343,11 @@ void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uin
 
     VmaAllocationCreateInfo imageAllocInfo = {};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-    CheckVk(vmaCreateImage(mAllocator, &imageInfo, &imageAllocInfo, &texture.image, &texture.allocation, nullptr),
-            "Failed to create Vulkan texture image");
+    {
+        LUS_TRACY_ZONE("Vulkan Create Texture Image");
+        CheckVk(vmaCreateImage(mAllocator, &imageInfo, &imageAllocInfo, &texture.image, &texture.allocation, nullptr),
+                "Failed to create Vulkan texture image");
+    }
 
     VkCommandBuffer commandBuffer = BeginImmediateCommands();
 
@@ -2277,7 +2399,10 @@ void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uin
     vkCmdPipelineBarrier2(commandBuffer, &shaderReadDependency);
 
     EndImmediateCommands(commandBuffer);
-    vmaDestroyBuffer(mAllocator, stagingBuffer, stagingAllocation);
+    {
+        LUS_TRACY_ZONE("Vulkan Destroy Texture Staging Buffer");
+        vmaDestroyBuffer(mAllocator, stagingBuffer, stagingAllocation);
+    }
 
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

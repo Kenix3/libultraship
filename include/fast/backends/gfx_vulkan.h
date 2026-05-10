@@ -282,6 +282,11 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     uint32_t mFrameCount = 0;
     float mCurrentNoiseScale = 1.0f;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
+    uint32_t mTracyDrawCallsThisFrame = 0;
+    uint32_t mTracyTextureUploadsThisFrame = 0;
+    uint32_t mTracySamplerRecreatesThisFrame = 0;
+    uint32_t mTracyShaderCreatesThisFrame = 0;
+    uint32_t mTracyImmediateSubmitsThisFrame = 0;
 };
 
 } // namespace Fast
