@@ -9,6 +9,7 @@
 #include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
 #include "ship/Context.h"
+#include "ship/config/ConsoleVariable.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/factory/ShaderFactory.h"
 
@@ -35,6 +36,21 @@ namespace {
 constexpr uint32_t ImGuiDescriptorPoolSize = 64;
 constexpr uint32_t PreferredBindlessTextureCount = 4096;
 constexpr VkDeviceSize InitialVertexRingBufferSize = 1024 * 1024;
+
+float GetZmodeDecalSlopeScaledDepthBias(uint32_t renderTargetHeight) {
+    constexpr int N64ModeFactor = 120;
+    constexpr int NoVanishFactor = 100;
+
+    switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+        case 1:
+            return -1.0f * static_cast<float>(renderTargetHeight) / N64ModeFactor;
+        case 2:
+            return -1.0f * static_cast<float>(renderTargetHeight) / NoVanishFactor;
+        case 0:
+        default:
+            return -2.0f;
+    }
+}
 
 struct VulkanPushConstants {
     uint32_t textureIds[SHADER_MAX_TEXTURES] = {};
@@ -642,9 +658,12 @@ void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linearFilter,
 }
 
 void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool depth_test, bool z_upd) {
+    mCurrentDepthTest = depth_test;
+    mCurrentDepthMask = z_upd;
 }
 
 void GfxRenderingAPIVulkan::SetZmodeDecal(bool decal) {
+    mCurrentZmodeDecal = decal;
 }
 
 void GfxRenderingAPIVulkan::SetViewport(int x, int y, int width, int height) {
@@ -709,6 +728,15 @@ void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, s
 
     VkDeviceSize vertexOffset = allocation.offset;
     vkCmdBindPipeline(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipeline);
+    vkCmdSetDepthTestEnable(mCurrentCommandBuffer,
+                            (mCurrentDepthTest || mCurrentDepthMask) ? VK_TRUE : VK_FALSE);
+    vkCmdSetDepthWriteEnable(mCurrentCommandBuffer, mCurrentDepthMask ? VK_TRUE : VK_FALSE);
+    vkCmdSetDepthCompareOp(mCurrentCommandBuffer,
+                           mCurrentDepthTest
+                               ? (mCurrentZmodeDecal ? VK_COMPARE_OP_LESS_OR_EQUAL : VK_COMPARE_OP_LESS)
+                               : VK_COMPARE_OP_ALWAYS);
+    vkCmdSetDepthBias(mCurrentCommandBuffer, 0.0f, 0.0f,
+                      mCurrentZmodeDecal ? GetZmodeDecalSlopeScaledDepthBias(mSwapchainExtent.height) : 0.0f);
     vkCmdBindDescriptorSets(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipelineLayout, 0, 1,
                             &mTextureDescriptorSet, 0, nullptr);
     vkCmdPushConstants(mCurrentCommandBuffer, mShaderProgram->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
@@ -735,6 +763,7 @@ void GfxRenderingAPIVulkan::Init() {
     CreateTextureDescriptorResources();
     CreateSwapchain();
     CreateImageViews();
+    CreateDepthResources();
     CreateCommandPool();
     CreateUploadCommandPool();
     CreateCommandBuffers();
@@ -806,8 +835,40 @@ void GfxRenderingAPIVulkan::StartFrame() {
     colorAttachmentDependency.pImageMemoryBarriers = &colorAttachmentBarrier;
     vkCmdPipelineBarrier2(mCurrentCommandBuffer, &colorAttachmentDependency);
 
-    VkClearValue clearValue = {};
-    clearValue.color = { { 0.02f, 0.02f, 0.04f, 1.0f } };
+    if (mDepthImage != VK_NULL_HANDLE) {
+        VkImageMemoryBarrier2 depthAttachmentBarrier = {};
+        depthAttachmentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        depthAttachmentBarrier.srcStageMask = mDepthImageLayout == VK_IMAGE_LAYOUT_UNDEFINED
+                                                  ? VK_PIPELINE_STAGE_2_NONE
+                                                  : VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+                                                        VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+        depthAttachmentBarrier.srcAccessMask = mDepthImageLayout == VK_IMAGE_LAYOUT_UNDEFINED
+                                                   ? VK_ACCESS_2_NONE
+                                                   : VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        depthAttachmentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+                                             VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+        depthAttachmentBarrier.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                               VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        depthAttachmentBarrier.oldLayout = mDepthImageLayout;
+        depthAttachmentBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        depthAttachmentBarrier.image = mDepthImage;
+        depthAttachmentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthAttachmentBarrier.subresourceRange.baseMipLevel = 0;
+        depthAttachmentBarrier.subresourceRange.levelCount = 1;
+        depthAttachmentBarrier.subresourceRange.baseArrayLayer = 0;
+        depthAttachmentBarrier.subresourceRange.layerCount = 1;
+
+        VkDependencyInfo depthAttachmentDependency = {};
+        depthAttachmentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        depthAttachmentDependency.imageMemoryBarrierCount = 1;
+        depthAttachmentDependency.pImageMemoryBarriers = &depthAttachmentBarrier;
+        vkCmdPipelineBarrier2(mCurrentCommandBuffer, &depthAttachmentDependency);
+        mDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    }
+
+    VkClearValue colorClearValue = {};
+    colorClearValue.color = { { 0.02f, 0.02f, 0.04f, 1.0f } };
 
     VkRenderingAttachmentInfo colorAttachment = {};
     colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -815,7 +876,18 @@ void GfxRenderingAPIVulkan::StartFrame() {
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue = clearValue;
+    colorAttachment.clearValue = colorClearValue;
+
+    VkClearValue depthClearValue = {};
+    depthClearValue.depthStencil = { 1.0f, 0 };
+
+    VkRenderingAttachmentInfo depthAttachment = {};
+    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    depthAttachment.imageView = mDepthImageView;
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.clearValue = depthClearValue;
 
     VkRenderingInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -824,6 +896,7 @@ void GfxRenderingAPIVulkan::StartFrame() {
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
+    renderingInfo.pDepthAttachment = mDepthImageView != VK_NULL_HANDLE ? &depthAttachment : nullptr;
     vkCmdBeginRendering(mCurrentCommandBuffer, &renderingInfo);
 
     VkViewport viewport = {};
@@ -949,7 +1022,7 @@ void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int fb_id, uint32_t widt
 
 void GfxRenderingAPIVulkan::StartDrawToFramebuffer(int fbId, float noiseScale) {
     (void)fbId;
-    mCurrentNoiseScale = noiseScale;
+    mCurrentNoiseScale = noiseScale != 0.0f ? 1.0f / noiseScale : 1.0f;
 }
 
 void GfxRenderingAPIVulkan::CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -957,6 +1030,21 @@ void GfxRenderingAPIVulkan::CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0,
 }
 
 void GfxRenderingAPIVulkan::ClearFramebuffer(bool color, bool depth) {
+    if (!mFrameActive || mCurrentCommandBuffer == VK_NULL_HANDLE || !depth || mDepthImageView == VK_NULL_HANDLE) {
+        return;
+    }
+    (void)color;
+
+    VkClearAttachment clearAttachment = {};
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    clearAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
+    VkClearRect clearRect = {};
+    clearRect.rect.offset = { 0, 0 };
+    clearRect.rect.extent = mSwapchainExtent;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+    vkCmdClearAttachments(mCurrentCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
 void GfxRenderingAPIVulkan::ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) {
@@ -1035,6 +1123,7 @@ bool GfxRenderingAPIVulkan::InitImGui() {
     initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &mSwapchainImageFormat;
+    initInfo.PipelineRenderingCreateInfo.depthAttachmentFormat = mDepthFormat;
 #endif
 
     mImGuiInitialized = ImGui_ImplVulkan_Init(&initInfo);
@@ -1161,6 +1250,62 @@ void GfxRenderingAPIVulkan::CreateImageViews() {
     }
 }
 
+void GfxRenderingAPIVulkan::CreateDepthResources() {
+    if (mAllocator == nullptr || mSwapchainExtent.width == 0 || mSwapchainExtent.height == 0) {
+        return;
+    }
+
+    DestroyDepthResources();
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent = { mSwapchainExtent.width, mSwapchainExtent.height, 1 };
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = mDepthFormat;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    CheckVk(vmaCreateImage(mAllocator, &imageInfo, &allocInfo, &mDepthImage, &mDepthAllocation, nullptr),
+            "Failed to create Vulkan depth image");
+
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = mDepthImage;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = mDepthFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    CheckVk(vkCreateImageView(mDevice, &viewInfo, nullptr, &mDepthImageView),
+            "Failed to create Vulkan depth image view");
+
+    mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mDepthExtent = mSwapchainExtent;
+}
+
+void GfxRenderingAPIVulkan::DestroyDepthResources() {
+    if (mDevice != VK_NULL_HANDLE && mDepthImageView != VK_NULL_HANDLE) {
+        vkDestroyImageView(mDevice, mDepthImageView, nullptr);
+        mDepthImageView = VK_NULL_HANDLE;
+    }
+    if (mAllocator != nullptr && mDepthImage != VK_NULL_HANDLE) {
+        vmaDestroyImage(mAllocator, mDepthImage, mDepthAllocation);
+        mDepthImage = VK_NULL_HANDLE;
+        mDepthAllocation = nullptr;
+    }
+    mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mDepthExtent = {};
+}
+
 void GfxRenderingAPIVulkan::CreateCommandPool() {
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1240,6 +1385,7 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
     rasterization.polygonMode = VK_POLYGON_MODE_FILL;
     rasterization.cullMode = VK_CULL_MODE_NONE;
     rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization.depthBiasEnable = VK_TRUE;
     rasterization.lineWidth = 1.0f;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -1248,9 +1394,9 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_FALSE;
-    depthStencil.depthWriteEnable = VK_FALSE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -1268,7 +1414,14 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
 
-    VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkDynamicState dynamicStates[] = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP,
+        VK_DYNAMIC_STATE_DEPTH_BIAS,
+    };
     VkPipelineDynamicStateCreateInfo dynamicState = {};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = static_cast<uint32_t>(std::size(dynamicStates));
@@ -1278,6 +1431,7 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachmentFormats = &mSwapchainImageFormat;
+    renderingInfo.depthAttachmentFormat = mDepthFormat;
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -1782,6 +1936,8 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
         return;
     }
 
+    DestroyDepthResources();
+
     for (auto imageView : mSwapchainImageViews) {
         vkDestroyImageView(mDevice, imageView, nullptr);
     }
@@ -1809,6 +1965,7 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
     CleanupSwapchain();
     CreateSwapchain();
     CreateImageViews();
+    CreateDepthResources();
     if (restoreImGui) {
         InitImGui();
     }

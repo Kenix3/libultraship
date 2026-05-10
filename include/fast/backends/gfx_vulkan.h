@@ -156,6 +156,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CleanupSwapchain();
     void RecreateSwapchain();
     void CreateImageViews();
+    void CreateDepthResources();
+    void DestroyDepthResources();
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
@@ -194,6 +196,12 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     std::vector<VkImage> mSwapchainImages;
     std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkImageLayout> mSwapchainImageLayouts;
+    VkFormat mDepthFormat = VK_FORMAT_D32_SFLOAT;
+    VkImage mDepthImage = VK_NULL_HANDLE;
+    VmaAllocation_T* mDepthAllocation = nullptr;
+    VkImageView mDepthImageView = VK_NULL_HANDLE;
+    VkImageLayout mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkExtent2D mDepthExtent = {};
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
     VkCommandPool mUploadCommandPool = VK_NULL_HANDLE;
     std::array<VulkanFrame, FRAMES_IN_FLIGHT> mFrames;

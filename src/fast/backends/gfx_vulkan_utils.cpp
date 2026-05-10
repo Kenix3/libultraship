@@ -171,9 +171,13 @@ bool CheckRequiredFeatures(VkPhysicalDevice physicalDevice) {
     vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     vulkan13Features.pNext = &vulkan12Features;
 
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
+    extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+    extendedDynamicStateFeatures.pNext = &vulkan13Features;
+
     VkPhysicalDeviceFeatures2 features = {};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features.pNext = &vulkan13Features;
+    features.pNext = &extendedDynamicStateFeatures;
 
     vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 
@@ -184,7 +188,8 @@ bool CheckRequiredFeatures(VkPhysicalDevice physicalDevice) {
            vulkan12Features.descriptorBindingSampledImageUpdateAfterBind == VK_TRUE &&
            vulkan12Features.shaderSampledImageArrayNonUniformIndexing == VK_TRUE &&
            vulkan12Features.bufferDeviceAddress == VK_TRUE && vulkan12Features.timelineSemaphore == VK_TRUE &&
-           vulkan13Features.dynamicRendering == VK_TRUE && vulkan13Features.synchronization2 == VK_TRUE;
+           vulkan13Features.dynamicRendering == VK_TRUE && vulkan13Features.synchronization2 == VK_TRUE &&
+           extendedDynamicStateFeatures.extendedDynamicState == VK_TRUE;
 }
 
 std::string MakeSingleLineMessage(const char* message) {
@@ -319,7 +324,7 @@ std::vector<const char*> GetValidationLayers() {
 }
 
 std::vector<const char*> GetRequiredDeviceExtensions() {
-    return { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    return { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME };
 }
 
 VkInstance CreateInstance(SDL_Window* window) {
@@ -474,9 +479,14 @@ VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, const QueueFamilyI
     vulkan13Features.dynamicRendering = VK_TRUE;
     vulkan13Features.synchronization2 = VK_TRUE;
 
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
+    extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+    extendedDynamicStateFeatures.pNext = &vulkan13Features;
+    extendedDynamicStateFeatures.extendedDynamicState = VK_TRUE;
+
     VkPhysicalDeviceFeatures2 features = {};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features.pNext = &vulkan13Features;
+    features.pNext = &extendedDynamicStateFeatures;
 
     auto deviceExtensions = GetRequiredDeviceExtensions();
 
