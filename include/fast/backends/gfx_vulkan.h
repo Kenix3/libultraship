@@ -5,6 +5,7 @@
 #include "gfx_vulkan_utils.h"
 
 #include <array>
+#include <deque>
 #include <map>
 #include <memory>
 #include <utility>
@@ -26,6 +27,8 @@ struct VulkanShaderProgram {
     size_t numFloats = 0;
     VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
     VkShaderModule fragmentShaderModule = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
 };
 
 struct VulkanTexture {
@@ -39,6 +42,7 @@ struct VulkanTexture {
     uint32_t height = 0;
     bool uploaded = false;
     bool linearFiltering = false;
+    uint32_t filtering = FILTER_THREE_POINT;
     uint32_t cms = 0;
     uint32_t cmt = 0;
 };
@@ -49,6 +53,49 @@ struct VulkanFrame {
     VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
     VkSemaphore renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
     uint64_t renderFinishedTimelineValue = 0;
+};
+
+class VulkanVertexRingBuffer {
+  public:
+    struct Allocation {
+        VkBuffer buffer = VK_NULL_HANDLE;
+        VkDeviceSize offset = 0;
+        void* mapped = nullptr;
+    };
+
+    void Init(VkDevice device, VmaAllocator_T* allocator, VkDeviceSize initialSize);
+    void Destroy();
+    void BeginFrame();
+    void EndFrame(VkSemaphore timelineSemaphore, uint64_t timelineValue);
+    Allocation Allocate(VkDeviceSize size, VkDeviceSize alignment);
+
+  private:
+    struct Buffer {
+        VkBuffer buffer = VK_NULL_HANDLE;
+        VmaAllocation_T* allocation = nullptr;
+        void* mapped = nullptr;
+        VkDeviceSize size = 0;
+        VkDeviceSize head = 0;
+    };
+
+    struct SubmittedRange {
+        VkSemaphore timelineSemaphore = VK_NULL_HANDLE;
+        uint64_t timelineValue = 0;
+    };
+
+    static VkDeviceSize AlignUp(VkDeviceSize value, VkDeviceSize alignment);
+    Buffer CreateBuffer(VkDeviceSize size);
+    void DestroyBuffer(Buffer& buffer);
+    void Grow(VkDeviceSize requiredSize);
+    bool CurrentBufferIsInUse() const;
+    void CollectCompletedRanges();
+
+    VkDevice mDevice = VK_NULL_HANDLE;
+    VmaAllocator_T* mAllocator = nullptr;
+    Buffer mCurrent;
+    std::deque<Buffer> mRetiredBuffers;
+    std::vector<SubmittedRange> mCurrentRanges;
+    bool mFrameAllocated = false;
 };
 
 class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
@@ -115,6 +162,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void DestroyFrameResources();
     void CreateAllocator();
     void CreateUploadCommandPool();
+    VkPipelineLayout CreatePipelineLayout();
+    VkPipeline CreateGraphicsPipeline(VulkanShaderProgram& program, const CCFeatures& ccFeatures, bool useAlpha);
     void CreateTextureDescriptorResources();
     void DestroyTextureDescriptorResources();
     void DestroyShaderProgram(VulkanShaderProgram& program);
@@ -166,6 +215,9 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkDescriptorSetLayout mTextureDescriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool mTextureDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSet mTextureDescriptorSet = VK_NULL_HANDLE;
+    VulkanVertexRingBuffer mVertexRingBuffer;
+    uint32_t mFrameCount = 0;
+    float mCurrentNoiseScale = 1.0f;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
 };
 

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -33,6 +34,15 @@ namespace {
 
 constexpr uint32_t ImGuiDescriptorPoolSize = 64;
 constexpr uint32_t PreferredBindlessTextureCount = 4096;
+constexpr VkDeviceSize InitialVertexRingBufferSize = 1024 * 1024;
+
+struct VulkanPushConstants {
+    uint32_t textureIds[SHADER_MAX_TEXTURES] = {};
+    uint32_t frameCount = 0;
+    float noiseScale = 1.0f;
+    uint32_t textureSize[2][2] = {};
+    uint32_t textureFiltering[2] = {};
+};
 
 void CheckImGuiVkResult(VkResult result) {
     if (result != VK_SUCCESS) {
@@ -308,7 +318,190 @@ VkShaderModule CreateShaderModule(VkDevice device, const std::vector<uint32_t>& 
     return shaderModule;
 }
 
+VkFormat VertexFormatForFloatCount(uint32_t floatCount) {
+    switch (floatCount) {
+        case 1:
+            return VK_FORMAT_R32_SFLOAT;
+        case 2:
+            return VK_FORMAT_R32G32_SFLOAT;
+        case 3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+        case 4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+        default:
+            throw std::runtime_error("Unsupported Vulkan vertex attribute size");
+    }
+}
+
+void AddVertexAttribute(std::vector<VkVertexInputAttributeDescription>& attributes, uint32_t location,
+                        uint32_t floatCount, uint32_t& offset) {
+    VkVertexInputAttributeDescription attribute = {};
+    attribute.location = location;
+    attribute.binding = 0;
+    attribute.format = VertexFormatForFloatCount(floatCount);
+    attribute.offset = offset;
+    attributes.push_back(attribute);
+    offset += floatCount * sizeof(float);
+}
+
+std::vector<VkVertexInputAttributeDescription> BuildVertexAttributes(const CCFeatures& ccFeatures) {
+    std::vector<VkVertexInputAttributeDescription> attributes;
+    attributes.reserve(16);
+
+    uint32_t location = 0;
+    uint32_t offset = 0;
+    AddVertexAttribute(attributes, location++, 4, offset);
+
+    for (uint32_t texture = 0; texture < 2; texture++) {
+        if (!ccFeatures.usedTextures[texture]) {
+            continue;
+        }
+
+        AddVertexAttribute(attributes, location++, 2, offset);
+        if (ccFeatures.clamp[texture][0]) {
+            AddVertexAttribute(attributes, location++, 1, offset);
+        }
+        if (ccFeatures.clamp[texture][1]) {
+            AddVertexAttribute(attributes, location++, 1, offset);
+        }
+    }
+
+    if (ccFeatures.opt_fog) {
+        AddVertexAttribute(attributes, location++, 4, offset);
+    }
+    if (ccFeatures.opt_grayscale) {
+        AddVertexAttribute(attributes, location++, 4, offset);
+    }
+
+    for (int input = 0; input < ccFeatures.numInputs; input++) {
+        AddVertexAttribute(attributes, location++, ccFeatures.opt_alpha ? 4 : 3, offset);
+    }
+
+    return attributes;
+}
+
 } // namespace
+
+VkDeviceSize VulkanVertexRingBuffer::AlignUp(VkDeviceSize value, VkDeviceSize alignment) {
+    if (alignment <= 1) {
+        return value;
+    }
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
+void VulkanVertexRingBuffer::Init(VkDevice device, VmaAllocator_T* allocator, VkDeviceSize initialSize) {
+    mDevice = device;
+    mAllocator = allocator;
+    mCurrent = CreateBuffer(initialSize);
+}
+
+void VulkanVertexRingBuffer::Destroy() {
+    DestroyBuffer(mCurrent);
+    for (auto& buffer : mRetiredBuffers) {
+        DestroyBuffer(buffer);
+    }
+    mRetiredBuffers.clear();
+    mCurrentRanges.clear();
+    mDevice = VK_NULL_HANDLE;
+    mAllocator = nullptr;
+}
+
+void VulkanVertexRingBuffer::BeginFrame() {
+    CollectCompletedRanges();
+    mFrameAllocated = false;
+    if (!CurrentBufferIsInUse()) {
+        mCurrent.head = 0;
+    }
+}
+
+void VulkanVertexRingBuffer::EndFrame(VkSemaphore timelineSemaphore, uint64_t timelineValue) {
+    if (!mFrameAllocated || timelineSemaphore == VK_NULL_HANDLE || timelineValue == 0) {
+        return;
+    }
+    mCurrentRanges.push_back({ timelineSemaphore, timelineValue });
+}
+
+VulkanVertexRingBuffer::Allocation VulkanVertexRingBuffer::Allocate(VkDeviceSize size, VkDeviceSize alignment) {
+    if (mAllocator == nullptr || mCurrent.buffer == VK_NULL_HANDLE) {
+        throw std::runtime_error("Vulkan vertex ring buffer is not initialized");
+    }
+
+    VkDeviceSize alignedHead = AlignUp(mCurrent.head, alignment);
+    if (size > mCurrent.size || alignedHead + size > mCurrent.size) {
+        if (!CurrentBufferIsInUse()) {
+            mCurrent.head = 0;
+            alignedHead = 0;
+        } else {
+            Grow(size);
+            alignedHead = 0;
+        }
+    }
+
+    if (size > mCurrent.size || alignedHead + size > mCurrent.size) {
+        throw std::runtime_error("Vulkan vertex ring buffer allocation is larger than the backing buffer");
+    }
+
+    mFrameAllocated = true;
+    mCurrent.head = alignedHead + size;
+    return { mCurrent.buffer, alignedHead, static_cast<uint8_t*>(mCurrent.mapped) + alignedHead };
+}
+
+VulkanVertexRingBuffer::Buffer VulkanVertexRingBuffer::CreateBuffer(VkDeviceSize size) {
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    Buffer buffer;
+    buffer.size = size;
+    VmaAllocationInfo allocationInfo = {};
+    CheckVk(vmaCreateBuffer(mAllocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &allocationInfo),
+            "Failed to create Vulkan vertex ring buffer");
+    buffer.mapped = allocationInfo.pMappedData;
+    return buffer;
+}
+
+void VulkanVertexRingBuffer::DestroyBuffer(Buffer& buffer) {
+    if (buffer.buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(mAllocator, buffer.buffer, buffer.allocation);
+    }
+    buffer = {};
+}
+
+void VulkanVertexRingBuffer::Grow(VkDeviceSize requiredSize) {
+    VkDeviceSize newSize = std::max(requiredSize, std::max(mCurrent.size * 2, InitialVertexRingBufferSize));
+    if (mCurrent.buffer != VK_NULL_HANDLE) {
+        mRetiredBuffers.push_back(mCurrent);
+    }
+    mCurrent = CreateBuffer(newSize);
+    mCurrentRanges.clear();
+}
+
+bool VulkanVertexRingBuffer::CurrentBufferIsInUse() const {
+    return !mCurrentRanges.empty();
+}
+
+void VulkanVertexRingBuffer::CollectCompletedRanges() {
+    if (mDevice == VK_NULL_HANDLE) {
+        return;
+    }
+
+    auto it = mCurrentRanges.begin();
+    while (it != mCurrentRanges.end()) {
+        uint64_t completedValue = 0;
+        VkResult result = vkGetSemaphoreCounterValue(mDevice, it->timelineSemaphore, &completedValue);
+        if (result != VK_SUCCESS || completedValue < it->timelineValue) {
+            ++it;
+            continue;
+        }
+        it = mCurrentRanges.erase(it);
+    }
+}
 
 GfxRenderingAPIVulkan::GfxRenderingAPIVulkan(GfxWindowBackendSDL2* windowBackend) : mWindowBackend(windowBackend) {
 }
@@ -362,6 +555,8 @@ ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0,
     prg->usedTextures[4] = ccFeatures.used_blend[0];
     prg->usedTextures[5] = ccFeatures.used_blend[1];
     prg->numFloats = numFloats;
+    prg->pipelineLayout = CreatePipelineLayout();
+    prg->pipeline = CreateGraphicsPipeline(*prg, ccFeatures, ccFeatures.opt_alpha);
     LoadShader(reinterpret_cast<ShaderProgram*>(prg));
     return reinterpret_cast<ShaderProgram*>(it->second.get());
 }
@@ -416,6 +611,7 @@ void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linearFilter,
 
     VulkanTexture& texture = GetTexture(mCurrentTextureIds[sampler]);
     texture.linearFiltering = linearFilter;
+    texture.filtering = !linearFilter ? FILTER_LINEAR : FILTER_THREE_POINT;
     texture.cms = cms;
     texture.cmt = cmt;
 
@@ -452,15 +648,73 @@ void GfxRenderingAPIVulkan::SetZmodeDecal(bool decal) {
 }
 
 void GfxRenderingAPIVulkan::SetViewport(int x, int y, int width, int height) {
+    if (!mFrameActive || mCurrentCommandBuffer == VK_NULL_HANDLE) {
+        return;
+    }
+
+    VkViewport viewport = {};
+    viewport.x = static_cast<float>(x);
+    viewport.y = static_cast<float>(static_cast<int>(mSwapchainExtent.height) - y - height);
+    viewport.width = static_cast<float>(width);
+    viewport.height = static_cast<float>(height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(mCurrentCommandBuffer, 0, 1, &viewport);
 }
 
 void GfxRenderingAPIVulkan::SetScissor(int x, int y, int width, int height) {
+    if (!mFrameActive || mCurrentCommandBuffer == VK_NULL_HANDLE) {
+        return;
+    }
+
+    VkRect2D scissor = {};
+    scissor.offset.x = std::max(0, x);
+    scissor.offset.y = std::max(0, static_cast<int>(mSwapchainExtent.height) - y - height);
+    scissor.extent.width = static_cast<uint32_t>(std::max(0, width));
+    scissor.extent.height = static_cast<uint32_t>(std::max(0, height));
+    vkCmdSetScissor(mCurrentCommandBuffer, 0, 1, &scissor);
 }
 
 void GfxRenderingAPIVulkan::SetUseAlpha(bool useAlpha) {
 }
 
 void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+    if (!mFrameActive || mCurrentCommandBuffer == VK_NULL_HANDLE || mShaderProgram == nullptr || buf_vbo_len == 0 ||
+        buf_vbo_num_tris == 0) {
+        return;
+    }
+
+    VkDeviceSize vertexBufferSize = static_cast<VkDeviceSize>(buf_vbo_len * sizeof(float));
+    auto allocation = mVertexRingBuffer.Allocate(vertexBufferSize, alignof(float));
+    std::memcpy(allocation.mapped, buf_vbo, static_cast<size_t>(vertexBufferSize));
+
+    VulkanPushConstants pushConstants = {};
+    for (uint32_t i = 0; i < SHADER_MAX_TEXTURES; i++) {
+        pushConstants.textureIds[i] = mCurrentTextureIds[i];
+    }
+    pushConstants.frameCount = mFrameCount;
+    pushConstants.noiseScale = mCurrentNoiseScale;
+    for (uint32_t i = 0; i < 2; i++) {
+        if (mCurrentTextureIds[i] < mTextures.size()) {
+            VulkanTexture& texture = GetTexture(mCurrentTextureIds[i]);
+            pushConstants.textureSize[i][0] = std::max(texture.width, 1u);
+            pushConstants.textureSize[i][1] = std::max(texture.height, 1u);
+            pushConstants.textureFiltering[i] = texture.filtering;
+        } else {
+            pushConstants.textureSize[i][0] = 1;
+            pushConstants.textureSize[i][1] = 1;
+            pushConstants.textureFiltering[i] = FILTER_LINEAR;
+        }
+    }
+
+    VkDeviceSize vertexOffset = allocation.offset;
+    vkCmdBindPipeline(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipeline);
+    vkCmdBindDescriptorSets(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipelineLayout, 0, 1,
+                            &mTextureDescriptorSet, 0, nullptr);
+    vkCmdPushConstants(mCurrentCommandBuffer, mShaderProgram->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                       sizeof(pushConstants), &pushConstants);
+    vkCmdBindVertexBuffers(mCurrentCommandBuffer, 0, 1, &allocation.buffer, &vertexOffset);
+    vkCmdDraw(mCurrentCommandBuffer, static_cast<uint32_t>(buf_vbo_num_tris * 3), 1, 0, 0);
 }
 
 void GfxRenderingAPIVulkan::Init() {
@@ -477,6 +731,7 @@ void GfxRenderingAPIVulkan::Init() {
     mQueueFamilies = deviceSelection.queueFamilies;
     mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
     CreateAllocator();
+    mVertexRingBuffer.Init(mDevice, mAllocator, InitialVertexRingBufferSize);
     CreateTextureDescriptorResources();
     CreateSwapchain();
     CreateImageViews();
@@ -506,6 +761,9 @@ void GfxRenderingAPIVulkan::StartFrame() {
         waitInfo.pValues = &mCurrentFrame->renderFinishedTimelineValue;
         CheckVk(vkWaitSemaphores(mDevice, &waitInfo, UINT64_MAX), "Failed to wait for Vulkan frame timeline");
     }
+
+    mFrameCount++;
+    mVertexRingBuffer.BeginFrame();
 
     VkResult acquireResult = vkAcquireNextImageKHR(
         mDevice, mSwapchain, UINT64_MAX, mCurrentFrame->imageAvailableSemaphore, VK_NULL_HANDLE, &mCurrentImageIndex);
@@ -568,6 +826,20 @@ void GfxRenderingAPIVulkan::StartFrame() {
     renderingInfo.pColorAttachments = &colorAttachment;
     vkCmdBeginRendering(mCurrentCommandBuffer, &renderingInfo);
 
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(mSwapchainExtent.width);
+    viewport.height = static_cast<float>(mSwapchainExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(mCurrentCommandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor = {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = mSwapchainExtent;
+    vkCmdSetScissor(mCurrentCommandBuffer, 0, 1, &scissor);
+
     mSwapchainImageLayouts[mCurrentImageIndex] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     mFrameActive = true;
 }
@@ -619,6 +891,7 @@ void GfxRenderingAPIVulkan::FinishRender() {
     waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     mCurrentFrame->renderFinishedTimelineValue++;
+    mVertexRingBuffer.EndFrame(mCurrentFrame->renderFinishedTimelineSemaphore, mCurrentFrame->renderFinishedTimelineValue);
 
     std::array<VkSemaphoreSubmitInfo, 2> signalSemaphoreInfos = {};
     signalSemaphoreInfos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
@@ -675,6 +948,8 @@ void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int fb_id, uint32_t widt
 }
 
 void GfxRenderingAPIVulkan::StartDrawToFramebuffer(int fbId, float noiseScale) {
+    (void)fbId;
+    mCurrentNoiseScale = noiseScale;
 }
 
 void GfxRenderingAPIVulkan::CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -907,6 +1182,126 @@ void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
             "Failed to create Vulkan upload command pool");
 }
 
+VkPipelineLayout GfxRenderingAPIVulkan::CreatePipelineLayout() {
+    VkPushConstantRange pushConstantRange = {};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(VulkanPushConstants);
+
+    VkPipelineLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layoutInfo.setLayoutCount = 1;
+    layoutInfo.pSetLayouts = &mTextureDescriptorSetLayout;
+    layoutInfo.pushConstantRangeCount = 1;
+    layoutInfo.pPushConstantRanges = &pushConstantRange;
+
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    CheckVk(vkCreatePipelineLayout(mDevice, &layoutInfo, nullptr, &pipelineLayout),
+            "Failed to create Vulkan graphics pipeline layout");
+    return pipelineLayout;
+}
+
+VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& program, const CCFeatures& ccFeatures,
+                                                         bool useAlpha) {
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+    shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    shaderStages[0].module = program.vertexShaderModule;
+    shaderStages[0].pName = "main";
+    shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shaderStages[1].module = program.fragmentShaderModule;
+    shaderStages[1].pName = "main";
+
+    VkVertexInputBindingDescription vertexBinding = {};
+    vertexBinding.binding = 0;
+    vertexBinding.stride = static_cast<uint32_t>(program.numFloats * sizeof(float));
+    vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    auto vertexAttributes = BuildVertexAttributes(ccFeatures);
+    VkPipelineVertexInputStateCreateInfo vertexInput = {};
+    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.vertexBindingDescriptionCount = 1;
+    vertexInput.pVertexBindingDescriptions = &vertexBinding;
+    vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size());
+    vertexInput.pVertexAttributeDescriptions = vertexAttributes.data();
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    VkPipelineViewportStateCreateInfo viewportState = {};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.scissorCount = 1;
+
+    VkPipelineRasterizationStateCreateInfo rasterization = {};
+    rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterization.cullMode = VK_CULL_MODE_NONE;
+    rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization.lineWidth = 1.0f;
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_FALSE;
+    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = useAlpha ? VK_TRUE : VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &colorBlendAttachment;
+
+    VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo dynamicState = {};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(std::size(dynamicStates));
+    dynamicState.pDynamicStates = dynamicStates;
+
+    VkPipelineRenderingCreateInfo renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachmentFormats = &mSwapchainImageFormat;
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.pNext = &renderingInfo;
+    pipelineInfo.stageCount = static_cast<uint32_t>(std::size(shaderStages));
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInput;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterization;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = program.pipelineLayout;
+    pipelineInfo.renderPass = VK_NULL_HANDLE;
+    pipelineInfo.subpass = 0;
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    CheckVk(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline),
+            "Failed to create Vulkan graphics pipeline");
+    return pipeline;
+}
+
 void GfxRenderingAPIVulkan::CreateCommandBuffers() {
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1081,6 +1476,14 @@ void GfxRenderingAPIVulkan::DestroyTextureDescriptorResources() {
 }
 
 void GfxRenderingAPIVulkan::DestroyShaderProgram(VulkanShaderProgram& program) {
+    if (program.pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(mDevice, program.pipeline, nullptr);
+        program.pipeline = VK_NULL_HANDLE;
+    }
+    if (program.pipelineLayout != VK_NULL_HANDLE) {
+        vkDestroyPipelineLayout(mDevice, program.pipelineLayout, nullptr);
+        program.pipelineLayout = VK_NULL_HANDLE;
+    }
     if (program.vertexShaderModule != VK_NULL_HANDLE) {
         vkDestroyShaderModule(mDevice, program.vertexShaderModule, nullptr);
         program.vertexShaderModule = VK_NULL_HANDLE;
@@ -1422,6 +1825,7 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         DestroyTextures();
         DestroyTextureDescriptorResources();
         DestroyFrameResources();
+        mVertexRingBuffer.Destroy();
         if (mUploadCommandPool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(mDevice, mUploadCommandPool, nullptr);
             mUploadCommandPool = VK_NULL_HANDLE;
