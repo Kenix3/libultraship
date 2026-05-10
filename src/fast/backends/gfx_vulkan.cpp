@@ -503,20 +503,6 @@ void GfxRenderingAPIVulkan::RenderDrawData(ImDrawData* drawData) {
         return;
     }
 
-    ImTextureID fallbackTextureId = ImGui::GetIO().Fonts->TexID;
-    if (fallbackTextureId != 0) {
-        for (int listIndex = 0; listIndex < drawData->CmdListsCount; listIndex++) {
-            ImDrawList* drawList = drawData->CmdLists[listIndex];
-            for (int commandIndex = 0; commandIndex < drawList->CmdBuffer.Size; commandIndex++) {
-                ImDrawCmd& command = drawList->CmdBuffer[commandIndex];
-                if (command.UserCallback == nullptr && command.TextureId == 0) {
-                    command.TextureId = fallbackTextureId;
-                    command.ElemCount = 0;
-                }
-            }
-        }
-    }
-
     ImGui_ImplVulkan_RenderDrawData(drawData, mCurrentCommandBuffer);
 }
 

@@ -2,6 +2,7 @@
 
 #include "ship/window/gui/Gui.h"
 
+#include <cstdint>
 #include <cstring>
 #include <utility>
 #include <string>
@@ -50,6 +51,21 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 #endif
 
 namespace Ship {
+namespace {
+
+void EnsureMainViewportSdlWindowHandle(SDL_Window* window) {
+    if (window == nullptr) {
+        return;
+    }
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (viewport != nullptr) {
+        viewport->PlatformHandle = reinterpret_cast<void*>(static_cast<intptr_t>(SDL_GetWindowID(window)));
+    }
+}
+
+} // namespace
+
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
@@ -163,6 +179,7 @@ void Gui::ImGuiWMInit() {
             }
             if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_VULKAN) {
                 ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
+                EnsureMainViewportSdlWindowHandle(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
             } else {
                 ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             }
@@ -307,6 +324,9 @@ void Gui::HandleWindowEvents(WindowEvent event) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
         case WindowBackend::FAST3D_SDL_VULKAN:
+            if (Context::GetInstance()->GetWindow()->GetWindowBackend() == WindowBackend::FAST3D_SDL_VULKAN) {
+                EnsureMainViewportSdlWindowHandle(static_cast<SDL_Window*>(mImpl.Vulkan.Window));
+            }
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
             Mobile::ImGuiProcessEvent(mImGuiIo->WantTextInput);
