@@ -34,6 +34,14 @@ struct VulkanShaderProgram {
     uint8_t numInputs = 0;
     bool usedTextures[SHADER_MAX_TEXTURES] = {};
     size_t numFloats = 0;
+    uint32_t flags = 0;
+    uint32_t texCoordOffset[2] = {};
+    uint32_t texClampSOffset[2] = {};
+    uint32_t texClampTOffset[2] = {};
+    uint32_t fogOffset = 0;
+    uint32_t grayscaleOffset = 0;
+    uint32_t inputOffset[7] = {};
+    int32_t combiner[2][2][4] = {};
     VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
     VkShaderModule fragmentShaderModule = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -91,6 +99,7 @@ class VulkanVertexRingBuffer {
     struct Allocation {
         VkBuffer buffer = VK_NULL_HANDLE;
         VkDeviceSize offset = 0;
+        VkDeviceAddress deviceAddress = 0;
         void* mapped = nullptr;
     };
 
@@ -105,6 +114,7 @@ class VulkanVertexRingBuffer {
         VkBuffer buffer = VK_NULL_HANDLE;
         VmaAllocation_T* allocation = nullptr;
         void* mapped = nullptr;
+        VkDeviceAddress deviceAddress = 0;
         VkDeviceSize size = 0;
         VkDeviceSize head = 0;
     };
@@ -197,6 +207,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateUploadCommandPool();
     VkPipelineLayout CreatePipelineLayout();
     VkPipeline CreateGraphicsPipeline(VulkanShaderProgram& program, const CCFeatures& ccFeatures, bool useAlpha);
+    void CreateUberShaderPipeline();
+    void DestroyUberShaderPipeline();
     void CreateTextureDescriptorResources();
     void DestroyTextureDescriptorResources();
     void DestroyShaderProgram(VulkanShaderProgram& program);
@@ -278,6 +290,11 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkDescriptorSetLayout mTextureDescriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool mTextureDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSet mTextureDescriptorSet = VK_NULL_HANDLE;
+    VkShaderModule mUberVertexShaderModule = VK_NULL_HANDLE;
+    VkShaderModule mUberFragmentShaderModule = VK_NULL_HANDLE;
+    VkPipelineLayout mUberPipelineLayout = VK_NULL_HANDLE;
+    VkPipeline mUberOpaquePipeline = VK_NULL_HANDLE;
+    VkPipeline mUberAlphaPipeline = VK_NULL_HANDLE;
     VulkanVertexRingBuffer mVertexRingBuffer;
     uint32_t mFrameCount = 0;
     float mCurrentNoiseScale = 1.0f;

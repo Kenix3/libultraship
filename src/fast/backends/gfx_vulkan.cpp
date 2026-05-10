@@ -70,12 +70,521 @@ float GetZmodeDecalSlopeScaledDepthBias(uint32_t renderTargetHeight) {
 }
 
 struct VulkanPushConstants {
-    uint32_t textureIds[SHADER_MAX_TEXTURES] = {};
+    VkDeviceAddress vertexAddress = 0;
+    VkDeviceAddress configAddress = 0;
     uint32_t frameCount = 0;
     float noiseScale = 1.0f;
+};
+
+enum VulkanUberShaderFlags : uint32_t {
+    UBER_FLAG_ALPHA = 1u << 0,
+    UBER_FLAG_FOG = 1u << 1,
+    UBER_FLAG_TEXTURE_EDGE = 1u << 2,
+    UBER_FLAG_NOISE = 1u << 3,
+    UBER_FLAG_2CYC = 1u << 4,
+    UBER_FLAG_ALPHA_THRESHOLD = 1u << 5,
+    UBER_FLAG_INVISIBLE = 1u << 6,
+    UBER_FLAG_GRAYSCALE = 1u << 7,
+    UBER_FLAG_USED_TEX0 = 1u << 8,
+    UBER_FLAG_USED_TEX1 = 1u << 9,
+    UBER_FLAG_MASK_TEX0 = 1u << 10,
+    UBER_FLAG_MASK_TEX1 = 1u << 11,
+    UBER_FLAG_BLEND_TEX0 = 1u << 12,
+    UBER_FLAG_BLEND_TEX1 = 1u << 13,
+    UBER_FLAG_CLAMP_TEX0_S = 1u << 14,
+    UBER_FLAG_CLAMP_TEX0_T = 1u << 15,
+    UBER_FLAG_CLAMP_TEX1_S = 1u << 16,
+    UBER_FLAG_CLAMP_TEX1_T = 1u << 17,
+    UBER_FLAG_COLOR_ALPHA_SAME_C0 = 1u << 18,
+    UBER_FLAG_COLOR_ALPHA_SAME_C1 = 1u << 19,
+};
+
+struct VulkanUberDrawConfig {
+    uint32_t textureIds[SHADER_MAX_TEXTURES] = {};
     uint32_t textureSize[2][2] = {};
     uint32_t textureFiltering[2] = {};
+    uint32_t flags = 0;
+    uint32_t vertexStrideFloats = 0;
+    uint32_t numInputs = 0;
+    uint32_t texCoordOffset[2] = {};
+    uint32_t texClampSOffset[2] = {};
+    uint32_t texClampTOffset[2] = {};
+    uint32_t fogOffset = 0;
+    uint32_t grayscaleOffset = 0;
+    uint32_t inputOffset[7] = {};
+    int32_t combiner[2][2][4] = {};
 };
+
+constexpr const char* VulkanUberVertexShaderSource = R"(
+#version 450
+#extension GL_EXT_buffer_reference : require
+
+layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer VertexData {
+    float data[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 8) readonly buffer DrawConfig {
+    uint textureIds[6];
+    uvec2 textureSize[2];
+    uint textureFiltering[2];
+    uint flags;
+    uint vertexStrideFloats;
+    uint numInputs;
+    uint texCoordOffset[2];
+    uint texClampSOffset[2];
+    uint texClampTOffset[2];
+    uint fogOffset;
+    uint grayscaleOffset;
+    uint inputOffset[7];
+    int combiner[16];
+};
+
+layout(push_constant) uniform PushConstants {
+    VertexData vertices;
+    DrawConfig cfg;
+    uint frameCount;
+    float noiseScale;
+} pc;
+
+layout(location = 0) out vec2 vTexCoord0;
+layout(location = 1) out float vTexClampS0;
+layout(location = 2) out float vTexClampT0;
+layout(location = 3) out vec2 vTexCoord1;
+layout(location = 4) out float vTexClampS1;
+layout(location = 5) out float vTexClampT1;
+layout(location = 6) out vec4 vFog;
+layout(location = 7) out vec4 vGrayscaleColor;
+layout(location = 8) out vec4 vInput1;
+layout(location = 9) out vec4 vInput2;
+layout(location = 10) out vec4 vInput3;
+layout(location = 11) out vec4 vInput4;
+layout(location = 12) out vec4 vInput5;
+layout(location = 13) out vec4 vInput6;
+layout(location = 14) out vec4 vInput7;
+
+const uint FLAG_ALPHA = 1u << 0;
+const uint FLAG_FOG = 1u << 1;
+const uint FLAG_GRAYSCALE = 1u << 7;
+const uint FLAG_USED_TEX0 = 1u << 8;
+const uint FLAG_USED_TEX1 = 1u << 9;
+const uint FLAG_CLAMP_TEX0_S = 1u << 14;
+const uint FLAG_CLAMP_TEX0_T = 1u << 15;
+const uint FLAG_CLAMP_TEX1_S = 1u << 16;
+const uint FLAG_CLAMP_TEX1_T = 1u << 17;
+const uint FLAG_COLOR_ALPHA_SAME_C0 = 1u << 18;
+const uint FLAG_COLOR_ALPHA_SAME_C1 = 1u << 19;
+
+bool hasFlag(uint flag) {
+    return (pc.cfg.flags & flag) != 0u;
+}
+
+float load1(uint base, uint offset) {
+    return pc.vertices.data[base + offset];
+}
+
+vec2 load2(uint base, uint offset) {
+    return vec2(pc.vertices.data[base + offset], pc.vertices.data[base + offset + 1u]);
+}
+
+vec4 load4(uint base, uint offset) {
+    return vec4(pc.vertices.data[base + offset], pc.vertices.data[base + offset + 1u],
+                pc.vertices.data[base + offset + 2u], pc.vertices.data[base + offset + 3u]);
+}
+
+vec4 loadInput(uint base, uint inputIndex) {
+    if (inputIndex >= pc.cfg.numInputs) {
+        return vec4(0.0);
+    }
+
+    uint offset = pc.cfg.inputOffset[inputIndex];
+    vec3 rgb = vec3(pc.vertices.data[base + offset], pc.vertices.data[base + offset + 1u],
+                    pc.vertices.data[base + offset + 2u]);
+    float alpha = hasFlag(FLAG_ALPHA) ? pc.vertices.data[base + offset + 3u] : 1.0;
+    return vec4(rgb, alpha);
+}
+
+void main() {
+    uint base = uint(gl_VertexIndex) * pc.cfg.vertexStrideFloats;
+    gl_Position = load4(base, 0u);
+
+    vTexCoord0 = hasFlag(FLAG_USED_TEX0) ? load2(base, pc.cfg.texCoordOffset[0]) : vec2(0.0);
+    vTexClampS0 = hasFlag(FLAG_CLAMP_TEX0_S) ? load1(base, pc.cfg.texClampSOffset[0]) : 0.0;
+    vTexClampT0 = hasFlag(FLAG_CLAMP_TEX0_T) ? load1(base, pc.cfg.texClampTOffset[0]) : 0.0;
+
+    vTexCoord1 = hasFlag(FLAG_USED_TEX1) ? load2(base, pc.cfg.texCoordOffset[1]) : vec2(0.0);
+    vTexClampS1 = hasFlag(FLAG_CLAMP_TEX1_S) ? load1(base, pc.cfg.texClampSOffset[1]) : 0.0;
+    vTexClampT1 = hasFlag(FLAG_CLAMP_TEX1_T) ? load1(base, pc.cfg.texClampTOffset[1]) : 0.0;
+
+    vFog = hasFlag(FLAG_FOG) ? load4(base, pc.cfg.fogOffset) : vec4(0.0);
+    vGrayscaleColor = hasFlag(FLAG_GRAYSCALE) ? load4(base, pc.cfg.grayscaleOffset) : vec4(0.0);
+
+    vInput1 = loadInput(base, 0u);
+    vInput2 = loadInput(base, 1u);
+    vInput3 = loadInput(base, 2u);
+    vInput4 = loadInput(base, 3u);
+    vInput5 = loadInput(base, 4u);
+    vInput6 = loadInput(base, 5u);
+    vInput7 = loadInput(base, 6u);
+}
+)";
+
+constexpr const char* VulkanUberFragmentShaderSource = R"(
+#version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
+
+layout(location = 0) in vec2 vTexCoord0;
+layout(location = 1) in float vTexClampS0;
+layout(location = 2) in float vTexClampT0;
+layout(location = 3) in vec2 vTexCoord1;
+layout(location = 4) in float vTexClampS1;
+layout(location = 5) in float vTexClampT1;
+layout(location = 6) in vec4 vFog;
+layout(location = 7) in vec4 vGrayscaleColor;
+layout(location = 8) in vec4 vInput1;
+layout(location = 9) in vec4 vInput2;
+layout(location = 10) in vec4 vInput3;
+layout(location = 11) in vec4 vInput4;
+layout(location = 12) in vec4 vInput5;
+layout(location = 13) in vec4 vInput6;
+layout(location = 14) in vec4 vInput7;
+
+layout(location = 0) out vec4 vOutColor;
+
+layout(set = 0, binding = 0) uniform sampler2D uTextures[];
+
+layout(buffer_reference, std430, buffer_reference_align = 8) readonly buffer DrawConfig {
+    uint textureIds[6];
+    uvec2 textureSize[2];
+    uint textureFiltering[2];
+    uint flags;
+    uint vertexStrideFloats;
+    uint numInputs;
+    uint texCoordOffset[2];
+    uint texClampSOffset[2];
+    uint texClampTOffset[2];
+    uint fogOffset;
+    uint grayscaleOffset;
+    uint inputOffset[7];
+    int combiner[16];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer VertexData {
+    float data[];
+};
+
+layout(push_constant) uniform PushConstants {
+    VertexData vertices;
+    DrawConfig cfg;
+    uint frameCount;
+    float noiseScale;
+} pc;
+
+const uint FILTER_THREE_POINT = 0u;
+
+const uint FLAG_ALPHA = 1u << 0;
+const uint FLAG_FOG = 1u << 1;
+const uint FLAG_TEXTURE_EDGE = 1u << 2;
+const uint FLAG_NOISE = 1u << 3;
+const uint FLAG_2CYC = 1u << 4;
+const uint FLAG_ALPHA_THRESHOLD = 1u << 5;
+const uint FLAG_INVISIBLE = 1u << 6;
+const uint FLAG_GRAYSCALE = 1u << 7;
+const uint FLAG_USED_TEX0 = 1u << 8;
+const uint FLAG_USED_TEX1 = 1u << 9;
+const uint FLAG_MASK_TEX0 = 1u << 10;
+const uint FLAG_MASK_TEX1 = 1u << 11;
+const uint FLAG_BLEND_TEX0 = 1u << 12;
+const uint FLAG_BLEND_TEX1 = 1u << 13;
+const uint FLAG_CLAMP_TEX0_S = 1u << 14;
+const uint FLAG_CLAMP_TEX0_T = 1u << 15;
+const uint FLAG_CLAMP_TEX1_S = 1u << 16;
+const uint FLAG_CLAMP_TEX1_T = 1u << 17;
+const uint FLAG_COLOR_ALPHA_SAME_C0 = 1u << 18;
+const uint FLAG_COLOR_ALPHA_SAME_C1 = 1u << 19;
+
+const int SHADER_0 = 0;
+const int SHADER_INPUT_1 = 1;
+const int SHADER_INPUT_7 = 7;
+const int SHADER_TEXEL0 = 8;
+const int SHADER_TEXEL0A = 9;
+const int SHADER_TEXEL1 = 10;
+const int SHADER_TEXEL1A = 11;
+const int SHADER_1 = 12;
+const int SHADER_COMBINED = 13;
+const int SHADER_NOISE = 14;
+
+vec4 texVal0 = vec4(0.0);
+vec4 texVal1 = vec4(0.0);
+vec4 texel = vec4(0.0);
+float randomValue = 0.0;
+
+bool hasFlag(uint flag) {
+    return (pc.cfg.flags & flag) != 0u;
+}
+
+int combinerAt(int cycle, int alpha, int index) {
+    return pc.cfg.combiner[cycle * 8 + alpha * 4 + index];
+}
+
+float random(in vec3 value) {
+    float v = dot(sin(value), vec3(12.9898, 78.233, 37.719));
+    return fract(sin(v) * 143758.5453);
+}
+
+vec4 sampleTexture(uint textureSlot, vec2 uv) {
+    return texture(uTextures[nonuniformEXT(pc.cfg.textureIds[textureSlot])], uv);
+}
+
+vec4 texOffset(uint textureSlot, vec2 texCoord, vec2 off, vec2 texSize) {
+    return sampleTexture(textureSlot, texCoord - off / texSize);
+}
+
+vec4 filter3point(uint textureSlot, vec2 texCoord, vec2 texSize) {
+    vec2 offset = fract(texCoord * texSize - vec2(0.5));
+    offset -= step(1.0, offset.x + offset.y);
+    vec4 c0 = texOffset(textureSlot, texCoord, offset, texSize);
+    vec4 c1 = texOffset(textureSlot, texCoord, vec2(offset.x - sign(offset.x), offset.y), texSize);
+    vec4 c2 = texOffset(textureSlot, texCoord, vec2(offset.x, offset.y - sign(offset.y)), texSize);
+    return c0 + abs(offset.x) * (c1 - c0) + abs(offset.y) * (c2 - c0);
+}
+
+vec4 hookTexture2D(uint id, uint textureSlot, vec2 uv, vec2 texSize) {
+    if (pc.cfg.textureFiltering[id] == FILTER_THREE_POINT) {
+        return filter3point(textureSlot, uv, texSize);
+    }
+    return sampleTexture(textureSlot, uv);
+}
+
+vec4 inputValue(int inputId) {
+    switch (inputId) {
+        case SHADER_INPUT_1: return vInput1;
+        case 2: return vInput2;
+        case 3: return vInput3;
+        case 4: return vInput4;
+        case 5: return vInput5;
+        case 6: return vInput6;
+        case SHADER_INPUT_7: return vInput7;
+        default: return vec4(0.0);
+    }
+}
+
+vec4 sourceValue(int item, bool firstCycle) {
+    if (item >= SHADER_INPUT_1 && item <= SHADER_INPUT_7) {
+        return inputValue(item);
+    }
+
+    switch (item) {
+        case SHADER_1:
+            return vec4(1.0);
+        case SHADER_TEXEL0:
+            return firstCycle ? texVal0 : texVal1;
+        case SHADER_TEXEL0A:
+            return vec4(firstCycle ? texVal0.a : texVal1.a);
+        case SHADER_TEXEL1:
+            return firstCycle ? texVal1 : texVal0;
+        case SHADER_TEXEL1A:
+            return vec4(firstCycle ? texVal1.a : texVal0.a);
+        case SHADER_COMBINED:
+            return texel;
+        case SHADER_NOISE:
+            return vec4(randomValue);
+        case SHADER_0:
+        default:
+            return vec4(0.0);
+    }
+}
+
+float sourceAlpha(int item, bool firstCycle) {
+    if (item >= SHADER_INPUT_1 && item <= SHADER_INPUT_7) {
+        return inputValue(item).a;
+    }
+
+    switch (item) {
+        case SHADER_1:
+            return 1.0;
+        case SHADER_TEXEL0:
+        case SHADER_TEXEL0A:
+            return firstCycle ? texVal0.a : texVal1.a;
+        case SHADER_TEXEL1:
+        case SHADER_TEXEL1A:
+            return firstCycle ? texVal1.a : texVal0.a;
+        case SHADER_COMBINED:
+            return texel.a;
+        case SHADER_NOISE:
+            return randomValue;
+        case SHADER_0:
+        default:
+            return 0.0;
+    }
+}
+
+vec3 evalColorCycle(int cycle) {
+    bool firstCycle = cycle == 0;
+    int aItem = combinerAt(cycle, 0, 0);
+    int bItem = combinerAt(cycle, 0, 1);
+    int cItem = combinerAt(cycle, 0, 2);
+    int dItem = combinerAt(cycle, 0, 3);
+
+    if (cItem == SHADER_0) {
+        return sourceValue(dItem, firstCycle).rgb;
+    }
+    if (bItem == SHADER_0 && dItem == SHADER_0) {
+        return sourceValue(aItem, firstCycle).rgb * sourceValue(cItem, firstCycle).rgb;
+    }
+    if (bItem == dItem) {
+        return mix(sourceValue(bItem, firstCycle).rgb, sourceValue(aItem, firstCycle).rgb,
+                   sourceValue(cItem, firstCycle).rgb);
+    }
+    return (sourceValue(aItem, firstCycle).rgb - sourceValue(bItem, firstCycle).rgb) *
+               sourceValue(cItem, firstCycle).rgb +
+           sourceValue(dItem, firstCycle).rgb;
+}
+
+float evalAlphaCycle(int cycle) {
+    bool firstCycle = cycle == 0;
+    int aItem = combinerAt(cycle, 1, 0);
+    int bItem = combinerAt(cycle, 1, 1);
+    int cItem = combinerAt(cycle, 1, 2);
+    int dItem = combinerAt(cycle, 1, 3);
+
+    if (cItem == SHADER_0) {
+        return sourceAlpha(dItem, firstCycle);
+    }
+    if (bItem == SHADER_0 && dItem == SHADER_0) {
+        return sourceAlpha(aItem, firstCycle) * sourceAlpha(cItem, firstCycle);
+    }
+    if (bItem == dItem) {
+        return mix(sourceAlpha(bItem, firstCycle), sourceAlpha(aItem, firstCycle), sourceAlpha(cItem, firstCycle));
+    }
+    return (sourceAlpha(aItem, firstCycle) - sourceAlpha(bItem, firstCycle)) * sourceAlpha(cItem, firstCycle) +
+           sourceAlpha(dItem, firstCycle);
+}
+
+vec4 evalVectorCycle(int cycle) {
+    bool firstCycle = cycle == 0;
+    int aItem = combinerAt(cycle, 0, 0);
+    int bItem = combinerAt(cycle, 0, 1);
+    int cItem = combinerAt(cycle, 0, 2);
+    int dItem = combinerAt(cycle, 0, 3);
+
+    if (cItem == SHADER_0) {
+        return sourceValue(dItem, firstCycle);
+    }
+    if (bItem == SHADER_0 && dItem == SHADER_0) {
+        return sourceValue(aItem, firstCycle) * sourceValue(cItem, firstCycle);
+    }
+    if (bItem == dItem) {
+        return mix(sourceValue(bItem, firstCycle), sourceValue(aItem, firstCycle), sourceValue(cItem, firstCycle));
+    }
+    return (sourceValue(aItem, firstCycle) - sourceValue(bItem, firstCycle)) * sourceValue(cItem, firstCycle) +
+           sourceValue(dItem, firstCycle);
+}
+
+void main() {
+    randomValue = (random(vec3(floor(gl_FragCoord.xy * pc.noiseScale), float(pc.frameCount))) + 1.0) / 2.0;
+
+    if (hasFlag(FLAG_USED_TEX0)) {
+        vec2 texSize = vec2(pc.cfg.textureSize[0]);
+        vec2 uv = vTexCoord0;
+        if (hasFlag(FLAG_CLAMP_TEX0_S)) {
+            uv.s = clamp(uv.s, 0.5 / texSize.s, vTexClampS0);
+        }
+        if (hasFlag(FLAG_CLAMP_TEX0_T)) {
+            uv.t = clamp(uv.t, 0.5 / texSize.t, vTexClampT0);
+        }
+
+        texVal0 = hookTexture2D(0u, 0u, uv, texSize);
+        if (hasFlag(FLAG_MASK_TEX0)) {
+            vec2 maskSize = vec2(textureSize(uTextures[nonuniformEXT(pc.cfg.textureIds[2])], 0));
+            vec4 maskVal = hookTexture2D(0u, 2u, uv, maskSize);
+            vec4 blendVal = hasFlag(FLAG_BLEND_TEX0) ? hookTexture2D(0u, 4u, uv, texSize) : vec4(0.0);
+            texVal0 = mix(texVal0, blendVal, maskVal.a);
+        }
+    }
+
+    if (hasFlag(FLAG_USED_TEX1)) {
+        vec2 texSize = vec2(pc.cfg.textureSize[1]);
+        vec2 uv = vTexCoord1;
+        if (hasFlag(FLAG_CLAMP_TEX1_S)) {
+            uv.s = clamp(uv.s, 0.5 / texSize.s, vTexClampS1);
+        }
+        if (hasFlag(FLAG_CLAMP_TEX1_T)) {
+            uv.t = clamp(uv.t, 0.5 / texSize.t, vTexClampT1);
+        }
+
+        texVal1 = hookTexture2D(1u, 1u, uv, texSize);
+        if (hasFlag(FLAG_MASK_TEX1)) {
+            vec2 maskSize = vec2(textureSize(uTextures[nonuniformEXT(pc.cfg.textureIds[3])], 0));
+            vec4 maskVal = hookTexture2D(1u, 3u, uv, maskSize);
+            vec4 blendVal = hasFlag(FLAG_BLEND_TEX1) ? hookTexture2D(1u, 5u, uv, texSize) : vec4(0.0);
+            texVal1 = mix(texVal1, blendVal, maskVal.a);
+        }
+    }
+
+    int cycles = hasFlag(FLAG_2CYC) ? 2 : 1;
+    for (int cycle = 0; cycle < cycles; cycle++) {
+        if (cycle == 1) {
+            if (combinerAt(cycle, 1, 2) == SHADER_COMBINED) {
+                texel.a = mod(texel.a + 1.01, 2.02) - 1.01;
+            } else {
+                texel.a = mod(texel.a + 0.51, 2.02) - 0.51;
+            }
+
+            if (combinerAt(cycle, 0, 2) == SHADER_COMBINED) {
+                texel.rgb = mod(texel.rgb + vec3(1.01), vec3(2.02)) - vec3(1.01);
+            } else {
+                texel.rgb = mod(texel.rgb + vec3(0.51), vec3(2.02)) - vec3(0.51);
+            }
+        }
+
+        bool colorAlphaSame = cycle == 0 ? hasFlag(FLAG_COLOR_ALPHA_SAME_C0) : hasFlag(FLAG_COLOR_ALPHA_SAME_C1);
+        if (hasFlag(FLAG_ALPHA) && colorAlphaSame) {
+            texel = evalVectorCycle(cycle);
+        } else {
+            texel.rgb = evalColorCycle(cycle);
+            texel.a = hasFlag(FLAG_ALPHA) ? evalAlphaCycle(cycle) : 1.0;
+        }
+    }
+
+    texel = mod(texel + vec4(0.51), vec4(2.02)) - vec4(0.51);
+    texel = clamp(texel, 0.0, 1.0);
+
+    if (hasFlag(FLAG_FOG)) {
+        texel.rgb = mix(texel.rgb, vFog.rgb, vFog.a);
+    }
+
+    if (hasFlag(FLAG_TEXTURE_EDGE) && hasFlag(FLAG_ALPHA)) {
+        if (texel.a > 0.19) {
+            texel.a = 1.0;
+        } else {
+            discard;
+        }
+    }
+
+    if (hasFlag(FLAG_ALPHA) && hasFlag(FLAG_NOISE)) {
+        texel.a *= floor(clamp(randomValue + texel.a, 0.0, 1.0));
+    }
+
+    if (hasFlag(FLAG_GRAYSCALE)) {
+        float intensity = (texel.r + texel.g + texel.b) / 3.0;
+        vec3 newTexel = vGrayscaleColor.rgb * intensity;
+        texel.rgb = mix(texel.rgb, newTexel, vGrayscaleColor.a);
+    }
+
+    if (hasFlag(FLAG_ALPHA)) {
+        if (hasFlag(FLAG_ALPHA_THRESHOLD) && texel.a < 8.0 / 256.0) {
+            discard;
+        }
+        if (hasFlag(FLAG_INVISIBLE)) {
+            texel.a = 0.0;
+        }
+        vOutColor = texel;
+    } else {
+        vOutColor = vec4(texel.rgb, 1.0);
+    }
+}
+)";
 
 void CheckImGuiVkResult(VkResult result) {
     if (result != VK_SUCCESS) {
@@ -283,7 +792,8 @@ std::optional<std::string> VulkanIncludeFs(const std::string& path) {
     return *inc;
 }
 
-std::string BuildVulkanShaderSource(const char* resourcePath, const CCFeatures& ccFeatures, bool vertexShader) {
+[[maybe_unused]] std::string BuildVulkanShaderSource(const char* resourcePath, const CCFeatures& ccFeatures,
+                                                     bool vertexShader) {
     if (vertexShader) {
         rawNumFloats = 4;
         vertexAttributeLocation = 1;
@@ -409,7 +919,7 @@ void AddVertexAttribute(std::vector<VkVertexInputAttributeDescription>& attribut
     offset += floatCount * sizeof(float);
 }
 
-std::vector<VkVertexInputAttributeDescription> BuildVertexAttributes(const CCFeatures& ccFeatures) {
+[[maybe_unused]] std::vector<VkVertexInputAttributeDescription> BuildVertexAttributes(const CCFeatures& ccFeatures) {
     std::vector<VkVertexInputAttributeDescription> attributes;
     attributes.reserve(16);
 
@@ -508,14 +1018,16 @@ VulkanVertexRingBuffer::Allocation VulkanVertexRingBuffer::Allocate(VkDeviceSize
 
     mFrameAllocated = true;
     mCurrent.head = alignedHead + size;
-    return { mCurrent.buffer, alignedHead, static_cast<uint8_t*>(mCurrent.mapped) + alignedHead };
+    return { mCurrent.buffer, alignedHead, mCurrent.deviceAddress + alignedHead,
+             static_cast<uint8_t*>(mCurrent.mapped) + alignedHead };
 }
 
 VulkanVertexRingBuffer::Buffer VulkanVertexRingBuffer::CreateBuffer(VkDeviceSize size) {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VmaAllocationCreateInfo allocInfo = {};
@@ -528,6 +1040,13 @@ VulkanVertexRingBuffer::Buffer VulkanVertexRingBuffer::CreateBuffer(VkDeviceSize
     CheckVk(vmaCreateBuffer(mAllocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, &allocationInfo),
             "Failed to create Vulkan vertex ring buffer");
     buffer.mapped = allocationInfo.pMappedData;
+    VkBufferDeviceAddressInfo addressInfo = {};
+    addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    addressInfo.buffer = buffer.buffer;
+    buffer.deviceAddress = vkGetBufferDeviceAddress(mDevice, &addressInfo);
+    if (buffer.deviceAddress == 0) {
+        throw std::runtime_error("Failed to get Vulkan vertex ring buffer device address");
+    }
     return buffer;
 }
 
@@ -610,30 +1129,6 @@ ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0,
         gfx_cc_get_features(shaderId0, shaderId1, &ccFeatures);
     }
 
-    std::string vertexSource;
-    {
-        LUS_TRACY_ZONE("Vulkan Build Vertex Shader Source");
-        vertexSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.vert", ccFeatures, true);
-    }
-    size_t numFloats = rawNumFloats;
-    std::string fragmentSource;
-    {
-        LUS_TRACY_ZONE("Vulkan Build Fragment Shader Source");
-        fragmentSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.frag", ccFeatures, false);
-    }
-    std::vector<uint32_t> vertexSpirv;
-    {
-        LUS_TRACY_ZONE("Vulkan Compile Vertex Shader");
-        vertexSpirv =
-            CompileVulkanGlslToSpirv(vertexSource, shaderc_vertex_shader, "shaders/vulkan/default.shader.vert");
-    }
-    std::vector<uint32_t> fragmentSpirv;
-    {
-        LUS_TRACY_ZONE("Vulkan Compile Fragment Shader");
-        fragmentSpirv =
-            CompileVulkanGlslToSpirv(fragmentSource, shaderc_fragment_shader, "shaders/vulkan/default.shader.frag");
-    }
-
     auto key = std::make_pair(shaderId0, shaderId1);
     decltype(mShaderProgramPool)::iterator it;
     {
@@ -642,13 +1137,6 @@ ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0,
         it = insertedIt;
     }
     VulkanShaderProgram* prg = it->second.get();
-    {
-        LUS_TRACY_ZONE("Vulkan Create Shader Modules");
-        prg->vertexShaderModule =
-            CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan vertex shader module");
-        prg->fragmentShaderModule =
-            CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan fragment shader module");
-    }
     prg->numInputs = ccFeatures.numInputs;
     prg->usedTextures[0] = ccFeatures.usedTextures[0];
     prg->usedTextures[1] = ccFeatures.usedTextures[1];
@@ -656,15 +1144,61 @@ ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0,
     prg->usedTextures[3] = ccFeatures.used_masks[1];
     prg->usedTextures[4] = ccFeatures.used_blend[0];
     prg->usedTextures[5] = ccFeatures.used_blend[1];
-    prg->numFloats = numFloats;
-    {
-        LUS_TRACY_ZONE("Vulkan Create Pipeline Layout");
-        prg->pipelineLayout = CreatePipelineLayout();
+
+    prg->flags = 0;
+    prg->flags |= ccFeatures.opt_alpha ? UBER_FLAG_ALPHA : 0;
+    prg->flags |= ccFeatures.opt_fog ? UBER_FLAG_FOG : 0;
+    prg->flags |= ccFeatures.opt_texture_edge ? UBER_FLAG_TEXTURE_EDGE : 0;
+    prg->flags |= ccFeatures.opt_noise ? UBER_FLAG_NOISE : 0;
+    prg->flags |= ccFeatures.opt_2cyc ? UBER_FLAG_2CYC : 0;
+    prg->flags |= ccFeatures.opt_alpha_threshold ? UBER_FLAG_ALPHA_THRESHOLD : 0;
+    prg->flags |= ccFeatures.opt_invisible ? UBER_FLAG_INVISIBLE : 0;
+    prg->flags |= ccFeatures.opt_grayscale ? UBER_FLAG_GRAYSCALE : 0;
+    prg->flags |= ccFeatures.usedTextures[0] ? UBER_FLAG_USED_TEX0 : 0;
+    prg->flags |= ccFeatures.usedTextures[1] ? UBER_FLAG_USED_TEX1 : 0;
+    prg->flags |= ccFeatures.used_masks[0] ? UBER_FLAG_MASK_TEX0 : 0;
+    prg->flags |= ccFeatures.used_masks[1] ? UBER_FLAG_MASK_TEX1 : 0;
+    prg->flags |= ccFeatures.used_blend[0] ? UBER_FLAG_BLEND_TEX0 : 0;
+    prg->flags |= ccFeatures.used_blend[1] ? UBER_FLAG_BLEND_TEX1 : 0;
+    prg->flags |= ccFeatures.clamp[0][0] ? UBER_FLAG_CLAMP_TEX0_S : 0;
+    prg->flags |= ccFeatures.clamp[0][1] ? UBER_FLAG_CLAMP_TEX0_T : 0;
+    prg->flags |= ccFeatures.clamp[1][0] ? UBER_FLAG_CLAMP_TEX1_S : 0;
+    prg->flags |= ccFeatures.clamp[1][1] ? UBER_FLAG_CLAMP_TEX1_T : 0;
+    prg->flags |= ccFeatures.color_alpha_same[0] ? UBER_FLAG_COLOR_ALPHA_SAME_C0 : 0;
+    prg->flags |= ccFeatures.color_alpha_same[1] ? UBER_FLAG_COLOR_ALPHA_SAME_C1 : 0;
+
+    uint32_t offset = 4;
+    for (uint32_t texture = 0; texture < 2; texture++) {
+        if (!ccFeatures.usedTextures[texture]) {
+            continue;
+        }
+        prg->texCoordOffset[texture] = offset;
+        offset += 2;
+        if (ccFeatures.clamp[texture][0]) {
+            prg->texClampSOffset[texture] = offset++;
+        }
+        if (ccFeatures.clamp[texture][1]) {
+            prg->texClampTOffset[texture] = offset++;
+        }
     }
-    {
-        LUS_TRACY_ZONE("Vulkan Create Graphics Pipeline");
-        prg->pipeline = CreateGraphicsPipeline(*prg, ccFeatures, ccFeatures.opt_alpha);
+    if (ccFeatures.opt_fog) {
+        prg->fogOffset = offset;
+        offset += 4;
     }
+    if (ccFeatures.opt_grayscale) {
+        prg->grayscaleOffset = offset;
+        offset += 4;
+    }
+    for (int input = 0; input < ccFeatures.numInputs && input < 7; input++) {
+        prg->inputOffset[input] = offset;
+        offset += ccFeatures.opt_alpha ? 4 : 3;
+    }
+    prg->numFloats = offset;
+
+    std::memcpy(prg->combiner, ccFeatures.c, sizeof(prg->combiner));
+    prg->pipelineLayout = mUberPipelineLayout;
+    prg->pipeline = ccFeatures.opt_alpha ? mUberAlphaPipeline : mUberOpaquePipeline;
+
     LoadShader(reinterpret_cast<ShaderProgram*>(prg));
     return reinterpret_cast<ShaderProgram*>(it->second.get());
 }
@@ -812,26 +1346,42 @@ void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, s
     auto allocation = mVertexRingBuffer.Allocate(vertexBufferSize, alignof(float));
     std::memcpy(allocation.mapped, buf_vbo, static_cast<size_t>(vertexBufferSize));
 
-    VulkanPushConstants pushConstants = {};
+    VulkanUberDrawConfig drawConfig = {};
     for (uint32_t i = 0; i < SHADER_MAX_TEXTURES; i++) {
-        pushConstants.textureIds[i] = mCurrentTextureIds[i];
+        drawConfig.textureIds[i] = mCurrentTextureIds[i];
     }
-    pushConstants.frameCount = mFrameCount;
-    pushConstants.noiseScale = mCurrentNoiseScale;
     for (uint32_t i = 0; i < 2; i++) {
         if (mCurrentTextureIds[i] < mTextures.size()) {
             VulkanTexture& texture = GetTexture(mCurrentTextureIds[i]);
-            pushConstants.textureSize[i][0] = std::max(texture.width, 1u);
-            pushConstants.textureSize[i][1] = std::max(texture.height, 1u);
-            pushConstants.textureFiltering[i] = texture.filtering;
+            drawConfig.textureSize[i][0] = std::max(texture.width, 1u);
+            drawConfig.textureSize[i][1] = std::max(texture.height, 1u);
+            drawConfig.textureFiltering[i] = texture.filtering;
         } else {
-            pushConstants.textureSize[i][0] = 1;
-            pushConstants.textureSize[i][1] = 1;
-            pushConstants.textureFiltering[i] = FILTER_LINEAR;
+            drawConfig.textureSize[i][0] = 1;
+            drawConfig.textureSize[i][1] = 1;
+            drawConfig.textureFiltering[i] = FILTER_LINEAR;
         }
     }
+    drawConfig.flags = mShaderProgram->flags;
+    drawConfig.vertexStrideFloats = static_cast<uint32_t>(mShaderProgram->numFloats);
+    drawConfig.numInputs = mShaderProgram->numInputs;
+    std::memcpy(drawConfig.texCoordOffset, mShaderProgram->texCoordOffset, sizeof(drawConfig.texCoordOffset));
+    std::memcpy(drawConfig.texClampSOffset, mShaderProgram->texClampSOffset, sizeof(drawConfig.texClampSOffset));
+    std::memcpy(drawConfig.texClampTOffset, mShaderProgram->texClampTOffset, sizeof(drawConfig.texClampTOffset));
+    drawConfig.fogOffset = mShaderProgram->fogOffset;
+    drawConfig.grayscaleOffset = mShaderProgram->grayscaleOffset;
+    std::memcpy(drawConfig.inputOffset, mShaderProgram->inputOffset, sizeof(drawConfig.inputOffset));
+    std::memcpy(drawConfig.combiner, mShaderProgram->combiner, sizeof(drawConfig.combiner));
 
-    VkDeviceSize vertexOffset = allocation.offset;
+    auto configAllocation = mVertexRingBuffer.Allocate(sizeof(drawConfig), 16);
+    std::memcpy(configAllocation.mapped, &drawConfig, sizeof(drawConfig));
+
+    VulkanPushConstants pushConstants = {};
+    pushConstants.vertexAddress = allocation.deviceAddress;
+    pushConstants.configAddress = configAllocation.deviceAddress;
+    pushConstants.frameCount = mFrameCount;
+    pushConstants.noiseScale = mCurrentNoiseScale;
+
     vkCmdBindPipeline(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipeline);
     vkCmdSetDepthTestEnable(mCurrentCommandBuffer,
                             (mCurrentDepthTest || mCurrentDepthMask) ? VK_TRUE : VK_FALSE);
@@ -845,9 +1395,9 @@ void GfxRenderingAPIVulkan::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, s
                       mCurrentZmodeDecal ? GetZmodeDecalSlopeScaledDepthBias(renderTargetHeight) : 0.0f);
     vkCmdBindDescriptorSets(mCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mShaderProgram->pipelineLayout, 0, 1,
                             &mTextureDescriptorSet, 0, nullptr);
-    vkCmdPushConstants(mCurrentCommandBuffer, mShaderProgram->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+    vkCmdPushConstants(mCurrentCommandBuffer, mShaderProgram->pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                        sizeof(pushConstants), &pushConstants);
-    vkCmdBindVertexBuffers(mCurrentCommandBuffer, 0, 1, &allocation.buffer, &vertexOffset);
     vkCmdDraw(mCurrentCommandBuffer, static_cast<uint32_t>(buf_vbo_num_tris * 3), 1, 0, 0);
 }
 
@@ -870,6 +1420,7 @@ void GfxRenderingAPIVulkan::Init() {
     CreateSwapchain();
     CreateImageViews();
     CreateDepthResources();
+    CreateUberShaderPipeline();
     CreateCommandPool();
     CreateUploadCommandPool();
     CreateCommandBuffers();
@@ -1598,7 +2149,7 @@ void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
 
 VkPipelineLayout GfxRenderingAPIVulkan::CreatePipelineLayout() {
     VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(VulkanPushConstants);
 
@@ -1617,6 +2168,8 @@ VkPipelineLayout GfxRenderingAPIVulkan::CreatePipelineLayout() {
 
 VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& program, const CCFeatures& ccFeatures,
                                                          bool useAlpha) {
+    (void)ccFeatures;
+
     VkPipelineShaderStageCreateInfo shaderStages[2] = {};
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1627,18 +2180,8 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
     shaderStages[1].module = program.fragmentShaderModule;
     shaderStages[1].pName = "main";
 
-    VkVertexInputBindingDescription vertexBinding = {};
-    vertexBinding.binding = 0;
-    vertexBinding.stride = static_cast<uint32_t>(program.numFloats * sizeof(float));
-    vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    auto vertexAttributes = BuildVertexAttributes(ccFeatures);
     VkPipelineVertexInputStateCreateInfo vertexInput = {};
     vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInput.vertexBindingDescriptionCount = 1;
-    vertexInput.pVertexBindingDescriptions = &vertexBinding;
-    vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size());
-    vertexInput.pVertexAttributeDescriptions = vertexAttributes.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1723,6 +2266,57 @@ VkPipeline GfxRenderingAPIVulkan::CreateGraphicsPipeline(VulkanShaderProgram& pr
     CheckVk(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline),
             "Failed to create Vulkan graphics pipeline");
     return pipeline;
+}
+
+void GfxRenderingAPIVulkan::CreateUberShaderPipeline() {
+    if (mUberOpaquePipeline != VK_NULL_HANDLE && mUberAlphaPipeline != VK_NULL_HANDLE) {
+        return;
+    }
+
+    LUS_TRACY_ZONE("Vulkan Create Uber Shader Pipeline");
+
+    auto vertexSpirv =
+        CompileVulkanGlslToSpirv(VulkanUberVertexShaderSource, shaderc_vertex_shader, "vulkan_uber.vert");
+    auto fragmentSpirv =
+        CompileVulkanGlslToSpirv(VulkanUberFragmentShaderSource, shaderc_fragment_shader, "vulkan_uber.frag");
+
+    mUberVertexShaderModule =
+        CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan uber vertex shader module");
+    mUberFragmentShaderModule =
+        CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan uber fragment shader module");
+    mUberPipelineLayout = CreatePipelineLayout();
+
+    VulkanShaderProgram program = {};
+    program.vertexShaderModule = mUberVertexShaderModule;
+    program.fragmentShaderModule = mUberFragmentShaderModule;
+    program.pipelineLayout = mUberPipelineLayout;
+
+    CCFeatures dummyFeatures = {};
+    mUberOpaquePipeline = CreateGraphicsPipeline(program, dummyFeatures, false);
+    mUberAlphaPipeline = CreateGraphicsPipeline(program, dummyFeatures, true);
+}
+
+void GfxRenderingAPIVulkan::DestroyUberShaderPipeline() {
+    if (mUberOpaquePipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(mDevice, mUberOpaquePipeline, nullptr);
+        mUberOpaquePipeline = VK_NULL_HANDLE;
+    }
+    if (mUberAlphaPipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(mDevice, mUberAlphaPipeline, nullptr);
+        mUberAlphaPipeline = VK_NULL_HANDLE;
+    }
+    if (mUberPipelineLayout != VK_NULL_HANDLE) {
+        vkDestroyPipelineLayout(mDevice, mUberPipelineLayout, nullptr);
+        mUberPipelineLayout = VK_NULL_HANDLE;
+    }
+    if (mUberVertexShaderModule != VK_NULL_HANDLE) {
+        vkDestroyShaderModule(mDevice, mUberVertexShaderModule, nullptr);
+        mUberVertexShaderModule = VK_NULL_HANDLE;
+    }
+    if (mUberFragmentShaderModule != VK_NULL_HANDLE) {
+        vkDestroyShaderModule(mDevice, mUberFragmentShaderModule, nullptr);
+        mUberFragmentShaderModule = VK_NULL_HANDLE;
+    }
 }
 
 void GfxRenderingAPIVulkan::CreateCommandBuffers() {
@@ -1891,22 +2485,23 @@ void GfxRenderingAPIVulkan::DestroyTextureDescriptorResources() {
 }
 
 void GfxRenderingAPIVulkan::DestroyShaderProgram(VulkanShaderProgram& program) {
-    if (program.pipeline != VK_NULL_HANDLE) {
+    if (program.pipeline != VK_NULL_HANDLE && program.pipeline != mUberOpaquePipeline &&
+        program.pipeline != mUberAlphaPipeline) {
         vkDestroyPipeline(mDevice, program.pipeline, nullptr);
-        program.pipeline = VK_NULL_HANDLE;
     }
-    if (program.pipelineLayout != VK_NULL_HANDLE) {
+    program.pipeline = VK_NULL_HANDLE;
+    if (program.pipelineLayout != VK_NULL_HANDLE && program.pipelineLayout != mUberPipelineLayout) {
         vkDestroyPipelineLayout(mDevice, program.pipelineLayout, nullptr);
-        program.pipelineLayout = VK_NULL_HANDLE;
     }
-    if (program.vertexShaderModule != VK_NULL_HANDLE) {
+    program.pipelineLayout = VK_NULL_HANDLE;
+    if (program.vertexShaderModule != VK_NULL_HANDLE && program.vertexShaderModule != mUberVertexShaderModule) {
         vkDestroyShaderModule(mDevice, program.vertexShaderModule, nullptr);
-        program.vertexShaderModule = VK_NULL_HANDLE;
     }
-    if (program.fragmentShaderModule != VK_NULL_HANDLE) {
+    program.vertexShaderModule = VK_NULL_HANDLE;
+    if (program.fragmentShaderModule != VK_NULL_HANDLE && program.fragmentShaderModule != mUberFragmentShaderModule) {
         vkDestroyShaderModule(mDevice, program.fragmentShaderModule, nullptr);
-        program.fragmentShaderModule = VK_NULL_HANDLE;
     }
+    program.fragmentShaderModule = VK_NULL_HANDLE;
 }
 
 void GfxRenderingAPIVulkan::DestroyShaderPrograms() {
@@ -2632,6 +3227,7 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         ShutdownImGui();
         CleanupSwapchain();
         DestroyShaderPrograms();
+        DestroyUberShaderPipeline();
         DestroyFramebuffers();
         DestroyTextures();
         DestroyTextureDescriptorResources();
