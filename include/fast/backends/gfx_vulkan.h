@@ -55,6 +55,25 @@ struct VulkanFrame {
     uint64_t renderFinishedTimelineValue = 0;
 };
 
+struct VulkanFramebuffer {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t msaaLevel = 1;
+    bool openglInvertY = false;
+    bool renderTarget = false;
+    bool hasDepthBuffer = false;
+    bool canExtractDepth = false;
+    uint32_t colorTextureId = UINT32_MAX;
+    VkImage colorImage = VK_NULL_HANDLE;
+    VmaAllocation_T* colorAllocation = nullptr;
+    VkImageView colorImageView = VK_NULL_HANDLE;
+    VkImageLayout colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImage depthImage = VK_NULL_HANDLE;
+    VmaAllocation_T* depthAllocation = nullptr;
+    VkImageView depthImageView = VK_NULL_HANDLE;
+    VkImageLayout depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+};
+
 class VulkanVertexRingBuffer {
   public:
     struct Allocation {
@@ -172,6 +191,21 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void DestroyShaderPrograms();
     void DestroyTexture(VulkanTexture& texture);
     void DestroyTextures();
+    void DestroyFramebufferResources(VulkanFramebuffer& framebuffer);
+    void DestroyFramebuffers();
+    void CreateFramebufferColorResources(VulkanFramebuffer& framebuffer);
+    void CreateFramebufferDepthResources(VulkanFramebuffer& framebuffer);
+    void TransitionImageLayout(VkImage image, VkImageAspectFlags aspectMask, VkImageLayout oldLayout,
+                               VkImageLayout newLayout, VkPipelineStageFlags2 srcStageMask,
+                               VkAccessFlags2 srcAccessMask, VkPipelineStageFlags2 dstStageMask,
+                               VkAccessFlags2 dstAccessMask);
+    void EndCurrentRendering();
+    void BeginRenderingToCurrentFramebuffer();
+    VulkanFramebuffer* GetFramebuffer(int fbId);
+    VkImage GetFramebufferColorImage(int fbId);
+    VkImageView GetFramebufferColorImageView(int fbId);
+    VkImageLayout& GetFramebufferColorLayout(int fbId);
+    VkExtent2D GetFramebufferExtent(int fbId) const;
     void UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
     void WriteBindlessTextureDescriptor(uint32_t textureId);
     void EnsureImGuiTextureDescriptor(uint32_t textureId);
@@ -210,12 +244,16 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     uint32_t mCurrentImageIndex = 0;
     VkCommandBuffer mCurrentCommandBuffer = VK_NULL_HANDLE;
     bool mFrameActive = false;
+    bool mRenderingActive = false;
     bool mImGuiInitialized = false;
     bool mFramebufferResized = false;
 
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;
     VulkanShaderProgram* mShaderProgram = nullptr;
-    std::vector<uint32_t> mFramebuffers;
+    std::vector<VulkanFramebuffer> mFramebuffers;
+    uint32_t mCurrentFramebuffer = 0;
+    uint32_t mCurrentRenderTargetWidth = 0;
+    uint32_t mCurrentRenderTargetHeight = 0;
     std::vector<VulkanTexture> mTextures;
     uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};
     int mCurrentTile = 0;

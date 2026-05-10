@@ -189,6 +189,7 @@ bool CheckRequiredFeatures(VkPhysicalDevice physicalDevice) {
            vulkan12Features.shaderSampledImageArrayNonUniformIndexing == VK_TRUE &&
            vulkan12Features.bufferDeviceAddress == VK_TRUE && vulkan12Features.timelineSemaphore == VK_TRUE &&
            vulkan13Features.dynamicRendering == VK_TRUE && vulkan13Features.synchronization2 == VK_TRUE &&
+           vulkan13Features.shaderDemoteToHelperInvocation == VK_TRUE &&
            extendedDynamicStateFeatures.extendedDynamicState == VK_TRUE;
 }
 
@@ -478,6 +479,7 @@ VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, const QueueFamilyI
     vulkan13Features.pNext = &vulkan12Features;
     vulkan13Features.dynamicRendering = VK_TRUE;
     vulkan13Features.synchronization2 = VK_TRUE;
+    vulkan13Features.shaderDemoteToHelperInvocation = VK_TRUE;
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
     extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
