@@ -895,9 +895,10 @@ void GfxRenderingAPIVulkan::FinishRender() {
     mCurrentFrame->renderFinishedTimelineValue++;
     mVertexRingBuffer.EndFrame(mCurrentFrame->renderFinishedTimelineSemaphore, mCurrentFrame->renderFinishedTimelineValue);
 
+    VkSemaphore renderFinishedSemaphore = mSwapchainRenderFinishedSemaphores[mCurrentImageIndex];
     std::array<VkSemaphoreSubmitInfo, 2> signalSemaphoreInfos = {};
     signalSemaphoreInfos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfos[0].semaphore = mCurrentFrame->renderFinishedSemaphore;
+    signalSemaphoreInfos[0].semaphore = renderFinishedSemaphore;
     signalSemaphoreInfos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     signalSemaphoreInfos[1].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     signalSemaphoreInfos[1].semaphore = mCurrentFrame->renderFinishedTimelineSemaphore;
@@ -920,7 +921,7 @@ void GfxRenderingAPIVulkan::FinishRender() {
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &mCurrentFrame->renderFinishedSemaphore;
+    presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &mSwapchain;
     presentInfo.pImageIndices = &mCurrentImageIndex;
@@ -1378,6 +1379,14 @@ void GfxRenderingAPIVulkan::CreateSwapchain() {
     mSwapchainImageLayouts.assign(mSwapchainImages.size(), VK_IMAGE_LAYOUT_UNDEFINED);
     mSwapchainImageStageMasks.assign(mSwapchainImages.size(), VK_PIPELINE_STAGE_2_NONE);
     mSwapchainImageAccessMasks.assign(mSwapchainImages.size(), VK_ACCESS_2_NONE);
+
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    mSwapchainRenderFinishedSemaphores.resize(mSwapchainImages.size(), VK_NULL_HANDLE);
+    for (VkSemaphore& semaphore : mSwapchainRenderFinishedSemaphores) {
+        CheckVk(vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &semaphore),
+                "Failed to create Vulkan swapchain render-finished semaphore");
+    }
 }
 
 void GfxRenderingAPIVulkan::CreateImageViews() {
@@ -1650,10 +1659,6 @@ void GfxRenderingAPIVulkan::CreateSyncObjects() {
             vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &frame.imageAvailableSemaphore) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan image-available semaphore");
         }
-        if (frame.renderFinishedSemaphore == VK_NULL_HANDLE &&
-            vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &frame.renderFinishedSemaphore) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create Vulkan render-finished semaphore");
-        }
         if (frame.renderFinishedTimelineSemaphore == VK_NULL_HANDLE &&
             vkCreateSemaphore(mDevice, &timelineSemaphoreInfo, nullptr, &frame.renderFinishedTimelineSemaphore) !=
                 VK_SUCCESS) {
@@ -1675,10 +1680,6 @@ void GfxRenderingAPIVulkan::DestroyFrameResources() {
         if (frame.imageAvailableSemaphore != VK_NULL_HANDLE) {
             vkDestroySemaphore(mDevice, frame.imageAvailableSemaphore, nullptr);
             frame.imageAvailableSemaphore = VK_NULL_HANDLE;
-        }
-        if (frame.renderFinishedSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, frame.renderFinishedSemaphore, nullptr);
-            frame.renderFinishedSemaphore = VK_NULL_HANDLE;
         }
         if (frame.renderFinishedTimelineSemaphore != VK_NULL_HANDLE) {
             vkDestroySemaphore(mDevice, frame.renderFinishedTimelineSemaphore, nullptr);
@@ -2456,6 +2457,13 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
         vkDestroyImageView(mDevice, imageView, nullptr);
     }
     mSwapchainImageViews.clear();
+
+    for (VkSemaphore semaphore : mSwapchainRenderFinishedSemaphores) {
+        if (semaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, semaphore, nullptr);
+        }
+    }
+    mSwapchainRenderFinishedSemaphores.clear();
 
     if (mSwapchain != VK_NULL_HANDLE) {
         vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);

@@ -59,7 +59,6 @@ struct VulkanTexture {
 struct VulkanFrame {
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
     VkSemaphore renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
     uint64_t renderFinishedTimelineValue = 0;
 };
@@ -242,6 +241,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkExtent2D mSwapchainExtent = {};
     std::vector<VkImage> mSwapchainImages;
     std::vector<VkImageView> mSwapchainImageViews;
+    std::vector<VkSemaphore> mSwapchainRenderFinishedSemaphores;
     std::vector<VkImageLayout> mSwapchainImageLayouts;
     std::vector<VkPipelineStageFlags2> mSwapchainImageStageMasks;
     std::vector<VkAccessFlags2> mSwapchainImageAccessMasks;
