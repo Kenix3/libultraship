@@ -218,11 +218,20 @@ void GfxRenderingAPIVulkan::StartFrame() {
         return;
     }
 
-    vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+    mCurrentFrame = &mFrames[mCurrentFrameIndex];
+    if (mCurrentFrame->renderFinishedTimelineValue > 0) {
+        VkSemaphoreWaitInfo waitInfo = {};
+        waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = &mCurrentFrame->renderFinishedTimelineSemaphore;
+        waitInfo.pValues = &mCurrentFrame->renderFinishedTimelineValue;
+        CheckVk(vkWaitSemaphores(mDevice, &waitInfo, UINT64_MAX), "Failed to wait for Vulkan frame timeline");
+    }
 
-    VkResult acquireResult = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore,
-                                                   VK_NULL_HANDLE, &mCurrentImageIndex);
+    VkResult acquireResult = vkAcquireNextImageKHR(
+        mDevice, mSwapchain, UINT64_MAX, mCurrentFrame->imageAvailableSemaphore, VK_NULL_HANDLE, &mCurrentImageIndex);
     if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
+        mCurrentFrame = nullptr;
         RecreateSwapchain();
         return;
     }
@@ -230,8 +239,7 @@ void GfxRenderingAPIVulkan::StartFrame() {
         throw std::runtime_error("Failed to acquire Vulkan swapchain image");
     }
 
-    vkResetFences(mDevice, 1, &mInFlightFence);
-    mCurrentCommandBuffer = mCommandBuffers[mCurrentImageIndex];
+    mCurrentCommandBuffer = mCurrentFrame->commandBuffer;
     vkResetCommandBuffer(mCurrentCommandBuffer, 0);
 
     VkCommandBufferBeginInfo beginInfo = {};
@@ -328,13 +336,19 @@ void GfxRenderingAPIVulkan::FinishRender() {
 
     VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
     waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    waitSemaphoreInfo.semaphore = mImageAvailableSemaphore;
+    waitSemaphoreInfo.semaphore = mCurrentFrame->imageAvailableSemaphore;
     waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    VkSemaphoreSubmitInfo signalSemaphoreInfo = {};
-    signalSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfo.semaphore = mRenderFinishedSemaphores[mCurrentImageIndex];
-    signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mCurrentFrame->renderFinishedTimelineValue++;
+
+    std::array<VkSemaphoreSubmitInfo, 2> signalSemaphoreInfos = {};
+    signalSemaphoreInfos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    signalSemaphoreInfos[0].semaphore = mCurrentFrame->renderFinishedSemaphore;
+    signalSemaphoreInfos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    signalSemaphoreInfos[1].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    signalSemaphoreInfos[1].semaphore = mCurrentFrame->renderFinishedTimelineSemaphore;
+    signalSemaphoreInfos[1].value = mCurrentFrame->renderFinishedTimelineValue;
+    signalSemaphoreInfos[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     VkSubmitInfo2 submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
@@ -342,23 +356,25 @@ void GfxRenderingAPIVulkan::FinishRender() {
     submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
     submitInfo.commandBufferInfoCount = 1;
     submitInfo.pCommandBufferInfos = &commandBufferInfo;
-    submitInfo.signalSemaphoreInfoCount = 1;
-    submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
+    submitInfo.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
+    submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
 
-    if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, mInFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit2(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit Vulkan command buffer");
     }
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &mRenderFinishedSemaphores[mCurrentImageIndex];
+    presentInfo.pWaitSemaphores = &mCurrentFrame->renderFinishedSemaphore;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &mSwapchain;
     presentInfo.pImageIndices = &mCurrentImageIndex;
 
     VkResult presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
     mCurrentCommandBuffer = VK_NULL_HANDLE;
+    mCurrentFrame = nullptr;
+    mCurrentFrameIndex = (mCurrentFrameIndex + 1) % FRAMES_IN_FLIGHT;
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
         RecreateSwapchain();
@@ -613,16 +629,19 @@ void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
 }
 
 void GfxRenderingAPIVulkan::CreateCommandBuffers() {
-    mCommandBuffers.resize(mSwapchainImages.size());
-
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = mCommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(mCommandBuffers.size());
+    allocInfo.commandBufferCount = static_cast<uint32_t>(mFrames.size());
 
-    if (vkAllocateCommandBuffers(mDevice, &allocInfo, mCommandBuffers.data()) != VK_SUCCESS) {
+    std::array<VkCommandBuffer, FRAMES_IN_FLIGHT> commandBuffers = {};
+    if (vkAllocateCommandBuffers(mDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate Vulkan command buffers");
+    }
+
+    for (size_t i = 0; i < mFrames.size(); i++) {
+        mFrames[i].commandBuffer = commandBuffers[i];
     }
 }
 
@@ -630,35 +649,60 @@ void GfxRenderingAPIVulkan::CreateSyncObjects() {
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VkSemaphoreTypeCreateInfo timelineSemaphoreTypeInfo = {};
+    timelineSemaphoreTypeInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+    timelineSemaphoreTypeInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    timelineSemaphoreTypeInfo.initialValue = 0;
 
-    if (mImageAvailableSemaphore == VK_NULL_HANDLE &&
-        vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan image-available semaphore");
-    }
+    VkSemaphoreCreateInfo timelineSemaphoreInfo = {};
+    timelineSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    timelineSemaphoreInfo.pNext = &timelineSemaphoreTypeInfo;
 
-    if (mInFlightFence == VK_NULL_HANDLE &&
-        vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan in-flight fence");
-    }
-
-    mRenderFinishedSemaphores.resize(mSwapchainImages.size(), VK_NULL_HANDLE);
-    for (auto& renderFinishedSemaphore : mRenderFinishedSemaphores) {
-        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create Vulkan swapchain synchronization objects");
+    for (auto& frame : mFrames) {
+        if (frame.imageAvailableSemaphore == VK_NULL_HANDLE &&
+            vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &frame.imageAvailableSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan image-available semaphore");
+        }
+        if (frame.renderFinishedSemaphore == VK_NULL_HANDLE &&
+            vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &frame.renderFinishedSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan render-finished semaphore");
+        }
+        if (frame.renderFinishedTimelineSemaphore == VK_NULL_HANDLE &&
+            vkCreateSemaphore(mDevice, &timelineSemaphoreInfo, nullptr, &frame.renderFinishedTimelineSemaphore) !=
+                VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan render-finished timeline semaphore");
         }
     }
 }
 
-void GfxRenderingAPIVulkan::CleanupSwapchainSyncObjects() {
-    for (auto renderFinishedSemaphore : mRenderFinishedSemaphores) {
-        if (renderFinishedSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, renderFinishedSemaphore, nullptr);
-        }
+void GfxRenderingAPIVulkan::DestroyFrameResources() {
+    if (mDevice == VK_NULL_HANDLE) {
+        return;
     }
-    mRenderFinishedSemaphores.clear();
+
+    for (auto& frame : mFrames) {
+        if (frame.commandBuffer != VK_NULL_HANDLE && mCommandPool != VK_NULL_HANDLE) {
+            vkFreeCommandBuffers(mDevice, mCommandPool, 1, &frame.commandBuffer);
+            frame.commandBuffer = VK_NULL_HANDLE;
+        }
+        if (frame.imageAvailableSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, frame.imageAvailableSemaphore, nullptr);
+            frame.imageAvailableSemaphore = VK_NULL_HANDLE;
+        }
+        if (frame.renderFinishedSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, frame.renderFinishedSemaphore, nullptr);
+            frame.renderFinishedSemaphore = VK_NULL_HANDLE;
+        }
+        if (frame.renderFinishedTimelineSemaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(mDevice, frame.renderFinishedTimelineSemaphore, nullptr);
+            frame.renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
+        }
+        frame.renderFinishedTimelineValue = 0;
+    }
+
+    mCurrentFrame = nullptr;
+    mCurrentCommandBuffer = VK_NULL_HANDLE;
+    mCurrentFrameIndex = 0;
 }
 
 void GfxRenderingAPIVulkan::CreateAllocator() {
@@ -1037,14 +1081,6 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
         return;
     }
 
-    CleanupSwapchainSyncObjects();
-
-    if (!mCommandBuffers.empty()) {
-        vkFreeCommandBuffers(mDevice, mCommandPool, static_cast<uint32_t>(mCommandBuffers.size()),
-                             mCommandBuffers.data());
-        mCommandBuffers.clear();
-    }
-
     for (auto imageView : mSwapchainImageViews) {
         vkDestroyImageView(mDevice, imageView, nullptr);
     }
@@ -1060,6 +1096,7 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
     mSwapchainImageFormat = VK_FORMAT_UNDEFINED;
     mSwapchainExtent = {};
     mCurrentCommandBuffer = VK_NULL_HANDLE;
+    mCurrentFrame = nullptr;
     mFrameActive = false;
 }
 
@@ -1071,8 +1108,6 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
     CleanupSwapchain();
     CreateSwapchain();
     CreateImageViews();
-    CreateCommandBuffers();
-    CreateSyncObjects();
     if (restoreImGui) {
         InitImGui();
     }
@@ -1087,14 +1122,7 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         CleanupSwapchain();
         DestroyTextures();
         DestroyTextureDescriptorResources();
-        if (mInFlightFence != VK_NULL_HANDLE) {
-            vkDestroyFence(mDevice, mInFlightFence, nullptr);
-            mInFlightFence = VK_NULL_HANDLE;
-        }
-        if (mImageAvailableSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
-            mImageAvailableSemaphore = VK_NULL_HANDLE;
-        }
+        DestroyFrameResources();
         if (mUploadCommandPool != VK_NULL_HANDLE) {
             vkDestroyCommandPool(mDevice, mUploadCommandPool, nullptr);
             mUploadCommandPool = VK_NULL_HANDLE;

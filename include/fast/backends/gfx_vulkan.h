@@ -4,6 +4,7 @@
 #include "../interpreter.h"
 #include "gfx_vulkan_utils.h"
 
+#include <array>
 #include <map>
 #include <memory>
 #include <utility>
@@ -16,6 +17,8 @@ struct VmaAllocator_T;
 namespace Fast {
 
 class GfxWindowBackendSDL2;
+
+constexpr uint32_t FRAMES_IN_FLIGHT = 3;
 
 struct VulkanShaderProgram {
     uint8_t numInputs = 0;
@@ -35,6 +38,14 @@ struct VulkanTexture {
     bool linearFiltering = false;
     uint32_t cms = 0;
     uint32_t cmt = 0;
+};
+
+struct VulkanFrame {
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
+    uint64_t renderFinishedTimelineValue = 0;
 };
 
 class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
@@ -98,7 +109,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
-    void CleanupSwapchainSyncObjects();
+    void DestroyFrameResources();
     void CreateAllocator();
     void CreateUploadCommandPool();
     void CreateTextureDescriptorResources();
@@ -131,10 +142,9 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     std::vector<VkImageLayout> mSwapchainImageLayouts;
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
     VkCommandPool mUploadCommandPool = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> mCommandBuffers;
-    VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
-    std::vector<VkSemaphore> mRenderFinishedSemaphores;
-    VkFence mInFlightFence = VK_NULL_HANDLE;
+    std::array<VulkanFrame, FRAMES_IN_FLIGHT> mFrames;
+    uint32_t mCurrentFrameIndex = 0;
+    VulkanFrame* mCurrentFrame = nullptr;
     uint32_t mCurrentImageIndex = 0;
     VkCommandBuffer mCurrentCommandBuffer = VK_NULL_HANDLE;
     bool mFrameActive = false;
