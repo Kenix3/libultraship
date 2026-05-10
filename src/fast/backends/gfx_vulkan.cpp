@@ -73,6 +73,38 @@ void CheckVk(VkResult result, const char* message) {
     }
 }
 
+struct VulkanImageUsageState {
+    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkPipelineStageFlags2 stageMask = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2 accessMask = VK_ACCESS_2_NONE;
+};
+
+VulkanImageUsageState GetImageUsageState(VulkanImageUsage usage) {
+    switch (usage) {
+        case VulkanImageUsage::ColorAttachment:
+            return { VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                     VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT };
+        case VulkanImageUsage::DepthAttachment:
+            return { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT };
+        case VulkanImageUsage::ShaderRead:
+            return { VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                     VK_ACCESS_2_SHADER_SAMPLED_READ_BIT };
+        case VulkanImageUsage::TransferSrc:
+            return { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_2_COPY_BIT,
+                     VK_ACCESS_2_TRANSFER_READ_BIT };
+        case VulkanImageUsage::TransferDst:
+            return { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_COPY_BIT,
+                     VK_ACCESS_2_TRANSFER_WRITE_BIT };
+        case VulkanImageUsage::Present:
+            return { VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE };
+    }
+
+    throw std::runtime_error("Unsupported Vulkan image usage");
+}
+
 VkSamplerAddressMode GfxCmToVulkan(uint32_t value) {
     switch (value) {
         case G_TX_NOMIRROR | G_TX_CLAMP:
@@ -813,6 +845,8 @@ void GfxRenderingAPIVulkan::StartFrame() {
     if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("Failed to acquire Vulkan swapchain image");
     }
+    mSwapchainImageStageMasks[mCurrentImageIndex] = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mSwapchainImageAccessMasks[mCurrentImageIndex] = VK_ACCESS_2_NONE;
 
     mCurrentCommandBuffer = mCurrentFrame->commandBuffer;
     vkResetCommandBuffer(mCurrentCommandBuffer, 0);
@@ -840,31 +874,13 @@ void GfxRenderingAPIVulkan::FinishRender() {
 
     EndCurrentRendering();
 
-    VkImageMemoryBarrier2 presentBarrier = {};
-    presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    presentBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    presentBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-    presentBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
-    presentBarrier.dstAccessMask = VK_ACCESS_2_NONE;
-    presentBarrier.oldLayout = mSwapchainImageLayouts[mCurrentImageIndex];
-    presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    presentBarrier.image = mSwapchainImages[mCurrentImageIndex];
-    presentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    presentBarrier.subresourceRange.baseMipLevel = 0;
-    presentBarrier.subresourceRange.levelCount = 1;
-    presentBarrier.subresourceRange.baseArrayLayer = 0;
-    presentBarrier.subresourceRange.layerCount = 1;
-
-    VkDependencyInfo presentDependency = {};
-    presentDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    presentDependency.imageMemoryBarrierCount = 1;
-    presentDependency.pImageMemoryBarriers = &presentBarrier;
-    vkCmdPipelineBarrier2(mCurrentCommandBuffer, &presentDependency);
+    TransitionImageUsage(mSwapchainImages[mCurrentImageIndex], VK_IMAGE_ASPECT_COLOR_BIT,
+                         mSwapchainImageLayouts[mCurrentImageIndex], mSwapchainImageStageMasks[mCurrentImageIndex],
+                         mSwapchainImageAccessMasks[mCurrentImageIndex], VulkanImageUsage::Present);
 
     if (vkEndCommandBuffer(mCurrentCommandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("Failed to record Vulkan command buffer");
     }
-    mSwapchainImageLayouts[mCurrentImageIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     mFrameActive = false;
 
     VkCommandBufferSubmitInfo commandBufferInfo = {};
@@ -874,7 +890,7 @@ void GfxRenderingAPIVulkan::FinishRender() {
     VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
     waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     waitSemaphoreInfo.semaphore = mCurrentFrame->imageAvailableSemaphore;
-    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     mCurrentFrame->renderFinishedTimelineValue++;
     mVertexRingBuffer.EndFrame(mCurrentFrame->renderFinishedTimelineSemaphore, mCurrentFrame->renderFinishedTimelineValue);
@@ -1063,14 +1079,14 @@ void GfxRenderingAPIVulkan::CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0,
 
     VkImageLayout& srcLayout = GetFramebufferColorLayout(fbSrcId);
     VkImageLayout& dstLayout = GetFramebufferColorLayout(fbDstId);
-    TransitionImageLayout(srcImage, VK_IMAGE_ASPECT_COLOR_BIT, srcLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT,
-                          VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT);
-    srcLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    TransitionImageLayout(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT,
-                          VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
-    dstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    VkPipelineStageFlags2& srcStageMask = GetFramebufferColorStageMask(fbSrcId);
+    VkPipelineStageFlags2& dstStageMask = GetFramebufferColorStageMask(fbDstId);
+    VkAccessFlags2& srcAccessMask = GetFramebufferColorAccessMask(fbSrcId);
+    VkAccessFlags2& dstAccessMask = GetFramebufferColorAccessMask(fbDstId);
+    TransitionImageUsage(srcImage, VK_IMAGE_ASPECT_COLOR_BIT, srcLayout, srcStageMask, srcAccessMask,
+                         VulkanImageUsage::TransferSrc);
+    TransitionImageUsage(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, dstStageMask, dstAccessMask,
+                         VulkanImageUsage::TransferDst);
 
     if ((srcX1 - srcX0) == (dstX1 - dstX0) && (srcY1 - srcY0) == (dstY1 - dstY0)) {
         VkImageCopy2 copyRegion = {};
@@ -1114,27 +1130,20 @@ void GfxRenderingAPIVulkan::CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0,
     }
 
     if (fbDstId == static_cast<int>(mCurrentFramebuffer)) {
-        TransitionImageLayout(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
-        dstLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        TransitionImageUsage(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, dstStageMask, dstAccessMask,
+                             VulkanImageUsage::ColorAttachment);
     } else if (dstFb != nullptr && fbDstId != 0 && dstFb->colorTextureId < mTextures.size()) {
         VulkanTexture& texture = mTextures[dstFb->colorTextureId];
-        TransitionImageLayout(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-        dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        TransitionImageUsage(dstImage, VK_IMAGE_ASPECT_COLOR_BIT, dstLayout, dstStageMask, dstAccessMask,
+                             VulkanImageUsage::ShaderRead);
         texture.layout = dstLayout;
         WriteBindlessTextureDescriptor(dstFb->colorTextureId);
     }
 
     if (srcFb != nullptr && srcFb->colorTextureId < mTextures.size() && fbSrcId != static_cast<int>(mCurrentFramebuffer)) {
         VulkanTexture& texture = mTextures[srcFb->colorTextureId];
-        TransitionImageLayout(srcImage, VK_IMAGE_ASPECT_COLOR_BIT, srcLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
-                              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-        srcLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        TransitionImageUsage(srcImage, VK_IMAGE_ASPECT_COLOR_BIT, srcLayout, srcStageMask, srcAccessMask,
+                             VulkanImageUsage::ShaderRead);
         texture.layout = srcLayout;
         WriteBindlessTextureDescriptor(srcFb->colorTextureId);
     }
@@ -1367,6 +1376,8 @@ void GfxRenderingAPIVulkan::CreateSwapchain() {
     mSwapchainImageFormat = surfaceFormat.format;
     mSwapchainExtent = extent;
     mSwapchainImageLayouts.assign(mSwapchainImages.size(), VK_IMAGE_LAYOUT_UNDEFINED);
+    mSwapchainImageStageMasks.assign(mSwapchainImages.size(), VK_PIPELINE_STAGE_2_NONE);
+    mSwapchainImageAccessMasks.assign(mSwapchainImages.size(), VK_ACCESS_2_NONE);
 }
 
 void GfxRenderingAPIVulkan::CreateImageViews() {
@@ -1433,6 +1444,8 @@ void GfxRenderingAPIVulkan::CreateDepthResources() {
             "Failed to create Vulkan depth image view");
 
     mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mDepthImageStageMask = VK_PIPELINE_STAGE_2_NONE;
+    mDepthImageAccessMask = VK_ACCESS_2_NONE;
     mDepthExtent = mSwapchainExtent;
 }
 
@@ -1447,6 +1460,8 @@ void GfxRenderingAPIVulkan::DestroyDepthResources() {
         mDepthAllocation = nullptr;
     }
     mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mDepthImageStageMask = VK_PIPELINE_STAGE_2_NONE;
+    mDepthImageAccessMask = VK_ACCESS_2_NONE;
     mDepthExtent = {};
 }
 
@@ -1848,22 +1863,28 @@ VulkanTexture& GfxRenderingAPIVulkan::GetTexture(uint32_t textureId) {
     return mTextures[textureId];
 }
 
-void GfxRenderingAPIVulkan::TransitionImageLayout(VkImage image, VkImageAspectFlags aspectMask,
-                                                  VkImageLayout oldLayout, VkImageLayout newLayout,
-                                                  VkPipelineStageFlags2 srcStageMask, VkAccessFlags2 srcAccessMask,
-                                                  VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 dstAccessMask) {
-    if (image == VK_NULL_HANDLE || oldLayout == newLayout) {
+void GfxRenderingAPIVulkan::TransitionImageUsage(VkImage image, VkImageAspectFlags aspectMask, VkImageLayout& layout,
+                                                 VkPipelineStageFlags2& stageMask, VkAccessFlags2& accessMask,
+                                                 VulkanImageUsage newUsage) {
+    if (image == VK_NULL_HANDLE) {
+        return;
+    }
+
+    VulkanImageUsageState newState = GetImageUsageState(newUsage);
+    VkPipelineStageFlags2 oldStageMask = layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_PIPELINE_STAGE_2_NONE : stageMask;
+    VkAccessFlags2 oldAccessMask = layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ACCESS_2_NONE : accessMask;
+    if (layout == newState.layout && oldStageMask == newState.stageMask && oldAccessMask == newState.accessMask) {
         return;
     }
 
     VkImageMemoryBarrier2 barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    barrier.srcStageMask = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_PIPELINE_STAGE_2_NONE : srcStageMask;
-    barrier.srcAccessMask = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ACCESS_2_NONE : srcAccessMask;
-    barrier.dstStageMask = dstStageMask;
-    barrier.dstAccessMask = dstAccessMask;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
+    barrier.srcStageMask = oldStageMask;
+    barrier.srcAccessMask = oldAccessMask;
+    barrier.dstStageMask = newState.stageMask;
+    barrier.dstAccessMask = newState.accessMask;
+    barrier.oldLayout = layout;
+    barrier.newLayout = newState.layout;
     barrier.image = image;
     barrier.subresourceRange.aspectMask = aspectMask;
     barrier.subresourceRange.baseMipLevel = 0;
@@ -1876,6 +1897,10 @@ void GfxRenderingAPIVulkan::TransitionImageLayout(VkImage image, VkImageAspectFl
     dependency.imageMemoryBarrierCount = 1;
     dependency.pImageMemoryBarriers = &barrier;
     vkCmdPipelineBarrier2(mCurrentCommandBuffer, &dependency);
+
+    layout = newState.layout;
+    stageMask = newState.stageMask;
+    accessMask = newState.accessMask;
 }
 
 VulkanFramebuffer* GfxRenderingAPIVulkan::GetFramebuffer(int fbId) {
@@ -1913,6 +1938,28 @@ VkImageLayout& GfxRenderingAPIVulkan::GetFramebufferColorLayout(int fbId) {
     return framebuffer->colorLayout;
 }
 
+VkPipelineStageFlags2& GfxRenderingAPIVulkan::GetFramebufferColorStageMask(int fbId) {
+    if (fbId == 0) {
+        return mSwapchainImageStageMasks[mCurrentImageIndex];
+    }
+    VulkanFramebuffer* framebuffer = GetFramebuffer(fbId);
+    if (framebuffer == nullptr) {
+        throw std::runtime_error("Invalid Vulkan framebuffer id");
+    }
+    return framebuffer->colorStageMask;
+}
+
+VkAccessFlags2& GfxRenderingAPIVulkan::GetFramebufferColorAccessMask(int fbId) {
+    if (fbId == 0) {
+        return mSwapchainImageAccessMasks[mCurrentImageIndex];
+    }
+    VulkanFramebuffer* framebuffer = GetFramebuffer(fbId);
+    if (framebuffer == nullptr) {
+        throw std::runtime_error("Invalid Vulkan framebuffer id");
+    }
+    return framebuffer->colorAccessMask;
+}
+
 VkExtent2D GfxRenderingAPIVulkan::GetFramebufferExtent(int fbId) const {
     if (fbId <= 0 || static_cast<size_t>(fbId) >= mFramebuffers.size() || mFramebuffers[fbId].width == 0 ||
         mFramebuffers[fbId].height == 0) {
@@ -1933,34 +1980,33 @@ void GfxRenderingAPIVulkan::BeginRenderingToCurrentFramebuffer() {
     }
 
     VkImageLayout& colorLayout = GetFramebufferColorLayout(mCurrentFramebuffer);
-    TransitionImageLayout(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, colorLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
-                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                          VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
-    colorLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkPipelineStageFlags2& colorStageMask = GetFramebufferColorStageMask(mCurrentFramebuffer);
+    VkAccessFlags2& colorAccessMask = GetFramebufferColorAccessMask(mCurrentFramebuffer);
+    TransitionImageUsage(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, colorLayout, colorStageMask, colorAccessMask,
+                         VulkanImageUsage::ColorAttachment);
 
     VulkanFramebuffer* framebuffer = GetFramebuffer(mCurrentFramebuffer);
     VkImageView depthImageView = VK_NULL_HANDLE;
     VkImageLayout* depthLayout = nullptr;
+    VkPipelineStageFlags2* depthStageMask = nullptr;
+    VkAccessFlags2* depthAccessMask = nullptr;
     VkImage depthImage = VK_NULL_HANDLE;
     if (mCurrentFramebuffer == 0) {
         depthImage = mDepthImage;
         depthImageView = mDepthImageView;
         depthLayout = &mDepthImageLayout;
+        depthStageMask = &mDepthImageStageMask;
+        depthAccessMask = &mDepthImageAccessMask;
     } else if (framebuffer != nullptr && framebuffer->hasDepthBuffer) {
         depthImage = framebuffer->depthImage;
         depthImageView = framebuffer->depthImageView;
         depthLayout = &framebuffer->depthLayout;
+        depthStageMask = &framebuffer->depthStageMask;
+        depthAccessMask = &framebuffer->depthAccessMask;
     }
-    if (depthImage != VK_NULL_HANDLE && depthLayout != nullptr) {
-        TransitionImageLayout(depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, *depthLayout,
-                              VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                              VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
-                              VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
-                                  VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-        *depthLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    if (depthImage != VK_NULL_HANDLE && depthLayout != nullptr && depthStageMask != nullptr && depthAccessMask != nullptr) {
+        TransitionImageUsage(depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, *depthLayout, *depthStageMask, *depthAccessMask,
+                             VulkanImageUsage::DepthAttachment);
     }
 
     VkRenderingAttachmentInfo colorAttachment = {};
@@ -2001,12 +2047,8 @@ void GfxRenderingAPIVulkan::EndCurrentRendering() {
 
     VulkanFramebuffer* framebuffer = GetFramebuffer(mCurrentFramebuffer);
     if (framebuffer != nullptr && mCurrentFramebuffer != 0 && framebuffer->colorTextureId < mTextures.size()) {
-        TransitionImageLayout(framebuffer->colorImage, VK_IMAGE_ASPECT_COLOR_BIT, framebuffer->colorLayout,
-                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                              VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-        framebuffer->colorLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        TransitionImageUsage(framebuffer->colorImage, VK_IMAGE_ASPECT_COLOR_BIT, framebuffer->colorLayout,
+                             framebuffer->colorStageMask, framebuffer->colorAccessMask, VulkanImageUsage::ShaderRead);
         VulkanTexture& texture = mTextures[framebuffer->colorTextureId];
         texture.layout = framebuffer->colorLayout;
         if (texture.uploaded) {
@@ -2048,6 +2090,9 @@ void GfxRenderingAPIVulkan::CreateFramebufferColorResources(VulkanFramebuffer& f
     viewInfo.subresourceRange.layerCount = 1;
     CheckVk(vkCreateImageView(mDevice, &viewInfo, nullptr, &framebuffer.colorImageView),
             "Failed to create Vulkan framebuffer color image view");
+    framebuffer.colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    framebuffer.colorStageMask = VK_PIPELINE_STAGE_2_NONE;
+    framebuffer.colorAccessMask = VK_ACCESS_2_NONE;
 
     VulkanTexture& texture = GetTexture(framebuffer.colorTextureId);
     if (texture.imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
@@ -2117,6 +2162,8 @@ void GfxRenderingAPIVulkan::CreateFramebufferDepthResources(VulkanFramebuffer& f
     CheckVk(vkCreateImageView(mDevice, &viewInfo, nullptr, &framebuffer.depthImageView),
             "Failed to create Vulkan framebuffer depth image view");
     framebuffer.depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    framebuffer.depthStageMask = VK_PIPELINE_STAGE_2_NONE;
+    framebuffer.depthAccessMask = VK_ACCESS_2_NONE;
 }
 
 void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width,
@@ -2374,6 +2421,8 @@ void GfxRenderingAPIVulkan::DestroyFramebufferResources(VulkanFramebuffer& frame
         framebuffer.colorAllocation = nullptr;
     }
     framebuffer.colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    framebuffer.colorStageMask = VK_PIPELINE_STAGE_2_NONE;
+    framebuffer.colorAccessMask = VK_ACCESS_2_NONE;
 
     if (framebuffer.depthImageView != VK_NULL_HANDLE) {
         vkDestroyImageView(mDevice, framebuffer.depthImageView, nullptr);
@@ -2385,6 +2434,8 @@ void GfxRenderingAPIVulkan::DestroyFramebufferResources(VulkanFramebuffer& frame
         framebuffer.depthAllocation = nullptr;
     }
     framebuffer.depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    framebuffer.depthStageMask = VK_PIPELINE_STAGE_2_NONE;
+    framebuffer.depthAccessMask = VK_ACCESS_2_NONE;
 }
 
 void GfxRenderingAPIVulkan::DestroyFramebuffers() {
@@ -2413,6 +2464,8 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
 
     mSwapchainImages.clear();
     mSwapchainImageLayouts.clear();
+    mSwapchainImageStageMasks.clear();
+    mSwapchainImageAccessMasks.clear();
     mSwapchainImageFormat = VK_FORMAT_UNDEFINED;
     mSwapchainExtent = {};
     mCurrentCommandBuffer = VK_NULL_HANDLE;

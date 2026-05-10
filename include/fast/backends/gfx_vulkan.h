@@ -21,6 +21,15 @@ class GfxWindowBackendSDL2;
 
 constexpr uint32_t FRAMES_IN_FLIGHT = 3;
 
+enum class VulkanImageUsage {
+    ColorAttachment,
+    DepthAttachment,
+    ShaderRead,
+    TransferSrc,
+    TransferDst,
+    Present,
+};
+
 struct VulkanShaderProgram {
     uint8_t numInputs = 0;
     bool usedTextures[SHADER_MAX_TEXTURES] = {};
@@ -68,10 +77,14 @@ struct VulkanFramebuffer {
     VmaAllocation_T* colorAllocation = nullptr;
     VkImageView colorImageView = VK_NULL_HANDLE;
     VkImageLayout colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkPipelineStageFlags2 colorStageMask = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2 colorAccessMask = VK_ACCESS_2_NONE;
     VkImage depthImage = VK_NULL_HANDLE;
     VmaAllocation_T* depthAllocation = nullptr;
     VkImageView depthImageView = VK_NULL_HANDLE;
     VkImageLayout depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkPipelineStageFlags2 depthStageMask = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2 depthAccessMask = VK_ACCESS_2_NONE;
 };
 
 class VulkanVertexRingBuffer {
@@ -195,16 +208,16 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void DestroyFramebuffers();
     void CreateFramebufferColorResources(VulkanFramebuffer& framebuffer);
     void CreateFramebufferDepthResources(VulkanFramebuffer& framebuffer);
-    void TransitionImageLayout(VkImage image, VkImageAspectFlags aspectMask, VkImageLayout oldLayout,
-                               VkImageLayout newLayout, VkPipelineStageFlags2 srcStageMask,
-                               VkAccessFlags2 srcAccessMask, VkPipelineStageFlags2 dstStageMask,
-                               VkAccessFlags2 dstAccessMask);
+    void TransitionImageUsage(VkImage image, VkImageAspectFlags aspectMask, VkImageLayout& layout,
+                              VkPipelineStageFlags2& stageMask, VkAccessFlags2& accessMask, VulkanImageUsage newUsage);
     void EndCurrentRendering();
     void BeginRenderingToCurrentFramebuffer();
     VulkanFramebuffer* GetFramebuffer(int fbId);
     VkImage GetFramebufferColorImage(int fbId);
     VkImageView GetFramebufferColorImageView(int fbId);
     VkImageLayout& GetFramebufferColorLayout(int fbId);
+    VkPipelineStageFlags2& GetFramebufferColorStageMask(int fbId);
+    VkAccessFlags2& GetFramebufferColorAccessMask(int fbId);
     VkExtent2D GetFramebufferExtent(int fbId) const;
     void UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
     void WriteBindlessTextureDescriptor(uint32_t textureId);
@@ -230,11 +243,15 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     std::vector<VkImage> mSwapchainImages;
     std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkImageLayout> mSwapchainImageLayouts;
+    std::vector<VkPipelineStageFlags2> mSwapchainImageStageMasks;
+    std::vector<VkAccessFlags2> mSwapchainImageAccessMasks;
     VkFormat mDepthFormat = VK_FORMAT_D32_SFLOAT;
     VkImage mDepthImage = VK_NULL_HANDLE;
     VmaAllocation_T* mDepthAllocation = nullptr;
     VkImageView mDepthImageView = VK_NULL_HANDLE;
     VkImageLayout mDepthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkPipelineStageFlags2 mDepthImageStageMask = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2 mDepthImageAccessMask = VK_ACCESS_2_NONE;
     VkExtent2D mDepthExtent = {};
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
     VkCommandPool mUploadCommandPool = VK_NULL_HANDLE;
