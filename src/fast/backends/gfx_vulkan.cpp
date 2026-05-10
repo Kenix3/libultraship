@@ -8,9 +8,15 @@
 
 #include "fast/backends/gfx_sdl.h"
 #include "fast/interpreter.h"
+#include "ship/Context.h"
+#include "ship/resource/ResourceManager.h"
+#include "ship/resource/factory/ShaderFactory.h"
 
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
+#include <prism/processor.h>
+#include <shaderc/shaderc.hpp>
+#include <spdlog/spdlog.h>
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -18,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -54,6 +61,253 @@ VkSamplerAddressMode GfxCmToVulkan(uint32_t value) {
     }
 }
 
+static size_t rawNumFloats = 0;
+static uint32_t vertexAttributeLocation = 0;
+static uint32_t varyingLocation = 0;
+
+bool GetBool(prism::ContextTypes* value) {
+    if (std::holds_alternative<int>(*value)) {
+        return std::get<int>(*value) == 1;
+    }
+    return false;
+}
+
+#define RAND_NOISE "((random(vec3(floor(gl_FragCoord.xy * noiseScale), float(frameCount))) + 1.0) / 2.0)"
+
+const char* ShaderItemToStr(uint32_t item, bool withAlpha, bool onlyAlpha, bool inputsHaveAlpha, bool firstCycle,
+                            bool hintSingleElement) {
+    if (!onlyAlpha) {
+        switch (item) {
+            default:
+            case SHADER_0:
+                return withAlpha ? "vec4(0.0, 0.0, 0.0, 0.0)" : "vec3(0.0, 0.0, 0.0)";
+            case SHADER_1:
+                return withAlpha ? "vec4(1.0, 1.0, 1.0, 1.0)" : "vec3(1.0, 1.0, 1.0)";
+            case SHADER_INPUT_1:
+                return withAlpha || !inputsHaveAlpha ? "vInput1" : "vInput1.rgb";
+            case SHADER_INPUT_2:
+                return withAlpha || !inputsHaveAlpha ? "vInput2" : "vInput2.rgb";
+            case SHADER_INPUT_3:
+                return withAlpha || !inputsHaveAlpha ? "vInput3" : "vInput3.rgb";
+            case SHADER_INPUT_4:
+                return withAlpha || !inputsHaveAlpha ? "vInput4" : "vInput4.rgb";
+            case SHADER_TEXEL0:
+                return firstCycle ? (withAlpha ? "texVal0" : "texVal0.rgb") : (withAlpha ? "texVal1" : "texVal1.rgb");
+            case SHADER_TEXEL0A:
+                return firstCycle ? (hintSingleElement ? "texVal0.a"
+                                                       : (withAlpha ? "vec4(texVal0.a)" : "vec3(texVal0.a)"))
+                                  : (hintSingleElement ? "texVal1.a"
+                                                       : (withAlpha ? "vec4(texVal1.a)" : "vec3(texVal1.a)"));
+            case SHADER_TEXEL1A:
+                return firstCycle ? (hintSingleElement ? "texVal1.a"
+                                                       : (withAlpha ? "vec4(texVal1.a)" : "vec3(texVal1.a)"))
+                                  : (hintSingleElement ? "texVal0.a"
+                                                       : (withAlpha ? "vec4(texVal0.a)" : "vec3(texVal0.a)"));
+            case SHADER_TEXEL1:
+                return firstCycle ? (withAlpha ? "texVal1" : "texVal1.rgb") : (withAlpha ? "texVal0" : "texVal0.rgb");
+            case SHADER_COMBINED:
+                return withAlpha ? "texel" : "texel.rgb";
+            case SHADER_NOISE:
+                return withAlpha ? "vec4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
+                                 : "vec3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
+        }
+    }
+
+    switch (item) {
+        default:
+        case SHADER_0:
+            return "0.0";
+        case SHADER_1:
+            return "1.0";
+        case SHADER_INPUT_1:
+            return "vInput1.a";
+        case SHADER_INPUT_2:
+            return "vInput2.a";
+        case SHADER_INPUT_3:
+            return "vInput3.a";
+        case SHADER_INPUT_4:
+            return "vInput4.a";
+        case SHADER_TEXEL0:
+        case SHADER_TEXEL0A:
+            return firstCycle ? "texVal0.a" : "texVal1.a";
+        case SHADER_TEXEL1:
+        case SHADER_TEXEL1A:
+            return firstCycle ? "texVal1.a" : "texVal0.a";
+        case SHADER_COMBINED:
+            return "texel.a";
+        case SHADER_NOISE:
+            return RAND_NOISE;
+    }
+}
+
+#undef RAND_NOISE
+
+prism::ContextTypes* AppendFormula(prism::ContextTypes*, prism::ContextTypes* arg, prism::ContextTypes* single,
+                                   prism::ContextTypes* mult, prism::ContextTypes* mix,
+                                   prism::ContextTypes* withAlphaArg, prism::ContextTypes* onlyAlphaArg,
+                                   prism::ContextTypes* alphaArg, prism::ContextTypes* firstCycleArg) {
+    auto c = std::get<prism::MTDArray<int>>(*arg);
+    bool doSingle = GetBool(single);
+    bool doMultiply = GetBool(mult);
+    bool doMix = GetBool(mix);
+    bool withAlpha = GetBool(withAlphaArg);
+    bool onlyAlpha = GetBool(onlyAlphaArg);
+    bool optAlpha = GetBool(alphaArg);
+    bool firstCycle = GetBool(firstCycleArg);
+
+    std::string out;
+    if (doSingle) {
+        out += ShaderItemToStr(c.at(onlyAlpha, 3), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+    } else if (doMultiply) {
+        out += ShaderItemToStr(c.at(onlyAlpha, 0), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+        out += " * ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 2), withAlpha, onlyAlpha, optAlpha, firstCycle, true);
+    } else if (doMix) {
+        out += "mix(";
+        out += ShaderItemToStr(c.at(onlyAlpha, 1), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+        out += ", ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 0), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+        out += ", ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 2), withAlpha, onlyAlpha, optAlpha, firstCycle, true);
+        out += ")";
+    } else {
+        out += "(";
+        out += ShaderItemToStr(c.at(onlyAlpha, 0), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+        out += " - ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 1), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+        out += ") * ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 2), withAlpha, onlyAlpha, optAlpha, firstCycle, true);
+        out += " + ";
+        out += ShaderItemToStr(c.at(onlyAlpha, 3), withAlpha, onlyAlpha, optAlpha, firstCycle, false);
+    }
+    return new prism::ContextTypes{ out };
+}
+
+prism::ContextTypes* NextVertexAttributeLocation(prism::ContextTypes*, prism::ContextTypes* numFloats) {
+    uint32_t location = vertexAttributeLocation++;
+    rawNumFloats += std::get<int>(*numFloats);
+    return new prism::ContextTypes{ static_cast<int>(location) };
+}
+
+prism::ContextTypes* NextVaryingLocation() {
+    return new prism::ContextTypes{ static_cast<int>(varyingLocation++) };
+}
+
+std::optional<std::string> VulkanIncludeFs(const std::string& path) {
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = static_cast<uint32_t>(Ship::ResourceType::Shader);
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = std::static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+    if (res == nullptr) {
+        return std::nullopt;
+    }
+
+    auto inc = static_cast<std::string*>(res->GetRawPointer());
+    return *inc;
+}
+
+std::string BuildVulkanShaderSource(const char* resourcePath, const CCFeatures& ccFeatures, bool vertexShader) {
+    if (vertexShader) {
+        rawNumFloats = 4;
+        vertexAttributeLocation = 1;
+    }
+    varyingLocation = 0;
+
+    prism::Processor processor;
+    prism::ContextItems context = {
+        { "SHADER_0", SHADER_0 },
+        { "SHADER_INPUT_1", SHADER_INPUT_1 },
+        { "SHADER_INPUT_2", SHADER_INPUT_2 },
+        { "SHADER_INPUT_3", SHADER_INPUT_3 },
+        { "SHADER_INPUT_4", SHADER_INPUT_4 },
+        { "SHADER_INPUT_5", SHADER_INPUT_5 },
+        { "SHADER_INPUT_6", SHADER_INPUT_6 },
+        { "SHADER_INPUT_7", SHADER_INPUT_7 },
+        { "SHADER_TEXEL0", SHADER_TEXEL0 },
+        { "SHADER_TEXEL0A", SHADER_TEXEL0A },
+        { "SHADER_TEXEL1", SHADER_TEXEL1 },
+        { "SHADER_TEXEL1A", SHADER_TEXEL1A },
+        { "SHADER_1", SHADER_1 },
+        { "SHADER_COMBINED", SHADER_COMBINED },
+        { "SHADER_NOISE", SHADER_NOISE },
+        { "FILTER_THREE_POINT", Fast::FILTER_THREE_POINT },
+        { "o_c", M_ARRAY(ccFeatures.c, int, 2, 2, 4) },
+        { "o_alpha", ccFeatures.opt_alpha },
+        { "o_fog", ccFeatures.opt_fog },
+        { "o_texture_edge", ccFeatures.opt_texture_edge },
+        { "o_noise", ccFeatures.opt_noise },
+        { "o_2cyc", ccFeatures.opt_2cyc },
+        { "o_alpha_threshold", ccFeatures.opt_alpha_threshold },
+        { "o_invisible", ccFeatures.opt_invisible },
+        { "o_grayscale", ccFeatures.opt_grayscale },
+        { "o_textures", M_ARRAY(ccFeatures.usedTextures, bool, 2) },
+        { "o_masks", M_ARRAY(ccFeatures.used_masks, bool, 2) },
+        { "o_blend", M_ARRAY(ccFeatures.used_blend, bool, 2) },
+        { "o_clamp", M_ARRAY(ccFeatures.clamp, bool, 2, 2) },
+        { "o_inputs", ccFeatures.numInputs },
+        { "o_do_mix", M_ARRAY(ccFeatures.do_mix, bool, 2, 2) },
+        { "o_do_single", M_ARRAY(ccFeatures.do_single, bool, 2, 2) },
+        { "o_do_multiply", M_ARRAY(ccFeatures.do_multiply, bool, 2, 2) },
+        { "o_color_alpha_same", M_ARRAY(ccFeatures.color_alpha_same, bool, 2) },
+        { "o_three_point_filtering", true },
+        { "append_formula", reinterpret_cast<InvokeFunc>(AppendFormula) },
+        { "next_attrib_location", reinterpret_cast<InvokeFunc>(NextVertexAttributeLocation) },
+        { "next_varying_location", reinterpret_cast<InvokeFunc>(NextVaryingLocation) },
+    };
+    processor.populate(context);
+
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = static_cast<uint32_t>(Ship::ResourceType::Shader);
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res = std::static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(resourcePath, true, init));
+    if (res == nullptr) {
+        SPDLOG_ERROR("Failed to load Vulkan shader template {}, missing f3d.o2r?", resourcePath);
+        abort();
+    }
+
+    auto shader = static_cast<std::string*>(res->GetRawPointer());
+    processor.load(*shader);
+    processor.bind_include_loader(VulkanIncludeFs);
+    return processor.process();
+}
+
+std::vector<uint32_t> CompileVulkanGlslToSpirv(const std::string& source, shaderc_shader_kind shaderKind,
+                                               const char* sourceName) {
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+    options.SetTargetSpirv(shaderc_spirv_version_1_6);
+#ifdef _DEBUG
+    options.SetGenerateDebugInfo();
+    options.SetOptimizationLevel(shaderc_optimization_level_zero);
+#else
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+#endif
+
+    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(source, shaderKind, sourceName, options);
+    if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+        throw std::runtime_error(std::string("Failed to compile Vulkan shader ") + sourceName + ": " +
+                                 result.GetErrorMessage());
+    }
+
+    return { result.cbegin(), result.cend() };
+}
+
+VkShaderModule CreateShaderModule(VkDevice device, const std::vector<uint32_t>& spirv, const char* shaderName) {
+    VkShaderModuleCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = spirv.size() * sizeof(uint32_t);
+    createInfo.pCode = spirv.data();
+
+    VkShaderModule shaderModule = VK_NULL_HANDLE;
+    CheckVk(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule), shaderName);
+    return shaderModule;
+}
+
 } // namespace
 
 GfxRenderingAPIVulkan::GfxRenderingAPIVulkan(GfxWindowBackendSDL2* windowBackend) : mWindowBackend(windowBackend) {
@@ -79,11 +333,36 @@ void GfxRenderingAPIVulkan::UnloadShader(ShaderProgram* oldPrg) {
 }
 
 void GfxRenderingAPIVulkan::LoadShader(ShaderProgram* newPrg) {
+    mShaderProgram = reinterpret_cast<VulkanShaderProgram*>(newPrg);
 }
 
 ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t shaderId0, uint32_t shaderId1) {
+    CCFeatures ccFeatures;
+    gfx_cc_get_features(shaderId0, shaderId1, &ccFeatures);
+
+    const auto vertexSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.vert", ccFeatures, true);
+    size_t numFloats = rawNumFloats;
+    const auto fragmentSource = BuildVulkanShaderSource("shaders/vulkan/default.shader.frag", ccFeatures, false);
+    const auto vertexSpirv =
+        CompileVulkanGlslToSpirv(vertexSource, shaderc_vertex_shader, "shaders/vulkan/default.shader.vert");
+    const auto fragmentSpirv =
+        CompileVulkanGlslToSpirv(fragmentSource, shaderc_fragment_shader, "shaders/vulkan/default.shader.frag");
+
     auto key = std::make_pair(shaderId0, shaderId1);
     auto [it, _] = mShaderProgramPool.emplace(key, std::make_unique<VulkanShaderProgram>());
+    VulkanShaderProgram* prg = it->second.get();
+    prg->vertexShaderModule = CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan vertex shader module");
+    prg->fragmentShaderModule =
+        CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan fragment shader module");
+    prg->numInputs = ccFeatures.numInputs;
+    prg->usedTextures[0] = ccFeatures.usedTextures[0];
+    prg->usedTextures[1] = ccFeatures.usedTextures[1];
+    prg->usedTextures[2] = ccFeatures.used_masks[0];
+    prg->usedTextures[3] = ccFeatures.used_masks[1];
+    prg->usedTextures[4] = ccFeatures.used_blend[0];
+    prg->usedTextures[5] = ccFeatures.used_blend[1];
+    prg->numFloats = numFloats;
+    LoadShader(reinterpret_cast<ShaderProgram*>(prg));
     return reinterpret_cast<ShaderProgram*>(it->second.get());
 }
 
@@ -801,6 +1080,25 @@ void GfxRenderingAPIVulkan::DestroyTextureDescriptorResources() {
     mMaxBindlessTextures = 0;
 }
 
+void GfxRenderingAPIVulkan::DestroyShaderProgram(VulkanShaderProgram& program) {
+    if (program.vertexShaderModule != VK_NULL_HANDLE) {
+        vkDestroyShaderModule(mDevice, program.vertexShaderModule, nullptr);
+        program.vertexShaderModule = VK_NULL_HANDLE;
+    }
+    if (program.fragmentShaderModule != VK_NULL_HANDLE) {
+        vkDestroyShaderModule(mDevice, program.fragmentShaderModule, nullptr);
+        program.fragmentShaderModule = VK_NULL_HANDLE;
+    }
+}
+
+void GfxRenderingAPIVulkan::DestroyShaderPrograms() {
+    for (auto& [_, program] : mShaderProgramPool) {
+        DestroyShaderProgram(*program);
+    }
+    mShaderProgramPool.clear();
+    mShaderProgram = nullptr;
+}
+
 VkCommandBuffer GfxRenderingAPIVulkan::BeginImmediateCommands() {
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1120,6 +1418,7 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
         vkDeviceWaitIdle(mDevice);
         ShutdownImGui();
         CleanupSwapchain();
+        DestroyShaderPrograms();
         DestroyTextures();
         DestroyTextureDescriptorResources();
         DestroyFrameResources();

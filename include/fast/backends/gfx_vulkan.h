@@ -23,6 +23,9 @@ constexpr uint32_t FRAMES_IN_FLIGHT = 3;
 struct VulkanShaderProgram {
     uint8_t numInputs = 0;
     bool usedTextures[SHADER_MAX_TEXTURES] = {};
+    size_t numFloats = 0;
+    VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
+    VkShaderModule fragmentShaderModule = VK_NULL_HANDLE;
 };
 
 struct VulkanTexture {
@@ -114,6 +117,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void CreateUploadCommandPool();
     void CreateTextureDescriptorResources();
     void DestroyTextureDescriptorResources();
+    void DestroyShaderProgram(VulkanShaderProgram& program);
+    void DestroyShaderPrograms();
     void DestroyTexture(VulkanTexture& texture);
     void DestroyTextures();
     void UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
@@ -152,6 +157,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     bool mFramebufferResized = false;
 
     std::map<std::pair<uint64_t, uint32_t>, std::unique_ptr<VulkanShaderProgram>> mShaderProgramPool;
+    VulkanShaderProgram* mShaderProgram = nullptr;
     std::vector<uint32_t> mFramebuffers;
     std::vector<VulkanTexture> mTextures;
     uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};

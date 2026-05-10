@@ -67,6 +67,17 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(libultraship PRIVATE Vulkan::Vulkan)
 target_link_libraries(libultraship PRIVATE GPUOpen::VulkanMemoryAllocator)
 
+find_package(shaderc CONFIG QUIET)
+if(TARGET shaderc::shaderc)
+    target_link_libraries(libultraship PRIVATE shaderc::shaderc)
+elseif(TARGET shaderc_shared)
+    target_link_libraries(libultraship PRIVATE shaderc_shared)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SHADERC REQUIRED IMPORTED_TARGET shaderc)
+    target_link_libraries(libultraship PRIVATE PkgConfig::SHADERC)
+endif()
+
 find_package(libzip REQUIRED)
 target_link_libraries(libultraship PRIVATE libzip::zip)
 
