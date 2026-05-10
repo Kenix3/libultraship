@@ -212,6 +212,7 @@ void Gui::ShutDownImGui(Ship::Window* window) {
             break;
 #endif
         case WindowBackend::FAST3D_SDL_VULKAN:
+            // TODO: Gui should get a direct rendering-backend ImGui shutdown hook instead of routing through Interpreter.
             ((Fast::GfxRenderingAPIVulkan*)mInterpreter.lock()->GetCurrentRenderingAPI())->ShutdownImGui();
             ImGui_ImplSDL2_Shutdown();
             break;

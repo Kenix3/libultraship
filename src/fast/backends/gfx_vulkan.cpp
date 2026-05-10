@@ -824,6 +824,7 @@ void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uin
     stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
+    // TODO: Use a persistent staging/ring buffer instead of allocating a small upload buffer per texture.
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VmaAllocation stagingAllocation = nullptr;
     VmaAllocationInfo stagingInfo = {};
