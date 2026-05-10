@@ -232,7 +232,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         resourceManager->Init(rmArgs);
     }
 
-    if (!resourceManager->IsLoaded()) {
+    if (!resourceManager->GetArchiveManager()->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");

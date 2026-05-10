@@ -7,6 +7,7 @@
 #include "ship/audio/AudioPlayer.h"
 #include "ship/Component.h"
 #include "ship/config/Config.h"
+#include "ship/Context.h"
 
 namespace Ship {
 class Config;
@@ -33,6 +34,10 @@ class Audio : public Component {
      * @param settings Initial audio backend selection and channel configuration.
      */
     Audio(AudioSettings settings) : Component("Audio"), mAudioSettings(settings) {
+        auto context = Context::GetInstance();
+        if (context) {
+            mConfig = context->GetChildren().GetFirst<Config>();
+        }
     }
     ~Audio();
 

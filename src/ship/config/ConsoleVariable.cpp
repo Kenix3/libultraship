@@ -12,18 +12,11 @@
 
 namespace Ship {
 
-std::shared_ptr<Config> ConsoleVariable::GetConfig() {
-    if (!mConfig) {
-        auto inst = Context::GetInstance();
-        if (!inst) {
-            return nullptr;
-        }
+ConsoleVariable::ConsoleVariable() : Component("ConsoleVariables") {
+    auto inst = Context::GetInstance();
+    if (inst) {
         mConfig = inst->GetChildren().GetFirst<Config>();
     }
-    return mConfig;
-}
-
-ConsoleVariable::ConsoleVariable() : Component("ConsoleVariables") {
     Load();
     MarkInitialized();
 }
@@ -184,7 +177,7 @@ void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue)
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
-    std::shared_ptr<Config> conf = GetConfig();
+    std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
     }
@@ -217,7 +210,7 @@ void ConsoleVariable::ClearVariable(const char* name) {
 }
 
 void ConsoleVariable::ClearBlock(const char* name) {
-    std::shared_ptr<Config> conf = GetConfig();
+    std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
     }
@@ -259,7 +252,7 @@ void ConsoleVariable::CopyVariable(const char* from, const char* to) {
 }
 
 void ConsoleVariable::Save() {
-    std::shared_ptr<Config> conf = GetConfig();
+    std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
     }
@@ -298,7 +291,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
-    std::shared_ptr<Config> conf = GetConfig();
+    std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
     }

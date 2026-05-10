@@ -15,13 +15,10 @@ namespace Ship {
  */
 class SDLAddRemoveDeviceEventHandler : public GuiWindow {
   public:
-    using GuiWindow::GuiWindow;
+    SDLAddRemoveDeviceEventHandler(const std::string& consoleVariable, const std::string& name);
     virtual ~SDLAddRemoveDeviceEventHandler();
 
   protected:
-    /** @brief Caches the ControlDeck component for use during updates. */
-    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
-
     /** @brief No-op – this handler does not draw any visible UI. */
     void DrawElement() override;
 

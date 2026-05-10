@@ -8,10 +8,6 @@
 #include <unordered_set>
 #include <nlohmann/json.hpp>
 
-#ifdef COMPONENT_THREAD_SAFE
-// Thread-safe component lists are protected by a recursive_mutex in PartList.
-#endif
-
 #include "ship/Part.h"
 #include "ship/PartList.h"
 #include "ship/ComponentList.h"

@@ -50,6 +50,10 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
 }
 
 ResourceManager::ResourceManager() : Component("ResourceManager") {
+    auto context = Context::GetInstance();
+    if (context) {
+        mThreadPool = context->GetChildren().GetFirst<ThreadPool>();
+    }
 }
 
 void ResourceManager::OnInit(const nlohmann::json& initArgs) {
@@ -57,15 +61,11 @@ void ResourceManager::OnInit(const nlohmann::json& initArgs) {
     auto hashesVec = initArgs.value("validHashes", std::vector<uint32_t>{});
     std::unordered_set<uint32_t> validHashes(hashesVec.begin(), hashesVec.end());
 
-    auto context = Context::GetInstance();
-    if (context) {
-        mThreadPool = context->GetChildren().GetFirst<ThreadPool>();
-    }
     mResourceLoader = std::make_shared<ResourceLoader>();
     mArchiveManager = std::make_shared<ArchiveManager>();
     GetArchiveManager()->Init(archivePaths, validHashes);
 
-    if (!IsLoaded()) {
+    if (!mArchiveManager->IsLoaded()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
         auto tpc = GetThreadPool();
         if (tpc) {
@@ -79,7 +79,7 @@ ResourceManager::~ResourceManager() {
 }
 
 bool ResourceManager::IsLoaded() {
-    return mArchiveManager != nullptr && mArchiveManager->IsLoaded();
+    return IsInitialized();
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {

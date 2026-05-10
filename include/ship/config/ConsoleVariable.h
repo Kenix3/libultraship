@@ -216,8 +216,5 @@ class ConsoleVariable : public Component {
     };
     std::unordered_map<std::string, std::shared_ptr<CVar>, TransparentStringHash, TransparentStringEqual> mVariables;
     std::shared_ptr<Config> mConfig;
-
-    /** @brief Returns the cached Config component, looking it up lazily if needed. */
-    std::shared_ptr<Config> GetConfig();
 };
 } // namespace Ship

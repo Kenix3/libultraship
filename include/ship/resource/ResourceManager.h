@@ -106,7 +106,7 @@ class ResourceManager : public Component {
     ~ResourceManager();
 
     /**
-     * @brief Returns true once initialization has completed successfully.
+     * @brief Returns true once this component has been initialized via Component::Init().
      * @return true if the manager is ready to load resources.
      */
     bool IsLoaded();

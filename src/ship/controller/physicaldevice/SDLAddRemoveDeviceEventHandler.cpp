@@ -5,12 +5,13 @@
 
 namespace Ship {
 
-SDLAddRemoveDeviceEventHandler::~SDLAddRemoveDeviceEventHandler() {
+SDLAddRemoveDeviceEventHandler::SDLAddRemoveDeviceEventHandler(const std::string& consoleVariable,
+                                                               const std::string& name)
+    : GuiWindow(consoleVariable, name) {
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
-void SDLAddRemoveDeviceEventHandler::OnInit(const nlohmann::json& initArgs) {
-    GuiWindow::OnInit(initArgs);
-    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+SDLAddRemoveDeviceEventHandler::~SDLAddRemoveDeviceEventHandler() {
 }
 
 void SDLAddRemoveDeviceEventHandler::DrawElement() {
