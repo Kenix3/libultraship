@@ -166,18 +166,25 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
 
     // ---- Console Variables ----
-    shared->GetChildren().Add(std::make_shared<ConsoleVariable>());
+    shared->GetChildren().Add(std::make_shared<ConsoleVariable>(config));
 
     // ---- Thread Pool ----
-    shared->GetChildren().Add(std::make_shared<ThreadPool>(threadCount));
+    auto threadPool = std::make_shared<ThreadPool>(threadCount);
+    shared->GetChildren().Add(threadPool);
 
 #ifdef ENABLE_SCRIPTING
     // ---- Keystore ----
-    shared->GetChildren().Add(std::make_shared<Keystore>());
+    auto keystore = std::make_shared<Keystore>(config);
+    shared->GetChildren().Add(keystore);
 #endif
 
     // ---- Resource Manager ----
-    auto resourceManager = std::make_shared<ResourceManager>();
+    auto resourceManager =
+#ifdef ENABLE_SCRIPTING
+        std::make_shared<ResourceManager>(threadPool, keystore);
+#else
+        std::make_shared<ResourceManager>(threadPool);
+#endif
     shared->GetChildren().Add(resourceManager);
 
     // ---- Control Deck ----
@@ -203,7 +210,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     shared->GetChildren().Add(window);
 
     // ---- Audio ----
-    auto audio = std::make_shared<Audio>(audioSettings);
+    auto audio = std::make_shared<Audio>(audioSettings, config);
     shared->GetChildren().Add(audio);
 
     // ---- Gfx Debugger ----
@@ -213,7 +220,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     shared->GetChildren().Add(std::make_shared<Events>());
 
     // ---- File Drop Manager ----
-    auto fileDropMgr = std::make_shared<FileDrop>();
+    auto fileDropMgr = std::make_shared<FileDrop>(std::dynamic_pointer_cast<Window>(window));
     shared->GetChildren().Add(fileDropMgr);
 
 #ifdef ENABLE_SCRIPTING
@@ -224,15 +231,23 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 #endif
 
     // ---- Init all components that need it ----
-    {
+    try {
         nlohmann::json rmArgs;
         rmArgs["archivePaths"] =
             archivePaths.empty() ? std::vector<std::string>{ mainPath, patchesPath } : archivePaths;
         rmArgs["validHashes"] = std::vector<uint32_t>(validHashes.begin(), validHashes.end());
         resourceManager->Init(rmArgs);
+    } catch (const std::exception& e) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
+                                 "Main OTR file not found. Please generate one", nullptr);
+        SPDLOG_ERROR("Failed to initialize ResourceManager: {}", e.what());
+#ifdef __IOS__
+        exit(0);
+#endif
+        return nullptr;
     }
 
-    if (!resourceManager->GetArchiveManager()->IsLoaded()) {
+    if (!resourceManager->GetArchiveManager()->IsInitialized()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
@@ -273,12 +288,17 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
             std::string configPath = compArgs.value("path", "");
             return std::make_shared<Config>(configPath);
         } else if (type == "ConsoleVariable") {
-            return std::make_shared<ConsoleVariable>();
+            return std::make_shared<ConsoleVariable>(context->GetChildren().GetFirst<Config>());
         } else if (type == "ThreadPool") {
             size_t threadCount = compArgs.value("threadCount", static_cast<size_t>(1));
             return std::make_shared<ThreadPool>(threadCount);
         } else if (type == "ResourceManager") {
-            return std::make_shared<ResourceManager>();
+            auto threadPool = context->GetChildren().GetFirst<ThreadPool>();
+#ifdef ENABLE_SCRIPTING
+            return std::make_shared<ResourceManager>(threadPool, context->GetChildren().GetFirst<Keystore>());
+#else
+            return std::make_shared<ResourceManager>(threadPool);
+#endif
         } else if (type == "CrashHandler") {
             return std::make_shared<CrashHandler>();
         } else if (type == "Console") {
@@ -288,19 +308,19 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
             if (compArgs.contains("channelSetting")) {
                 settings.ChannelSetting = static_cast<AudioChannelsSetting>(compArgs["channelSetting"].get<int>());
             }
-            return std::make_shared<Audio>(settings);
+            return std::make_shared<Audio>(settings, context->GetChildren().GetFirst<Config>());
         } else if (type == "GfxDebugger") {
             return std::make_shared<Fast::GfxDebugger>();
         } else if (type == "Events") {
             return std::make_shared<Events>();
         } else if (type == "FileDrop") {
-            return std::make_shared<FileDrop>();
+            return std::make_shared<FileDrop>(context->GetChildren().GetFirst<Window>());
         } else if (type == "Logger") {
             // Logger requires a logger - skip if not provided in overrides.
             return nullptr;
 #ifdef ENABLE_SCRIPTING
         } else if (type == "Keystore") {
-            return std::make_shared<Keystore>();
+            return std::make_shared<Keystore>(context->GetChildren().GetFirst<Config>());
         } else if (type == "ScriptLoader") {
             return std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
                                                   std::vector<std::string>{}, std::vector<std::string>{},

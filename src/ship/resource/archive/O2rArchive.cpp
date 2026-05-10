@@ -5,7 +5,9 @@
 #include <unordered_map>
 
 namespace Ship {
-O2rArchive::O2rArchive(const std::string& archivePath) : Archive(archivePath) {
+O2rArchive::O2rArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
+                       std::shared_ptr<Keystore> keystore)
+    : Archive(archivePath, std::move(resourceManager), std::move(keystore)) {
     mZipArchive = nullptr;
 }
 

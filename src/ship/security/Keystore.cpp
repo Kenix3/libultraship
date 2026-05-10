@@ -2,15 +2,13 @@
 
 #include "ship/utils/StringHelper.h"
 #include "ship/config/Config.h"
-#include "ship/Context.h"
 #include "ship/DefaultKeys.h"
 
 #include <vector>
 
 namespace Ship {
 
-Keystore::Keystore() : Component("Keystore") {
-    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+Keystore::Keystore(std::shared_ptr<Config> config) : Component("Keystore"), mConfig(std::move(config)) {
     Load();
     for (const auto entry : AllDefaultKeys) {
         AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), KeyOrigin::System);
@@ -59,6 +57,9 @@ std::vector<KeystoreEntry> Keystore::GetAllKeys() const {
 }
 
 void Keystore::Load() {
+    if (!mConfig) {
+        return;
+    }
     mConfig->Reload();
 
     nlohmann::json rootJson = mConfig->GetNestedJson();
@@ -79,6 +80,9 @@ void Keystore::Load() {
 }
 
 void Keystore::Save() {
+    if (!mConfig) {
+        return;
+    }
     for (const auto& [keyName, entry] : mKeys) {
         std::string hexString = StringHelper::BytesToHex(entry.Data);
         mConfig->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);

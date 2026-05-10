@@ -9,7 +9,6 @@
 #include <processthreadsapi.h>
 #include <dbghelp.h>
 #endif
-#include "ship/Context.h"
 #include "ship/window/Window.h"
 #ifdef __unix__
 #include <dlfcn.h>
@@ -17,7 +16,7 @@
 #endif
 
 namespace Ship {
-FileDrop::FileDrop() : Component("FileDrop") {
+FileDrop::FileDrop(std::shared_ptr<Window> window) : Component("FileDrop"), mWindow(std::move(window)) {
 }
 
 FileDrop::~FileDrop() {
@@ -114,12 +113,10 @@ void FileDrop::CallHandlers() {
         }
     }
     SPDLOG_WARN("Dropped file {} not handled by any registered.", mPath);
-    auto gui = GetWindow()->GetGui();
-    gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
-}
-
-void FileDrop::OnInit(const nlohmann::json& /*initArgs*/) {
-    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
+    if (auto window = GetWindow()) {
+        auto gui = window->GetGui();
+        gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
+    }
 }
 
 std::shared_ptr<Window> FileDrop::GetWindow() const {

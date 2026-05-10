@@ -50,7 +50,7 @@ class Keystore : public Component {
     /**
      * @brief Constructs an empty Keystore.
      */
-    Keystore();
+    explicit Keystore(std::shared_ptr<Config> config = nullptr);
     ~Keystore() override = default;
 
     /**

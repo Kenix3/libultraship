@@ -42,7 +42,8 @@ class OtrArchive final : virtual public Archive {
      * @brief Constructs an OtrArchive for the given MPQ file path.
      * @param archivePath Absolute or relative filesystem path to the ".otr" file.
      */
-    OtrArchive(const std::string& archivePath);
+    OtrArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+               std::shared_ptr<Keystore> keystore = nullptr);
     ~OtrArchive();
 
     /**

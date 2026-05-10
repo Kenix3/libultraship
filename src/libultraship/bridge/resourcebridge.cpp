@@ -175,6 +175,6 @@ void ResourceUnloadDirectory(const char* name) {
 }
 
 uint32_t IsResourceManagerLoaded() {
-    return GetResourceManager()->IsLoaded();
+    return GetResourceManager()->IsInitialized();
 }
 }

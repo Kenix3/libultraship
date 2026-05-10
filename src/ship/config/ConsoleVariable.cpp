@@ -4,7 +4,6 @@
 #include "ship/utils/filesystemtools/DiskFile.h"
 #include "ship/utils/Utils.h"
 #include "ship/config/Config.h"
-#include "ship/Context.h"
 
 #ifdef _MSC_VER
 #define strdup _strdup
@@ -12,11 +11,8 @@
 
 namespace Ship {
 
-ConsoleVariable::ConsoleVariable() : Component("ConsoleVariables") {
-    auto inst = Context::GetInstance();
-    if (inst) {
-        mConfig = inst->GetChildren().GetFirst<Config>();
-    }
+ConsoleVariable::ConsoleVariable(std::shared_ptr<Config> config)
+    : Component("ConsoleVariables"), mConfig(std::move(config)) {
     Load();
     MarkInitialized();
 }

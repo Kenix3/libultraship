@@ -9,7 +9,9 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-OtrArchive::OtrArchive(const std::string& archivePath) : Archive(archivePath) {
+OtrArchive::OtrArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
+                       std::shared_ptr<Keystore> keystore)
+    : Archive(archivePath, std::move(resourceManager), std::move(keystore)) {
     mHandle = nullptr;
 }
 

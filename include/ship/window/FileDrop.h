@@ -20,17 +20,16 @@ namespace Ship {
  * FileDrop stores the path of the most recently dropped file and dispatches
  * the event to a chain of registered handler callbacks.
  *
- * **Required Context children (looked up at Init time):**
- * - **Window** — cached in OnInit() and used by the drop-event dispatcher to obtain the GUI
- *   layer when forwarding drop events. Window must be added to the Context and initialized
- *   before FileDrop::Init() is called.
+ * **Required dependencies:**
+ * - **Window** — passed in the constructor and used by the drop-event dispatcher
+ *   to obtain the GUI layer when forwarding drop events.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<FileDrop>()`.
  */
 class FileDrop : public Component {
   public:
     /** @brief Constructs the FileDrop component. */
-    FileDrop();
+    explicit FileDrop(std::shared_ptr<Window> window = nullptr);
     ~FileDrop();
 
     /**
@@ -69,9 +68,6 @@ class FileDrop : public Component {
     void CallHandlers();
 
   protected:
-    /** @brief Caches the Window component from the Context hierarchy. */
-    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
-
     /** @brief Declares Window as a dependency. */
     const nlohmann::json& GetDependencies() const override;
 

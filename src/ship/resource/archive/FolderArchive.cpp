@@ -9,7 +9,9 @@
 #include "ship/resource/ResourceManager.h"
 
 namespace Ship {
-FolderArchive::FolderArchive(const std::string& archivePath) : Archive(archivePath) {
+FolderArchive::FolderArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
+                             std::shared_ptr<Keystore> keystore)
+    : Archive(archivePath, std::move(resourceManager), std::move(keystore)) {
     mArchiveBasePath = archivePath + "/";
 }
 

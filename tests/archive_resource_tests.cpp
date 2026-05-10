@@ -121,7 +121,7 @@ TEST(ArchiveManager, FreshManagerListFilesReturnsEmpty) {
 
 TEST(ArchiveManager, AddLoadedArchiveSucceeds) {
     auto archive = LoadedArchive("ram://a", { { "file.dat", "hello" } });
-    ASSERT_TRUE(archive->IsLoaded());
+    ASSERT_TRUE(archive->IsInitialized());
 
     Ship::ArchiveManager am;
     auto result = am.AddArchive(archive);

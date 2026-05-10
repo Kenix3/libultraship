@@ -5,10 +5,11 @@
 #include "ship/resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
+#include <stdexcept>
 #include "ship/utils/StringHelper.h"
 #include "ship/utils/Utils.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
+#include "ship/security/Keystore.h"
 #include "ship/thread/ThreadPool.h"
 
 namespace Ship {
@@ -49,11 +50,8 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
     return rcd.GetHash();
 }
 
-ResourceManager::ResourceManager() : Component("ResourceManager") {
-    auto context = Context::GetInstance();
-    if (context) {
-        mThreadPool = context->GetChildren().GetFirst<ThreadPool>();
-    }
+ResourceManager::ResourceManager(std::shared_ptr<ThreadPool> threadPool, std::shared_ptr<Keystore> keystore)
+    : Component("ResourceManager"), mThreadPool(std::move(threadPool)), mKeystore(std::move(keystore)) {
 }
 
 void ResourceManager::OnInit(const nlohmann::json& initArgs) {
@@ -62,24 +60,22 @@ void ResourceManager::OnInit(const nlohmann::json& initArgs) {
     std::unordered_set<uint32_t> validHashes(hashesVec.begin(), hashesVec.end());
 
     mResourceLoader = std::make_shared<ResourceLoader>();
-    mArchiveManager = std::make_shared<ArchiveManager>();
+    mArchiveManager =
+        std::make_shared<ArchiveManager>(std::dynamic_pointer_cast<ResourceManager>(GetSharedComponent()), mKeystore);
     GetArchiveManager()->Init(archivePaths, validHashes);
 
-    if (!mArchiveManager->IsLoaded()) {
+    if (!mArchiveManager->IsInitialized()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
         auto tpc = GetThreadPool();
         if (tpc) {
             tpc->Pause();
         }
+        throw std::runtime_error("Failed to initialize ArchiveManager");
     }
 }
 
 ResourceManager::~ResourceManager() {
     SPDLOG_INFO("destruct ResourceManager");
-}
-
-bool ResourceManager::IsLoaded() {
-    return IsInitialized();
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {

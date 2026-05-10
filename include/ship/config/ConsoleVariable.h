@@ -56,7 +56,7 @@ typedef struct CVar {
  */
 class ConsoleVariable : public Component {
   public:
-    ConsoleVariable();
+    explicit ConsoleVariable(std::shared_ptr<Config> config = nullptr);
     ~ConsoleVariable();
 
     /**

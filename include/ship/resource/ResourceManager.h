@@ -21,6 +21,7 @@
 
 namespace Ship {
 struct File;
+class Keystore;
 
 /**
  * @brief Specifies which resources to include or exclude when performing a bulk load/unload.
@@ -84,16 +85,9 @@ struct ResourceIdentifierHash {
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * **Required Context children (looked up at Init time):**
- * - **ThreadPool** — used for all asynchronous resource load/unload
- *   operations. ThreadPool self-initializes on construction, so adding it
- *   to the Context before calling ResourceManager::Init() satisfies this requirement.
- *
- * @note Init-order dependency: ThreadPool must be present in the Context
- *       hierarchy before ResourceManager::Init() is called. There is no strict
- *       requirement that ThreadPool::IsInitialized() returns true at that
- *       point (it always does after construction), but it must be reachable via
- *       `Context::GetChildren().GetFirst<ThreadPool>()`.
+ * **Required dependencies (constructor-injected):**
+ * - **ThreadPool** — used for all asynchronous resource load/unload operations.
+ * - **Keystore** — optional; passed through to ArchiveManager/Archive for signature validation.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
@@ -102,14 +96,9 @@ class ResourceManager : public Component {
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
   public:
-    ResourceManager();
+    explicit ResourceManager(std::shared_ptr<ThreadPool> threadPool = nullptr,
+                             std::shared_ptr<Keystore> keystore = nullptr);
     ~ResourceManager();
-
-    /**
-     * @brief Returns true once this component has been initialized via Component::Init().
-     * @return true if the manager is ready to load resources.
-     */
-    bool IsLoaded();
 
     /** @brief Returns the ArchiveManager that manages the mounted archives. */
     std::shared_ptr<ArchiveManager> GetArchiveManager();
@@ -429,6 +418,7 @@ class ResourceManager : public Component {
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
     std::shared_ptr<ThreadPool> mThreadPool;
+    std::shared_ptr<Keystore> mKeystore;
 
     std::shared_ptr<ThreadPool> GetThreadPool();
 };

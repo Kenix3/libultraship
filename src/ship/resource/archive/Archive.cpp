@@ -2,7 +2,6 @@
 
 #include "spdlog/spdlog.h"
 
-#include "ship/Context.h"
 #include "ship/resource/File.h"
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/ResourceType.h"
@@ -19,9 +18,11 @@
 #include <monocypher-ed25519.h>
 
 namespace Ship {
-Archive::Archive(const std::string& path)
-    : mIsLoaded(false), mIsSigned(false), mIsChecksumValid(false), mHasGameVersion(false), mGameVersion(0xFFFFFFFF),
-      mManifest(), mPath(path) {
+Archive::Archive(const std::string& path, std::shared_ptr<ResourceManager> resourceManager,
+                 std::shared_ptr<Keystore> keystore)
+    : mResourceManager(std::move(resourceManager)), mKeystore(std::move(keystore)), mIsInitialized(false),
+      mIsSigned(false), mIsChecksumValid(false), mHasGameVersion(false), mGameVersion(0xFFFFFFFF), mManifest(),
+      mPath(path) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 
@@ -35,18 +36,6 @@ bool Archive::operator==(const Archive& rhs) const {
 
 void Archive::Load() {
     bool opened = Open();
-
-    if (!mResourceManager || !mKeystore) {
-        auto context = Context::GetInstance();
-        if (context != nullptr) {
-            if (!mResourceManager) {
-                mResourceManager = context->GetChildren().GetFirst<ResourceManager>();
-            }
-            if (!mKeystore) {
-                mKeystore = context->GetChildren().GetFirst<Keystore>();
-            }
-        }
-    }
 
     auto t = LoadFile("version");
     bool isGameVersionValid = false;
@@ -105,16 +94,16 @@ void Archive::Load() {
         }
     }
 
-    SetLoaded(opened && (!mHasGameVersion || isGameVersionValid));
+    SetInitialized(opened && (!mHasGameVersion || isGameVersionValid));
 
-    if (!IsLoaded()) {
+    if (!IsInitialized()) {
         Unload();
     }
 }
 
 void Archive::Unload() {
     Close();
-    SetLoaded(false);
+    SetInitialized(false);
 }
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
@@ -169,12 +158,12 @@ const std::string& Archive::GetPath() {
     return mPath;
 }
 
-bool Archive::IsLoaded() {
-    return mIsLoaded;
+bool Archive::IsInitialized() {
+    return mIsInitialized;
 }
 
-void Archive::SetLoaded(bool isLoaded) {
-    mIsLoaded = isLoaded;
+void Archive::SetInitialized(bool isInitialized) {
+    mIsInitialized = isInitialized;
 }
 
 void Archive::SetGameVersion(uint32_t gameVersion) {

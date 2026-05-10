@@ -17,6 +17,8 @@
 namespace Ship {
 struct File;
 class Archive;
+class ResourceManager;
+class Keystore;
 
 #ifdef ENABLE_SCRIPTING
 /**
@@ -39,20 +41,17 @@ using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEnt
  * File lookups, directory listings, and game-version validation are all delegated
  * here from the ResourceManager layer.
  *
- * **Required Context children (looked up at runtime):**
- * - **ResourceManager** — used by Archive objects during mount validation to
- *   check game versions. ResourceManager must be added to the Context before
- *   ArchiveManager::Init() is called.
- * - **Keystore** — only required when `ENABLE_SCRIPTING` is defined. Used by
- *   Archive objects to verify archive signatures. Keystore must be added to the
- *   Context before ArchiveManager::Init() is called.
+ * **Required dependencies (constructor-injected):**
+ * - **ResourceManager** — used by Archive objects during mount validation.
+ * - **Keystore** — used by Archive objects for signature validation.
  *
  * Obtain the instance from
  * `Context::GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()`.
  */
 class ArchiveManager : public Component {
   public:
-    ArchiveManager();
+    explicit ArchiveManager(std::shared_ptr<ResourceManager> resourceManager = nullptr,
+                            std::shared_ptr<Keystore> keystore = nullptr);
 
     /**
      * @brief Discovers and mounts all archives found under the given paths.
@@ -104,11 +103,6 @@ class ArchiveManager : public Component {
      * @return Number of archives removed (0 or 1).
      */
     size_t RemoveArchive(const std::string& path);
-
-    /**
-     * @brief Returns true if at least one archive has been successfully loaded.
-     */
-    bool IsLoaded();
 
     /**
      * @brief Loads raw file bytes from the highest-priority archive that contains the path.
@@ -235,6 +229,8 @@ class ArchiveManager : public Component {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
+    std::shared_ptr<ResourceManager> mResourceManager;
+    std::shared_ptr<Keystore> mKeystore;
 #ifdef ENABLE_SCRIPTING
     UntrustedArchiveHandler mUntrustedArchiveHandler;
 #endif
