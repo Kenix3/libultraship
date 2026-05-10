@@ -6,8 +6,31 @@
 #include "ship/Context.h"
 
 namespace Ship {
+
+namespace {
+std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariable() {
+    static std::weak_ptr<Ship::ConsoleVariable> sCache;
+    auto cv = sCache.lock();
+    if (!cv) {
+        cv = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+        sCache = cv;
+    }
+    return cv;
+}
+
+std::shared_ptr<Ship::ControlDeck> GetControlDeck() {
+    static std::weak_ptr<Ship::ControlDeck> sCache;
+    auto cd = sCache.lock();
+    if (!cd) {
+        cd = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+        sCache = cd;
+    }
+    return cd;
+}
+} // namespace
+
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
-    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    auto consoleVariable = GetConsoleVariable();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + id;
     const std::string mappingClass =
         consoleVariable->GetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -33,7 +56,7 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromCon
 }
 
 std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
-    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+    auto controlDeck = GetControlDeck();
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :

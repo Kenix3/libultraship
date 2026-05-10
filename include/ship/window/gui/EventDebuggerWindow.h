@@ -19,7 +19,7 @@ class EventDebuggerWindow final : public GuiWindow {
     using GuiWindow::GuiWindow;
 
     /** @brief Performs one-time initialization of the event debugger window. */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Renders the event debugger panel contents via ImGui. */
     void DrawElement() override;

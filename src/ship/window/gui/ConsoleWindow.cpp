@@ -46,8 +46,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                     std::string* output) {
-    auto window = std::static_pointer_cast<ConsoleWindow>(
-        Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
+    auto window = GetCachedConsoleWindow();
     if (!window) {
         if (output) {
             *output += "A console window is necessary for Clear";
@@ -63,8 +62,7 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
 int32_t ConsoleWindow::UnbindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                      std::string* output) {
     if (args.size() > 1) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for Unbind";
@@ -117,8 +115,7 @@ int32_t ConsoleWindow::UnbindCommand(std::shared_ptr<Console> console, const std
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for Bind";
@@ -155,8 +152,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
 int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                          std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetChildren().GetFirst<Window>()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for BindToggle";
@@ -297,7 +293,27 @@ ConsoleWindow::~ConsoleWindow() {
     delete[] mFilterBuffer;
 }
 
-void ConsoleWindow::InitElement() {
+// Returns the cached ConsoleWindow instance for use in static command handlers.
+static std::shared_ptr<ConsoleWindow> GetCachedConsoleWindow() {
+    static std::weak_ptr<ConsoleWindow> sCache;
+    auto cached = sCache.lock();
+    if (!cached) {
+        auto ctx = Context::GetInstance();
+        if (!ctx) {
+            return nullptr;
+        }
+        auto window = ctx->GetChildren().GetFirst<Window>();
+        if (!window || !window->GetGui()) {
+            return nullptr;
+        }
+        cached = std::static_pointer_cast<ConsoleWindow>(window->GetGui()->GetGuiWindow("Console"));
+        sCache = cached;
+    }
+    return cached;
+}
+
+void ConsoleWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     mInputBuffer = new char[gMaxBufferSize];
     strcpy(mInputBuffer, "");
     mFilterBuffer = new char[gMaxBufferSize];

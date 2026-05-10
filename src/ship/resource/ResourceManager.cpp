@@ -1,5 +1,6 @@
 #include "ship/resource/ResourceManager.h"
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
 #include <algorithm>
@@ -51,8 +52,11 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
 ResourceManager::ResourceManager() : Component("ResourceManager") {
 }
 
-void ResourceManager::Init(const std::vector<std::string>& archivePaths,
-                           const std::unordered_set<uint32_t>& validHashes) {
+void ResourceManager::OnInit(const nlohmann::json& initArgs) {
+    auto archivePaths = initArgs.value("archivePaths", std::vector<std::string>{});
+    auto hashesVec = initArgs.value("validHashes", std::vector<uint32_t>{});
+    std::unordered_set<uint32_t> validHashes(hashesVec.begin(), hashesVec.end());
+
     auto context = Context::GetInstance();
     if (context) {
         mThreadPool = context->GetChildren().GetFirst<ThreadPool>();
@@ -68,9 +72,6 @@ void ResourceManager::Init(const std::vector<std::string>& archivePaths,
             tpc->Pause();
         }
     }
-
-    // Mark initialized so dependents can check IsInitialized() before proceeding.
-    MarkInitialized();
 }
 
 ResourceManager::~ResourceManager() {

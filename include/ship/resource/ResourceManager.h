@@ -103,17 +103,10 @@ class ResourceManager : public Component {
 
   public:
     ResourceManager();
-
-    /**
-     * @brief Initializes the ResourceManager, mounting archives and starting the thread pool.
-     * @param archivePaths Paths to OTR/O2R archive files or directories containing them.
-     * @param validHashes  Set of acceptable game-version hash values; empty = all accepted.
-     */
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes);
     ~ResourceManager();
 
     /**
-     * @brief Returns true once Init() has completed successfully.
+     * @brief Returns true once initialization has completed successfully.
      * @return true if the manager is ready to load resources.
      */
     bool IsLoaded();
@@ -406,6 +399,15 @@ class ResourceManager : public Component {
     void* GetResourceRawPointer(uint64_t crc);
 
   protected:
+    /**
+     * @brief Component initialization hook. Mounts archives and starts the thread pool.
+     *
+     * Expected initArgs keys:
+     * - "archivePaths" (array of strings): paths to OTR/O2R archive files or directories.
+     * - "validHashes"  (array of uint32): acceptable game-version hashes; empty = all accepted.
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,

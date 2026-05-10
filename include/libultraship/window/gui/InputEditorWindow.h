@@ -62,7 +62,7 @@ class InputEditorWindow : public Ship::GuiWindow {
 
   protected:
     /** @brief Registers button bitmasks and performs initial population of mapping tables. */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Renders the full port-tabbed input editor UI. */
     void DrawElement() override;

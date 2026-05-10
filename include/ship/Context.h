@@ -184,8 +184,6 @@ class Context : public Component {
     Context(std::string name, std::string shortName);
     ~Context();
 
-    /** @brief Returns the human-readable application name. */
-    const std::string& GetName() const;
     /** @brief Returns the short application identifier. */
     const std::string& GetShortName() const;
 
@@ -200,7 +198,6 @@ class Context : public Component {
     static std::weak_ptr<Context> mContext;
 
     bool mOwnsLogger = false;
-    std::string mName;
     std::string mShortName;
 
     TickableList mTickableComponents;

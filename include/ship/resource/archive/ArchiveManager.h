@@ -43,8 +43,9 @@ using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEnt
  * - **ResourceManager** — used by Archive objects during mount validation to
  *   check game versions. ResourceManager must be added to the Context before
  *   ArchiveManager::Init() is called.
- * - **Keystore** — used by Archive objects to verify archive signatures. Keystore
- *   must be added to the Context before ArchiveManager::Init() is called.
+ * - **Keystore** — only required when `ENABLE_SCRIPTING` is defined. Used by
+ *   Archive objects to verify archive signatures. Keystore must be added to the
+ *   Context before ArchiveManager::Init() is called.
  *
  * Obtain the instance from
  * `Context::GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()`.

@@ -224,13 +224,12 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 #endif
 
     // ---- Init all components that need it ----
-    if (archivePaths.empty()) {
-        std::vector<std::string> paths;
-        paths.push_back(mainPath);
-        paths.push_back(patchesPath);
-        resourceManager->Init(paths, validHashes);
-    } else {
-        resourceManager->Init(archivePaths, validHashes);
+    {
+        nlohmann::json rmArgs;
+        rmArgs["archivePaths"] =
+            archivePaths.empty() ? std::vector<std::string>{ mainPath, patchesPath } : archivePaths;
+        rmArgs["validHashes"] = std::vector<uint32_t>(validHashes.begin(), validHashes.end());
+        resourceManager->Init(rmArgs);
     }
 
     if (!resourceManager->IsLoaded()) {
@@ -449,11 +448,7 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 }
 
 Context::Context(std::string name, std::string shortName)
-    : Component(name), mName(std::move(name)), mShortName(std::move(shortName)) {
-}
-
-const std::string& Context::GetName() const {
-    return mName;
+    : Component(std::move(name)), mShortName(std::move(shortName)) {
 }
 
 const std::string& Context::GetShortName() const {

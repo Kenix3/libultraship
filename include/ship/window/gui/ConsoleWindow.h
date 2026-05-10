@@ -108,7 +108,7 @@ class ConsoleWindow : public GuiWindow {
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
 
     /** @brief Registers built-in console commands (clear, help, bind, set, get, …). */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Processes key bindings and clears expired auto-complete state. */
     void UpdateElement() override;

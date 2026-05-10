@@ -26,7 +26,9 @@ class Window;
  *   public:
  *     using GuiWindow::GuiWindow;
  *   protected:
- *     void InitElement() override { }
+ *     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override {
+ *         GuiWindow::OnInit(initArgs);
+ *     }
  *     void UpdateElement() override { }
  *     void DrawElement() override {
  *         ImGui::Text("Hello World");

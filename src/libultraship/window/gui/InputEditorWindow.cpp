@@ -16,7 +16,8 @@ InputEditorWindow::~InputEditorWindow() {
     SPDLOG_TRACE("destruct input editor window");
 }
 
-void InputEditorWindow::InitElement() {
+void InputEditorWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     mControlDeck = mControlDeck;
     mWindow = mWindow;
 

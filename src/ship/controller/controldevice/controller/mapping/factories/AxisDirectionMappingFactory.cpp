@@ -16,10 +16,33 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
+
+namespace {
+std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariable() {
+    static std::weak_ptr<Ship::ConsoleVariable> sCache;
+    auto cv = sCache.lock();
+    if (!cv) {
+        cv = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+        sCache = cv;
+    }
+    return cv;
+}
+
+std::shared_ptr<Ship::ControlDeck> GetControlDeck() {
+    static std::weak_ptr<Ship::ControlDeck> sCache;
+    auto cd = sCache.lock();
+    if (!cd) {
+        cd = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+        sCache = cd;
+    }
+    return cd;
+}
+} // namespace
+
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, StickIndex stickIndex,
                                                                   std::string id) {
-    auto consoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
+    auto consoleVariable = GetConsoleVariable();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + id;
     const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -118,7 +141,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
-    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+    auto controlDeck = GetControlDeck();
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
 
     auto defaultsForStick =
@@ -134,7 +157,7 @@ AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t 
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
 AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex) {
-    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+    auto controlDeck = GetControlDeck();
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
 
     auto defaultButtonsForStick =
@@ -160,7 +183,7 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
 std::shared_ptr<ControllerAxisDirectionMapping>
 AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
                                                                     Direction direction) {
-    auto controlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+    auto controlDeck = GetControlDeck();
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :

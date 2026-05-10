@@ -118,7 +118,8 @@ void EventDebuggerWindow::DrawElement() {
     }
 }
 
-void EventDebuggerWindow::InitElement() {
+void EventDebuggerWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     mEvents = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Events>();
     hookOptExpandAll = false;
     hookOptCollapseAll = false;

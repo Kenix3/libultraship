@@ -12,8 +12,8 @@ GuiElement::GuiElement(const std::string& name) : GuiElement(name, false) {
 GuiElement::~GuiElement() {
 }
 
-void GuiElement::OnInit(const nlohmann::json& /*initArgs*/) {
-    InitElement();
+void GuiElement::OnInit(const nlohmann::json& initArgs) {
+    Component::OnInit(initArgs);
 }
 
 void GuiElement::Update() {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ship/window/gui/GuiWindow.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 
@@ -18,13 +19,16 @@ class SDLAddRemoveDeviceEventHandler : public GuiWindow {
     virtual ~SDLAddRemoveDeviceEventHandler();
 
   protected:
-    /** @brief No-op – this handler has no ImGui state to initialize. */
-    void InitElement() override;
+    /** @brief Caches the ControlDeck component for use during updates. */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief No-op – this handler does not draw any visible UI. */
     void DrawElement() override;
 
     /** @brief Polls SDL events and dispatches device connect/disconnect callbacks. */
     void UpdateElement() override;
+
+  private:
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

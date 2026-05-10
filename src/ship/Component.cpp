@@ -1,10 +1,5 @@
 #include "ship/Component.h"
 
-#ifdef COMPONENT_THREAD_SAFE
-#include <shared_mutex>
-#include <mutex>
-#endif
-
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
@@ -13,12 +8,7 @@ namespace Ship {
 // ---- Component ----
 
 Component::Component(const std::string& name)
-    : Part(), mName(name), mParents(this, ComponentListRole::Parents), mChildren(this, ComponentListRole::Children)
-#ifdef COMPONENT_THREAD_SAFE
-      ,
-      mMutex()
-#endif
-{
+    : Part(), mName(name), mParents(this, ComponentListRole::Parents), mChildren(this, ComponentListRole::Children) {
     if (spdlog::default_logger()) {
         SPDLOG_INFO("Constructing component {}", ToString());
     }
@@ -41,12 +31,6 @@ std::string Component::ToString() const {
 Component::operator std::string() const {
     return ToString();
 }
-
-#ifdef COMPONENT_THREAD_SAFE
-std::shared_mutex& Component::GetMutex() const {
-    return mMutex;
-}
-#endif
 
 // ---- Get ----
 

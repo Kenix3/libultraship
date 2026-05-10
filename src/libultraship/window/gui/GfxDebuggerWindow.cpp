@@ -22,7 +22,8 @@ namespace LUS {
 GfxDebuggerWindow::~GfxDebuggerWindow() {
 }
 
-void GfxDebuggerWindow::InitElement() {
+void GfxDebuggerWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     auto fast3dWindow = std::dynamic_pointer_cast<Fast::Fast3dWindow>(
         Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>());
     if (fast3dWindow) {

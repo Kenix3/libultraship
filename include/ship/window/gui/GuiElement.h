@@ -10,11 +10,26 @@ namespace Ship {
  * GuiElement provides the lifecycle skeleton (Init -> Draw/Update -> Show/Hide) that
  * every ImGui panel in the Ship GUI system must implement. Concrete subclasses are
  * GuiWindow (for floating ImGui windows) and GuiMenuBar (for the top-of-screen menu
- * bar), both of which override DrawElement(), InitElement(), and UpdateElement().
+ * bar), both of which override DrawElement(), OnInit(), and UpdateElement().
  *
  * GuiElement uses the Component initialization system. Calling Init() delegates to
- * the Component::Init() path which invokes OnInit() → InitElement() exactly once.
+ * Component::Init() → GuiElement::OnInit() exactly once. Subclasses override OnInit()
+ * and must call the parent (GuiElement::OnInit() or Component::OnInit()) first.
  * Draw() and Update() are called by the Gui layer every frame for visible elements.
+ *
+ * @code
+ * class MyWindow : public Ship::GuiWindow {
+ *   public:
+ *     using GuiWindow::GuiWindow;
+ *   protected:
+ *     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override {
+ *         GuiWindow::OnInit(initArgs);
+ *         // widget/resource setup goes here
+ *     }
+ *     void UpdateElement() override { }
+ *     void DrawElement() override { ImGui::Text("Hello World"); }
+ * };
+ * @endcode
  */
 class GuiElement : public Component {
   public:
@@ -69,15 +84,13 @@ class GuiElement : public Component {
 
   protected:
     /**
-     * @brief Component initialization hook. Delegates to InitElement().
+     * @brief Component initialization hook.
      *
-     * Called by Component::Init() exactly once. Subclasses should override
-     * InitElement() for their specific setup rather than overriding OnInit().
+     * Called by Component::Init() exactly once. Subclasses override OnInit() for
+     * their specific setup and must call GuiElement::OnInit(initArgs) (or
+     * Component::OnInit(initArgs)) to preserve the initialization contract.
      */
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
-
-    /** @brief One-time setup called by OnInit(). Subclasses perform widget/resource setup here. */
-    virtual void InitElement() = 0;
 
     /** @brief Per-frame logic update called by Update(). Subclasses perform state updates here. */
     virtual void UpdateElement() = 0;

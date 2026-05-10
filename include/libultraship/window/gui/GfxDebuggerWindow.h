@@ -36,7 +36,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   protected:
     /** @brief Caches a weak reference to the Fast3D interpreter on first init. */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Polls the interpreter for a new display list when debugging is requested. */
     void UpdateElement() override;
