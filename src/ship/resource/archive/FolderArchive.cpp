@@ -12,7 +12,7 @@ namespace Ship {
 FolderArchive::FolderArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
                              std::shared_ptr<Keystore> keystore)
     : Archive(archivePath, std::move(resourceManager), std::move(keystore)) {
-    mArchiveBasePath = archivePath + "/";
+    mArchiveBasePath = std::filesystem::path(archivePath).generic_string() + "/";
 }
 
 Ship::FolderArchive::~FolderArchive() {
