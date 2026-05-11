@@ -1262,7 +1262,10 @@ void GfxRenderingAPIVulkan::SetSamplerParameters(int sampler, bool linearFilter,
     texture.cmt = cmt;
 
     if (texture.sampler != VK_NULL_HANDLE) {
-        vkDestroySampler(mDevice, texture.sampler, nullptr);
+        VkSampler sampler = texture.sampler;
+        QueueFrameDeletion([this, sampler]() {
+            vkDestroySampler(mDevice, sampler, nullptr);
+        });
         texture.sampler = VK_NULL_HANDLE;
     }
 
@@ -1407,13 +1410,25 @@ void GfxRenderingAPIVulkan::Init() {
     }
 
     mInstance = Vulkan::CreateInstance(mWindowBackend->GetWindow());
+    QueueGlobalDeletion([instance = mInstance]() {
+        vkDestroyInstance(instance, nullptr);
+    });
     mDebugMessenger = Vulkan::CreateDebugMessenger(mInstance);
+    QueueGlobalDeletion([instance = mInstance, debugMessenger = mDebugMessenger]() {
+        Vulkan::DestroyDebugMessenger(instance, debugMessenger);
+    });
     mSurface = Vulkan::CreateSurface(mInstance, mWindowBackend->GetWindow());
+    QueueGlobalDeletion([instance = mInstance, surface = mSurface]() {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+    });
 
     auto deviceSelection = Vulkan::PickPhysicalDevice(mInstance, mSurface);
     mPhysicalDevice = deviceSelection.physicalDevice;
     mQueueFamilies = deviceSelection.queueFamilies;
     mDevice = Vulkan::CreateLogicalDevice(mPhysicalDevice, mQueueFamilies, &mGraphicsQueue, &mPresentQueue);
+    QueueGlobalDeletion([this, device = mDevice]() {
+        vkDestroyDevice(device, nullptr);
+    });
     CreateAllocator();
     mVertexRingBuffer.Init(mDevice, mAllocator, InitialVertexRingBufferSize);
     CreateTextureDescriptorResources();
@@ -1457,6 +1472,7 @@ void GfxRenderingAPIVulkan::StartFrame() {
     }
 
     mFrameCount++;
+    FlushFrameDeletionQueue(false);
     {
         LUS_TRACY_ZONE("Vulkan VertexRing BeginFrame");
         mVertexRingBuffer.BeginFrame();
@@ -1674,26 +1690,36 @@ void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int fb_id, uint32_t widt
     }
 
     if (!has_depth_buffer) {
-        if (framebuffer.depthImageView != VK_NULL_HANDLE) {
-            vkDestroyImageView(mDevice, framebuffer.depthImageView, nullptr);
-            framebuffer.depthImageView = VK_NULL_HANDLE;
-        }
-        if (framebuffer.depthImage != VK_NULL_HANDLE) {
-            vmaDestroyImage(mAllocator, framebuffer.depthImage, framebuffer.depthAllocation);
-            framebuffer.depthImage = VK_NULL_HANDLE;
-            framebuffer.depthAllocation = nullptr;
-        }
+        VkImage depthImage = framebuffer.depthImage;
+        VmaAllocation depthAllocation = framebuffer.depthAllocation;
+        VkImageView depthImageView = framebuffer.depthImageView;
+        QueueFrameDeletion([this, depthImage, depthAllocation, depthImageView]() {
+            if (depthImageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(mDevice, depthImageView, nullptr);
+            }
+            if (depthImage != VK_NULL_HANDLE) {
+                vmaDestroyImage(mAllocator, depthImage, depthAllocation);
+            }
+        });
+        framebuffer.depthImageView = VK_NULL_HANDLE;
+        framebuffer.depthImage = VK_NULL_HANDLE;
+        framebuffer.depthAllocation = nullptr;
         framebuffer.depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         return;
     }
 
     if (depthChanged || framebuffer.depthImage == VK_NULL_HANDLE) {
-        if (framebuffer.depthImageView != VK_NULL_HANDLE) {
-            vkDestroyImageView(mDevice, framebuffer.depthImageView, nullptr);
-        }
-        if (framebuffer.depthImage != VK_NULL_HANDLE) {
-            vmaDestroyImage(mAllocator, framebuffer.depthImage, framebuffer.depthAllocation);
-        }
+        VkImage depthImage = framebuffer.depthImage;
+        VmaAllocation depthAllocation = framebuffer.depthAllocation;
+        VkImageView depthImageView = framebuffer.depthImageView;
+        QueueFrameDeletion([this, depthImage, depthAllocation, depthImageView]() {
+            if (depthImageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(mDevice, depthImageView, nullptr);
+            }
+            if (depthImage != VK_NULL_HANDLE) {
+                vmaDestroyImage(mAllocator, depthImage, depthAllocation);
+            }
+        });
         framebuffer.depthImage = VK_NULL_HANDLE;
         framebuffer.depthAllocation = nullptr;
         framebuffer.depthImageView = VK_NULL_HANDLE;
@@ -2164,6 +2190,9 @@ void GfxRenderingAPIVulkan::CreateCommandPool() {
     if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan command pool");
     }
+    QueueGlobalDeletion([this, commandPool = mCommandPool]() {
+        vkDestroyCommandPool(mDevice, commandPool, nullptr);
+    });
 }
 
 void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
@@ -2174,6 +2203,9 @@ void GfxRenderingAPIVulkan::CreateUploadCommandPool() {
 
     CheckVk(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mUploadCommandPool),
             "Failed to create Vulkan upload command pool");
+    QueueGlobalDeletion([this, commandPool = mUploadCommandPool]() {
+        vkDestroyCommandPool(mDevice, commandPool, nullptr);
+    });
 }
 
 VkPipelineLayout GfxRenderingAPIVulkan::CreatePipelineLayout() {
@@ -2311,9 +2343,18 @@ void GfxRenderingAPIVulkan::CreateUberShaderPipeline() {
 
     mUberVertexShaderModule =
         CreateShaderModule(mDevice, vertexSpirv, "Failed to create Vulkan uber vertex shader module");
+    QueueGlobalDeletion([this, shaderModule = mUberVertexShaderModule]() {
+        vkDestroyShaderModule(mDevice, shaderModule, nullptr);
+    });
     mUberFragmentShaderModule =
         CreateShaderModule(mDevice, fragmentSpirv, "Failed to create Vulkan uber fragment shader module");
+    QueueGlobalDeletion([this, shaderModule = mUberFragmentShaderModule]() {
+        vkDestroyShaderModule(mDevice, shaderModule, nullptr);
+    });
     mUberPipelineLayout = CreatePipelineLayout();
+    QueueGlobalDeletion([this, pipelineLayout = mUberPipelineLayout]() {
+        vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
+    });
 
     VulkanShaderProgram program = {};
     program.vertexShaderModule = mUberVertexShaderModule;
@@ -2322,30 +2363,13 @@ void GfxRenderingAPIVulkan::CreateUberShaderPipeline() {
 
     CCFeatures dummyFeatures = {};
     mUberOpaquePipeline = CreateGraphicsPipeline(program, dummyFeatures, false);
+    QueueGlobalDeletion([this, pipeline = mUberOpaquePipeline]() {
+        vkDestroyPipeline(mDevice, pipeline, nullptr);
+    });
     mUberAlphaPipeline = CreateGraphicsPipeline(program, dummyFeatures, true);
-}
-
-void GfxRenderingAPIVulkan::DestroyUberShaderPipeline() {
-    if (mUberOpaquePipeline != VK_NULL_HANDLE) {
-        vkDestroyPipeline(mDevice, mUberOpaquePipeline, nullptr);
-        mUberOpaquePipeline = VK_NULL_HANDLE;
-    }
-    if (mUberAlphaPipeline != VK_NULL_HANDLE) {
-        vkDestroyPipeline(mDevice, mUberAlphaPipeline, nullptr);
-        mUberAlphaPipeline = VK_NULL_HANDLE;
-    }
-    if (mUberPipelineLayout != VK_NULL_HANDLE) {
-        vkDestroyPipelineLayout(mDevice, mUberPipelineLayout, nullptr);
-        mUberPipelineLayout = VK_NULL_HANDLE;
-    }
-    if (mUberVertexShaderModule != VK_NULL_HANDLE) {
-        vkDestroyShaderModule(mDevice, mUberVertexShaderModule, nullptr);
-        mUberVertexShaderModule = VK_NULL_HANDLE;
-    }
-    if (mUberFragmentShaderModule != VK_NULL_HANDLE) {
-        vkDestroyShaderModule(mDevice, mUberFragmentShaderModule, nullptr);
-        mUberFragmentShaderModule = VK_NULL_HANDLE;
-    }
+    QueueGlobalDeletion([this, pipeline = mUberAlphaPipeline]() {
+        vkDestroyPipeline(mDevice, pipeline, nullptr);
+    });
 }
 
 void GfxRenderingAPIVulkan::CreateCommandBuffers() {
@@ -2383,10 +2407,20 @@ void GfxRenderingAPIVulkan::CreateSyncObjects() {
             vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &frame.imageAvailableSemaphore) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan image-available semaphore");
         }
+        if (frame.imageAvailableSemaphore != VK_NULL_HANDLE) {
+            QueueGlobalDeletion([this, semaphore = frame.imageAvailableSemaphore]() {
+                vkDestroySemaphore(mDevice, semaphore, nullptr);
+            });
+        }
         if (frame.renderFinishedTimelineSemaphore == VK_NULL_HANDLE &&
             vkCreateSemaphore(mDevice, &timelineSemaphoreInfo, nullptr, &frame.renderFinishedTimelineSemaphore) !=
                 VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan render-finished timeline semaphore");
+        }
+        if (frame.renderFinishedTimelineSemaphore != VK_NULL_HANDLE) {
+            QueueGlobalDeletion([this, semaphore = frame.renderFinishedTimelineSemaphore]() {
+                vkDestroySemaphore(mDevice, semaphore, nullptr);
+            });
         }
     }
 }
@@ -2401,14 +2435,8 @@ void GfxRenderingAPIVulkan::DestroyFrameResources() {
             vkFreeCommandBuffers(mDevice, mCommandPool, 1, &frame.commandBuffer);
             frame.commandBuffer = VK_NULL_HANDLE;
         }
-        if (frame.imageAvailableSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, frame.imageAvailableSemaphore, nullptr);
-            frame.imageAvailableSemaphore = VK_NULL_HANDLE;
-        }
-        if (frame.renderFinishedTimelineSemaphore != VK_NULL_HANDLE) {
-            vkDestroySemaphore(mDevice, frame.renderFinishedTimelineSemaphore, nullptr);
-            frame.renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
-        }
+        frame.imageAvailableSemaphore = VK_NULL_HANDLE;
+        frame.renderFinishedTimelineSemaphore = VK_NULL_HANDLE;
         frame.renderFinishedTimelineValue = 0;
     }
 
@@ -2428,6 +2456,9 @@ void GfxRenderingAPIVulkan::CreateAllocator() {
     if (vmaCreateAllocator(&allocatorInfo, &mAllocator) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan memory allocator");
     }
+    QueueGlobalDeletion([allocator = mAllocator]() {
+        vmaDestroyAllocator(allocator);
+    });
 }
 
 void GfxRenderingAPIVulkan::CreateTextureDescriptorResources() {
@@ -2471,6 +2502,9 @@ void GfxRenderingAPIVulkan::CreateTextureDescriptorResources() {
     layoutInfo.pBindings = &textureBinding;
     CheckVk(vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mTextureDescriptorSetLayout),
             "Failed to create Vulkan texture descriptor set layout");
+    QueueGlobalDeletion([this, descriptorSetLayout = mTextureDescriptorSetLayout]() {
+        vkDestroyDescriptorSetLayout(mDevice, descriptorSetLayout, nullptr);
+    });
 
     VkDescriptorPoolSize poolSize = {};
     poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -2484,6 +2518,9 @@ void GfxRenderingAPIVulkan::CreateTextureDescriptorResources() {
     poolInfo.pPoolSizes = &poolSize;
     CheckVk(vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mTextureDescriptorPool),
             "Failed to create Vulkan texture descriptor pool");
+    QueueGlobalDeletion([this, descriptorPool = mTextureDescriptorPool]() {
+        vkDestroyDescriptorPool(mDevice, descriptorPool, nullptr);
+    });
 
     VkDescriptorSetVariableDescriptorCountAllocateInfo variableCountInfo = {};
     variableCountInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
@@ -2500,35 +2537,34 @@ void GfxRenderingAPIVulkan::CreateTextureDescriptorResources() {
             "Failed to allocate Vulkan texture descriptor set");
 }
 
-void GfxRenderingAPIVulkan::DestroyTextureDescriptorResources() {
-    if (mTextureDescriptorPool != VK_NULL_HANDLE) {
-        vkDestroyDescriptorPool(mDevice, mTextureDescriptorPool, nullptr);
-        mTextureDescriptorPool = VK_NULL_HANDLE;
-    }
-    if (mTextureDescriptorSetLayout != VK_NULL_HANDLE) {
-        vkDestroyDescriptorSetLayout(mDevice, mTextureDescriptorSetLayout, nullptr);
-        mTextureDescriptorSetLayout = VK_NULL_HANDLE;
-    }
-    mTextureDescriptorSet = VK_NULL_HANDLE;
-    mMaxBindlessTextures = 0;
-}
-
 void GfxRenderingAPIVulkan::DestroyShaderProgram(VulkanShaderProgram& program) {
     if (program.pipeline != VK_NULL_HANDLE && program.pipeline != mUberOpaquePipeline &&
         program.pipeline != mUberAlphaPipeline) {
-        vkDestroyPipeline(mDevice, program.pipeline, nullptr);
+        VkPipeline pipeline = program.pipeline;
+        QueueFrameDeletion([this, pipeline]() {
+            vkDestroyPipeline(mDevice, pipeline, nullptr);
+        });
     }
     program.pipeline = VK_NULL_HANDLE;
     if (program.pipelineLayout != VK_NULL_HANDLE && program.pipelineLayout != mUberPipelineLayout) {
-        vkDestroyPipelineLayout(mDevice, program.pipelineLayout, nullptr);
+        VkPipelineLayout pipelineLayout = program.pipelineLayout;
+        QueueFrameDeletion([this, pipelineLayout]() {
+            vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
+        });
     }
     program.pipelineLayout = VK_NULL_HANDLE;
     if (program.vertexShaderModule != VK_NULL_HANDLE && program.vertexShaderModule != mUberVertexShaderModule) {
-        vkDestroyShaderModule(mDevice, program.vertexShaderModule, nullptr);
+        VkShaderModule shaderModule = program.vertexShaderModule;
+        QueueFrameDeletion([this, shaderModule]() {
+            vkDestroyShaderModule(mDevice, shaderModule, nullptr);
+        });
     }
     program.vertexShaderModule = VK_NULL_HANDLE;
     if (program.fragmentShaderModule != VK_NULL_HANDLE && program.fragmentShaderModule != mUberFragmentShaderModule) {
-        vkDestroyShaderModule(mDevice, program.fragmentShaderModule, nullptr);
+        VkShaderModule shaderModule = program.fragmentShaderModule;
+        QueueFrameDeletion([this, shaderModule]() {
+            vkDestroyShaderModule(mDevice, shaderModule, nullptr);
+        });
     }
     program.fragmentShaderModule = VK_NULL_HANDLE;
 }
@@ -2598,6 +2634,77 @@ VulkanTexture& GfxRenderingAPIVulkan::GetTexture(uint32_t textureId) {
         throw std::runtime_error("Vulkan texture id does not exist");
     }
     return mTextures[textureId];
+}
+
+void GfxRenderingAPIVulkan::QueueGlobalDeletion(std::function<void()> destroy) {
+    if (!destroy) {
+        return;
+    }
+    mGlobalDeletionQueue.push_back(std::move(destroy));
+}
+
+void GfxRenderingAPIVulkan::QueueFrameDeletion(std::function<void()> destroy) {
+    if (!destroy) {
+        return;
+    }
+
+    if (mDevice == VK_NULL_HANDLE) {
+        return;
+    }
+
+    VkSemaphore timelineSemaphore = VK_NULL_HANDLE;
+    uint64_t timelineValue = 0;
+    if (mFrameActive && mCurrentFrame != nullptr) {
+        timelineSemaphore = mCurrentFrame->renderFinishedTimelineSemaphore;
+        timelineValue = mCurrentFrame->renderFinishedTimelineValue + 1;
+    } else {
+        const size_t lastSubmittedFrameIndex = (mCurrentFrameIndex + FRAMES_IN_FLIGHT - 1) % FRAMES_IN_FLIGHT;
+        const VulkanFrame& frame = mFrames[lastSubmittedFrameIndex];
+        timelineSemaphore = frame.renderFinishedTimelineSemaphore;
+        timelineValue = frame.renderFinishedTimelineValue;
+    }
+
+    if (timelineValue == 0 || timelineSemaphore == VK_NULL_HANDLE) {
+        destroy();
+        return;
+    }
+
+    mFrameDeletionQueue.push_back({ timelineSemaphore, timelineValue, std::move(destroy) });
+}
+
+void GfxRenderingAPIVulkan::FlushFrameDeletionQueue(bool force) {
+    if (mDevice == VK_NULL_HANDLE) {
+        mFrameDeletionQueue.clear();
+        return;
+    }
+
+    while (!mFrameDeletionQueue.empty()) {
+        VulkanFrameDeletion& deletion = mFrameDeletionQueue.front();
+        bool completed = force || deletion.timelineSemaphore == VK_NULL_HANDLE || deletion.timelineValue == 0;
+        if (!completed) {
+            uint64_t completedValue = 0;
+            VkResult result = vkGetSemaphoreCounterValue(mDevice, deletion.timelineSemaphore, &completedValue);
+            completed = result == VK_SUCCESS && completedValue >= deletion.timelineValue;
+        }
+        if (!completed) {
+            break;
+        }
+
+        if (deletion.destroy) {
+            deletion.destroy();
+        }
+        mFrameDeletionQueue.pop_front();
+    }
+}
+
+void GfxRenderingAPIVulkan::FlushGlobalDeletionQueue() {
+    while (!mGlobalDeletionQueue.empty()) {
+        auto destroy = std::move(mGlobalDeletionQueue.back());
+        mGlobalDeletionQueue.pop_back();
+        if (destroy) {
+            destroy();
+        }
+    }
 }
 
 void GfxRenderingAPIVulkan::TransitionImageUsage(VkImage image, VkImageAspectFlags aspectMask, VkImageLayout& layout,
@@ -2833,10 +2940,16 @@ void GfxRenderingAPIVulkan::CreateFramebufferColorResources(VulkanFramebuffer& f
 
     VulkanTexture& texture = GetTexture(framebuffer.colorTextureId);
     if (texture.imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
-        ImGui_ImplVulkan_RemoveTexture(texture.imguiDescriptorSet);
+        VkDescriptorSet imguiDescriptorSet = texture.imguiDescriptorSet;
+        QueueFrameDeletion([imguiDescriptorSet]() {
+            ImGui_ImplVulkan_RemoveTexture(imguiDescriptorSet);
+        });
     }
     if (texture.sampler != VK_NULL_HANDLE) {
-        vkDestroySampler(mDevice, texture.sampler, nullptr);
+        VkSampler sampler = texture.sampler;
+        QueueFrameDeletion([this, sampler]() {
+            vkDestroySampler(mDevice, sampler, nullptr);
+        });
     }
     texture.image = framebuffer.colorImage;
     texture.allocation = framebuffer.colorAllocation;
@@ -3063,18 +3176,20 @@ void GfxRenderingAPIVulkan::UploadTextureToGpu(VulkanTexture& texture, const uin
     texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texture.uploaded = true;
 
-    if (oldImGuiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
-        ImGui_ImplVulkan_RemoveTexture(oldImGuiDescriptorSet);
-    }
-    if (oldSampler != VK_NULL_HANDLE) {
-        vkDestroySampler(mDevice, oldSampler, nullptr);
-    }
-    if (oldImageView != VK_NULL_HANDLE) {
-        vkDestroyImageView(mDevice, oldImageView, nullptr);
-    }
-    if (oldImage != VK_NULL_HANDLE) {
-        vmaDestroyImage(mAllocator, oldImage, oldAllocation);
-    }
+    QueueFrameDeletion([this, oldImage, oldAllocation, oldImageView, oldSampler, oldImGuiDescriptorSet]() {
+        if (oldImGuiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
+            ImGui_ImplVulkan_RemoveTexture(oldImGuiDescriptorSet);
+        }
+        if (oldSampler != VK_NULL_HANDLE) {
+            vkDestroySampler(mDevice, oldSampler, nullptr);
+        }
+        if (oldImageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(mDevice, oldImageView, nullptr);
+        }
+        if (oldImage != VK_NULL_HANDLE) {
+            vmaDestroyImage(mAllocator, oldImage, oldAllocation);
+        }
+    });
 }
 
 void GfxRenderingAPIVulkan::WriteBindlessTextureDescriptor(uint32_t textureId) {
@@ -3115,23 +3230,31 @@ void GfxRenderingAPIVulkan::EnsureImGuiTextureDescriptor(uint32_t textureId) {
 }
 
 void GfxRenderingAPIVulkan::DestroyTexture(VulkanTexture& texture) {
-    if (texture.imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
-        ImGui_ImplVulkan_RemoveTexture(texture.imguiDescriptorSet);
-    }
+    VkImage image = texture.image;
+    VmaAllocation allocation = texture.allocation;
+    VkImageView imageView = texture.imageView;
+    VkSampler sampler = texture.sampler;
+    VkDescriptorSet imguiDescriptorSet = texture.imguiDescriptorSet;
+    QueueFrameDeletion([this, image, allocation, imageView, sampler, imguiDescriptorSet]() {
+        if (imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
+            ImGui_ImplVulkan_RemoveTexture(imguiDescriptorSet);
+        }
+        if (sampler != VK_NULL_HANDLE) {
+            vkDestroySampler(mDevice, sampler, nullptr);
+        }
+        if (imageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(mDevice, imageView, nullptr);
+        }
+        if (image != VK_NULL_HANDLE) {
+            vmaDestroyImage(mAllocator, image, allocation);
+        }
+    });
+
     texture.imguiDescriptorSet = VK_NULL_HANDLE;
-    if (texture.sampler != VK_NULL_HANDLE) {
-        vkDestroySampler(mDevice, texture.sampler, nullptr);
-        texture.sampler = VK_NULL_HANDLE;
-    }
-    if (texture.imageView != VK_NULL_HANDLE) {
-        vkDestroyImageView(mDevice, texture.imageView, nullptr);
-        texture.imageView = VK_NULL_HANDLE;
-    }
-    if (texture.image != VK_NULL_HANDLE) {
-        vmaDestroyImage(mAllocator, texture.image, texture.allocation);
-        texture.image = VK_NULL_HANDLE;
-        texture.allocation = nullptr;
-    }
+    texture.sampler = VK_NULL_HANDLE;
+    texture.imageView = VK_NULL_HANDLE;
+    texture.image = VK_NULL_HANDLE;
+    texture.allocation = nullptr;
     texture.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     texture.uploaded = false;
 }
@@ -3146,13 +3269,18 @@ void GfxRenderingAPIVulkan::DestroyTextures() {
 void GfxRenderingAPIVulkan::DestroyFramebufferResources(VulkanFramebuffer& framebuffer) {
     if (framebuffer.colorTextureId < mTextures.size()) {
         VulkanTexture& texture = mTextures[framebuffer.colorTextureId];
-        if (texture.imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
-            ImGui_ImplVulkan_RemoveTexture(texture.imguiDescriptorSet);
-        }
+        VkSampler sampler = texture.sampler;
+        VkDescriptorSet imguiDescriptorSet = texture.imguiDescriptorSet;
+        QueueFrameDeletion([this, sampler, imguiDescriptorSet]() {
+            if (imguiDescriptorSet != VK_NULL_HANDLE && mImGuiInitialized) {
+                ImGui_ImplVulkan_RemoveTexture(imguiDescriptorSet);
+            }
+            if (sampler != VK_NULL_HANDLE) {
+                vkDestroySampler(mDevice, sampler, nullptr);
+            }
+        });
+
         texture.imguiDescriptorSet = VK_NULL_HANDLE;
-        if (texture.sampler != VK_NULL_HANDLE) {
-            vkDestroySampler(mDevice, texture.sampler, nullptr);
-        }
         texture.sampler = VK_NULL_HANDLE;
         texture.image = VK_NULL_HANDLE;
         texture.allocation = nullptr;
@@ -3161,28 +3289,38 @@ void GfxRenderingAPIVulkan::DestroyFramebufferResources(VulkanFramebuffer& frame
         texture.uploaded = false;
     }
 
-    if (framebuffer.colorImageView != VK_NULL_HANDLE) {
-        vkDestroyImageView(mDevice, framebuffer.colorImageView, nullptr);
-        framebuffer.colorImageView = VK_NULL_HANDLE;
-    }
-    if (framebuffer.colorImage != VK_NULL_HANDLE) {
-        vmaDestroyImage(mAllocator, framebuffer.colorImage, framebuffer.colorAllocation);
-        framebuffer.colorImage = VK_NULL_HANDLE;
-        framebuffer.colorAllocation = nullptr;
-    }
+    VkImage colorImage = framebuffer.colorImage;
+    VmaAllocation colorAllocation = framebuffer.colorAllocation;
+    VkImageView colorImageView = framebuffer.colorImageView;
+    QueueFrameDeletion([this, colorImage, colorAllocation, colorImageView]() {
+        if (colorImageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(mDevice, colorImageView, nullptr);
+        }
+        if (colorImage != VK_NULL_HANDLE) {
+            vmaDestroyImage(mAllocator, colorImage, colorAllocation);
+        }
+    });
+    framebuffer.colorImageView = VK_NULL_HANDLE;
+    framebuffer.colorImage = VK_NULL_HANDLE;
+    framebuffer.colorAllocation = nullptr;
     framebuffer.colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     framebuffer.colorStageMask = VK_PIPELINE_STAGE_2_NONE;
     framebuffer.colorAccessMask = VK_ACCESS_2_NONE;
 
-    if (framebuffer.depthImageView != VK_NULL_HANDLE) {
-        vkDestroyImageView(mDevice, framebuffer.depthImageView, nullptr);
-        framebuffer.depthImageView = VK_NULL_HANDLE;
-    }
-    if (framebuffer.depthImage != VK_NULL_HANDLE) {
-        vmaDestroyImage(mAllocator, framebuffer.depthImage, framebuffer.depthAllocation);
-        framebuffer.depthImage = VK_NULL_HANDLE;
-        framebuffer.depthAllocation = nullptr;
-    }
+    VkImage depthImage = framebuffer.depthImage;
+    VmaAllocation depthAllocation = framebuffer.depthAllocation;
+    VkImageView depthImageView = framebuffer.depthImageView;
+    QueueFrameDeletion([this, depthImage, depthAllocation, depthImageView]() {
+        if (depthImageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(mDevice, depthImageView, nullptr);
+        }
+        if (depthImage != VK_NULL_HANDLE) {
+            vmaDestroyImage(mAllocator, depthImage, depthAllocation);
+        }
+    });
+    framebuffer.depthImageView = VK_NULL_HANDLE;
+    framebuffer.depthImage = VK_NULL_HANDLE;
+    framebuffer.depthAllocation = nullptr;
     framebuffer.depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     framebuffer.depthStageMask = VK_PIPELINE_STAGE_2_NONE;
     framebuffer.depthAccessMask = VK_ACCESS_2_NONE;
@@ -3236,6 +3374,7 @@ void GfxRenderingAPIVulkan::CleanupSwapchain() {
 
 void GfxRenderingAPIVulkan::RecreateSwapchain() {
     vkDeviceWaitIdle(mDevice);
+    FlushFrameDeletionQueue(true);
 
     bool restoreImGui = mImGuiInitialized;
     ShutdownImGui();
@@ -3249,53 +3388,41 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
 }
 
 void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
-    // TODO: use destructor queue
-
     if (mDevice != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(mDevice);
+        FlushFrameDeletionQueue(true);
         ShutdownImGui();
         CleanupSwapchain();
         DestroyShaderPrograms();
-        DestroyUberShaderPipeline();
         DestroyFramebuffers();
         DestroyTextures();
-        DestroyTextureDescriptorResources();
+        FlushFrameDeletionQueue(true);
         DestroyFrameResources();
         mVertexRingBuffer.Destroy();
-        if (mUploadCommandPool != VK_NULL_HANDLE) {
-            vkDestroyCommandPool(mDevice, mUploadCommandPool, nullptr);
-            mUploadCommandPool = VK_NULL_HANDLE;
-        }
-        if (mCommandPool != VK_NULL_HANDLE) {
-            vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
-            mCommandPool = VK_NULL_HANDLE;
-        }
-        if (mAllocator != nullptr) {
-            vmaDestroyAllocator(mAllocator);
-            mAllocator = nullptr;
-        }
-        vkDestroyDevice(mDevice, nullptr);
-        mDevice = VK_NULL_HANDLE;
+        FlushGlobalDeletionQueue();
     }
 
-    if (mSurface != VK_NULL_HANDLE) {
-        vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
-        mSurface = VK_NULL_HANDLE;
-    }
+    FlushGlobalDeletionQueue();
 
-    if (mDebugMessenger != VK_NULL_HANDLE) {
-        Vulkan::DestroyDebugMessenger(mInstance, mDebugMessenger);
-        mDebugMessenger = VK_NULL_HANDLE;
-    }
-
-    if (mInstance != VK_NULL_HANDLE) {
-        vkDestroyInstance(mInstance, nullptr);
-        mInstance = VK_NULL_HANDLE;
-    }
-
+    mInstance = VK_NULL_HANDLE;
+    mDebugMessenger = VK_NULL_HANDLE;
+    mSurface = VK_NULL_HANDLE;
     mPhysicalDevice = VK_NULL_HANDLE;
+    mDevice = VK_NULL_HANDLE;
     mGraphicsQueue = VK_NULL_HANDLE;
     mPresentQueue = VK_NULL_HANDLE;
+    mAllocator = nullptr;
+    mCommandPool = VK_NULL_HANDLE;
+    mUploadCommandPool = VK_NULL_HANDLE;
+    mTextureDescriptorPool = VK_NULL_HANDLE;
+    mTextureDescriptorSetLayout = VK_NULL_HANDLE;
+    mTextureDescriptorSet = VK_NULL_HANDLE;
+    mMaxBindlessTextures = 0;
+    mUberOpaquePipeline = VK_NULL_HANDLE;
+    mUberAlphaPipeline = VK_NULL_HANDLE;
+    mUberPipelineLayout = VK_NULL_HANDLE;
+    mUberVertexShaderModule = VK_NULL_HANDLE;
+    mUberFragmentShaderModule = VK_NULL_HANDLE;
 }
 
 } // namespace Fast

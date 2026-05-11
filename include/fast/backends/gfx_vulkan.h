@@ -6,6 +6,7 @@
 
 #include <array>
 #include <deque>
+#include <functional>
 #include <map>
 #include <memory>
 #include <utility>
@@ -92,6 +93,12 @@ struct VulkanFramebuffer {
     VkImageLayout depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkPipelineStageFlags2 depthStageMask = VK_PIPELINE_STAGE_2_NONE;
     VkAccessFlags2 depthAccessMask = VK_ACCESS_2_NONE;
+};
+
+struct VulkanFrameDeletion {
+    VkSemaphore timelineSemaphore = VK_NULL_HANDLE;
+    uint64_t timelineValue = 0;
+    std::function<void()> destroy;
 };
 
 class VulkanVertexRingBuffer {
@@ -208,9 +215,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkPipelineLayout CreatePipelineLayout();
     VkPipeline CreateGraphicsPipeline(VulkanShaderProgram& program, const CCFeatures& ccFeatures, bool useAlpha);
     void CreateUberShaderPipeline();
-    void DestroyUberShaderPipeline();
     void CreateTextureDescriptorResources();
-    void DestroyTextureDescriptorResources();
     void DestroyShaderProgram(VulkanShaderProgram& program);
     void DestroyShaderPrograms();
     void DestroyTexture(VulkanTexture& texture);
@@ -233,6 +238,10 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void UploadTextureToGpu(VulkanTexture& texture, const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
     void WriteBindlessTextureDescriptor(uint32_t textureId);
     void EnsureImGuiTextureDescriptor(uint32_t textureId);
+    void QueueGlobalDeletion(std::function<void()> destroy);
+    void QueueFrameDeletion(std::function<void()> destroy);
+    void FlushFrameDeletionQueue(bool force);
+    void FlushGlobalDeletionQueue();
     VkCommandBuffer BeginImmediateCommands();
     void EndImmediateCommands(VkCommandBuffer commandBuffer);
     VulkanTexture& GetTexture(uint32_t textureId);
@@ -296,6 +305,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     VkPipeline mUberOpaquePipeline = VK_NULL_HANDLE;
     VkPipeline mUberAlphaPipeline = VK_NULL_HANDLE;
     VulkanVertexRingBuffer mVertexRingBuffer;
+    std::deque<VulkanFrameDeletion> mFrameDeletionQueue;
+    std::vector<std::function<void()>> mGlobalDeletionQueue;
     uint32_t mFrameCount = 0;
     float mCurrentNoiseScale = 1.0f;
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
