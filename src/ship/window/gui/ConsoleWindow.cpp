@@ -10,6 +10,9 @@
 
 namespace Ship {
 
+// Forward declaration - defined below ConsoleWindow::~ConsoleWindow
+static std::shared_ptr<ConsoleWindow> GetCachedConsoleWindow();
+
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (output) {

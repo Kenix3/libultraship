@@ -4,6 +4,7 @@
 #include "ship/utils/filesystemtools/DiskFile.h"
 #include "ship/utils/Utils.h"
 #include "ship/config/Config.h"
+#include "ship/Context.h"
 
 #ifdef _MSC_VER
 #define strdup _strdup
