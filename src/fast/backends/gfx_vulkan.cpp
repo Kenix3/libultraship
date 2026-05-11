@@ -1511,47 +1511,64 @@ void GfxRenderingAPIVulkan::FinishRender() {
         return;
     }
 
-    EndCurrentRendering();
+    {
+        LUS_TRACY_ZONE("Vulkan Finish EndCurrentRendering");
+        EndCurrentRendering();
+    }
 
-    TransitionImageUsage(mSwapchainImages[mCurrentImageIndex], VK_IMAGE_ASPECT_COLOR_BIT,
-                         mSwapchainImageLayouts[mCurrentImageIndex], mSwapchainImageStageMasks[mCurrentImageIndex],
-                         mSwapchainImageAccessMasks[mCurrentImageIndex], VulkanImageUsage::Present);
+    {
+        LUS_TRACY_ZONE("Vulkan Transition Swapchain Present");
+        TransitionImageUsage(mSwapchainImages[mCurrentImageIndex], VK_IMAGE_ASPECT_COLOR_BIT,
+                             mSwapchainImageLayouts[mCurrentImageIndex], mSwapchainImageStageMasks[mCurrentImageIndex],
+                             mSwapchainImageAccessMasks[mCurrentImageIndex], VulkanImageUsage::Present);
+    }
 
-    if (vkEndCommandBuffer(mCurrentCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to record Vulkan command buffer");
+    {
+        LUS_TRACY_ZONE("Vulkan EndCommandBuffer");
+        if (vkEndCommandBuffer(mCurrentCommandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to record Vulkan command buffer");
+        }
     }
     mFrameActive = false;
 
     VkCommandBufferSubmitInfo commandBufferInfo = {};
-    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    commandBufferInfo.commandBuffer = mCurrentCommandBuffer;
-
     VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
-    waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    waitSemaphoreInfo.semaphore = mCurrentFrame->imageAvailableSemaphore;
-    waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-
-    mCurrentFrame->renderFinishedTimelineValue++;
-    mVertexRingBuffer.EndFrame(mCurrentFrame->renderFinishedTimelineSemaphore, mCurrentFrame->renderFinishedTimelineValue);
-
-    VkSemaphore renderFinishedSemaphore = mSwapchainRenderFinishedSemaphores[mCurrentImageIndex];
+    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
     std::array<VkSemaphoreSubmitInfo, 2> signalSemaphoreInfos = {};
-    signalSemaphoreInfos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfos[0].semaphore = renderFinishedSemaphore;
-    signalSemaphoreInfos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    signalSemaphoreInfos[1].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signalSemaphoreInfos[1].semaphore = mCurrentFrame->renderFinishedTimelineSemaphore;
-    signalSemaphoreInfos[1].value = mCurrentFrame->renderFinishedTimelineValue;
-    signalSemaphoreInfos[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-
     VkSubmitInfo2 submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-    submitInfo.waitSemaphoreInfoCount = 1;
-    submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
-    submitInfo.commandBufferInfoCount = 1;
-    submitInfo.pCommandBufferInfos = &commandBufferInfo;
-    submitInfo.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
-    submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
+    {
+        LUS_TRACY_ZONE("Vulkan Build SubmitInfo");
+        commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+        commandBufferInfo.commandBuffer = mCurrentCommandBuffer;
+
+        waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        waitSemaphoreInfo.semaphore = mCurrentFrame->imageAvailableSemaphore;
+        waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        mCurrentFrame->renderFinishedTimelineValue++;
+        {
+            LUS_TRACY_ZONE("Vulkan VertexRing EndFrame");
+            mVertexRingBuffer.EndFrame(mCurrentFrame->renderFinishedTimelineSemaphore,
+                                       mCurrentFrame->renderFinishedTimelineValue);
+        }
+
+        renderFinishedSemaphore = mSwapchainRenderFinishedSemaphores[mCurrentImageIndex];
+        signalSemaphoreInfos[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        signalSemaphoreInfos[0].semaphore = renderFinishedSemaphore;
+        signalSemaphoreInfos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        signalSemaphoreInfos[1].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        signalSemaphoreInfos[1].semaphore = mCurrentFrame->renderFinishedTimelineSemaphore;
+        signalSemaphoreInfos[1].value = mCurrentFrame->renderFinishedTimelineValue;
+        signalSemaphoreInfos[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+        submitInfo.waitSemaphoreInfoCount = 1;
+        submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
+        submitInfo.commandBufferInfoCount = 1;
+        submitInfo.pCommandBufferInfos = &commandBufferInfo;
+        submitInfo.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
+        submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
+    }
 
     {
         LUS_TRACY_ZONE("Vulkan QueueSubmit Frame");
@@ -1561,30 +1578,42 @@ void GfxRenderingAPIVulkan::FinishRender() {
     }
 
     VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &mSwapchain;
-    presentInfo.pImageIndices = &mCurrentImageIndex;
+    {
+        LUS_TRACY_ZONE("Vulkan Build PresentInfo");
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &mSwapchain;
+        presentInfo.pImageIndices = &mCurrentImageIndex;
+    }
 
     VkResult presentResult = VK_SUCCESS;
     {
         LUS_TRACY_ZONE("Vulkan QueuePresent");
         presentResult = vkQueuePresentKHR(mPresentQueue, &presentInfo);
     }
-    mCurrentCommandBuffer = VK_NULL_HANDLE;
-    mCurrentFrame = nullptr;
-    mCurrentFrameIndex = (mCurrentFrameIndex + 1) % FRAMES_IN_FLIGHT;
-    LUS_TRACY_PLOT("Vulkan draw calls/frame", static_cast<int64_t>(mTracyDrawCallsThisFrame));
-    LUS_TRACY_PLOT("Vulkan texture uploads/frame", static_cast<int64_t>(mTracyTextureUploadsThisFrame));
-    LUS_TRACY_PLOT("Vulkan sampler recreates/frame", static_cast<int64_t>(mTracySamplerRecreatesThisFrame));
-    LUS_TRACY_PLOT("Vulkan shader creates/frame", static_cast<int64_t>(mTracyShaderCreatesThisFrame));
-    LUS_TRACY_PLOT("Vulkan immediate submits/frame", static_cast<int64_t>(mTracyImmediateSubmitsThisFrame));
-    LUS_TRACY_FRAME_MARK;
+    {
+        LUS_TRACY_ZONE("Vulkan Finish Frame Bookkeeping");
+        mCurrentCommandBuffer = VK_NULL_HANDLE;
+        mCurrentFrame = nullptr;
+        mCurrentFrameIndex = (mCurrentFrameIndex + 1) % FRAMES_IN_FLIGHT;
+    }
+    {
+        LUS_TRACY_ZONE("Vulkan Tracy Frame Counters");
+        LUS_TRACY_PLOT("Vulkan draw calls/frame", static_cast<int64_t>(mTracyDrawCallsThisFrame));
+        LUS_TRACY_PLOT("Vulkan texture uploads/frame", static_cast<int64_t>(mTracyTextureUploadsThisFrame));
+        LUS_TRACY_PLOT("Vulkan sampler recreates/frame", static_cast<int64_t>(mTracySamplerRecreatesThisFrame));
+        LUS_TRACY_PLOT("Vulkan shader creates/frame", static_cast<int64_t>(mTracyShaderCreatesThisFrame));
+        LUS_TRACY_PLOT("Vulkan immediate submits/frame", static_cast<int64_t>(mTracyImmediateSubmitsThisFrame));
+        LUS_TRACY_FRAME_MARK;
+    }
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
-        RecreateSwapchain();
+        {
+            LUS_TRACY_ZONE("Vulkan RecreateSwapchain After Present");
+            RecreateSwapchain();
+        }
         return;
     }
     if (presentResult != VK_SUCCESS) {
