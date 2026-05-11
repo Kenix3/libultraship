@@ -181,8 +181,7 @@ bool CheckRequiredFeatures(VkPhysicalDevice physicalDevice) {
 
     vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 
-    return vulkan12Features.descriptorIndexing == VK_TRUE &&
-           vulkan12Features.runtimeDescriptorArray == VK_TRUE &&
+    return vulkan12Features.descriptorIndexing == VK_TRUE && vulkan12Features.runtimeDescriptorArray == VK_TRUE &&
            vulkan12Features.descriptorBindingVariableDescriptorCount == VK_TRUE &&
            vulkan12Features.descriptorBindingPartiallyBound == VK_TRUE &&
            vulkan12Features.descriptorBindingSampledImageUpdateAfterBind == VK_TRUE &&

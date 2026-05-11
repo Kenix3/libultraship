@@ -101,6 +101,8 @@ struct VulkanFrameDeletion {
     std::function<void()> destroy;
 };
 
+struct VulkanTracyFrameZone;
+
 class VulkanVertexRingBuffer {
   public:
     struct Allocation {
@@ -246,6 +248,8 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     void EndImmediateCommands(VkCommandBuffer commandBuffer);
     VulkanTexture& GetTexture(uint32_t textureId);
     void DestroyVulkanObjects();
+    void BeginTracyBackendFrame();
+    void EndTracyBackendFrame();
 
     GfxWindowBackendSDL2* mWindowBackend = nullptr;
     VkInstance mInstance = VK_NULL_HANDLE;
@@ -315,6 +319,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI {
     uint32_t mTracySamplerRecreatesThisFrame = 0;
     uint32_t mTracyShaderCreatesThisFrame = 0;
     uint32_t mTracyImmediateSubmitsThisFrame = 0;
+    std::unique_ptr<VulkanTracyFrameZone> mTracyBackendFrameZone;
 };
 
 } // namespace Fast

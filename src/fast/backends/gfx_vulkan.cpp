@@ -48,6 +48,26 @@
 #endif
 
 namespace Fast {
+
+#ifdef LUS_ENABLE_TRACY
+namespace {
+constexpr tracy::SourceLocationData VulkanBackendFrameSourceLocation = {
+    "Vulkan Backend Frame", "GfxRenderingAPIVulkan::Frame", __FILE__, __LINE__, 0
+};
+} // namespace
+
+struct VulkanTracyFrameZone {
+    explicit VulkanTracyFrameZone(const tracy::SourceLocationData* sourceLocation)
+        : zone(sourceLocation, TRACY_CALLSTACK, true) {
+    }
+
+    tracy::ScopedZone zone;
+};
+#else
+struct VulkanTracyFrameZone {
+};
+#endif
+
 namespace {
 
 constexpr uint32_t ImGuiDescriptorPoolSize = 1024;
@@ -1449,10 +1469,22 @@ void GfxRenderingAPIVulkan::OnResize() {
 }
 
 void GfxRenderingAPIVulkan::StartFrame() {
-    LUS_TRACY_ZONE("Vulkan StartFrame");
     if (mSwapchain == VK_NULL_HANDLE || mFrameActive) {
         return;
     }
+
+    BeginTracyBackendFrame();
+    struct EndTracyBackendFrameOnExit {
+        GfxRenderingAPIVulkan* api;
+        bool enabled = true;
+
+        ~EndTracyBackendFrameOnExit() {
+            if (enabled) {
+                api->EndTracyBackendFrame();
+            }
+        }
+    } endTracyBackendFrameOnExit{ this };
+    LUS_TRACY_ZONE("Vulkan StartFrame");
 
     mTracyDrawCallsThisFrame = 0;
     mTracyTextureUploadsThisFrame = 0;
@@ -1516,16 +1548,25 @@ void GfxRenderingAPIVulkan::StartFrame() {
     mCurrentFramebuffer = 0;
     mCurrentRenderTargetWidth = mSwapchainExtent.width;
     mCurrentRenderTargetHeight = mSwapchainExtent.height;
+    endTracyBackendFrameOnExit.enabled = false;
 }
 
 void GfxRenderingAPIVulkan::EndFrame() {
 }
 
 void GfxRenderingAPIVulkan::FinishRender() {
-    LUS_TRACY_ZONE("Vulkan FinishRender");
     if (mSwapchain == VK_NULL_HANDLE || !mFrameActive) {
         return;
     }
+
+    struct EndTracyBackendFrameOnExit {
+        GfxRenderingAPIVulkan* api;
+
+        ~EndTracyBackendFrameOnExit() {
+            api->EndTracyBackendFrame();
+        }
+    } endTracyBackendFrameOnExit{ this };
+    LUS_TRACY_ZONE("Vulkan FinishRender");
 
     {
         LUS_TRACY_ZONE("Vulkan Finish EndCurrentRendering");
@@ -3388,6 +3429,8 @@ void GfxRenderingAPIVulkan::RecreateSwapchain() {
 }
 
 void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
+    EndTracyBackendFrame();
+
     if (mDevice != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(mDevice);
         FlushFrameDeletionQueue(true);
@@ -3423,6 +3466,20 @@ void GfxRenderingAPIVulkan::DestroyVulkanObjects() {
     mUberPipelineLayout = VK_NULL_HANDLE;
     mUberVertexShaderModule = VK_NULL_HANDLE;
     mUberFragmentShaderModule = VK_NULL_HANDLE;
+}
+
+void GfxRenderingAPIVulkan::BeginTracyBackendFrame() {
+#ifdef LUS_ENABLE_TRACY
+    if (mTracyBackendFrameZone == nullptr) {
+        mTracyBackendFrameZone = std::make_unique<VulkanTracyFrameZone>(&VulkanBackendFrameSourceLocation);
+    }
+#endif
+}
+
+void GfxRenderingAPIVulkan::EndTracyBackendFrame() {
+#ifdef LUS_ENABLE_TRACY
+    mTracyBackendFrameZone.reset();
+#endif
 }
 
 } // namespace Fast
