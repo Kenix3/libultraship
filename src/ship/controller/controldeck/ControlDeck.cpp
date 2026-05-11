@@ -1,6 +1,7 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #include "ship/Context.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/controller/controldevice/controller/Controller.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/config/ConsoleVariable.h"

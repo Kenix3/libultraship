@@ -14,6 +14,7 @@
 
 #include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 
 // for some reason windows isn't seeing M_PI
 // this is copied from my system's math.h

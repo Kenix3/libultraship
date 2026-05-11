@@ -2,6 +2,7 @@
 
 #include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 
 namespace Ship {
 MouseStateManager::MouseStateManager() {
