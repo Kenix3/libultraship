@@ -4,6 +4,7 @@
 
 #include "ship/resource/File.h"
 #include "ship/resource/ResourceLoader.h"
+#include "ship/resource/ResourceManager.h"
 #include "ship/resource/ResourceType.h"
 #include "ship/security/Keystore.h"
 #include "ship/utils/binarytools/MemoryStream.h"
