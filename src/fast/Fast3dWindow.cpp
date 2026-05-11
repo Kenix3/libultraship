@@ -481,8 +481,8 @@ std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
 }
 
 const nlohmann::json& Fast3dWindow::GetDependencies() const {
-    static const nlohmann::json deps = nlohmann::json::array({ "Config", "ConsoleVariable", "ControlDeck" });
-    return deps;
+    static const nlohmann::json sDeps = nlohmann::json::array({ "Config", "ConsoleVariable", "ControlDeck" });
+    return sDeps;
 }
 
 } // namespace Fast

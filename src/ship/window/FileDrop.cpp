@@ -125,8 +125,8 @@ std::shared_ptr<Window> FileDrop::GetWindow() const {
 }
 
 const nlohmann::json& FileDrop::GetDependencies() const {
-    static const nlohmann::json deps = nlohmann::json::array({ "Window" });
-    return deps;
+    static const nlohmann::json sDeps = nlohmann::json::array({ "Window" });
+    return sDeps;
 }
 
 } // namespace Ship

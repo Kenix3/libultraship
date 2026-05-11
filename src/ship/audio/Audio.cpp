@@ -164,8 +164,8 @@ AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
 }
 
 const nlohmann::json& Audio::GetDependencies() const {
-    static const nlohmann::json deps = nlohmann::json::array({ "Config" });
-    return deps;
+    static const nlohmann::json sDeps = nlohmann::json::array({ "Config" });
+    return sDeps;
 }
 
 } // namespace Ship
