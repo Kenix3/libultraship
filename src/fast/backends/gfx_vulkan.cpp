@@ -71,16 +71,18 @@ GfxClipParameters GfxRenderingAPIVulkan::GetClipParameters() {
 // Shader management — no-ops (ParallelRDP handles combiners)
 // ============================================================
 
-void GfxRenderingAPIVulkan::UnloadShader(ShaderProgram*) {}
-void GfxRenderingAPIVulkan::LoadShader(ShaderProgram*) {}
-void GfxRenderingAPIVulkan::ClearShaderCache() {}
+void GfxRenderingAPIVulkan::UnloadShader(ShaderProgram*) {
+}
+void GfxRenderingAPIVulkan::LoadShader(ShaderProgram*) {
+}
+void GfxRenderingAPIVulkan::ClearShaderCache() {
+}
 
 ShaderProgram* GfxRenderingAPIVulkan::CreateAndLoadNewShader(uint64_t, uint64_t) {
     // Return a pointer to the dummy program so the interpreter has a
     // non-null ShaderProgram* to work with.
     mDummyShader.numInputs = 0;
-    std::fill(std::begin(mDummyShader.usedTextures),
-              std::end(mDummyShader.usedTextures), false);
+    std::fill(std::begin(mDummyShader.usedTextures), std::end(mDummyShader.usedTextures), false);
     return reinterpret_cast<ShaderProgram*>(&mDummyShader);
 }
 
@@ -88,8 +90,7 @@ ShaderProgram* GfxRenderingAPIVulkan::LookupShader(uint64_t, uint64_t) {
     return reinterpret_cast<ShaderProgram*>(&mDummyShader);
 }
 
-void GfxRenderingAPIVulkan::ShaderGetInfo(ShaderProgram*, uint8_t* numInputs,
-                                           bool usedTextures[2]) {
+void GfxRenderingAPIVulkan::ShaderGetInfo(ShaderProgram*, uint8_t* numInputs, bool usedTextures[2]) {
     *numInputs = 0;
     usedTextures[0] = false;
     usedTextures[1] = false;
@@ -100,21 +101,32 @@ void GfxRenderingAPIVulkan::ShaderGetInfo(ShaderProgram*, uint8_t* numInputs,
 // commands into RDRAM/TMEM by ParallelRDP)
 // ============================================================
 
-uint32_t GfxRenderingAPIVulkan::NewTexture() { return 0; }
-void GfxRenderingAPIVulkan::SelectTexture(int, uint32_t) {}
-void GfxRenderingAPIVulkan::UploadTexture(const uint8_t*, uint32_t, uint32_t) {}
-void GfxRenderingAPIVulkan::SetSamplerParameters(int, bool, uint32_t, uint32_t) {}
-void GfxRenderingAPIVulkan::DeleteTexture(uint32_t) {}
+uint32_t GfxRenderingAPIVulkan::NewTexture() {
+    return 0;
+}
+void GfxRenderingAPIVulkan::SelectTexture(int, uint32_t) {
+}
+void GfxRenderingAPIVulkan::UploadTexture(const uint8_t*, uint32_t, uint32_t) {
+}
+void GfxRenderingAPIVulkan::SetSamplerParameters(int, bool, uint32_t, uint32_t) {
+}
+void GfxRenderingAPIVulkan::DeleteTexture(uint32_t) {
+}
 
 // ============================================================
 // Render state — no-ops (RDP other-modes control all state)
 // ============================================================
 
-void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool, bool) {}
-void GfxRenderingAPIVulkan::SetZmodeDecal(bool) {}
-void GfxRenderingAPIVulkan::SetViewport(int, int, int, int) {}
-void GfxRenderingAPIVulkan::SetScissor(int, int, int, int) {}
-void GfxRenderingAPIVulkan::SetUseAlpha(bool) {}
+void GfxRenderingAPIVulkan::SetDepthTestAndMask(bool, bool) {
+}
+void GfxRenderingAPIVulkan::SetZmodeDecal(bool) {
+}
+void GfxRenderingAPIVulkan::SetViewport(int, int, int, int) {
+}
+void GfxRenderingAPIVulkan::SetScissor(int, int, int, int) {
+}
+void GfxRenderingAPIVulkan::SetUseAlpha(bool) {
+}
 
 // ============================================================
 // Draw calls — no-op (ParallelRDP rasterises from RDP commands)
@@ -141,9 +153,7 @@ void GfxRenderingAPIVulkan::Init() {
     }
 
     mContext = std::make_unique<Vulkan::Context>();
-    if (!mContext->init_instance_and_device(
-            nullptr, 0, nullptr, 0,
-            Vulkan::CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT)) {
+    if (!mContext->init_instance_and_device(nullptr, 0, nullptr, 0, Vulkan::CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT)) {
         // Retry without advanced WSI (software Vulkan drivers may lack it).
         mContext = std::make_unique<Vulkan::Context>();
         if (!mContext->init_instance_and_device(nullptr, 0, nullptr, 0, 0)) {
@@ -157,9 +167,8 @@ void GfxRenderingAPIVulkan::Init() {
 
     mRdram.resize(RDRAM_SIZE, 0);
 
-    mProcessor = std::make_unique<RDP::CommandProcessor>(
-        *mDevice, mRdram.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
-        RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
+    mProcessor = std::make_unique<RDP::CommandProcessor>(*mDevice, mRdram.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
+                                                         RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
 
     if (!mProcessor->device_is_supported()) {
         mProcessor.reset();
@@ -202,20 +211,19 @@ int GfxRenderingAPIVulkan::CreateFramebuffer() {
     return 0;
 }
 
-void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int, uint32_t, uint32_t,
-                                                         uint32_t, bool, bool,
-                                                         bool, bool) {}
+void GfxRenderingAPIVulkan::UpdateFramebufferParameters(int, uint32_t, uint32_t, uint32_t, bool, bool, bool, bool) {
+}
 
-void GfxRenderingAPIVulkan::StartDrawToFramebuffer(int, float) {}
+void GfxRenderingAPIVulkan::StartDrawToFramebuffer(int, float) {
+}
 
-void GfxRenderingAPIVulkan::CopyFramebuffer(int, int, int, int, int, int,
-                                             int, int, int, int) {}
+void GfxRenderingAPIVulkan::CopyFramebuffer(int, int, int, int, int, int, int, int, int, int) {
+}
 
-void GfxRenderingAPIVulkan::ClearFramebuffer(bool, bool) {}
+void GfxRenderingAPIVulkan::ClearFramebuffer(bool, bool) {
+}
 
-void GfxRenderingAPIVulkan::ReadFramebufferToCPU(int, uint32_t width,
-                                                  uint32_t height,
-                                                  uint16_t* rgba16Buf) {
+void GfxRenderingAPIVulkan::ReadFramebufferToCPU(int, uint32_t width, uint32_t height, uint16_t* rgba16Buf) {
     if (!mAvailable || !rgba16Buf)
         return;
 
@@ -226,11 +234,11 @@ void GfxRenderingAPIVulkan::ReadFramebufferToCPU(int, uint32_t width,
     std::memcpy(rgba16Buf, fb.data(), fb.size() * sizeof(uint16_t));
 }
 
-void GfxRenderingAPIVulkan::ResolveMSAAColorBuffer(int, int) {}
+void GfxRenderingAPIVulkan::ResolveMSAAColorBuffer(int, int) {
+}
 
 std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
-GfxRenderingAPIVulkan::GetPixelDepth(
-    int, const std::set<std::pair<float, float>>&) {
+GfxRenderingAPIVulkan::GetPixelDepth(int, const std::set<std::pair<float, float>>&) {
     return {};
 }
 
@@ -238,15 +246,18 @@ void* GfxRenderingAPIVulkan::GetFramebufferTextureId(int) {
     return nullptr;
 }
 
-void GfxRenderingAPIVulkan::SelectTextureFb(int) {}
+void GfxRenderingAPIVulkan::SelectTextureFb(int) {
+}
 
-void GfxRenderingAPIVulkan::SetTextureFilter(FilteringMode) {}
+void GfxRenderingAPIVulkan::SetTextureFilter(FilteringMode) {
+}
 
 FilteringMode GfxRenderingAPIVulkan::GetTextureFilter() {
     return FILTER_NONE;
 }
 
-void GfxRenderingAPIVulkan::SetSrgbMode() {}
+void GfxRenderingAPIVulkan::SetSrgbMode() {
+}
 
 ImTextureID GfxRenderingAPIVulkan::GetTextureById(int) {
     return nullptr;
@@ -264,8 +275,8 @@ size_t GfxRenderingAPIVulkan::GetRDRAMSize() const {
     return mRdram.size();
 }
 
-std::vector<uint16_t> GfxRenderingAPIVulkan::ReadFramebufferFromRDRAM(
-    uint32_t addr, uint32_t width, uint32_t height) const {
+std::vector<uint16_t> GfxRenderingAPIVulkan::ReadFramebufferFromRDRAM(uint32_t addr, uint32_t width,
+                                                                      uint32_t height) const {
     std::vector<uint16_t> fb(width * height, 0);
     if (!mAvailable || addr + width * height * 2 > mRdram.size())
         return fb;
@@ -274,8 +285,7 @@ std::vector<uint16_t> GfxRenderingAPIVulkan::ReadFramebufferFromRDRAM(
     // vram16[index ^ 1], swapping adjacent uint16_t pairs within every
     // 32-bit RDRAM word.  Applying the same XOR when reading compensates
     // and restores the correct pixel order.
-    const uint16_t* vram16 = reinterpret_cast<const uint16_t*>(
-        mRdram.data() + addr);
+    const uint16_t* vram16 = reinterpret_cast<const uint16_t*>(mRdram.data() + addr);
     for (uint32_t i = 0; i < width * height; i++)
         fb[i] = vram16[i ^ 1];
     return fb;

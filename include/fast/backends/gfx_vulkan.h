@@ -86,22 +86,18 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI, public RdpCommandBac
     void FinishRender() override;
 
     int CreateFramebuffer() override;
-    void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height,
-                                     uint32_t msaa_level, bool opengl_invertY,
-                                     bool render_target, bool has_depth_buffer,
+    void UpdateFramebufferParameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
+                                     bool opengl_invertY, bool render_target, bool has_depth_buffer,
                                      bool can_extract_depth) override;
     void StartDrawToFramebuffer(int fbId, float noiseScale) override;
-    void CopyFramebuffer(int fbDstId, int fbSrcId,
-                         int srcX0, int srcY0, int srcX1, int srcY1,
-                         int dstX0, int dstY0, int dstX1, int dstY1) override;
+    void CopyFramebuffer(int fbDstId, int fbSrcId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
+                         int dstX1, int dstY1) override;
     void ClearFramebuffer(bool color, bool depth) override;
-    void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height,
-                              uint16_t* rgba16Buf) override;
+    void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) override;
     void ResolveMSAAColorBuffer(int fbIdTarget, int fbIdSrc) override;
 
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
-    GetPixelDepth(int fb_id,
-                  const std::set<std::pair<float, float>>& coordinates) override;
+    GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) override;
 
     void* GetFramebufferTextureId(int fbId) override;
     void SelectTextureFb(int fbId) override;
@@ -111,7 +107,9 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI, public RdpCommandBac
     ImTextureID GetTextureById(int id) override;
 
     // ---- Vulkan-specific ----------------------------------------------------
-    bool IsAvailable() const { return mAvailable; }
+    bool IsAvailable() const {
+        return mAvailable;
+    }
 
     /// Direct access to the RDRAM backing store.  Game code or the interpreter
     /// can write texture / palette data here before emitting RDP load commands.
@@ -121,9 +119,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI, public RdpCommandBac
     /// Read the RGBA5551 framebuffer from RDRAM at the given byte address.
     /// ParallelRDP writes pixels with adjacent uint16 pairs swapped within
     /// every 32-bit word, so this method compensates with an XOR-1 read.
-    std::vector<uint16_t> ReadFramebufferFromRDRAM(uint32_t addr,
-                                                    uint32_t width,
-                                                    uint32_t height) const;
+    std::vector<uint16_t> ReadFramebufferFromRDRAM(uint32_t addr, uint32_t width, uint32_t height) const;
 
   private:
     bool mAvailable = false;
