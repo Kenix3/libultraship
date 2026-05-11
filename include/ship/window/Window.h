@@ -6,12 +6,13 @@
 #include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
-#include "ship/window/gui/Gui.h"
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "ship/Component.h"
 
 namespace Ship {
+class Gui;
+class GuiWindow;
 
 /** @brief Identifies the graphics/windowing backend in use.
  *

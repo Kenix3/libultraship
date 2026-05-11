@@ -7,6 +7,7 @@
 #include "ship/window/Window.h"
 
 namespace Ship {
+class Config;
 
 /**
  * @brief Abstract class representing a Config Version Updater, intended to express how to

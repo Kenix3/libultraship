@@ -1,4 +1,5 @@
 #include "ship/window/FileDrop.h"
+#include "ship/window/gui/Gui.h"
 #include <cstdlib>
 #include <cstring>
 #include <spdlog/spdlog.h>

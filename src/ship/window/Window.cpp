@@ -1,4 +1,5 @@
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 #include <string>
 #include <fstream>
 #include <iostream>

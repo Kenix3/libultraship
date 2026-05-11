@@ -10,6 +10,7 @@
 #include <string_view>
 
 namespace Ship {
+class Config;
 
 /** @brief Discriminator tag for the active field of the CVar union. */
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
