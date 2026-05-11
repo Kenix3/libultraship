@@ -513,11 +513,18 @@ SwapchainSupport QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfac
     return QuerySwapchainSupportInternal(physicalDevice, surface);
 }
 
-VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool useSrgb) {
+    const VkFormat preferredFormat = useSrgb ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
     for (const auto& availableFormat : availableFormats) {
-        // TODO: is this the best format we can use that is guaranteed to be
-        // supported?
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+        if (availableFormat.format == preferredFormat &&
+            availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return availableFormat;
+        }
+    }
+
+    const VkFormat fallbackFormat = useSrgb ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+    for (const auto& availableFormat : availableFormats) {
+        if (availableFormat.format == fallbackFormat &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
         }

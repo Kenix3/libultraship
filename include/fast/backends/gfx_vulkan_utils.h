@@ -41,7 +41,7 @@ DeviceSelection PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 VkDevice CreateLogicalDevice(VkPhysicalDevice physicalDevice, const QueueFamilyIndices& queueFamilies,
                              VkQueue* graphicsQueue, VkQueue* presentQueue);
 SwapchainSupport QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
-VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool useSrgb);
 VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window);
 

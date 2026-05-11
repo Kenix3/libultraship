@@ -2032,7 +2032,7 @@ uint32_t GfxRenderingAPIVulkan::GetMinImageCount() const {
 
 void GfxRenderingAPIVulkan::CreateSwapchain() {
     auto swapchainSupport = Vulkan::QuerySwapchainSupport(mPhysicalDevice, mSurface);
-    auto surfaceFormat = Vulkan::ChooseSwapSurfaceFormat(swapchainSupport.formats);
+    auto surfaceFormat = Vulkan::ChooseSwapSurfaceFormat(swapchainSupport.formats, mSrgbMode);
     auto presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes);
     auto extent = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, mWindowBackend->GetWindow());
 
