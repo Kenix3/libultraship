@@ -48,7 +48,6 @@ class Audio : public Component {
      *
      * @throws std::runtime_error if Config is not present in the hierarchy.
      * @throws std::runtime_error if Config is present but not yet initialized.
-     */
     /** @brief Returns the currently active AudioPlayer instance. */
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
 
