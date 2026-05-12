@@ -1,0 +1,70 @@
+name: coverage
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  coverage-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y $(cat .github/workflows/apt-deps.txt) gcovr
+    - name: Install latest SDL
+      run: |
+        wget https://www.libsdl.org/release/SDL2-2.24.1.tar.gz
+        tar -xzf SDL2-2.24.1.tar.gz
+        cd SDL2-2.24.1
+        ./configure
+        make -j $(nproc)
+        sudo make install
+    - name: Install latest tinyxml2
+      run: |
+        wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+        tar -xzf 10.0.0.tar.gz
+        cd tinyxml2-10.0.0
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+    - name: Install Python dependencies
+      run: python3 -m pip install -r requirements.txt
+    - name: Configure with coverage instrumentation
+      run: |
+        cmake --no-warn-unused-cli -H. -Bbuild-coverage -GNinja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DLUS_BUILD_TESTS=ON \
+          -DCMAKE_CXX_FLAGS="--coverage" \
+          -DCMAKE_C_FLAGS="--coverage" \
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+      env:
+        CC: gcc-12
+        CXX: g++-12
+    - name: Build
+      run: cmake --build build-coverage --config Debug --parallel $(nproc)
+    - name: Run tests
+      run: ctest --test-dir build-coverage --output-on-failure
+      env:
+        SDL_VIDEODRIVER: dummy
+        SDL_AUDIODRIVER: dummy
+    - name: Generate coverage report
+      run: |
+        gcovr \
+          --root . \
+          --filter 'src/' \
+          --xml-pretty \
+          --output coverage.xml \
+          build-coverage
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage.xml
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
