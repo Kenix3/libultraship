@@ -160,6 +160,12 @@ std::string Window::GetWindowBackendName() {
 }
 
 std::shared_ptr<Config> Window::GetConfig() const {
-    return RequireDependency(mConfig, "Config");
+    if (!mConfig) {
+        throw std::runtime_error("Window requires Config dependency");
+    }
+    if (!mConfig->IsInitialized()) {
+        throw std::runtime_error("Window requires Config to be initialized");
+    }
+    return mConfig;
 }
 } // namespace Ship

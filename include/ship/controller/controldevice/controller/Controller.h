@@ -18,6 +18,9 @@
 
 namespace Ship {
 class ConsoleVariable;
+class ControlDeck;
+class Config;
+class Window;
 
 /**
  * @brief Represents a single logical controller connected to a ControlPort.
@@ -42,7 +45,9 @@ class Controller : public ControlDevice {
      * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
     Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
-               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
+               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+               std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+               std::shared_ptr<Window> window = nullptr);
 
     /** @brief Destroys the Controller and releases all mapping resources. */
     ~Controller();
@@ -158,6 +163,9 @@ class Controller : public ControlDevice {
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>>
         mButtons;                                      ///< Button subsystems keyed by bitmask.
     std::shared_ptr<ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable component.
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Config> mConfig;
+    std::shared_ptr<Window> mWindow;
 
   private:
     void LoadButtonMappingFromConfig(std::string id);

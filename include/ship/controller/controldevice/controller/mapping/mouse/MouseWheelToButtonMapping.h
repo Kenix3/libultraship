@@ -8,6 +8,7 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
+class Config;
 
 /**
  * @brief Maps a mouse scroll-wheel direction to a virtual controller button.
@@ -23,7 +24,9 @@ class MouseWheelToButtonMapping final : public MouseWheelToAnyMapping, public Co
      * @param bitmask        The button bitmask to set when the wheel is scrolled.
      * @param wheelDirection The scroll-wheel direction to bind.
      */
-    MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, WheelDirection wheelDirection);
+    MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, WheelDirection wheelDirection,
+                              std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                              std::shared_ptr<Config> config = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current wheel state.

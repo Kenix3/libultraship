@@ -20,7 +20,7 @@ class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
      * @brief Constructs a keyboard-key mapping for the given scan code.
      * @param scancode The keyboard scan code to bind.
      */
-    KeyboardKeyToAnyMapping(KbScancode scancode);
+    KeyboardKeyToAnyMapping(KbScancode scancode, std::shared_ptr<Window> window);
 
     /** @brief Destructor. */
     virtual ~KeyboardKeyToAnyMapping();
@@ -43,5 +43,8 @@ class KeyboardKeyToAnyMapping : virtual public ControllerInputMapping {
     KbScancode mKeyboardScancode;
     bool mKeyPressed;
     std::shared_ptr<Window> mWindow;
+
+  private:
+    std::shared_ptr<Window> GetWindow() const;
 };
 } // namespace Ship

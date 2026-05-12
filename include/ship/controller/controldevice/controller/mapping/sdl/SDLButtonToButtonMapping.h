@@ -5,6 +5,7 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
+class Config;
 
 /**
  * @brief Maps an SDL gamepad button to a virtual controller button.
@@ -20,7 +21,9 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
      * @param bitmask             The button bitmask to set when the gamepad button is held.
      * @param sdlControllerButton The SDL controller button index.
      */
-    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton);
+    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton,
+                             std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                             std::shared_ptr<Config> config = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current gamepad button state.

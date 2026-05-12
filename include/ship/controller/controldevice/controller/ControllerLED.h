@@ -24,7 +24,7 @@ class ControllerLED {
      * @brief Constructs a ControllerLED for the given port.
      * @param portIndex Zero-based port index.
      */
-    ControllerLED(uint8_t portIndex);
+    ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~ControllerLED();
 
     /**

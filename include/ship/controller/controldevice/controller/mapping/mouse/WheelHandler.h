@@ -26,7 +26,7 @@ struct WheelDirections {
 class WheelHandler {
   public:
     /** @brief Constructs a WheelHandler with default (zero) state. */
-    WheelHandler();
+    WheelHandler(std::shared_ptr<Window> window);
 
     /** @brief Destructor. */
     ~WheelHandler();
@@ -69,6 +69,7 @@ class WheelHandler {
   private:
     float CalcDirectionValue(CoordsF& coords, WheelDirection direction);
     void UpdateAxisBuffer(float* buf, float input);
+    std::shared_ptr<Window> GetWindow() const;
 
     static std::shared_ptr<WheelHandler> mInstance;
 

@@ -8,6 +8,7 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
+class Config;
 
 /**
  * @brief Maps a mouse button to a virtual controller button.
@@ -23,7 +24,9 @@ class MouseButtonToButtonMapping final : public MouseButtonToAnyMapping, public 
      * @param bitmask   The button bitmask to set when the mouse button is held.
      * @param button    The mouse button to bind.
      */
-    MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button);
+    MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button,
+                               std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                               std::shared_ptr<Config> config = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current mouse button state.

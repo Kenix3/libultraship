@@ -5,6 +5,7 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
+class Config;
 
 /**
  * @brief Maps a keyboard key to a virtual analog stick direction.
@@ -22,7 +23,8 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
      * @param scancode   The keyboard scan code to bind.
      */
     KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
-                                      KbScancode scancode);
+                                      KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                                      std::shared_ptr<Config> config = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;

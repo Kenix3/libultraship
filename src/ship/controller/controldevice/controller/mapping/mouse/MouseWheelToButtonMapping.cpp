@@ -5,14 +5,21 @@
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/config/Config.h"
 
 namespace Ship {
 MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                     WheelDirection wheelDirection)
+                                                     WheelDirection wheelDirection,
+                                                     std::shared_ptr<ControlDeck> controlDeck,
+                                                     std::shared_ptr<Config> config)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseWheelToAnyMapping(wheelDirection),
-      ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask) {
+      ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask, controlDeck, config) {
     mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    if (controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    } else {
+        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    }
 }
 
 void MouseWheelToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Factory for creating ControllerAxisDirectionMapping instances.
@@ -63,5 +65,11 @@ class AxisDirectionMappingFactory {
      */
     static std::shared_ptr<ControllerAxisDirectionMapping>
     CreateAxisDirectionMappingFromMouseWheelInput(uint8_t portIndex, StickIndex stickIndex, Direction direction);
+
+  private:
+    static std::shared_ptr<ConsoleVariable> GetConsoleVariable();
+    static std::shared_ptr<ControlDeck> GetControlDeck();
+    static std::weak_ptr<ConsoleVariable> sConsoleVariable;
+    static std::weak_ptr<ControlDeck> sControlDeck;
 };
 } // namespace Ship

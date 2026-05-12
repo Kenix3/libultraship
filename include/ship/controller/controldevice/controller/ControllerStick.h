@@ -42,7 +42,8 @@ class ControllerStick {
      * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
     ControllerStick(uint8_t portIndex, StickIndex stickIndex,
-                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
+                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                    std::shared_ptr<Window> window = nullptr);
     ~ControllerStick();
 
     /** @brief Clears all in-memory mappings and reloads them from Config. */

@@ -16,7 +16,7 @@ class ConsoleVariable;
 class GlobalSDLDeviceSettings {
   public:
     /** @brief Constructs the settings and loads persisted values from configuration. */
-    GlobalSDLDeviceSettings();
+    GlobalSDLDeviceSettings(std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~GlobalSDLDeviceSettings();
 
     /**

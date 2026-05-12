@@ -12,32 +12,30 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
+std::weak_ptr<ConsoleVariable> ButtonMappingFactory::sConsoleVariable;
+std::weak_ptr<ControlDeck> ButtonMappingFactory::sControlDeck;
 
-namespace {
-std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariable() {
-    static std::weak_ptr<Ship::ConsoleVariable> sCache;
-    auto cv = sCache.lock();
+std::shared_ptr<ConsoleVariable> ButtonMappingFactory::GetConsoleVariable() {
+    auto cv = sConsoleVariable.lock();
     if (!cv) {
-        cv = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
-        sCache = cv;
+        cv = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+        sConsoleVariable = cv;
     }
     return cv;
 }
 
-std::shared_ptr<Ship::ControlDeck> GetControlDeck() {
-    static std::weak_ptr<Ship::ControlDeck> sCache;
-    auto cd = sCache.lock();
+std::shared_ptr<ControlDeck> ButtonMappingFactory::GetControlDeck() {
+    auto cd = sControlDeck.lock();
     if (!cd) {
-        cd = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
-        sCache = cd;
+        cd = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+        sControlDeck = cd;
     }
     return cd;
 }
-} // namespace
 
 std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
-    auto consoleVariable = GetConsoleVariable();
+    auto consoleVariable = ButtonMappingFactory::GetConsoleVariable();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + id;
     const std::string mappingClass =
         consoleVariable->GetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -107,7 +105,7 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
 
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = GetControlDeck();
+    auto controlDeck = ButtonMappingFactory::GetControlDeck();
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultsForBitmask =
@@ -122,7 +120,7 @@ ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CON
 
 std::vector<std::shared_ptr<ControllerButtonMapping>>
 ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = GetControlDeck();
+    auto controlDeck = ButtonMappingFactory::GetControlDeck();
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultButtonsForBitmask =
@@ -145,7 +143,7 @@ ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLL
 
 std::shared_ptr<ControllerButtonMapping>
 ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = GetControlDeck();
+    auto controlDeck = ButtonMappingFactory::GetControlDeck();
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :

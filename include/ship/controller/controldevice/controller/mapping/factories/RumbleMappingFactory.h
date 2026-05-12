@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Factory for creating ControllerRumbleMapping instances.
@@ -38,5 +40,10 @@ class RumbleMappingFactory {
      * @return A shared pointer to the new mapping, or nullptr if no rumble is available.
      */
     static std::shared_ptr<ControllerRumbleMapping> CreateRumbleMappingFromSDLInput(uint8_t portIndex);
+  private:
+    static std::shared_ptr<ConsoleVariable> GetConsoleVariable();
+    static std::shared_ptr<ControlDeck> GetControlDeck();
+    static std::weak_ptr<ConsoleVariable> sConsoleVariable;
+    static std::weak_ptr<ControlDeck> sControlDeck;
 };
 } // namespace Ship

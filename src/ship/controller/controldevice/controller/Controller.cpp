@@ -4,6 +4,8 @@
 #include <algorithm>
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
+#include "ship/config/Config.h"
+#include "ship/window/Window.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
@@ -18,18 +20,38 @@
 namespace Ship {
 
 Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
-                       std::shared_ptr<ConsoleVariable> consoleVariable)
+                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck,
+                       std::shared_ptr<Config> config, std::shared_ptr<Window> window)
     : ControlDevice(portIndex) {
-    mConsoleVariable = consoleVariable ? consoleVariable
-                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    for (auto bitmask : bitmasks) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable);
+    if (consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    } else {
+        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     }
-    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable);
-    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable);
+    if (controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    } else {
+        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    }
+    if (config) {
+        mConfig = std::move(config);
+    } else {
+        mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
+    }
+    if (window) {
+        mWindow = std::move(window);
+    } else {
+        mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
+    }
+    for (auto bitmask : bitmasks) {
+        mButtons[bitmask] =
+            std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable, mControlDeck, mConfig);
+    }
+    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable, mWindow);
+    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable, mWindow);
     mGyro = std::make_shared<ControllerGyro>(portIndex);
     mRumble = std::make_shared<ControllerRumble>(portIndex);
-    mLED = std::make_shared<ControllerLED>(portIndex);
+    mLED = std::make_shared<ControllerLED>(portIndex, mConsoleVariable);
 }
 
 Controller::~Controller() {

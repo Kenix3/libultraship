@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Factory for creating ControllerLEDMapping instances.
@@ -29,5 +31,10 @@ class LEDMappingFactory {
      * @return A shared pointer to the new mapping, or nullptr if no LED is available.
      */
     static std::shared_ptr<ControllerLEDMapping> CreateLEDMappingFromSDLInput(uint8_t portIndex);
+  private:
+    static std::shared_ptr<ConsoleVariable> GetConsoleVariable();
+    static std::shared_ptr<ControlDeck> GetControlDeck();
+    static std::weak_ptr<ConsoleVariable> sConsoleVariable;
+    static std::weak_ptr<ControlDeck> sControlDeck;
 };
 } // namespace Ship

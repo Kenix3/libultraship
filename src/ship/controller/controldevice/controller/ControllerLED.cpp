@@ -9,8 +9,12 @@
 #include "ship/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
 namespace Ship {
-ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+ControllerLED::ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable) : mPortIndex(portIndex) {
+    if (consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    } else {
+        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    }
 }
 
 ControllerLED::~ControllerLED() {

@@ -6,32 +6,30 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
+std::weak_ptr<ConsoleVariable> RumbleMappingFactory::sConsoleVariable;
+std::weak_ptr<ControlDeck> RumbleMappingFactory::sControlDeck;
 
-namespace {
-std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariable() {
-    static std::weak_ptr<Ship::ConsoleVariable> sCache;
-    auto cv = sCache.lock();
+std::shared_ptr<ConsoleVariable> RumbleMappingFactory::GetConsoleVariable() {
+    auto cv = sConsoleVariable.lock();
     if (!cv) {
-        cv = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
-        sCache = cv;
+        cv = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+        sConsoleVariable = cv;
     }
     return cv;
 }
 
-std::shared_ptr<Ship::ControlDeck> GetControlDeck() {
-    static std::weak_ptr<Ship::ControlDeck> sCache;
-    auto cd = sCache.lock();
+std::shared_ptr<ControlDeck> RumbleMappingFactory::GetControlDeck() {
+    auto cd = sControlDeck.lock();
     if (!cd) {
-        cd = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
-        sCache = cd;
+        cd = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+        sControlDeck = cd;
     }
     return cd;
 }
-} // namespace
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex,
                                                                                              std::string id) {
-    auto consoleVariable = GetConsoleVariable();
+    auto consoleVariable = RumbleMappingFactory::GetConsoleVariable();
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + id;
     const std::string mappingClass =
         consoleVariable->GetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -66,7 +64,7 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physical
 }
 
 std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex) {
-    auto controlDeck = GetControlDeck();
+    auto controlDeck = RumbleMappingFactory::GetControlDeck();
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :

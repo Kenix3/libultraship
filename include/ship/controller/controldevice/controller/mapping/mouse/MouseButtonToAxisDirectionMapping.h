@@ -8,6 +8,7 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
+class Config;
 
 /**
  * @brief Maps a mouse button to a virtual analog stick direction.
@@ -24,7 +25,9 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
      * @param direction  The stick direction to activate.
      * @param button     The mouse button to bind.
      */
-    MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button);
+    MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button,
+                                      std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                                      std::shared_ptr<Config> config = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;

@@ -27,7 +27,7 @@
 
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
-                                 std::shared_ptr<ConsoleVariable> consoleVariable)
+                                 std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
@@ -35,9 +35,16 @@ ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
     mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
     mDeadzone = 17.0f;
     mNotchSnapAngle = 0;
-    mConsoleVariable = consoleVariable ? consoleVariable
-                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
+    if (consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    } else {
+        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    }
+    if (window) {
+        mWindow = std::move(window);
+    } else {
+        mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
+    }
 }
 
 ControllerStick::~ControllerStick() {

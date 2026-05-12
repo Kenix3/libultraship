@@ -14,15 +14,25 @@
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/config/Config.h"
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                   std::shared_ptr<ConsoleVariable> consoleVariable)
+                                   std::shared_ptr<ConsoleVariable> consoleVariable,
+                                   std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> config)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
-    mConsoleVariable = consoleVariable ? consoleVariable
-                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    if (consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    } else {
+        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    }
+    if (controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    } else {
+        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    }
+    mConfig = std::move(config);
     mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
 
@@ -155,12 +165,14 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
+        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping,
+                                                               mControlDeck, mConfig);
     } else {
         auto gui = mWindow->GetGui();
         if (!gui->IsMouseOverAnyGuiItem() && gui->IsMouseOverActivePopup()) {
             if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-                mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
+                mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping,
+                                                                       mControlDeck, mConfig);
             } else {
                 mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
             }

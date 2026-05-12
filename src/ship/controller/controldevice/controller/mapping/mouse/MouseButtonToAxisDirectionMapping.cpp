@@ -5,14 +5,21 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
+#include "ship/config/Config.h"
 
 namespace Ship {
 MouseButtonToAxisDirectionMapping::MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
-                                                                     Direction direction, MouseBtn button)
+                                                                     Direction direction, MouseBtn button,
+                                                                     std::shared_ptr<ControlDeck> controlDeck,
+                                                                     std::shared_ptr<Config> config)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseButtonToAnyMapping(button),
-      ControllerAxisDirectionMapping(PhysicalDeviceType::Mouse, portIndex, stickIndex, direction) {
+      ControllerAxisDirectionMapping(PhysicalDeviceType::Mouse, portIndex, stickIndex, direction, controlDeck, config) {
     mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    if (controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    } else {
+        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
+    }
 }
 
 float MouseButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
