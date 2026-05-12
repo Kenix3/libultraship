@@ -14,20 +14,24 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) : Component("Window") {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager,
+               std::shared_ptr<Config> config)
+    : Component("Window"), mConfig(std::move(config)) {
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
     GetChildren().Add(gui);
 }
 
-Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config)
+    : Window(gui, std::make_shared<MouseStateManager>(), std::move(config)) {
 }
 
-Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Window(std::make_shared<Gui>(guiWindows)) {
+Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Config> config)
+    : Window(std::make_shared<Gui>(guiWindows), std::move(config)) {
 }
 
-Window::Window() : Window(std::vector<std::shared_ptr<GuiWindow>>()) {
+Window::Window(std::shared_ptr<Config> config) : Window(std::vector<std::shared_ptr<GuiWindow>>(), std::move(config)) {
 }
 
 Window::~Window() {
@@ -57,15 +61,16 @@ std::shared_ptr<Gui> Window::GetGui() {
 
 void Window::SaveWindowToConfig() {
     // This accepts conf in because it can be run in the destruction of LUS.
-    mConfig->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
+    auto config = GetConfig();
+    config->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
     if (IsFullscreen()) {
-        mConfig->SetInt("Window.Fullscreen.Width", (int32_t)GetWidth());
-        mConfig->SetInt("Window.Fullscreen.Height", (int32_t)GetHeight());
+        config->SetInt("Window.Fullscreen.Width", (int32_t)GetWidth());
+        config->SetInt("Window.Fullscreen.Height", (int32_t)GetHeight());
     } else {
-        mConfig->SetInt("Window.Width", (int32_t)GetWidth());
-        mConfig->SetInt("Window.Height", (int32_t)GetHeight());
-        mConfig->SetInt("Window.PositionX", GetPosX());
-        mConfig->SetInt("Window.PositionY", GetPosY());
+        config->SetInt("Window.Width", (int32_t)GetWidth());
+        config->SetInt("Window.Height", (int32_t)GetHeight());
+        config->SetInt("Window.PositionX", GetPosX());
+        config->SetInt("Window.PositionY", GetPosY());
     }
 }
 
@@ -124,23 +129,18 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 
 void Window::SetWindowBackend(int32_t backend) {
     mWindowBackend = backend;
-    mConfig->SetInt("Window.Backend.Id", GetWindowBackend());
-    mConfig->SetString("Window.Backend.Name", GetWindowBackendName());
-    mConfig->Save();
+    auto config = GetConfig();
+    config->SetInt("Window.Backend.Id", GetWindowBackend());
+    config->SetString("Window.Backend.Name", GetWindowBackendName());
+    config->Save();
 }
 
 void Window::AddAvailableWindowBackend(int32_t backend) {
     mAvailableWindowBackends->push_back(backend);
 }
 
-void Window::OnInit(const nlohmann::json& /*initArgs*/) {
-    // Dependencies (Config) are verified by Component::Init() via GetDependencies().
-    // Just cache the reference here.
-    mConfig = Context::GetInstance()->GetChildren().GetFirst<Config>();
-}
-
 int32_t Window::GetSavedWindowBackend() {
-    auto backendId = mConfig->GetInt("Window.Backend.Id", -1);
+    auto backendId = GetConfig()->GetInt("Window.Backend.Id", -1);
     if (IsAvailableWindowBackend(backendId)) {
         return backendId;
     }
@@ -160,11 +160,6 @@ std::string Window::GetWindowBackendName() {
 }
 
 std::shared_ptr<Config> Window::GetConfig() const {
-    return mConfig;
-}
-
-const nlohmann::json& Window::GetDependencies() const {
-    static const nlohmann::json sDeps = nlohmann::json::array({ "Config" });
-    return sDeps;
+    return RequireDependency(mConfig, "Config");
 }
 } // namespace Ship

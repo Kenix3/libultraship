@@ -82,9 +82,12 @@ class Context : public Component {
      * **Init-order dependencies within this factory:**
      * - ResourceManager::Init() — ThreadPool must be present (it self-initializes
      *   on construction, so it is always ready).
-     * - Window::OnInit() — Config must be present and initialized (Config self-initializes
-     *   on construction).
-     * - Audio::OnInit() — Config must be present and initialized (same as above).
+     * - Window construction/use — Config must be present and initialized before
+     *   any Window code path reads persisted settings.
+     * - Audio construction/use — Config must be present and initialized before
+     *   any Audio code path reads or writes persisted backend settings.
+     * - Config::Init(window) — Window must already be initialized before Config
+     *   caches it for later validated use.
      */
     static std::shared_ptr<Context>
     CreateDefaultInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
@@ -100,7 +103,6 @@ class Context : public Component {
      * - "components": array of component descriptors, each with:
      *   - "type": string identifying the component type
      *   - "name": string name for the component
-     *   - "dependencies": optional array of dependency names (verified at Init time)
      *   - "condition": optional compile-time condition (e.g. "ENABLE_SCRIPTING")
      *   - "initArgs": optional JSON object with initialization arguments for this component
      *   - "children": optional array of child component descriptors

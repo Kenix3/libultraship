@@ -7,6 +7,8 @@
 #include <queue>
 #include <unordered_set>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
+#include <type_traits>
 
 #include "ship/Part.h"
 #include "ship/PartList.h"
@@ -36,9 +38,8 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * @brief Performs one-time initialization of this component.
      *
      * This method is non-virtual and manages the initialized state flag. It
-     * first verifies that all dependencies declared by GetDependencies() are
-     * present and initialized, then calls the protected virtual OnInit() hook
-     * exactly once; subsequent calls are no-ops.
+     * calls the protected virtual OnInit() hook exactly once; subsequent calls
+     * are no-ops.
      *
      * Concrete subclasses that need parameter-free initialization should
      * override OnInit() rather than Init().
@@ -62,25 +63,6 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * only after that call succeeds.
      */
     bool IsInitialized() const;
-
-    /**
-     * @brief Returns a JSON array of dependency component names.
-     *
-     * Each element is the name (string) of a sibling component that must be
-     * present and initialized before this component's OnInit() is called.
-     * Init() checks these at runtime and throws if any are unmet.
-     *
-     * Override in subclasses to declare dependencies. Default returns an empty
-     * array (no dependencies).
-     *
-     * Example:
-     * @code
-     * nlohmann::json GetDependencies() const override {
-     *     return nlohmann::json::array({"Config", "ThreadPool"});
-     * }
-     * @endcode
-     */
-    virtual const nlohmann::json& GetDependencies() const;
 
     /** @brief Returns the name of this Component. */
     const std::string& GetName() const;
@@ -162,7 +144,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     /**
      * @brief Override this to implement component-specific initialization logic.
      *
-     * Called by Init() the first time it is invoked, after dependency checks pass.
+     * Called by Init() the first time it is invoked.
      * After OnInit() returns without throwing, the component is marked as initialized.
      * If OnInit() throws, the component remains uninitialized so Init() may be retried.
      *
@@ -185,6 +167,18 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * IsInitialized() returns true and ordering-dependency checks pass.
      */
     void MarkInitialized();
+
+    /**
+     * @brief Returns a cached dependency after validating it exists and is initialized.
+     *
+     * Use this from subclasses when accessing constructor- or init-cached component
+     * dependencies. The dependency must both exist and already be initialized.
+     *
+     * @throws std::runtime_error if the dependency pointer is empty.
+     * @throws std::runtime_error if the dependency exists but is not initialized.
+     */
+    template <typename T> std::shared_ptr<T> RequireDependency(const std::shared_ptr<T>& dependency,
+                                                               const std::string& dependencyName) const;
 
   private:
     std::string mName;
@@ -220,6 +214,24 @@ template <typename T> bool Component::HasInChildren() const {
         }
     }
     return false;
+}
+
+template <typename T>
+std::shared_ptr<T> Component::RequireDependency(const std::shared_ptr<T>& dependency,
+                                                const std::string& dependencyName) const {
+    static_assert(std::is_base_of_v<Component, T>, "RequireDependency only supports Component dependencies");
+
+    if (!dependency) {
+        throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + dependencyName +
+                                 "' to exist before use");
+    }
+
+    if (!dependency->IsInitialized()) {
+        throw std::runtime_error("Component '" + GetName() + "' requires dependency '" + dependencyName +
+                                 "' to be initialized before use");
+    }
+
+    return dependency;
 }
 
 template <typename T> std::shared_ptr<T> Component::GetFirstInChildren() const {

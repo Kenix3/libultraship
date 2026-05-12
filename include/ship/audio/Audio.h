@@ -19,10 +19,10 @@ class Config;
  * SetCurrentAudioBackend(); the channel layout can be changed via SetAudioChannels()
  * without restarting the application.
  *
- * **Required Context children (looked up at Init time):**
- * - **Config** — cached during OnInit() and used by SetCurrentAudioBackend() to load/persist
- *   the selected audio backend. Config must be added to the Context **before** calling
- *   Audio::Init().
+ * **Required dependencies (constructor-injected):**
+ * - **Config** — cached on the class and used by SetCurrentAudioBackend() to
+ *   load/persist the selected audio backend. Any code path that uses the cached
+ *   Config validates that it exists and is initialized before use.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<Audio>()`.
  */
@@ -73,13 +73,8 @@ class Audio : public Component {
     /**
      * @brief Implements audio initialization. Called by Component::Init().
      *
-     * @throws std::runtime_error if Config is not present in the hierarchy.
-     * @throws std::runtime_error if Config is present but not yet initialized.
      */
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
-
-    /** @brief Declares Config as a dependency. */
-    const nlohmann::json& GetDependencies() const override;
 
     /**
      * @brief Reads and validates the audio backend from the persisted config.

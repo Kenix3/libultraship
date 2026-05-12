@@ -546,88 +546,63 @@ TEST(ComponentInitTest, DefaultOnInitIsNoOp) {
     EXPECT_TRUE(c->IsInitialized());
 }
 
-// ---- Dependency failure tests ----
+// ---- Cached dependency validation tests ----
 
-// A component that declares a dependency via GetDependencies().
-class DependentComponent : public Component {
+class DependencyCheckingComponent : public Component {
   public:
-    std::vector<std::string> mDeps;
-    explicit DependentComponent(const std::string& name, std::vector<std::string> deps)
-        : Component(name), mDeps(std::move(deps)) {
-        mDepsJson = nlohmann::json::array();
-        for (const auto& d : mDeps) {
-            mDepsJson.push_back(d);
-        }
+    explicit DependencyCheckingComponent(const std::string& name, std::shared_ptr<Component> dependency = nullptr)
+        : Component(name), mDependency(std::move(dependency)) {
     }
 
-  protected:
-    const nlohmann::json& GetDependencies() const override {
-        return mDepsJson;
-    }
-    void OnInit(const nlohmann::json& /*initArgs*/) override {
+    void ValidateDependency(const std::string& dependencyName = "Dependency") {
+        RequireDependency(mDependency, dependencyName);
     }
 
   private:
-    nlohmann::json mDepsJson;
+    std::shared_ptr<Component> mDependency;
 };
 
-TEST(ComponentDependencyTest, ThrowsWhenDependencyNotPresent) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "MissingDep" });
-    parent->GetChildren().Add(child);
+TEST(ComponentDependencyTest, RequireDependencyThrowsWhenDependencyNotPresent) {
+    auto child = std::make_shared<DependencyCheckingComponent>("Child");
 
-    EXPECT_THROW(child->Init(), std::runtime_error);
-    EXPECT_FALSE(child->IsInitialized());
+    EXPECT_THROW(child->ValidateDependency("MissingDep"), std::runtime_error);
 }
 
-TEST(ComponentDependencyTest, ThrowsWhenDependencyNotInitialized) {
-    auto parent = std::make_shared<TestComponent>("Parent");
+TEST(ComponentDependencyTest, RequireDependencyThrowsWhenDependencyNotInitialized) {
     auto dep = std::make_shared<TestComponent>("TheDep");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "TheDep" });
-    parent->GetChildren().Add(dep);
-    parent->GetChildren().Add(child);
+    auto child = std::make_shared<DependencyCheckingComponent>("Child", dep);
 
-    // dep is NOT initialized yet
-    EXPECT_THROW(child->Init(), std::runtime_error);
-    EXPECT_FALSE(child->IsInitialized());
+    EXPECT_THROW(child->ValidateDependency("TheDep"), std::runtime_error);
 }
 
-TEST(ComponentDependencyTest, SucceedsWhenDependencyIsInitialized) {
-    auto parent = std::make_shared<TestComponent>("Parent");
+TEST(ComponentDependencyTest, RequireDependencySucceedsWhenDependencyIsInitialized) {
     auto dep = std::make_shared<TestComponent>("TheDep");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "TheDep" });
-    parent->GetChildren().Add(dep);
-    parent->GetChildren().Add(child);
+    auto child = std::make_shared<DependencyCheckingComponent>("Child", dep);
 
     dep->Init();
-    EXPECT_NO_THROW(child->Init());
-    EXPECT_TRUE(child->IsInitialized());
+    EXPECT_NO_THROW(child->ValidateDependency("TheDep"));
 }
 
-TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForMissingDependency) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "NoDep" });
-    parent->GetChildren().Add(child);
+TEST(ComponentDependencyTest, RequireDependencyThrowsWithCorrectMessageForMissingDependency) {
+    auto child = std::make_shared<DependencyCheckingComponent>("Child");
 
     try {
-        child->Init();
+        child->ValidateDependency("NoDep");
         FAIL() << "Expected std::runtime_error";
     } catch (const std::runtime_error& e) {
         std::string msg = e.what();
         EXPECT_NE(msg.find("Child"), std::string::npos);
         EXPECT_NE(msg.find("NoDep"), std::string::npos);
+        EXPECT_NE(msg.find("exist"), std::string::npos);
     }
 }
 
-TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForUninitializedDependency) {
-    auto parent = std::make_shared<TestComponent>("Parent");
+TEST(ComponentDependencyTest, RequireDependencyThrowsWithCorrectMessageForUninitializedDependency) {
     auto dep = std::make_shared<TestComponent>("NotReady");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "NotReady" });
-    parent->GetChildren().Add(dep);
-    parent->GetChildren().Add(child);
+    auto child = std::make_shared<DependencyCheckingComponent>("Child", dep);
 
     try {
-        child->Init();
+        child->ValidateDependency("NotReady");
         FAIL() << "Expected std::runtime_error";
     } catch (const std::runtime_error& e) {
         std::string msg = e.what();
@@ -635,51 +610,6 @@ TEST(ComponentDependencyTest, ThrowsWithCorrectMessageForUninitializedDependency
         EXPECT_NE(msg.find("NotReady"), std::string::npos);
         EXPECT_NE(msg.find("initialized"), std::string::npos);
     }
-}
-
-TEST(ComponentDependencyTest, MultipleDependenciesAllMustBeReady) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto dep1 = std::make_shared<TestComponent>("Dep1");
-    auto dep2 = std::make_shared<TestComponent>("Dep2");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "Dep1", "Dep2" });
-    parent->GetChildren().Add(dep1);
-    parent->GetChildren().Add(dep2);
-    parent->GetChildren().Add(child);
-
-    // Only dep1 initialized
-    dep1->Init();
-    EXPECT_THROW(child->Init(), std::runtime_error);
-    EXPECT_FALSE(child->IsInitialized());
-
-    // Now dep2 initialized too
-    dep2->Init();
-    EXPECT_NO_THROW(child->Init());
-    EXPECT_TRUE(child->IsInitialized());
-}
-
-TEST(ComponentDependencyTest, DependencyFoundInAncestorHierarchy) {
-    // Root -> Mid -> Leaf, where Leaf depends on "Root"
-    auto root = std::make_shared<TestComponent>("Root");
-    auto mid = std::make_shared<TestComponent>("Mid");
-    auto leaf = std::make_shared<DependentComponent>("Leaf", std::vector<std::string>{ "Root" });
-    root->GetChildren().Add(mid);
-    mid->GetChildren().Add(leaf);
-    root->Init(); // Mark root as initialized
-
-    EXPECT_NO_THROW(leaf->Init());
-    EXPECT_TRUE(leaf->IsInitialized());
-}
-
-TEST(ComponentDependencyTest, DependencyFoundAsSibling) {
-    auto parent = std::make_shared<TestComponent>("Parent");
-    auto sibling = std::make_shared<TestComponent>("Sibling");
-    auto child = std::make_shared<DependentComponent>("Child", std::vector<std::string>{ "Sibling" });
-    parent->GetChildren().Add(sibling);
-    parent->GetChildren().Add(child);
-    sibling->Init();
-
-    EXPECT_NO_THROW(child->Init());
-    EXPECT_TRUE(child->IsInitialized());
 }
 
 // ---- InitArgs passthrough tests ----

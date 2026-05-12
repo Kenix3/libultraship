@@ -34,27 +34,29 @@ enum WindowBackend {
  * @brief Fast3D-based window and rendering context.
  *
  * Fast3dWindow drives the Fast3D graphics pipeline and integrates with the
- * Ship component hierarchy. The following components must be present as
- * **direct children of the Context** before Fast3dWindow is used:
+ * Ship component hierarchy. The following dependencies are cached on the class:
  *
  *  - **Ship::Config** — queried by Fast3dWindow and the DXGI/DX11 back-ends for
  *    persistent window settings (resolution, fullscreen, etc.).
  *  - **Ship::ConsoleVariable** — read by all Fast3D back-ends for runtime
  *    rendering toggles.
- *  - **Ship::ResourceManager** — required by the DX11 and OpenGL back-ends for
- *    shader/texture resource loading.
- *  - **Ship::FileDrop** — required by the DXGI back-end to handle file-drop
- *    events forwarded from the OS.
  *  - **Ship::ControlDeck** — required for keyboard and mouse input routing.
- *  - **Fast::GfxDebugger** — required by the interpreter for debug-draw mode.
- *  - **Ship::Logger** — required for logging.
  */
 class Fast3dWindow : public Ship::Window {
   public:
-    Fast3dWindow();
-    Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows);
-    Fast3dWindow(std::shared_ptr<Ship::Gui> gui);
-    Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager);
+    Fast3dWindow(std::shared_ptr<Ship::Config> config = nullptr,
+                 std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
+                 std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
+    Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows, std::shared_ptr<Ship::Config> config = nullptr,
+                 std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
+                 std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
+    Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<Ship::Config> config = nullptr,
+                 std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
+                 std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
+    Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager,
+                 std::shared_ptr<Ship::Config> config = nullptr,
+                 std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
+                 std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
     ~Fast3dWindow();
 
     void Close() override;
@@ -114,9 +116,6 @@ class Fast3dWindow : public Ship::Window {
   protected:
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
-    /** @brief Declares Config, ConsoleVariable, ControlDeck as dependencies. */
-    const nlohmann::json& GetDependencies() const override;
-
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
     static void AllKeysUp();
@@ -132,9 +131,9 @@ class Fast3dWindow : public Ship::Window {
     std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
 
-    /** @brief Returns the cached ConsoleVariable component. */
+    /** @brief Returns the cached ConsoleVariable component after validating it is ready for use. */
     std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariables() const;
-    /** @brief Returns the cached ControlDeck component. */
+    /** @brief Returns the cached ControlDeck component after validating it is ready for use. */
     std::shared_ptr<Ship::ControlDeck> GetControlDeck() const;
 };
 } // namespace Fast

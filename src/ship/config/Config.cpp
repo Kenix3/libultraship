@@ -8,6 +8,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/Context.h"
+#include "ship/window/Window.h"
 
 namespace fs = std::filesystem;
 
@@ -19,6 +20,10 @@ Config::Config(const std::string& path) : Component("Config"), mPath(path), mIsN
 
 Config::~Config() {
     SPDLOG_TRACE("destruct config");
+}
+
+void Config::Init(std::shared_ptr<Window> window) {
+    mWindow = std::move(window);
 }
 
 const std::string& Config::GetPath() const {
@@ -258,6 +263,10 @@ ConfigVersionUpdater::ConfigVersionUpdater(uint32_t toVersion) : mVersion(toVers
 
 uint32_t ConfigVersionUpdater::GetVersion() {
     return mVersion;
+}
+
+std::shared_ptr<Window> Config::GetWindow() const {
+    return RequireDependency(mWindow, "Window");
 }
 
 } // namespace Ship

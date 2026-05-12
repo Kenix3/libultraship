@@ -51,10 +51,10 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * **Required Context children (looked up at OnInit time):**
- * - **Config** — cached in Window::OnInit() to read and persist window
- *   settings (size, backend, fullscreen state). Config must be added to the
- *   Context before Window::Init() is called.
+ * **Required dependencies (constructor-injected):**
+ * - **Config** — cached on the class and used to read and persist window
+ *   settings (size, backend, fullscreen state). Any code path that uses the
+ *   cached Config validates that it exists and is initialized before use.
  *
  * The window is added to Context as a child Component and is accessible via
  * `Context::GetChildren().GetFirst<Window>()`.
@@ -63,23 +63,24 @@ class Window : public Component {
     friend class Context;
 
   public:
-    Window();
+    explicit Window(std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window and pre-registers a list of GUI windows.
      * @param guiWindows GUI overlay windows to register with the Gui layer.
      */
-    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
+    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window backed by a pre-constructed Gui instance.
      * @param gui Gui layer to use.
      */
-    Window(std::shared_ptr<Gui> gui);
+    Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window with both a Gui and a MouseStateManager.
      * @param gui                Gui layer to use.
      * @param mouseStateManager  Mouse state tracker to use.
      */
-    Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager);
+    Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager,
+           std::shared_ptr<Config> config = nullptr);
     virtual ~Window();
 
     /** @brief Requests that the window and application close. */
@@ -288,27 +289,7 @@ class Window : public Component {
      */
     int32_t GetSavedWindowBackend();
 
-    /**
-     * @brief Caches Config from the component hierarchy and throws if not found or uninitialized.
-     *
-     * Called by Component::Init() via OnInit(). Subclasses that override OnInit()
-     * must call Window::OnInit() first to ensure Config is cached before they
-     * access any other components or read configuration values.
-     *
-     * @note Init-order dependency: Config must be present **and initialized** in
-     *       the Context hierarchy before OnInit() is called. Config
-     *       self-initializes on construction, so adding it to the Context before
-     *       the Window satisfies this requirement.
-     *
-     * @throws std::runtime_error if Config is not present in the Context hierarchy.
-     * @throws std::runtime_error if Config is present but not yet initialized.
-     */
-    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
-
-    /** @brief Declares Config as a dependency. */
-    const nlohmann::json& GetDependencies() const override;
-
-    /** @brief Returns the cached Config component. Subclasses use this after OnInit() runs. */
+    /** @brief Returns the cached Config component after validating it is ready for use. */
     std::shared_ptr<Config> GetConfig() const;
 
   private:

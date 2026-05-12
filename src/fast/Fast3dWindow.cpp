@@ -22,8 +22,12 @@ namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager)
-    : Ship::Window(gui, mouseStateManager) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager,
+                           std::shared_ptr<Ship::Config> config,
+                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
+                           std::shared_ptr<Ship::ControlDeck> controlDeck)
+    : Ship::Window(gui, mouseStateManager, std::move(config)), mConsoleVariables(std::move(consoleVariables)),
+      mControlDeck(std::move(controlDeck)) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mInterpreter = std::make_shared<Interpreter>();
@@ -40,15 +44,25 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
     AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_OPENGL);
 }
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
-    : Fast3dWindow(gui, std::make_shared<FastMouseStateManager>()) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<Ship::Config> config,
+                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
+                           std::shared_ptr<Ship::ControlDeck> controlDeck)
+    : Fast3dWindow(gui, std::make_shared<FastMouseStateManager>(), std::move(config), std::move(consoleVariables),
+                   std::move(controlDeck)) {
 }
 
-Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows)
-    : Fast3dWindow(std::make_shared<Fast3dGui>(guiWindows)) {
+Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows, std::shared_ptr<Ship::Config> config,
+                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
+                           std::shared_ptr<Ship::ControlDeck> controlDeck)
+    : Fast3dWindow(std::make_shared<Fast3dGui>(guiWindows), std::move(config), std::move(consoleVariables),
+                   std::move(controlDeck)) {
 }
 
-Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>()) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Config> config,
+                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
+                           std::shared_ptr<Ship::ControlDeck> controlDeck)
+    : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>(), std::move(config), std::move(consoleVariables),
+                   std::move(controlDeck)) {
 }
 
 Fast3dWindow::~Fast3dWindow() {
@@ -59,11 +73,6 @@ Fast3dWindow::~Fast3dWindow() {
 }
 
 void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
-    Window::OnInit(initArgs);
-
-    mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
-    mControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
-
     bool gameMode = false;
 
 #ifdef __linux__
@@ -473,16 +482,11 @@ std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {
 }
 
 std::shared_ptr<Ship::ConsoleVariable> Fast3dWindow::GetConsoleVariables() const {
-    return mConsoleVariables;
+    return RequireDependency(mConsoleVariables, "ConsoleVariables");
 }
 
 std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
-    return mControlDeck;
-}
-
-const nlohmann::json& Fast3dWindow::GetDependencies() const {
-    static const nlohmann::json sDeps = nlohmann::json::array({ "Config", "ConsoleVariable", "ControlDeck" });
-    return sDeps;
+    return RequireDependency(mControlDeck, "ControlDeck");
 }
 
 } // namespace Fast

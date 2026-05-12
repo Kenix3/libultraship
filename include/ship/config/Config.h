@@ -2,12 +2,13 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include <nlohmann/json.hpp>
-
-#include "ship/window/Window.h"
+#include "ship/Component.h"
 
 namespace Ship {
 class Config;
+class Window;
 
 /**
  * @brief Abstract class representing a Config Version Updater, intended to express how to
@@ -51,21 +52,29 @@ class ConfigVersionUpdater {
  * Version migration is supported through ConfigVersionUpdater subclasses; register them
  * with RegisterVersionUpdater() and call RunVersionUpdates() on startup.
  *
- * **Required Context children (looked up at runtime):**
- * - **Window** — queried by GetCurrentWindowBackend() to validate that the stored
- *   backend is available. Window must be added to the Context before
- *   Config::GetCurrentWindowBackend() is called.
+ * **Optional dependency (cached via Config::Init):**
+ * - **Window** — cached for configuration flows that need an initialized Window.
+ *   Any code path that uses the cached Window must validate that it exists and is
+ *   initialized before use.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<Config>()`.
  */
 class Config : public Component {
   public:
+    using Component::Init;
+
     /**
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).
      * @param path Filesystem path to the JSON configuration file.
      */
     Config(const std::string& path);
     ~Config();
+
+    /**
+     * @brief Caches the Window dependency for later validated use.
+     * @param window Window component associated with this config.
+     */
+    void Init(std::shared_ptr<Window> window);
 
     /**
      * @brief Returns the filesystem path to the JSON configuration file.
@@ -238,10 +247,13 @@ class Config : public Component {
     template <typename T> std::vector<T> GetArray(const std::string& key);
 
   private:
+    std::shared_ptr<Window> GetWindow() const;
+
     nlohmann::json mFlattenedJson;
     nlohmann::json mNestedJson;
     std::string mPath;
     bool mIsNewInstance;
     std::map<uint32_t, std::shared_ptr<ConfigVersionUpdater>> mVersionUpdaters;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

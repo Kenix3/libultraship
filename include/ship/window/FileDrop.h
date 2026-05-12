@@ -67,17 +67,13 @@ class FileDrop : public Component {
     /** @brief Invokes all registered drop handlers with the current dropped file. */
     void CallHandlers();
 
-  protected:
-    /** @brief Declares Window as a dependency. */
-    const nlohmann::json& GetDependencies() const override;
-
   private:
     std::vector<FileDroppedFunc> mRegisteredFuncs;
     char* mPath = nullptr;
     bool mFileDropped = false;
     std::shared_ptr<Window> mWindow;
 
-    /** @brief Returns the cached Window component. */
+    /** @brief Returns the cached Window component after validating it is ready for use. */
     std::shared_ptr<Window> GetWindow() const;
 };
 

@@ -259,6 +259,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     console->Init();
     window->Init();
+    config->Init(std::dynamic_pointer_cast<Window>(window));
     fileDropMgr->Init();
     audio->Init();
 

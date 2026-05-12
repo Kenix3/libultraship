@@ -65,15 +65,16 @@ AudioBackend Audio::GetCurrentAudioBackend() {
 }
 
 AudioBackend Audio::GetSavedAudioBackend() {
-    std::string backendName = mConfig->GetString("Window.AudioBackend");
+    auto config = GetConfig();
+    std::string backendName = config->GetString("Window.AudioBackend");
     if (backendName == "wasapi") {
         return AudioBackend::WASAPI;
     }
 
     // Migrate pulse player in config to sdl
     if (backendName == "pulse") {
-        mConfig->SetString("Window.AudioBackend", "sdl");
-        mConfig->Save();
+        config->SetString("Window.AudioBackend", "sdl");
+        config->Save();
         return AudioBackend::SDL;
     }
 
@@ -103,31 +104,32 @@ AudioBackend Audio::GetSavedAudioBackend() {
 }
 
 void Audio::SetCurrentAudioBackend(AudioBackend backend) {
+    auto config = GetConfig();
     mAudioBackend = backend;
 
     switch (backend) {
         case AudioBackend::WASAPI:
-            mConfig->SetString("Window.AudioBackend", "wasapi");
+            config->SetString("Window.AudioBackend", "wasapi");
             break;
         case AudioBackend::COREAUDIO:
-            mConfig->SetString("Window.AudioBackend", "coreaudio");
+            config->SetString("Window.AudioBackend", "coreaudio");
             break;
         case AudioBackend::SDL:
-            mConfig->SetString("Window.AudioBackend", "sdl");
+            config->SetString("Window.AudioBackend", "sdl");
             break;
         case AudioBackend::NUL:
-            mConfig->SetString("Window.AudioBackend", "null");
+            config->SetString("Window.AudioBackend", "null");
             break;
         default:
-            mConfig->SetString("Window.AudioBackend", "");
+            config->SetString("Window.AudioBackend", "");
     }
-    mConfig->Save();
+    config->Save();
 
     InitAudioPlayer();
 }
 
 std::shared_ptr<Config> Audio::GetConfig() const {
-    return mConfig;
+    return RequireDependency(mConfig, "Config");
 }
 
 std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
@@ -150,7 +152,7 @@ AudioChannelsSetting Audio::GetAudioChannels() const {
 
 AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
     int32_t channelsSetting =
-        mConfig->GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
+        GetConfig()->GetInt("CVars." CVAR_AUDIO_CHANNELS_SETTING, static_cast<int32_t>(AudioChannelsSetting::audioMax));
     switch (channelsSetting) {
         case AudioChannelsSetting::audioMatrix51:
             return AudioChannelsSetting::audioMatrix51;
@@ -161,11 +163,6 @@ AudioChannelsSetting Audio::GetSavedAudioChannelsSetting() {
         default:
             return AudioChannelsSetting::audioStereo;
     }
-}
-
-const nlohmann::json& Audio::GetDependencies() const {
-    static const nlohmann::json sDeps = nlohmann::json::array({ "Config" });
-    return sDeps;
 }
 
 } // namespace Ship

@@ -114,19 +114,12 @@ void FileDrop::CallHandlers() {
         }
     }
     SPDLOG_WARN("Dropped file {} not handled by any registered.", mPath);
-    if (auto window = GetWindow()) {
-        auto gui = window->GetGui();
-        gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
-    }
+    auto gui = GetWindow()->GetGui();
+    gui->GetGameOverlay()->TextDrawNotification(30.0f, true, "Unsupported file dropped, ignoring");
 }
 
 std::shared_ptr<Window> FileDrop::GetWindow() const {
-    return mWindow;
-}
-
-const nlohmann::json& FileDrop::GetDependencies() const {
-    static const nlohmann::json sDeps = nlohmann::json::array({ "Window" });
-    return sDeps;
+    return RequireDependency(mWindow, "Window");
 }
 
 } // namespace Ship
