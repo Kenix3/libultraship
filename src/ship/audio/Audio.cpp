@@ -129,7 +129,13 @@ void Audio::SetCurrentAudioBackend(AudioBackend backend) {
 }
 
 std::shared_ptr<Config> Audio::GetConfig() const {
-    return RequireDependency(mConfig, "Config");
+    if (!mConfig) {
+        throw std::runtime_error("Audio requires Config dependency");
+    }
+    if (!mConfig->IsInitialized()) {
+        throw std::runtime_error("Audio requires Config to be initialized");
+    }
+    return mConfig;
 }
 
 std::shared_ptr<std::vector<AudioBackend>> Audio::GetAvailableAudioBackends() {
