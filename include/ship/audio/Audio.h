@@ -37,17 +37,6 @@ class Audio : public Component {
     }
     ~Audio();
 
-     * Called by Component::Init(). Populates the list of available backends,
-     * picks the one specified in the AudioSettings (or falls back to a default),
-     * and starts the AudioPlayer.
-     *
-     * @note Init-order dependency: Config must be present **and initialized** in
-     *       the Context hierarchy before Component::Init() is called on Audio.
-     *       Config self-initializes on construction, so adding it to the Context
-     *       before Audio satisfies this requirement.
-     *
-     * @throws std::runtime_error if Config is not present in the hierarchy.
-     * @throws std::runtime_error if Config is present but not yet initialized.
     /** @brief Returns the currently active AudioPlayer instance. */
     std::shared_ptr<AudioPlayer> GetAudioPlayer();
 
