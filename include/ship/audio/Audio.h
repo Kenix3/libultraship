@@ -37,9 +37,6 @@ class Audio : public Component {
     }
     ~Audio();
 
-    /**
-     * @brief Selects and initialises the best available audio backend.
-     *
      * Called by Component::Init(). Populates the list of available backends,
      * picks the one specified in the AudioSettings (or falls back to a default),
      * and starts the AudioPlayer.
