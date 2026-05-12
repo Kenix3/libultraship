@@ -31,7 +31,16 @@ namespace LUS {
  */
 class InputEditorWindow : public Ship::GuiWindow {
   public:
-    using Ship::GuiWindow::GuiWindow;
+    /**
+     * @brief Constructs an InputEditorWindow with constructor-injected dependencies.
+     * @param consoleVariable CVar name controlling window visibility.
+     * @param name            Window title.
+     * @param controlDeck     ControlDeck for reading/writing controller mappings.
+     * @param window          Window for GUI and mouse capture state.
+     */
+    InputEditorWindow(const std::string& consoleVariable, const std::string& name,
+                      std::shared_ptr<Ship::ControlDeck> controlDeck,
+                      std::shared_ptr<Ship::Window> window);
 
     /** @brief Destroys the InputEditorWindow and releases any active rumble test state. */
     virtual ~InputEditorWindow();

@@ -6,14 +6,17 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/config/ConsoleVariable.h"
 #include <imgui.h>
+#include <stdexcept>
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 
 namespace Ship {
 
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
-                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
-    : Component("ControlDeck") {
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
+                         std::shared_ptr<Window> window,
+                         std::shared_ptr<ConsoleVariable> consoleVariable)
+    : Component("ControlDeck"), mWindow(std::move(window)), mConsoleVariables(std::move(consoleVariable)) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
@@ -25,10 +28,6 @@ ControlDeck::~ControlDeck() {
 }
 
 void ControlDeck::Init(uint8_t* controllerBits) {
-    auto ctx = Context::GetInstance();
-    mWindow = ctx->GetChildren().GetFirst<Window>();
-    mConsoleVariables = ctx->GetChildren().GetFirst<ConsoleVariable>();
-
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
@@ -138,10 +137,22 @@ std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
 }
 
 std::shared_ptr<Window> ControlDeck::GetWindow() const {
+    if (!mWindow) {
+        throw std::runtime_error("ControlDeck requires Window dependency");
+    }
+    if (!mWindow->IsInitialized()) {
+        throw std::runtime_error("ControlDeck requires Window to be initialized");
+    }
     return mWindow;
 }
 
 std::shared_ptr<ConsoleVariable> ControlDeck::GetConsoleVariables() const {
+    if (!mConsoleVariables) {
+        throw std::runtime_error("ControlDeck requires ConsoleVariable dependency");
+    }
+    if (!mConsoleVariables->IsInitialized()) {
+        throw std::runtime_error("ControlDeck requires ConsoleVariable to be initialized");
+    }
     return mConsoleVariables;
 }
 } // namespace Ship

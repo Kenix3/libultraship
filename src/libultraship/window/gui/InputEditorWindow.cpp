@@ -12,14 +12,18 @@
 
 namespace LUS {
 
+InputEditorWindow::InputEditorWindow(const std::string& consoleVariable, const std::string& name,
+                                      std::shared_ptr<Ship::ControlDeck> controlDeck,
+                                      std::shared_ptr<Ship::Window> window)
+    : GuiWindow(consoleVariable, name), mControlDeck(std::move(controlDeck)), mWindow(std::move(window)) {
+}
+
 InputEditorWindow::~InputEditorWindow() {
     SPDLOG_TRACE("destruct input editor window");
 }
 
 void InputEditorWindow::OnInit(const nlohmann::json& initArgs) {
     GuiWindow::OnInit(initArgs);
-    mControlDeck = mControlDeck;
-    mWindow = mWindow;
 
     mGameInputBlockTimer = INT32_MAX;
     mMappingInputBlockTimer = INT32_MAX;

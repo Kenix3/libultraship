@@ -9,6 +9,7 @@ union F3DGfx;
 class Interpreter;
 class GfxDebugger;
 class Fast3dGui;
+class Fast3dWindow;
 } // namespace Fast
 
 namespace Ship {
@@ -31,7 +32,18 @@ namespace LUS {
  */
 class GfxDebuggerWindow : public Ship::GuiWindow {
   public:
-    using GuiWindow::GuiWindow;
+    /**
+     * @brief Constructs a GfxDebuggerWindow with constructor-injected dependencies.
+     * @param consoleVariable  CVar name controlling window visibility.
+     * @param name             Window title.
+     * @param fast3dWindow     Fast3dWindow whose interpreter and GUI are used.
+     * @param gfxDebugger      GfxDebugger used to capture/inspect display lists.
+     * @param resourceManager  ResourceManager for archive lookups.
+     */
+    GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name,
+                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
+                      std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                      std::shared_ptr<Ship::ResourceManager> resourceManager);
     virtual ~GfxDebuggerWindow();
 
   protected:
@@ -58,14 +70,12 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {}; ///< Last captured display list command buffer.
-    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the Fast3D interpreter. @note Requires Window
-                                                   ///< (Fast3dWindow) to be initialized first.
+    std::weak_ptr<Fast::Interpreter> mInterpreter;         ///< Weak reference to the Fast3D interpreter (constructor-injected).
     std::shared_ptr<Fast::GfxDebugger>
-        mGfxDebugger; ///< Cached GfxDebugger component. @note Requires GfxDebugger component to be in Context.
+        mGfxDebugger; ///< GfxDebugger component (constructor-injected).
     std::shared_ptr<Fast::Fast3dGui>
-        mFast3dGui; ///< Cached Fast3dGui reference. @note Requires Window (Fast3dWindow) to be initialized first.
-    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager component. @note Requires
-                                                             ///< ResourceManager component to be in Context.
+        mFast3dGui; ///< Fast3dGui reference (constructor-injected).
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< ResourceManager component (constructor-injected).
 };
 
 } // namespace LUS

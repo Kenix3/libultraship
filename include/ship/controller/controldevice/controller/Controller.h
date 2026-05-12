@@ -37,10 +37,12 @@ class Controller : public ControlDevice {
   public:
     /**
      * @brief Constructs a Controller for the given port with a set of button bitmasks.
-     * @param portIndex Zero-based port index.
-     * @param bitmasks  All button bitmasks this controller should track (one ControllerButton per entry).
+     * @param portIndex       Zero-based port index.
+     * @param bitmasks        All button bitmasks this controller should track (one ControllerButton per entry).
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Destroys the Controller and releases all mapping resources. */
     ~Controller();

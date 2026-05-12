@@ -124,7 +124,12 @@ void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
 
     // Register the GFX Debugger window if not already present.
     if (GetGui() && GetGui()->GetGuiWindow("Gfx Debugger") == nullptr) {
-        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger"));
+        auto gfxDebugger = mGfxDebugger;
+        auto resourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>();
+        auto self = std::dynamic_pointer_cast<Fast3dWindow>(GetSharedComponent());
+        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(
+            CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger",
+            self, gfxDebugger, resourceManager));
     }
 }
 

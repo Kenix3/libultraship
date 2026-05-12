@@ -26,12 +26,11 @@ namespace Ship {
  *
  * Subclass ControlDeck to implement WriteToPad() for a specific game's pad layout.
  *
- * **Required Context children (looked up at Init time):**
- * - **ConsoleVariable** — cached in Init() and used by controller mapping layers to load/save
- *   per-mapping settings (e.g. button assignments, rumble toggle). ConsoleVariable must be
- *   added to the Context before ControlDeck::Init() is called.
- * - **Window** — cached in Init() and consulted by controller mappings for keyboard/mouse
- *   capture state. Window must be added to the Context before ControlDeck::Init() is called.
+ * **Required dependencies (constructor-injected): Window, ConsoleVariable**
+ * - **ConsoleVariable** — injected at construction and used by controller mapping layers to load/save
+ *   per-mapping settings (e.g. button assignments, rumble toggle).
+ * - **Window** — injected at construction and consulted by controller mappings for keyboard/mouse
+ *   capture state.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<ControlDeck>()`.
  */
@@ -42,10 +41,14 @@ class ControlDeck : public Component {
      * @param additionalBitmasks        Extra button bitmasks beyond the standard set.
      * @param controllerDefaultMappings Default mappings applied when a new device is connected.
      * @param buttonNames               Human-readable names for each button bitmask, keyed by bitmask.
+     * @param window                    Optional Window dependency.
+     * @param consoleVariable           Optional ConsoleVariable dependency.
      */
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                 std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
-                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
+                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
+                std::shared_ptr<Window> window = nullptr,
+                std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~ControlDeck();
 
     /**

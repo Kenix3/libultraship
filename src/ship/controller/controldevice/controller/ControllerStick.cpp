@@ -26,7 +26,8 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace Ship {
-ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
+ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
+                                 std::shared_ptr<ConsoleVariable> consoleVariable)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
@@ -34,7 +35,8 @@ ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex)
     mDeadzonePercentage = DEFAULT_STICK_DEADZONE_PERCENTAGE;
     mDeadzone = 17.0f;
     mNotchSnapAngle = 0;
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mConsoleVariable = consoleVariable ? consoleVariable
+                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
 

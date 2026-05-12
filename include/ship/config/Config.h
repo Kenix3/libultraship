@@ -52,8 +52,8 @@ class ConfigVersionUpdater {
  * Version migration is supported through ConfigVersionUpdater subclasses; register them
  * with RegisterVersionUpdater() and call RunVersionUpdates() on startup.
  *
- * **Optional dependency (cached via Config::Init):**
- * - **Window** — cached for configuration flows that need an initialized Window.
+ * **Optional dependency (constructor-injected):**
+ * - **Window** — injected at construction for configuration flows that need an initialized Window.
  *   Any code path that uses the cached Window must validate that it exists and is
  *   initialized before use.
  *
@@ -61,20 +61,13 @@ class ConfigVersionUpdater {
  */
 class Config : public Component {
   public:
-    using Component::Init;
-
     /**
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).
-     * @param path Filesystem path to the JSON configuration file.
+     * @param path   Filesystem path to the JSON configuration file.
+     * @param window Optional Window dependency for configuration flows that need it.
      */
-    Config(const std::string& path);
+    Config(const std::string& path, std::shared_ptr<Window> window = nullptr);
     ~Config();
-
-    /**
-     * @brief Caches the Window dependency for later validated use.
-     * @param window Window component associated with this config.
-     */
-    void Init(std::shared_ptr<Window> window);
 
     /**
      * @brief Returns the filesystem path to the JSON configuration file.
@@ -247,8 +240,6 @@ class Config : public Component {
     template <typename T> std::vector<T> GetArray(const std::string& key);
 
   private:
-    std::shared_ptr<Window> GetWindow() const;
-
     nlohmann::json mFlattenedJson;
     nlohmann::json mNestedJson;
     std::string mPath;

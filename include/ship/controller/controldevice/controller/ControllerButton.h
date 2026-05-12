@@ -27,10 +27,12 @@ class ControllerButton {
   public:
     /**
      * @brief Constructs a ControllerButton for a specific port and bitmask.
-     * @param portIndex Zero-based port index.
-     * @param bitmask   Single-bit bitmask representing this button (e.g. 0x0001 for A).
+     * @param portIndex       Zero-based port index.
+     * @param bitmask         Single-bit bitmask representing this button (e.g. 0x0001 for A).
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
-    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~ControllerButton();
 
     /**

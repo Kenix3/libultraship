@@ -49,10 +49,11 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
-
-    if (sControlDeck) {
-        sControlDeck->WriteToPad(pad);
+    if (!sControlDeck) {
+        SPDLOG_WARN("osContGetReadData: ControlDeck not initialized");
+        return;
     }
+    sControlDeck->WriteToPad(pad);
 }
 
 void osSetTime(OSTime time) {

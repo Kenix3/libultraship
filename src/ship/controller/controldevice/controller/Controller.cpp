@@ -17,13 +17,16 @@
 
 namespace Ship {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks) : ControlDevice(portIndex) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+                       std::shared_ptr<ConsoleVariable> consoleVariable)
+    : ControlDevice(portIndex) {
+    mConsoleVariable = consoleVariable ? consoleVariable
+                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     for (auto bitmask : bitmasks) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable);
     }
-    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
-    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK);
+    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable);
+    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable);
     mGyro = std::make_shared<ControllerGyro>(portIndex);
     mRumble = std::make_shared<ControllerRumble>(portIndex);
     mLED = std::make_shared<ControllerLED>(portIndex);

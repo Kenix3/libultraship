@@ -157,7 +157,8 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     }
 
     // ---- Configuration ----
-    auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath));
+    auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath),
+                                             std::dynamic_pointer_cast<Window>(window));
     shared->GetChildren().Add(config);
 
     // Read config values needed for component construction
@@ -259,7 +260,6 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     console->Init();
     window->Init();
-    config->Init(std::dynamic_pointer_cast<Window>(window));
     fileDropMgr->Init();
     audio->Init();
 

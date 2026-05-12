@@ -35,7 +35,14 @@ class ControllerStick {
      * @param portIndex  Zero-based port index.
      * @param stickIndex Stick identifier (e.g. LEFT_STICK or RIGHT_STICK).
      */
-    ControllerStick(uint8_t portIndex, StickIndex stickIndex);
+    /**
+     * @brief Constructs a ControllerStick for a specific port and stick index.
+     * @param portIndex       Zero-based port index.
+     * @param stickIndex      LEFT_STICK or RIGHT_STICK.
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
+     */
+    ControllerStick(uint8_t portIndex, StickIndex stickIndex,
+                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~ControllerStick();
 
     /** @brief Clears all in-memory mappings and reloads them from Config. */

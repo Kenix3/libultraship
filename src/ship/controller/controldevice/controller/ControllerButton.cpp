@@ -16,10 +16,12 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                   std::shared_ptr<ConsoleVariable> consoleVariable)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mConsoleVariable = consoleVariable ? consoleVariable
+                                       : Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     mControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
     mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
 }
