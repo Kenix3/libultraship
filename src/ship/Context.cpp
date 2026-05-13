@@ -29,10 +29,14 @@
 #endif
 
 namespace Ship {
-std::weak_ptr<Context> Context::mContext;
+Context* Context::mContext;
 
-std::shared_ptr<Context> Context::GetInstance() {
-    return mContext.lock();
+Context* Context::GetRawInstance() {
+    return mContext;
+}
+
+void Context::DestroyInstance() {
+    delete mContext;
 }
 
 Context::~Context() {
@@ -58,18 +62,18 @@ Context::~Context() {
     GetConfig()->Save();
     mConfig = nullptr;
     spdlog::shutdown();
+    mContext = nullptr;
 }
 
-std::shared_ptr<Context>
-Context::CreateInstance(const std::string& name, const std::string& shortName, const std::string& configFilePath,
-                        const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-                        uint32_t reservedThreadCount, AudioSettings audioSettings, std::shared_ptr<Window> window,
-                        std::shared_ptr<ControlDeck> controlDeck) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        if (shared->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
-            return shared;
+Context* Context::CreateInstance(const std::string& name, const std::string& shortName,
+                                 const std::string& configFilePath, const std::vector<std::string>& archivePaths,
+                                 const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount,
+                                 AudioSettings audioSettings, std::shared_ptr<Window> window,
+                                 std::shared_ptr<ControlDeck> controlDeck) {
+    if (mContext == nullptr) {
+        mContext = new Context(name, shortName, configFilePath);
+        if (mContext->Init(archivePaths, validHashes, reservedThreadCount, audioSettings, window, controlDeck)) {
+            return mContext;
         } else {
             SPDLOG_ERROR("Failed to initialize");
             return nullptr;
@@ -78,20 +82,19 @@ Context::CreateInstance(const std::string& name, const std::string& shortName, c
 
     SPDLOG_DEBUG("Trying to create a context when it already exists. Returning existing.");
 
-    return GetInstance();
+    return GetRawInstance();
 }
 
-std::shared_ptr<Context> Context::CreateUninitializedInstance(const std::string& name, const std::string& shortName,
-                                                              const std::string& configFilePath) {
-    if (mContext.expired()) {
-        auto shared = std::make_shared<Context>(name, shortName, configFilePath);
-        mContext = shared;
-        return shared;
+Context* Context::CreateUninitializedInstance(const std::string& name, const std::string& shortName,
+                                              const std::string& configFilePath) {
+    if (mContext == nullptr) {
+        mContext = new Context(name, shortName, configFilePath);
+        return mContext;
     }
 
     SPDLOG_DEBUG("Trying to create an uninitialized context when it already exists. Returning existing.");
 
-    return GetInstance();
+    return GetRawInstance();
 }
 
 Context::Context(std::string name, std::string shortName, std::string configFilePath)

@@ -3,5 +3,5 @@
 #include "ship/debug/CrashHandler.h"
 
 void CrashHandlerRegisterCallback(CrashHandlerCallback callback) {
-    Ship::Context::GetInstance()->GetCrashHandler()->RegisterCallback(callback);
+    Ship::Context::GetRawInstance()->GetCrashHandler()->RegisterCallback(callback);
 }

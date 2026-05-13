@@ -16,7 +16,7 @@ Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mous
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
-    mConfig = Context::GetInstance()->GetConfig();
+    mConfig = Context::GetRawInstance()->GetConfig();
 }
 
 Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {

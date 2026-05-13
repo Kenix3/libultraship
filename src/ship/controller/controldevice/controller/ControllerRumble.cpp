@@ -37,13 +37,13 @@ void ControllerRumble::SaveRumbleMappingIdsToConfig() {
     const std::string rumbleMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
     if (rumbleMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(rumbleMappingIdsCvarKey.c_str());
+        Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(rumbleMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(rumbleMappingIdsCvarKey.c_str(),
-                                                                       rumbleMappingIdListString.c_str());
+        Ship::Context::GetRawInstance()->GetConsoleVariables()->SetString(rumbleMappingIdsCvarKey.c_str(),
+                                                                          rumbleMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
 }
 
 void ControllerRumble::AddRumbleMapping(std::shared_ptr<ControllerRumbleMapping> mapping) {
@@ -119,7 +119,7 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
     const std::string rumbleMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
     std::stringstream rumbleMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
+        Ship::Context::GetRawInstance()->GetConsoleVariables()->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
     std::string rumbleMappingIdString;
     while (getline(rumbleMappingIdsStringStream, rumbleMappingIdString, ',')) {
         LoadRumbleMappingFromConfig(rumbleMappingIdString);
@@ -144,8 +144,8 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     SaveRumbleMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
     return true;
 }
 
