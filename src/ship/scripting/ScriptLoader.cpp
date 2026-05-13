@@ -14,9 +14,6 @@
 #include <queue>
 #include <unordered_map>
 
-#include "ship/Context.h"
-#include "ship/config/ConsoleVariable.h"
-
 namespace Ship {
 std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
                                                 const std::shared_ptr<Archive>& archive = nullptr) {
@@ -240,7 +237,7 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
 
 void ScriptLoader::CompileAll(const std::optional<std::function<void(const std::shared_ptr<Archive>&)>>& preCallback,
                               const std::optional<std::function<void()>>& postCallback) {
-    auto archive = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto archive = mResourceManager->GetArchiveManager();
     auto list = archive->GetArchives();
 
     for (const auto& entry : *list) {

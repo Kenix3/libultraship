@@ -3,6 +3,10 @@
 
 namespace Fast {
 
+GfxDebugger::GfxDebugger() : Ship::Component("GfxDebugger") {
+    MarkInitialized();
+}
+
 void GfxDebugger::ResumeGame() {
     mIsDebugging = false;
     mIsDebuggingRequested = false;

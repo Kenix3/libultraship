@@ -4,13 +4,20 @@
 #include <version>
 
 #include "ship/utils/StringHelper.h"
-#include "ship/events/EventSystem.h"
-#include "ship/Context.h"
+#include "ship/events/Events.h"
 
 namespace Ship {
 
 static bool hookOptCollapseAll;
 static bool hookOptExpandAll;
+
+EventDebuggerWindow::EventDebuggerWindow(std::shared_ptr<ConsoleVariable> consoleVariable,
+                                         std::shared_ptr<Window> window, std::shared_ptr<Events> events,
+                                         const std::string& visibilityCvar, const std::string& name)
+    : GuiWindow(std::move(consoleVariable), std::move(window), visibilityCvar, false, name, ImVec2{ -1, -1 },
+                ImGuiWindowFlags_None),
+      mEvents(std::move(events)) {
+}
 
 void DrawEventCallerInfo(std::string& name, EventRegistration& registry) {
     ImGui::Text("Total Callers Registered: %zu", registry.Callers.size());
@@ -79,8 +86,11 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
 }
 
 void EventDebuggerWindow::DrawElement() {
+    if (!mEvents) {
+        return;
+    }
     bool collapseLogic = false;
-    auto events = Ship::Context::GetInstance()->GetEventSystem()->GetEventRegistrations();
+    auto events = mEvents->GetEventRegistrations();
     bool doingCollapseOrExpand = hookOptExpandAll || hookOptCollapseAll;
 
     if (ImGui::Button("Expand All")) {
@@ -118,7 +128,8 @@ void EventDebuggerWindow::DrawElement() {
     }
 }
 
-void EventDebuggerWindow::InitElement() {
+void EventDebuggerWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     hookOptExpandAll = false;
     hookOptCollapseAll = false;
 }

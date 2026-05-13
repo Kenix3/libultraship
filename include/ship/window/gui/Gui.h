@@ -2,6 +2,7 @@
 
 #ifdef __cplusplus
 
+#include "ship/Component.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <memory>
@@ -19,6 +20,9 @@
 
 namespace Ship {
 class Window;
+class ConsoleVariable;
+class Config;
+class ResourceManager;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -28,9 +32,11 @@ class Window;
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
+ * GuiWindow children are accessible via `GetChildren().GetFirst<T>()`.
+ *
  * Obtain the instance from Window::GetGui().
  */
-class Gui {
+class Gui : public Component {
   public:
     /** @brief Constructs a Gui with no pre-registered windows. */
     Gui();
@@ -45,7 +51,7 @@ class Gui {
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
      */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs) override;
 
     /**
      * @brief Begins a new ImGui frame.
@@ -229,6 +235,10 @@ class Gui {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<Config> mConfig;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship
 

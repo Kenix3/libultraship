@@ -7,11 +7,16 @@
 #pragma once
 #ifdef __APPLE__
 
+#include <memory>
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
 
 #include <imgui_impl_sdl2.h>
 #include <simd/simd.h>
+
+namespace Ship {
+class ConsoleVariable;
+} // namespace Ship
 
 static constexpr size_t kMaxVertexBufferPoolSize = 3;
 static constexpr size_t METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
@@ -236,6 +241,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
 
     bool mNonUniformThreadgroupSupported;
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
 };
 
 } // namespace Fast

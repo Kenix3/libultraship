@@ -157,6 +157,20 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
                                                                        std::shared_ptr<File> metaFileToLoad) {
     auto initData = CreateDefaultResourceInitData();
 
+    if (!mResourceManager) {
+        auto context = Context::GetInstance();
+        if (context == nullptr) {
+            SPDLOG_ERROR("Failed to read resource init data for {}: no active context", filePath);
+            return initData;
+        }
+        mResourceManager = context->GetChildren().GetFirst<ResourceManager>();
+    }
+    auto resourceManager = mResourceManager;
+    if (resourceManager == nullptr) {
+        SPDLOG_ERROR("Failed to read resource init data for {}: no ResourceManager available", filePath);
+        return initData;
+    }
+
     // just using metaFileToLoad->Buffer->data() leads to garbage at the end
     // that causes nlohmann to fail parsing, following the pattern used for
     // xml resolves that issue
@@ -175,7 +189,7 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
         initData->Format = RESOURCE_FORMAT_XML;
     }
 
-    initData->Type = Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(parsed["type"]);
+    initData->Type = resourceManager->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
 
     return initData;
@@ -189,12 +203,25 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
     }
 
     if (initData == nullptr) {
+        if (!mResourceManager) {
+            auto context = Context::GetInstance();
+            if (context == nullptr) {
+                SPDLOG_ERROR("Failed to load resource {}: no active context", filePath);
+                return nullptr;
+            }
+            mResourceManager = context->GetChildren().GetFirst<ResourceManager>();
+        }
+        auto resourceManager = mResourceManager;
+        if (resourceManager == nullptr) {
+            SPDLOG_ERROR("Failed to load resource {}: no ResourceManager available", filePath);
+            return nullptr;
+        }
         auto metaFilePath = filePath + ".meta";
-        auto metaFileToLoad = Context::GetInstance()->GetResourceManager()->LoadFileProcess(metaFilePath);
+        auto metaFileToLoad = resourceManager->LoadFileProcess(metaFilePath);
 
         if (metaFileToLoad != nullptr) {
             auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-            fileToLoad = Context::GetInstance()->GetResourceManager()->LoadFileProcess(initDataFromMetaFile->Path);
+            fileToLoad = resourceManager->LoadFileProcess(initDataFromMetaFile->Path);
             initData = initDataFromMetaFile;
         } else {
             initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
@@ -285,8 +312,18 @@ ResourceLoader::ReadResourceInitDataXml(const std::string& filePath, std::shared
     resourceInitData->Format = RESOURCE_FORMAT_XML;
 
     auto root = document->FirstChildElement();
-    resourceInitData->Type =
-        Context::GetInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(root->Name());
+    auto context = Context::GetInstance();
+    if (context == nullptr) {
+        SPDLOG_ERROR("Error reading OTR header from XML: No active context for file {}", filePath);
+        return resourceInitData;
+    }
+
+    auto resourceManager = context->GetChildren().GetFirst<ResourceManager>();
+    if (resourceManager == nullptr) {
+        SPDLOG_ERROR("Error reading OTR header from XML: No ResourceManager for file {}", filePath);
+        return resourceInitData;
+    }
+    resourceInitData->Type = resourceManager->GetResourceLoader()->GetResourceType(root->Name());
     resourceInitData->ResourceVersion = root->IntAttribute("Version");
 
     return resourceInitData;

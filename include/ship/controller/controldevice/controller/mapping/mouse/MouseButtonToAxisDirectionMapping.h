@@ -3,8 +3,11 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "MouseButtonToAnyMapping.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps a mouse button to a virtual analog stick direction.
@@ -21,7 +24,9 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
      * @param direction  The stick direction to activate.
      * @param button     The mouse button to bind.
      */
-    MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button);
+    MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button,
+                                      std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;
@@ -43,5 +48,9 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
 
     /** @brief Returns the human-readable name of the bound mouse button. */
     std::string GetPhysicalInputName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

@@ -1,0 +1,117 @@
+# Doxyfile for libultraship
+# Run: doxygen Doxyfile
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "libultraship"
+PROJECT_BRIEF          = "Reimplementations of libultra (N64 SDK) functions for modern hardware"
+PROJECT_LOGO           =
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = include/ README.md
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.hpp *.md
+EXTENSION_MAPPING      =
+USE_MDFILE_AS_MAINPAGE = README.md
+EXCLUDE                = include/libultraship/libultra
+EXCLUDE_PATTERNS       = */fast/README.md
+
+#---------------------------------------------------------------------------
+# Output
+#---------------------------------------------------------------------------
+OUTPUT_DIRECTORY       = doxygen_out
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+
+#---------------------------------------------------------------------------
+# Extraction
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_ANON_NSPACES   = NO
+
+#---------------------------------------------------------------------------
+# Filtering
+#---------------------------------------------------------------------------
+# Define all feature-gate and platform macros so Doxygen sees the complete API
+# surface.  OS macros are defined simultaneously so that every platform-specific
+# code path appears in the generated documentation.
+PREDEFINED             = INCLUDE_MPQ_SUPPORT \
+                         INCLUDE_PROFILING \
+                         COMPONENT_THREAD_SAFE \
+                         INIT_EVENT_IDS \
+                         ENABLE_SCRIPTING \
+                         ENABLE_OPENGL \
+                         ENABLE_DX11 \
+                         ENABLE_DX12 \
+                         DECLARE_GFX_DXGI_FUNCTIONS \
+                         USE_OPENGLES \
+                         USE_GBI_TRACE \
+                         _WIN32 \
+                         _MSC_VER \
+                         __APPLE__ \
+                         __linux__ \
+                         __OpenBSD__ \
+                         __cplusplus
+
+# Exclude symbols that live outside the Ship / LUS / Fast namespace hierarchy.
+# This includes:
+#   - Objective-C bridge namespaces used by Metal headers (MTL, CA, NS).
+#   - The tinyxml2 library namespace exposed by forward declarations.
+#   - Global-scope utility classes (StringHelper, Path, DiskFile, Directory,
+#     BitConverter, Endianness) that have not yet been moved into a Ship sub-namespace.
+#   - Global-scope C-compatible structs/enums from fast/interpreter.h
+#     (ColorCombinerKey, CCFeatures, ShaderOpts) that must remain at global scope
+#     for C-linkage but are not part of the public C++ API.
+EXCLUDE_SYMBOLS        = MTL MTL::* CA CA::* NS NS::* tinyxml2 tinyxml2::* \
+                         StringHelper \
+                         Path \
+                         DiskFile \
+                         Directory \
+                         BinaryReader \
+                         BitConverter \
+                         Endianness \
+                         ColorCombinerKey \
+                         CCFeatures \
+                         ShaderOpts
+
+#---------------------------------------------------------------------------
+# Source browsing
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+
+#---------------------------------------------------------------------------
+# Graphs (requires Graphviz)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+DIRECTORY_GRAPH        = YES
+DOT_CLEANUP            = YES
+
+#---------------------------------------------------------------------------
+# Messages
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+
+#---------------------------------------------------------------------------
+# HTML appearance
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = AUTO_LIGHT

@@ -1,9 +1,12 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "ship/window/gui/GuiElement.h"
 
 namespace Ship {
+class ConsoleVariable;
+class Window;
 /**
  * @brief The application's main ImGui menu bar rendered at the top of the screen.
  *
@@ -17,6 +20,16 @@ namespace Ship {
  */
 class GuiMenuBar : public GuiElement {
   public:
+    /**
+     * @brief Constructs a GuiMenuBar with constructor-injected dependencies and explicit initial visibility.
+     * @param consoleVariable          ConsoleVariable dependency for CVar read/write.
+     * @param window                   Window dependency for GUI save scheduling.
+     * @param visibilityConsoleVariable CVar name used to persist/read visibility.
+     * @param isVisible                 Initial visibility state.
+     */
+    GuiMenuBar(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+               const std::string& visibilityConsoleVariable, bool isVisible);
+
     /**
      * @brief Constructs a GuiMenuBar with an explicit initial visibility.
      * @param visibilityConsoleVariable CVar name used to persist/read visibility.
@@ -44,9 +57,13 @@ class GuiMenuBar : public GuiElement {
      */
     void SetVisibility(bool visible) override;
 
+    void OnInit(const nlohmann::json& initArgs = {}) override;
+
   private:
     /** @brief Reads the CVar and updates mIsVisible accordingly. */
     void SyncVisibilityConsoleVariable();
     std::string mVisibilityConsoleVariable;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

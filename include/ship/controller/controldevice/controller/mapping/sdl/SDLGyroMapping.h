@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include "SDLMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad's gyroscope sensor to a virtual gyro input.
@@ -19,7 +22,9 @@ class SDLGyroMapping final : public ControllerGyroMapping {
      * @param neutralYaw   Yaw value at rest (calibration offset).
      * @param neutralRoll  Roll value at rest (calibration offset).
      */
-    SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll);
+    SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll,
+                   std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                   std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Reads the gyro sensor and writes the resulting X/Y values.
@@ -42,6 +47,10 @@ class SDLGyroMapping final : public ControllerGyroMapping {
 
     /** @brief Returns the human-readable name of the SDL gamepad device. */
     std::string GetPhysicalDeviceName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 
   private:
     float mNeutralPitch;

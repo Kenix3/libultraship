@@ -1,12 +1,15 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "ship/window/gui/GuiElement.h"
 #include <stdint.h>
 
 namespace Ship {
+class ConsoleVariable;
+class Window;
 /**
  * @brief A floating ImGui window managed by the Ship Gui layer.
  *
@@ -23,7 +26,9 @@ namespace Ship {
  *   public:
  *     using GuiWindow::GuiWindow;
  *   protected:
- *     void InitElement() override { }
+ *     void OnInit(const nlohmann::json& initArgs = {}) override {
+ *         GuiWindow::OnInit(initArgs);
+ *     }
  *     void UpdateElement() override { }
  *     void DrawElement() override {
  *         ImGui::Text("Hello World");
@@ -33,17 +38,18 @@ namespace Ship {
  */
 class GuiWindow : public GuiElement {
   public:
-    GuiWindow() = default;
-
     /**
-     * @brief Full constructor with explicit size and window flags.
-     * @param consoleVariable  CVar name used to persist/read visibility (e.g. "gMyWindow").
+     * @brief Full constructor with constructor-injected dependencies, explicit size and window flags.
+     * @param consoleVariable  ConsoleVariable dependency for CVar read/write.
+     * @param window           Window dependency for GUI save scheduling.
+     * @param visibilityCvar   CVar name used to persist/read visibility (e.g. "gMyWindow").
      * @param isVisible        Initial visibility.
      * @param name             Window title shown in the ImGui title bar.
      * @param originalSize     Default size of the window on first open.
      * @param windowFlags      ImGui window flags (e.g. ImGuiWindowFlags_NoResize).
      */
-    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
+    GuiWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+              const std::string& visibilityCvar, bool isVisible, const std::string& name, ImVec2 originalSize,
               uint32_t windowFlags);
 
     /**
@@ -54,6 +60,9 @@ class GuiWindow : public GuiElement {
      * @param originalSize    Default window size.
      */
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize);
+
+    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
+              uint32_t windowFlags);
 
     /**
      * @brief Minimal constructor using default size and flags.
@@ -94,9 +103,6 @@ class GuiWindow : public GuiElement {
      */
     void Draw() override;
 
-    /** @brief Returns the window's display name. */
-    std::string GetName();
-
   protected:
     /**
      * @brief Overrides SetVisibility to also write the new state to the backing CVar.
@@ -120,11 +126,14 @@ class GuiWindow : public GuiElement {
     /** @brief Reads the CVar and updates mIsVisible accordingly. */
     void SyncVisibilityConsoleVariable();
 
+    void OnInit(const nlohmann::json& initArgs = {}) override;
+
   private:
-    std::string mName;
     std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;
     ImVec2 mOriginalSize;
     uint32_t mWindowFlags;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

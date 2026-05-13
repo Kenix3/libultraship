@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ship/utils/color.h"
+#include "ship/Component.h"
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>
@@ -9,6 +10,7 @@
 #include <string_view>
 
 namespace Ship {
+class Config;
 
 /** @brief Discriminator tag for the active field of the CVar union. */
 typedef enum class ConsoleVariableType { Integer, Float, String, Color, Color24 } ConsoleVariableType;
@@ -46,11 +48,16 @@ typedef struct CVar {
  * from a JSON file via the Config layer. Values can be registered with defaults,
  * queried, mutated, copied, and cleared at runtime.
  *
- * Obtain the singleton instance from Context::GetConsoleVariables().
+ * **Required Context children (looked up at runtime):**
+ * - **Config** — used by Load() and Save() to read and write CVar persistence.
+ *   Config must be added to the Context before ConsoleVariable::Load() or
+ *   ConsoleVariable::Save() are called.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ConsoleVariable>()`.
  */
-class ConsoleVariable {
+class ConsoleVariable : public Component {
   public:
-    ConsoleVariable();
+    explicit ConsoleVariable(std::shared_ptr<Config> config = nullptr);
     ~ConsoleVariable();
 
     /**
@@ -209,5 +216,6 @@ class ConsoleVariable {
         }
     };
     std::unordered_map<std::string, std::shared_ptr<CVar>, TransparentStringHash, TransparentStringEqual> mVariables;
+    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

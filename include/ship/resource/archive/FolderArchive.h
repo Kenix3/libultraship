@@ -27,7 +27,8 @@ class FolderArchive final : virtual public Archive {
      * @brief Constructs a FolderArchive rooted at the given directory.
      * @param archivePath Path to the directory to use as the archive root.
      */
-    FolderArchive(const std::string& archivePath);
+    FolderArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+                  std::shared_ptr<Keystore> keystore = nullptr);
     ~FolderArchive();
 
     /**

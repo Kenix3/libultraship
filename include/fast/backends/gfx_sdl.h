@@ -1,7 +1,17 @@
 #pragma once
 
+#include <memory>
 #include "gfx_window_manager_api.h"
+
+namespace Ship {
+class ConsoleVariable;
+class Config;
+class FileDrop;
+} // namespace Ship
+
 namespace Fast {
+class Fast3dGui;
+
 class GfxWindowBackendSDL2 final : public GfxWindowBackend {
   public:
     GfxWindowBackendSDL2() = default;
@@ -66,5 +76,10 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     int mWindowWidth = 640;
     int mWindowHeight = 480;
     void (*mOnAllKeysUp)();
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::Config> mConfig;
+    std::shared_ptr<Ship::FileDrop> mFileDrop;
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;
 };
 } // namespace Fast

@@ -1,18 +1,17 @@
 #include "ship/debug/Console.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace Ship {
-Console::Console() {
+Console::Console() : Component("Console") {
 }
 
 Console::~Console() {
     SPDLOG_TRACE("destruct console");
 }
 
-void Console::Init() {
+void Console::OnInit(const nlohmann::json& /*initArgs*/) {
 }
 
 std::string Console::BuildUsage(const CommandEntry& entry) {
@@ -42,7 +41,7 @@ int32_t Console::Run(const std::string& command, std::string* output) {
     }
 
     const CommandEntry& entry = it->second;
-    int32_t commandResult = entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+    int32_t commandResult = entry.Handler(std::static_pointer_cast<Console>(GetSharedComponent()), cmdArgs, output);
     if (output) {
         SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
     } else {

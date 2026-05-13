@@ -7,6 +7,9 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+class Window;
 
 /** @brief Default stick sensitivity as a percentage of full scale. */
 #define DEFAULT_STICK_SENSITIVITY_PERCENTAGE 100
@@ -33,7 +36,15 @@ class ControllerStick {
      * @param portIndex  Zero-based port index.
      * @param stickIndex Stick identifier (e.g. LEFT_STICK or RIGHT_STICK).
      */
-    ControllerStick(uint8_t portIndex, StickIndex stickIndex);
+    /**
+     * @brief Constructs a ControllerStick for a specific port and stick index.
+     * @param portIndex       Zero-based port index.
+     * @param stickIndex      LEFT_STICK or RIGHT_STICK.
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
+     */
+    ControllerStick(uint8_t portIndex, StickIndex stickIndex,
+                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                    std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Window> window = nullptr);
     ~ControllerStick();
 
     /** @brief Clears all in-memory mappings and reloads them from Config. */
@@ -222,5 +233,9 @@ class ControllerStick {
     bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
+
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

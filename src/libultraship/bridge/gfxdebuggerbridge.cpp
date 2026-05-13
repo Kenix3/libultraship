@@ -1,27 +1,27 @@
 #include "libultraship/bridge/gfxdebuggerbridge.h"
 #include "ship/Context.h"
-#include "fast/Fast3dWindow.h"
+#include "fast/debug/GfxDebugger.h"
 
-static std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() {
-    auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
-    return window ? window->GetGfxDebugger() : nullptr;
+// Dependency: requires Fast::GfxDebugger component to be present in Ship::Context.
+
+static std::shared_ptr<Fast::GfxDebugger> sGfxDebugger;
+
+static Fast::GfxDebugger* GetGfxDebugger() {
+    if (!sGfxDebugger) {
+        sGfxDebugger = Ship::Context::GetInstance()->GetChildren().GetFirst<Fast::GfxDebugger>();
+    }
+    return sGfxDebugger.get();
 }
 
 void GfxDebuggerRequestDebugging() {
-    if (auto dbg = GetGfxDebugger()) {
-        dbg->RequestDebugging();
-    }
+    GetGfxDebugger()->RequestDebugging();
 }
 bool GfxDebuggerIsDebugging() {
-    auto dbg = GetGfxDebugger();
-    return dbg ? dbg->IsDebugging() : false;
+    return GetGfxDebugger()->IsDebugging();
 }
 bool GfxDebuggerIsDebuggingRequested() {
-    auto dbg = GetGfxDebugger();
-    return dbg ? dbg->IsDebuggingRequested() : false;
+    return GetGfxDebugger()->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    if (auto dbg = GetGfxDebugger()) {
-        dbg->DebugDisplayList((Fast::F3DGfx*)cmds);
-    }
+    GetGfxDebugger()->DebugDisplayList((Fast::F3DGfx*)cmds);
 }

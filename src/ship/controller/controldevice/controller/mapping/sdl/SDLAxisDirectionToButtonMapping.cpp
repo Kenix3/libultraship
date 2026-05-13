@@ -3,38 +3,34 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                                 int32_t sdlControllerAxis, int32_t axisDirection)
+                                                                 int32_t sdlControllerAxis, int32_t axisDirection,
+                                                                 std::shared_ptr<ControlDeck> controlDeck,
+                                                                 std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
-      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask),
+      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck),
       SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
-    if (Context::GetInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+    if (mControlDeck->GamepadGameInputBlocked()) {
         return;
     }
 
     int32_t axisThresholdPercentage = 25;
     if (AxisIsStick()) {
-        axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetControlDeck()
-                                      ->GetGlobalSDLDeviceSettings()
-                                      ->GetStickAxisThresholdPercentage();
+        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()->GetStickAxisThresholdPercentage();
     } else if (AxisIsTrigger()) {
-        axisThresholdPercentage = Ship::Context::GetInstance()
-                                      ->GetControlDeck()
-                                      ->GetGlobalSDLDeviceSettings()
-                                      ->GetTriggerAxisThresholdPercentage();
+        axisThresholdPercentage = mControlDeck->GetGlobalSDLDeviceSettings()->GetTriggerAxisThresholdPercentage();
     }
 
     for (const auto& [instanceId, gamepad] :
-         Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(
-             mPortIndex)) {
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
         const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
 
         auto axisMinValue = SDL_JOYSTICK_AXIS_MAX * (axisThresholdPercentage / 100.0f);
@@ -56,29 +52,23 @@ std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
 
 void SDLAxisDirectionToButtonMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(
-        StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
-        "SDLAxisDirectionToButtonMapping");
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(), mControllerAxis);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), mAxisDirection);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLAxisDirectionToButtonMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), mBitmask);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str(),
+                                 mControllerAxis);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(),
+                                 mAxisDirection);
+    mConsoleVariable->Save();
 }
 
 void SDLAxisDirectionToButtonMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + GetButtonMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.SDLControllerAxis", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->Save();
 }
 
 std::string SDLAxisDirectionToButtonMapping::GetPhysicalDeviceName() {

@@ -2,11 +2,13 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include <nlohmann/json.hpp>
-
-#include "ship/window/Window.h"
+#include "ship/Component.h"
 
 namespace Ship {
+class Config;
+class Window;
 
 /**
  * @brief Abstract class representing a Config Version Updater, intended to express how to
@@ -50,16 +52,28 @@ class ConfigVersionUpdater {
  * Version migration is supported through ConfigVersionUpdater subclasses; register them
  * with RegisterVersionUpdater() and call RunVersionUpdates() on startup.
  *
- * Obtain the instance from Context::GetConfig().
+ * **Optional dependency (constructor-injected):**
+ * - **Window** — injected at construction for configuration flows that need an initialized Window.
+ *   Any code path that uses the cached Window must validate that it exists and is
+ *   initialized before use.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<Config>()`.
  */
-class Config {
+class Config : public Component {
   public:
     /**
      * @brief Constructs a Config, loading the JSON file at @p path (creates it if absent).
-     * @param path Filesystem path to the JSON configuration file.
+     * @param path   Filesystem path to the JSON configuration file.
+     * @param window Optional Window dependency for configuration flows that need it.
      */
-    Config(std::string path);
+    Config(const std::string& path, std::shared_ptr<Window> window = nullptr);
     ~Config();
+
+    /**
+     * @brief Returns the filesystem path to the JSON configuration file.
+     * @return The path that was passed to the constructor (resolved by the caller).
+     */
+    const std::string& GetPath() const;
 
     /**
      * @brief Returns the string value for @p key, or @p defaultValue if absent.
@@ -231,5 +245,6 @@ class Config {
     std::string mPath;
     bool mIsNewInstance;
     std::map<uint32_t, std::shared_ptr<ConfigVersionUpdater>> mVersionUpdaters;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include "ship/Component.h"
 
 #if (__linux__)
 #include <csignal>
@@ -36,14 +37,18 @@ typedef void (*CrashHandlerCallback)(char*, size_t*);
  * any registered CrashHandlerCallback so the application can append game-specific
  * state before the process exits.
  *
- * Obtain the instance from Context::GetCrashHandler().
+ * **Required Context children (looked up at crash time):**
+ * - **Logger** — if present, its underlying spdlog logger is flushed after
+ *   the crash report is written to ensure log entries are not lost. It is optional;
+ *   the crash handler functions correctly without it.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<CrashHandler>()`.
  */
-class CrashHandler {
+class CrashHandler : public Component {
   public:
     /** @brief Installs the platform crash handlers with no application callback. */
     CrashHandler();
     ~CrashHandler();
-
     /**
      * @brief Installs the platform crash handlers and immediately registers @p callback.
      * @param callback Function to invoke when a crash is detected; may be nullptr.
@@ -55,19 +60,16 @@ class CrashHandler {
      * @param callback Function to invoke on crash; pass nullptr to clear the callback.
      */
     void RegisterCallback(CrashHandlerCallback callback);
-
     /**
      * @brief Appends @p str followed by a newline to the crash report buffer.
      * @param str Null-terminated string to append.
      */
     void AppendLine(const char* str);
-
     /**
      * @brief Appends @p str (without a trailing newline) to the crash report buffer.
      * @param str Null-terminated string to append.
      */
     void AppendStr(const char* str);
-
     /**
      * @brief Writes platform-agnostic crash header information (OS, build info, etc.)
      * to the report buffer.
@@ -86,7 +88,6 @@ class CrashHandler {
      * @param ctx Windows CONTEXT structure containing the register state.
      */
     void PrintRegisters(CONTEXT* ctx);
-
     /**
      * @brief Walks the call stack using @p ctx and appends it to the crash report.
      * @param ctx Windows CONTEXT structure used as the starting frame for stack unwinding.

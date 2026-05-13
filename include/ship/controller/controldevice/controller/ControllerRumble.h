@@ -8,6 +8,8 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 /**
  * @brief Aggregates rumble output mappings and drives force-feedback hardware.
  *
@@ -24,7 +26,8 @@ class ControllerRumble {
      * @brief Constructs a ControllerRumble for the given port.
      * @param portIndex Zero-based port index.
      */
-    ControllerRumble(uint8_t portIndex);
+    ControllerRumble(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                     std::shared_ptr<ControlDeck> controlDeck = nullptr);
     ~ControllerRumble();
 
     /**
@@ -98,5 +101,7 @@ class ControllerRumble {
   private:
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> mRumbleMappings;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

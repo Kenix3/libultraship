@@ -1,13 +1,16 @@
 #include "ship/resource/ResourceManager.h"
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
 #include <algorithm>
 #include <thread>
+#include <stdexcept>
 #include "ship/utils/StringHelper.h"
 #include "ship/utils/Utils.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
+#include "ship/security/Keystore.h"
+#include "ship/thread/ThreadPool.h"
 
 namespace Ship {
 
@@ -47,31 +50,32 @@ size_t ResourceIdentifierHash::operator()(const ResourceIdentifier& rcd) const {
     return rcd.GetHash();
 }
 
-ResourceManager::ResourceManager() {
+ResourceManager::ResourceManager(std::shared_ptr<ThreadPool> threadPool, std::shared_ptr<Keystore> keystore)
+    : Component("ResourceManager"), mThreadPool(std::move(threadPool)), mKeystore(std::move(keystore)) {
 }
 
-void ResourceManager::Init(const std::vector<std::string>& archivePaths,
-                           const std::unordered_set<uint32_t>& validHashes, int32_t reservedThreadCount) {
+void ResourceManager::OnInit(const nlohmann::json& initArgs) {
+    auto archivePaths = initArgs.value("archivePaths", std::vector<std::string>{});
+    auto hashesVec = initArgs.value("validHashes", std::vector<uint32_t>{});
+    std::unordered_set<uint32_t> validHashes(hashesVec.begin(), hashesVec.end());
+
     mResourceLoader = std::make_shared<ResourceLoader>();
-    mArchiveManager = std::make_shared<ArchiveManager>();
+    mArchiveManager =
+        std::make_shared<ArchiveManager>(std::dynamic_pointer_cast<ResourceManager>(GetSharedComponent()), mKeystore);
     GetArchiveManager()->Init(archivePaths, validHashes);
 
-    // the extra `- 1` is because we reserve an extra thread for spdlog
-    size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
-    mThreadPool = std::make_shared<BS::thread_pool>(threadCount);
-
-    if (!IsLoaded()) {
+    if (!mArchiveManager->IsInitialized()) {
         // Nothing ever unpauses the thread pool since nothing will ever try to load the archive again.
-        mThreadPool->pause();
+        auto tpc = GetThreadPool();
+        if (tpc) {
+            tpc->Pause();
+        }
+        throw std::runtime_error("Failed to initialize ArchiveManager");
     }
 }
 
 ResourceManager::~ResourceManager() {
     SPDLOG_INFO("destruct ResourceManager");
-}
-
-bool ResourceManager::IsLoaded() {
-    return mArchiveManager != nullptr && mArchiveManager->IsLoaded();
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {
@@ -212,7 +216,7 @@ ResourceManager::LoadResourceAsync(const ResourceIdentifier& identifier, bool lo
         return promise->get_future().share();
     }
 
-    return mThreadPool->submit_task(
+    return GetThreadPool()->Get()->submit_task(
         [this, identifier, loadExact, initData]() -> std::shared_ptr<IResource> {
             return LoadResourceProcess(identifier, loadExact, initData);
         },
@@ -330,7 +334,7 @@ ResourceManager::LoadResourcesProcess(const ResourceFilter& filter) {
 
 std::shared_future<std::shared_ptr<std::vector<std::shared_ptr<IResource>>>>
 ResourceManager::LoadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    return mThreadPool->submit_task(
+    return GetThreadPool()->Get()->submit_task(
         [this, filter]() -> std::shared_ptr<std::vector<std::shared_ptr<IResource>>> {
             return LoadResourcesProcess(filter);
         },
@@ -351,7 +355,7 @@ std::shared_ptr<std::vector<std::shared_ptr<IResource>>> ResourceManager::LoadRe
 }
 
 void ResourceManager::DirtyResources(const ResourceFilter& filter) {
-    mThreadPool->submit_task([this, filter]() -> void {
+    GetThreadPool()->Get()->submit_task([this, filter]() -> void {
         auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
         for (const auto& key : *list.get()) {
@@ -375,7 +379,7 @@ void ResourceManager::UnloadResourcesAsync(const std::string& searchMask, BS::pr
 }
 
 void ResourceManager::UnloadResourcesAsync(const ResourceFilter& filter, BS::priority_t priority) {
-    mThreadPool->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
+    GetThreadPool()->Get()->submit_task([this, filter]() -> void { UnloadResourcesProcess(filter); }, priority);
 }
 
 void ResourceManager::UnloadResources(const std::string& searchMask) {
@@ -515,6 +519,10 @@ void* ResourceManager::GetResourceRawPointer(uint64_t crc) {
     auto resource = LoadResource(crc);
 
     return GetResourceRawPointer(resource);
+}
+
+std::shared_ptr<ThreadPool> ResourceManager::GetThreadPool() {
+    return mThreadPool;
 }
 
 } // namespace Ship

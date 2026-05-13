@@ -78,26 +78,26 @@ TEST(Archive, GetPathReturnsConstructorArg) {
 }
 
 // ============================================================
-// Archive::IsLoaded  (before and after Load)
+// Archive::IsInitialized  (before and after Load)
 // ============================================================
 
 TEST(Archive, IsLoadedFalseBeforeLoad) {
     TestArchive arch("ram://arch", { { "file.bin", "data" } });
-    EXPECT_FALSE(arch.IsLoaded());
+    EXPECT_FALSE(arch.IsInitialized());
 }
 
 TEST(Archive, IsLoadedTrueAfterSuccessfulLoad) {
     TestArchive arch("ram://arch", { { "file.bin", "data" } });
     arch.Load();
-    EXPECT_TRUE(arch.IsLoaded());
+    EXPECT_TRUE(arch.IsInitialized());
 }
 
 TEST(Archive, UnloadSetsNotLoaded) {
     TestArchive arch("ram://arch", {});
     arch.Load();
-    ASSERT_TRUE(arch.IsLoaded());
+    ASSERT_TRUE(arch.IsInitialized());
     arch.Unload();
-    EXPECT_FALSE(arch.IsLoaded());
+    EXPECT_FALSE(arch.IsInitialized());
 }
 
 // ============================================================

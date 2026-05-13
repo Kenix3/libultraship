@@ -2,8 +2,8 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 #include <memory>
 #include <algorithm>
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
+#include "ship/window/Window.h"
 #if __APPLE__
 #include <SDL_events.h>
 #else
@@ -17,15 +17,22 @@
 
 namespace Ship {
 
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks) : ControlDevice(portIndex) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck,
+                       std::shared_ptr<Window> window)
+    : ControlDevice(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
+    mWindow = std::move(window);
     for (auto bitmask : bitmasks) {
-        mButtons[bitmask] = std::make_shared<ControllerButton>(portIndex, bitmask);
+        mButtons[bitmask] =
+            std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable, mControlDeck, mWindow);
     }
-    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK);
-    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK);
-    mGyro = std::make_shared<ControllerGyro>(portIndex);
-    mRumble = std::make_shared<ControllerRumble>(portIndex);
-    mLED = std::make_shared<ControllerLED>(portIndex);
+    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable, mControlDeck, mWindow);
+    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable, mControlDeck, mWindow);
+    mGyro = std::make_shared<ControllerGyro>(portIndex, mConsoleVariable, mControlDeck);
+    mRumble = std::make_shared<ControllerRumble>(portIndex, mConsoleVariable, mControlDeck);
+    mLED = std::make_shared<ControllerLED>(portIndex, mConsoleVariable, mControlDeck);
 }
 
 Controller::~Controller() {
@@ -67,7 +74,7 @@ uint8_t Controller::GetPortIndex() {
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    return Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(hasConfigCvarKey.c_str(), false);
+    return mConsoleVariable->GetInteger(hasConfigCvarKey.c_str(), false);
 }
 
 void Controller::ClearAllMappings() {
@@ -107,8 +114,8 @@ void Controller::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
 
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
 }
 
 void Controller::ReloadAllMappingsFromConfig() {

@@ -7,6 +7,9 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+class Window;
 
 /**
  * @brief Aggregates all ControllerButtonMapping instances for a single logical button.
@@ -24,10 +27,13 @@ class ControllerButton {
   public:
     /**
      * @brief Constructs a ControllerButton for a specific port and bitmask.
-     * @param portIndex Zero-based port index.
-     * @param bitmask   Single-bit bitmask representing this button (e.g. 0x0001 for A).
+     * @param portIndex       Zero-based port index.
+     * @param bitmask         Single-bit bitmask representing this button (e.g. 0x0001 for A).
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
-    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                     std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Window> window = nullptr);
     ~ControllerButton();
 
     /**
@@ -145,5 +151,9 @@ class ControllerButton {
     bool mUseEventInputToCreateNewMapping;
     KbScancode mKeyboardScancodeForNewMapping;
     MouseBtn mMouseButtonForNewMapping;
+
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

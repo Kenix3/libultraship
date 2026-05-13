@@ -5,10 +5,20 @@
 
 namespace Ship {
 
+SDLAddRemoveDeviceEventHandler::SDLAddRemoveDeviceEventHandler(std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                               std::shared_ptr<Window> window,
+                                                               const std::string& visibilityCvar,
+                                                               const std::string& name)
+    : GuiWindow(std::move(consoleVariable), std::move(window), visibilityCvar, false, name, ImVec2{ -1, -1 },
+                ImGuiWindowFlags_None) {
+}
+
 SDLAddRemoveDeviceEventHandler::~SDLAddRemoveDeviceEventHandler() {
 }
 
-void SDLAddRemoveDeviceEventHandler::InitElement() {
+void SDLAddRemoveDeviceEventHandler::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
+    mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
 }
 
 void SDLAddRemoveDeviceEventHandler::DrawElement() {
@@ -20,15 +30,17 @@ void SDLAddRemoveDeviceEventHandler::UpdateElement() {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
         // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
         // the SDL_CONTROLLERDEVICEADDED event
-        Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceConnect(
-            event.cdevice.which);
+        if (mControlDeck) {
+            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceConnect(event.cdevice.which);
+        }
     }
 
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
         // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
         // SDL_CONTROLLERDEVICEREMOVED [...] event
-        Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceDisconnect(
-            event.cdevice.which);
+        if (mControlDeck) {
+            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceDisconnect(event.cdevice.which);
+        }
     }
 }
 } // namespace Ship

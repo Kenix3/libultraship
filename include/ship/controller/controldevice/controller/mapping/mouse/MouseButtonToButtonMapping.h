@@ -3,8 +3,11 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "MouseButtonToAnyMapping.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps a mouse button to a virtual controller button.
@@ -20,7 +23,9 @@ class MouseButtonToButtonMapping final : public MouseButtonToAnyMapping, public 
      * @param bitmask   The button bitmask to set when the mouse button is held.
      * @param button    The mouse button to bind.
      */
-    MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button);
+    MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button,
+                               std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current mouse button state.
@@ -45,5 +50,9 @@ class MouseButtonToButtonMapping final : public MouseButtonToAnyMapping, public 
 
     /** @brief Returns the human-readable name of the bound mouse button. */
     std::string GetPhysicalInputName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

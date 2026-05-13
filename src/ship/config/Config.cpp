@@ -7,17 +7,23 @@
 #include <any>
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
+#include "ship/window/Window.h"
 
 namespace fs = std::filesystem;
 
 namespace Ship {
-Config::Config(std::string path) : mPath(std::move(path)), mIsNewInstance(false) {
+Config::Config(const std::string& path, std::shared_ptr<Window> window)
+    : Component("Config"), mPath(path), mIsNewInstance(false), mWindow(std::move(window)) {
     Reload();
+    MarkInitialized();
 }
 
 Config::~Config() {
     SPDLOG_TRACE("destruct config");
+}
+
+const std::string& Config::GetPath() const {
+    return mPath;
 }
 
 std::string Config::FormatNestedKey(const std::string& key) {

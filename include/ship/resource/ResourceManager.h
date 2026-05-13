@@ -12,6 +12,8 @@
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/Component.h"
+#include "ship/thread/ThreadPool.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -19,6 +21,7 @@
 
 namespace Ship {
 struct File;
+class Keystore;
 
 /**
  * @brief Specifies which resources to include or exclude when performing a bulk load/unload.
@@ -82,34 +85,20 @@ struct ResourceIdentifierHash {
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * Typical usage:
- * @code
- * auto rm = Ship::Context::GetInstance()->GetResourceManager();
- * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
- * @endcode
+ * **Required dependencies (constructor-injected):**
+ * - **ThreadPool** — used for all asynchronous resource load/unload operations.
+ * - **Keystore** — optional; passed through to ArchiveManager/Archive for signature validation.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
-class ResourceManager {
+class ResourceManager : public Component {
     friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
   public:
-    ResourceManager();
-
-    /**
-     * @brief Initializes the ResourceManager, mounting archives and starting the thread pool.
-     * @param archivePaths        Paths to OTR/O2R archive files or directories containing them.
-     * @param validHashes         Set of acceptable game-version hash values; empty = all accepted.
-     * @param reservedThreadCount Number of OS threads to reserve outside the resource thread pool.
-     */
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              int32_t reservedThreadCount = 1);
+    explicit ResourceManager(std::shared_ptr<ThreadPool> threadPool = nullptr,
+                             std::shared_ptr<Keystore> keystore = nullptr);
     ~ResourceManager();
-
-    /**
-     * @brief Returns true once Init() has completed successfully.
-     * @return true if the manager is ready to load resources.
-     */
-    bool IsLoaded();
 
     /** @brief Returns the ArchiveManager that manages the mounted archives. */
     std::shared_ptr<ArchiveManager> GetArchiveManager();
@@ -399,6 +388,15 @@ class ResourceManager {
     void* GetResourceRawPointer(uint64_t crc);
 
   protected:
+    /**
+     * @brief Component initialization hook. Mounts archives and starts the thread pool.
+     *
+     * Expected initArgs keys:
+     * - "archivePaths" (array of strings): paths to OTR/O2R archive files or directories.
+     * - "validHashes"  (array of uint32): acceptable game-version hashes; empty = all accepted.
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
@@ -414,11 +412,14 @@ class ResourceManager {
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
-    std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
     bool mAltAssetsEnabled = false;
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
+    std::shared_ptr<ThreadPool> mThreadPool;
+    std::shared_ptr<Keystore> mKeystore;
+
+    std::shared_ptr<ThreadPool> GetThreadPool();
 };
 } // namespace Ship

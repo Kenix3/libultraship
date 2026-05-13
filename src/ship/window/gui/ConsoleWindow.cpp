@@ -2,12 +2,16 @@
 
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/Context.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/utils/Utils.h"
 #include <sstream>
 
 namespace Ship {
+
+// Forward declaration - defined below ConsoleWindow::~ConsoleWindow
+static std::shared_ptr<ConsoleWindow> GetCachedConsoleWindow();
 
 int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
@@ -46,8 +50,7 @@ int32_t ConsoleWindow::HelpCommand(std::shared_ptr<Console> console, const std::
 
 int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                     std::string* output) {
-    auto window =
-        std::static_pointer_cast<ConsoleWindow>(Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+    auto window = GetCachedConsoleWindow();
     if (!window) {
         if (output) {
             *output += "A console window is necessary for Clear";
@@ -63,8 +66,7 @@ int32_t ConsoleWindow::ClearCommand(std::shared_ptr<Console> console, const std:
 int32_t ConsoleWindow::UnbindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                      std::string* output) {
     if (args.size() > 1) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for Unbind";
@@ -117,8 +119,7 @@ int32_t ConsoleWindow::UnbindCommand(std::shared_ptr<Console> console, const std
 int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                    std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for Bind";
@@ -155,8 +156,7 @@ int32_t ConsoleWindow::BindCommand(std::shared_ptr<Console> console, const std::
 int32_t ConsoleWindow::BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
                                          std::string* output) {
     if (args.size() > 2) {
-        auto window = std::static_pointer_cast<ConsoleWindow>(
-            Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"));
+        auto window = GetCachedConsoleWindow();
         if (!window) {
             if (output) {
                 *output += "A console window is necessary for BindToggle";
@@ -202,10 +202,12 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
 
     int vType = CheckVarType(args[2]);
 
+    auto consoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+
     if (vType == VARTYPE_STRING) {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(args[1].c_str(), args[2].c_str());
+        consoleVariables->SetString(args[1].c_str(), args[2].c_str());
     } else if (vType == VARTYPE_FLOAT) {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetFloat((char*)args[1].c_str(), std::stof(args[2]));
+        consoleVariables->SetFloat((char*)args[1].c_str(), std::stof(args[2]));
     } else if (vType == VARTYPE_RGBA) {
         uint32_t val = std::stoul(&args[2].c_str()[1], nullptr, 16);
         Color_RGBA8 clr;
@@ -213,12 +215,12 @@ int32_t ConsoleWindow::SetCommand(std::shared_ptr<Console> console, const std::v
         clr.g = val >> 16;
         clr.b = val >> 8;
         clr.a = val & 0xFF;
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetColor((char*)args[1].c_str(), clr);
+        consoleVariables->SetColor((char*)args[1].c_str(), clr);
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(args[1].c_str(), std::stoi(args[2]));
+        consoleVariables->SetInteger(args[1].c_str(), std::stoi(args[2]));
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    consoleVariables->Save();
 
     return 0;
 }
@@ -233,7 +235,7 @@ int32_t ConsoleWindow::GetCommand(std::shared_ptr<Console> console, const std::v
         return 1;
     }
 
-    auto cvar = Ship::Context::GetInstance()->GetConsoleVariables()->Get(args[1].c_str());
+    auto cvar = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>()->Get(args[1].c_str());
 
     if (cvar != nullptr) {
         if (cvar->Type == ConsoleVariableType::Integer) {
@@ -289,35 +291,61 @@ int32_t ConsoleWindow::CheckVarType(const std::string& input) {
     return result;
 }
 
+ConsoleWindow::ConsoleWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                             std::shared_ptr<Console> console, const std::string& visibilityCvar,
+                             const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
+    : GuiWindow(consoleVariable, window, visibilityCvar, false, name, originalSize, windowFlags),
+      mConsole(std::move(console)), mConsoleVariables(std::move(consoleVariable)) {
+}
+
 ConsoleWindow::~ConsoleWindow() {
     SPDLOG_TRACE("destruct console window");
     delete[] mInputBuffer;
     delete[] mFilterBuffer;
 }
 
-void ConsoleWindow::InitElement() {
+// Returns the cached ConsoleWindow instance for use in static command handlers.
+static std::shared_ptr<ConsoleWindow> GetCachedConsoleWindow() {
+    static std::weak_ptr<ConsoleWindow> sCache;
+    auto cached = sCache.lock();
+    if (!cached) {
+        auto ctx = Context::GetInstance();
+        if (!ctx) {
+            return nullptr;
+        }
+        auto window = ctx->GetChildren().GetFirst<Window>();
+        if (!window || !window->GetGui()) {
+            return nullptr;
+        }
+        cached = std::static_pointer_cast<ConsoleWindow>(window->GetGui()->GetGuiWindow("Console"));
+        sCache = cached;
+    }
+    return cached;
+}
+
+void ConsoleWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
     mInputBuffer = new char[gMaxBufferSize];
     strcpy(mInputBuffer, "");
     mFilterBuffer = new char[gMaxBufferSize];
     strcpy(mFilterBuffer, "");
 
-    Context::GetInstance()->GetConsole()->AddCommand(
-        "set", { SetCommand,
-                 "Sets a console variable.",
-                 { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetConsole()->AddCommand(
-        "get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetConsole()->AddCommand("help", { HelpCommand, "Shows all the commands" });
-    Context::GetInstance()->GetConsole()->AddCommand("clear", { ClearCommand, "Clear the console history" });
-    Context::GetInstance()->GetConsole()->AddCommand(
-        "unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetConsole()->AddCommand(
+    if (!mConsole) {
+        return;
+    }
+    mConsole->AddCommand("set", { SetCommand,
+                                  "Sets a console variable.",
+                                  { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });
+    mConsole->AddCommand("get", { GetCommand, "Gets a console variable", { { "varName", ArgumentType::TEXT } } });
+    mConsole->AddCommand("help", { HelpCommand, "Shows all the commands" });
+    mConsole->AddCommand("clear", { ClearCommand, "Clear the console history" });
+    mConsole->AddCommand("unbind", { UnbindCommand, "Unbinds a key", { { "key", ArgumentType::TEXT } } });
+    mConsole->AddCommand(
         "bind",
         { BindCommand, "Binds key to commands", { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
-    Context::GetInstance()->GetConsole()->AddCommand(
-        "bind-toggle", { BindToggleCommand,
-                         "Bind key as a bool toggle",
-                         { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
+    mConsole->AddCommand("bind-toggle", { BindToggleCommand,
+                                          "Bind key as a bool toggle",
+                                          { { "key", ArgumentType::TEXT }, { "cmd", ArgumentType::TEXT } } });
 }
 
 void ConsoleWindow::UpdateElement() {
@@ -329,8 +357,7 @@ void ConsoleWindow::UpdateElement() {
     for (auto [key, var] : mBindingToggle) {
         if (ImGui::IsKeyPressed(key)) {
             Dispatch("set " + var + " " +
-                     std::to_string(!static_cast<bool>(
-                         Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(var.c_str(), 0))));
+                     std::to_string(!static_cast<bool>(mConsoleVariables->GetInteger(var.c_str(), 0))));
         }
     }
 }
@@ -342,7 +369,7 @@ void ConsoleWindow::DrawElement() {
 
     // Renders autocomplete window
     if (mOpenAutocomplete) {
-        auto console = Context::GetInstance()->GetConsole();
+        auto console = mConsole;
 
         ImGui::SetNextWindowSize(ImVec2(350, std::min(static_cast<int>(mAutoComplete.size()), 3) * 20.f),
                                  ImGuiCond_Once);
@@ -392,7 +419,7 @@ void ConsoleWindow::DrawElement() {
         ClearLogs(mCurrentChannel);
     }
 
-    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gSinkEnabled", 0)) {
+    if (mConsoleVariables->GetInteger("gSinkEnabled", 0)) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
         if (ImGui::BeginCombo("##channel", mCurrentChannel.c_str())) {
@@ -545,7 +572,7 @@ void ConsoleWindow::Dispatch(const std::string& line) {
     mHistoryIndex = -1;
     mHistory.push_back(line);
     SendInfoMessage("> " + line);
-    auto console = Context::GetInstance()->GetConsole();
+    auto console = mConsole;
     const std::vector<std::string> cmdArgs = StringHelper::Split(line, " ");
     if (console->HasCommand(cmdArgs[0])) {
         const CommandEntry entry = console->GetCommand(cmdArgs[0]);
@@ -576,7 +603,7 @@ void ConsoleWindow::Dispatch(const std::string& line) {
 int ConsoleWindow::CallbackStub(ImGuiInputTextCallbackData* data) {
     const auto instance = static_cast<ConsoleWindow*>(data->UserData);
     const bool emptyHistory = instance->mHistory.empty();
-    auto console = Context::GetInstance()->GetConsole();
+    auto console = instance->mConsole;
     std::string history;
 
     switch (data->EventKey) {

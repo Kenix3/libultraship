@@ -26,7 +26,7 @@ struct WheelDirections {
 class WheelHandler {
   public:
     /** @brief Constructs a WheelHandler with default (zero) state. */
-    WheelHandler();
+    WheelHandler(std::shared_ptr<Window> window);
 
     /** @brief Destructor. */
     ~WheelHandler();
@@ -35,7 +35,7 @@ class WheelHandler {
      * @brief Returns the global WheelHandler singleton.
      * @return Shared pointer to the WheelHandler instance.
      */
-    static std::shared_ptr<WheelHandler> GetInstance();
+    static std::shared_ptr<WheelHandler> GetInstance(std::shared_ptr<Window> window = nullptr);
 
     /** @brief Samples the latest wheel data from the window back-end. */
     void Update();
@@ -69,11 +69,13 @@ class WheelHandler {
   private:
     float CalcDirectionValue(CoordsF& coords, WheelDirection direction);
     void UpdateAxisBuffer(float* buf, float input);
+    std::shared_ptr<Window> GetWindow() const;
 
     static std::shared_ptr<WheelHandler> mInstance;
 
     WheelDirections mDirections;
     CoordsF mCoords;
     CoordsF mBufferedCoords;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

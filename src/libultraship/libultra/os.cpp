@@ -7,6 +7,9 @@ typedef std::ratio<3000, 64> n64ClockRatio;
 typedef std::ratio_divide<std::micro, n64ClockRatio> n64CycleRate;
 typedef std::chrono::duration<long long, n64CycleRate> n64CycleRateDuration;
 
+// Cached ControlDeck pointer; set by osContInit and reused by all other os functions.
+static std::shared_ptr<Ship::ControlDeck> sControlDeck;
+
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
 uint64_t __osCurrentTime = 0;
@@ -29,7 +32,13 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
         exit(EXIT_FAILURE);
     }
 
-    Ship::Context::GetInstance()->GetControlDeck()->Init(controllerBits);
+    sControlDeck = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ControlDeck>();
+    if (!sControlDeck) {
+        SPDLOG_ERROR("osContInit: ControlDeck not found in context");
+        return -1;
+    }
+
+    sControlDeck->Init(controllerBits);
 
     return 0;
 }
@@ -40,8 +49,11 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
-
-    Ship::Context::GetInstance()->GetControlDeck()->WriteToPad(pad);
+    if (!sControlDeck) {
+        SPDLOG_WARN("osContGetReadData: ControlDeck not initialized");
+        return;
+    }
+    sControlDeck->WriteToPad(pad);
 }
 
 void osSetTime(OSTime time) {
@@ -86,7 +98,11 @@ int32_t osAiSetNextBuffer(void* buff, size_t len) {
 }
 
 int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
-    auto io = Ship::Context::GetInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
+    if (!sControlDeck) {
+        SPDLOG_ERROR("__osMotorAccess: ControlDeck not initialized (call osContInit first)");
+        return -1;
+    }
+    auto io = sControlDeck->GetControllerByPort(pfs->channel)->GetRumble();
     if (vibrate) {
         io->StartRumble();
     } else {

@@ -5,6 +5,13 @@ file(GLOB Source_Files__TopLevel RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
 source_group("" FILES ${Source_Files__TopLevel})
 target_sources(libultraship PRIVATE ${Source_Files__TopLevel})
 
+#=================== Actions ===================
+
+file(GLOB Source_Files__Actions RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "actions/*.cpp")
+
+source_group("actions" FILES ${Source_Files__Actions})
+target_sources(libultraship PRIVATE ${Source_Files__Actions})
+
 #=================== Audio ===================
 
 file(GLOB Source_Files__Audio RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "audio/*.cpp")
@@ -118,3 +125,15 @@ file(GLOB Source_Files__Resource__Archive RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "
 source_group("resource/archive" FILES ${Source_Files__Resource__Archive})
 
 target_sources(libultraship PRIVATE ${Source_Files__Resource} ${Source_Files__Resource__Types} ${Source_Files__Resource__Factories} ${Source_Files__Resource__Archive})
+
+#=================== Log ===================
+
+file(GLOB Source_Files__Log RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "log/*.cpp")
+source_group("log" FILES ${Source_Files__Log})
+target_sources(libultraship PRIVATE ${Source_Files__Log})
+
+#=================== Thread ===================
+
+file(GLOB Source_Files__Thread RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "thread/*.cpp")
+source_group("thread" FILES ${Source_Files__Thread})
+target_sources(libultraship PRIVATE ${Source_Files__Thread})

@@ -1,8 +1,13 @@
 #ifdef ENABLE_OPENGL
 #pragma once
 
+#include <memory>
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
+
+namespace Ship {
+class ConsoleVariable;
+} // namespace Ship
 
 #ifdef _MSC_VER
 #include <SDL2/SDL.h>
@@ -109,6 +114,8 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void SetUniforms(ShaderProgram* prg) const;
     std::string BuildFsShader(const CCFeatures& cc_features);
     void SetPerDrawUniforms();
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
 
     std::vector<TextureInfo> textures;
     GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};

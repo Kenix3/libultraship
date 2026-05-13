@@ -8,6 +8,8 @@ if(POLICY CMP0141)
 endif()
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
+option(INCLUDE_PROFILING "Enable action and tickable profiling timers" OFF)
+option(COMPONENT_THREAD_SAFE "Enable thread safety for Component parent/child lists" OFF)
 option(DISABLE_DLL_LOADER "Disable dynamic library loading support" OFF)
 option(ENABLE_SCRIPTING "Enable TCC-based C mod compilation and scripting system" OFF)
 

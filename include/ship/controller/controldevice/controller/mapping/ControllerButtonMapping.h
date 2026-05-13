@@ -2,10 +2,12 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 #include "ControllerInputMapping.h"
 
 namespace Ship {
+class ControlDeck;
 
 #ifndef CONTROLLERBUTTONS_T
 #define CONTROLLERBUTTONS_T uint16_t
@@ -26,7 +28,8 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
      * @param portIndex          The controller port index this mapping is assigned to.
      * @param bitmask            The button bitmask this mapping controls.
      */
-    ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask);
+    ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                            std::shared_ptr<ControlDeck> controlDeck = nullptr);
     virtual ~ControllerButtonMapping();
 
     /**
@@ -58,6 +61,7 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
      * @param portIndex The new port index.
      */
     void SetPortIndex(uint8_t portIndex);
+    std::shared_ptr<ControlDeck> GetControlDeck() const;
 
     /** @brief Persists this mapping to the application configuration. */
     virtual void SaveToConfig() = 0;
@@ -68,5 +72,6 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
   protected:
     uint8_t mPortIndex;
     CONTROLLERBUTTONS_T mBitmask;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

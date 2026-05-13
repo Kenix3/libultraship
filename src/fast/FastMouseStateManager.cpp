@@ -1,13 +1,12 @@
 #include <memory>
 
-#include "ship/Context.h"
 #include "fast/FastMouseStateManager.h"
 #include "fast/Fast3dWindow.h"
 
 namespace Fast {
 void FastMouseStateManager::ResetCursorVisibilityTimer() {
-    auto wnd = std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
-    SetCursorVisibilityTimeTicks(mCursorVisibleSeconds * wnd->GetTargetFps());
+    auto fast3dWindow = std::dynamic_pointer_cast<Fast3dWindow>(mWindow);
+    SetCursorVisibilityTimeTicks(mCursorVisibleSeconds * fast3dWindow->GetTargetFps());
     MouseStateManager::ResetCursorVisibilityTimer();
 }
 

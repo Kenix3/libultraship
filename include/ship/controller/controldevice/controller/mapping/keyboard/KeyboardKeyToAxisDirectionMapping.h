@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "KeyboardKeyToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps a keyboard key to a virtual analog stick direction.
@@ -19,7 +22,9 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
      * @param scancode   The keyboard scan code to bind.
      */
     KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
-                                      KbScancode scancode);
+                                      KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                                      std::shared_ptr<Window> window = nullptr,
+                                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;
@@ -41,5 +46,9 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
 
     /** @brief Returns the human-readable name of the bound key. */
     std::string GetPhysicalInputName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship
