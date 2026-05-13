@@ -7,15 +7,19 @@
 namespace Ship {
 GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
     : GuiElement(visibilityConsoleVariable, isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
+}
+
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) : GuiMenuBar(visibilityConsoleVariable, false) {
+}
+
+void GuiMenuBar::OnInit(const nlohmann::json& initArgs) {
+    GuiElement::OnInit(initArgs);
+    mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
     if (!mVisibilityConsoleVariable.empty()) {
         mIsVisible = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
     }
-}
-
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) : GuiMenuBar(visibilityConsoleVariable, false) {
 }
 
 void GuiMenuBar::Draw() {

@@ -23,7 +23,9 @@ class KeyboardKeyToButtonMapping final : public KeyboardKeyToAnyMapping, public 
      */
     KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, KbScancode scancode,
                                std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                               std::shared_ptr<Config> config = nullptr);
+                               std::shared_ptr<Config> config = nullptr,
+                               std::shared_ptr<Window> window = nullptr,
+                               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current key state.

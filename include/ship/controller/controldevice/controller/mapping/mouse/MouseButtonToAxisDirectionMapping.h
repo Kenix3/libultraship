@@ -27,7 +27,8 @@ class MouseButtonToAxisDirectionMapping final : public MouseButtonToAnyMapping, 
      */
     MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction, MouseBtn button,
                                       std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                      std::shared_ptr<Config> config = nullptr);
+                                      std::shared_ptr<Config> config = nullptr,
+                                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;

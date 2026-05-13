@@ -31,6 +31,8 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
+    WheelHandler::GetInstance(mWindow);
+
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();

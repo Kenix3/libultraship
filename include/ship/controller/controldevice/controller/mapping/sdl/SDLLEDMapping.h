@@ -22,7 +22,8 @@ class SDLLEDMapping final : public ControllerLEDMapping {
      * @param savedColor  The saved RGB colour used when the source is fixed.
      */
     SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor,
-                  std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr);
+                  std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+                  std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Sends an RGB colour to the gamepad LED.

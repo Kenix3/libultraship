@@ -9,6 +9,7 @@
 
 namespace Ship {
 class ConsoleVariable;
+class ControlDeck;
 /**
  * @brief Aggregates LED output mappings and drives controller lighting hardware.
  *
@@ -24,7 +25,8 @@ class ControllerLED {
      * @brief Constructs a ControllerLED for the given port.
      * @param portIndex Zero-based port index.
      */
-    ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
+    ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                  std::shared_ptr<ControlDeck> controlDeck = nullptr);
     ~ControllerLED();
 
     /**
@@ -93,5 +95,6 @@ class ControllerLED {
     uint8_t mPortIndex;
     std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> mLEDMappings;
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

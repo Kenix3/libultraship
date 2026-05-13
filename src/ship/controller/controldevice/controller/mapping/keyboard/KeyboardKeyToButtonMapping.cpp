@@ -3,23 +3,20 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/Context.h"
 #include "ship/config/Config.h"
 #include "ship/window/Window.h"
 
 namespace Ship {
 KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                        KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck,
-                                                       std::shared_ptr<Config> config)
+                                                       std::shared_ptr<Config> config,
+                                                       std::shared_ptr<Window> window,
+                                                       std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::Keyboard),
-      KeyboardKeyToAnyMapping(scancode, Context::GetInstance()->GetChildren().GetFirst<Window>()),
+      KeyboardKeyToAnyMapping(scancode, window),
       ControllerButtonMapping(PhysicalDeviceType::Keyboard, portIndex, bitmask, controlDeck, config) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 void KeyboardKeyToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

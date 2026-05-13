@@ -34,7 +34,8 @@ class ControllerButton {
      */
     ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
-                     std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr);
+                     std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+                     std::shared_ptr<Window> window = nullptr);
     ~ControllerButton();
 
     /**

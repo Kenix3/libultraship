@@ -35,7 +35,7 @@ class WheelHandler {
      * @brief Returns the global WheelHandler singleton.
      * @return Shared pointer to the WheelHandler instance.
      */
-    static std::shared_ptr<WheelHandler> GetInstance();
+    static std::shared_ptr<WheelHandler> GetInstance(std::shared_ptr<Window> window = nullptr);
 
     /** @brief Samples the latest wheel data from the window back-end. */
     void Update();

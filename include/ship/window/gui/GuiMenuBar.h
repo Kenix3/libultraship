@@ -47,6 +47,8 @@ class GuiMenuBar : public GuiElement {
      */
     void SetVisibility(bool visible) override;
 
+    void OnInit(const nlohmann::json& initArgs = {}) override;
+
   private:
     /** @brief Reads the CVar and updates mIsVisible accordingly. */
     void SyncVisibilityConsoleVariable();

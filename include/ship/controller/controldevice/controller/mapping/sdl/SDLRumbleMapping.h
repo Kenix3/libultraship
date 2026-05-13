@@ -23,7 +23,8 @@ class SDLRumbleMapping final : public ControllerRumbleMapping {
      */
     SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                      uint8_t highFrequencyIntensityPercentage, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                     std::shared_ptr<Config> config = nullptr);
+                     std::shared_ptr<Config> config = nullptr,
+                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Starts the rumble effect with the configured intensities. */
     void StartRumble() override;

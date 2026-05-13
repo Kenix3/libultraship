@@ -1,7 +1,6 @@
 #include "ship/controller/controldevice/controller/mapping/factories/ButtonMappingFactory.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardKeyToButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/MouseButtonToButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/MouseWheelToButtonMapping.h"
@@ -12,37 +11,17 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
-std::weak_ptr<ConsoleVariable> ButtonMappingFactory::sConsoleVariable;
-std::weak_ptr<ControlDeck> ButtonMappingFactory::sControlDeck;
-
-std::shared_ptr<ConsoleVariable> ButtonMappingFactory::GetConsoleVariable() {
-    auto cv = sConsoleVariable.lock();
-    if (!cv) {
-        cv = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-        sConsoleVariable = cv;
-    }
-    return cv;
-}
-
-std::shared_ptr<ControlDeck> ButtonMappingFactory::GetControlDeck() {
-    auto cd = sControlDeck.lock();
-    if (!cd) {
-        cd = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-        sControlDeck = cd;
-    }
-    return cd;
-}
-
-std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex,
-                                                                                             std::string id) {
-    auto consoleVariable = ButtonMappingFactory::GetConsoleVariable();
+std::shared_ptr<ControllerButtonMapping>
+ButtonMappingFactory::CreateButtonMappingFromConfig(uint8_t portIndex, std::string id,
+                                                    std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                    std::shared_ptr<ControlDeck> controlDeck,
+                                                    std::shared_ptr<Window> window) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".ButtonMappings." + id;
     const std::string mappingClass =
         consoleVariable->GetString(StringHelper::Sprintf("%s.ButtonMappingClass", mappingCvarKey.c_str()).c_str(), "");
     CONTROLLERBUTTONS_T bitmask =
         consoleVariable->GetInteger(StringHelper::Sprintf("%s.Bitmask", mappingCvarKey.c_str()).c_str(), 0);
     if (!bitmask) {
-        // all button mappings need bitmasks
         consoleVariable->ClearVariable(mappingCvarKey.c_str());
         consoleVariable->Save();
         return nullptr;
@@ -53,13 +32,13 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), -1);
 
         if (sdlControllerButton == -1) {
-            // something about this mapping is invalid
             consoleVariable->ClearVariable(mappingCvarKey.c_str());
             consoleVariable->Save();
             return nullptr;
         }
 
-        return std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlControllerButton);
+        return std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlControllerButton, controlDeck,
+                                                          nullptr, consoleVariable);
     }
 
     if (mappingClass == "SDLAxisDirectionToButtonMapping") {
@@ -69,27 +48,29 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             consoleVariable->GetInteger(StringHelper::Sprintf("%s.AxisDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         if (sdlControllerAxis == -1 || (axisDirection != -1 && axisDirection != 1)) {
-            // something about this mapping is invalid
             consoleVariable->ClearVariable(mappingCvarKey.c_str());
             consoleVariable->Save();
             return nullptr;
         }
 
-        return std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlControllerAxis, axisDirection);
+        return std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlControllerAxis, axisDirection,
+                                                                 controlDeck, nullptr, consoleVariable);
     }
 
     if (mappingClass == "KeyboardKeyToButtonMapping") {
         int32_t scancode = consoleVariable->GetInteger(
             StringHelper::Sprintf("%s.KeyboardScancode", mappingCvarKey.c_str()).c_str(), 0);
 
-        return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode));
+        return std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, static_cast<KbScancode>(scancode),
+                                                            controlDeck, nullptr, window, consoleVariable);
     }
 
     if (mappingClass == "MouseButtonToButtonMapping") {
         int mouseButton =
             consoleVariable->GetInteger(StringHelper::Sprintf("%s.MouseButton", mappingCvarKey.c_str()).c_str(), 0);
 
-        return std::make_shared<MouseButtonToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton));
+        return std::make_shared<MouseButtonToButtonMapping>(portIndex, bitmask, static_cast<MouseBtn>(mouseButton),
+                                                            controlDeck, nullptr, consoleVariable);
     }
 
     if (mappingClass == "MouseWheelToButtonMapping") {
@@ -97,60 +78,69 @@ std::shared_ptr<ControllerButtonMapping> ButtonMappingFactory::CreateButtonMappi
             consoleVariable->GetInteger(StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), 0);
 
         return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask,
-                                                           static_cast<WheelDirection>(wheelDirection));
+                                                           static_cast<WheelDirection>(wheelDirection), controlDeck,
+                                                           nullptr, consoleVariable);
     }
 
     return nullptr;
 }
 
 std::vector<std::shared_ptr<ControllerButtonMapping>>
-ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = ButtonMappingFactory::GetControlDeck();
+ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                          std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                          std::shared_ptr<ControlDeck> controlDeck,
+                                                          std::shared_ptr<Window> window) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultsForBitmask =
         controlDeck->GetControllerDefaultMappings()->GetDefaultKeyboardKeyToButtonMappings()[bitmask];
 
     for (const auto& scancode : defaultsForBitmask) {
-        mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, scancode));
+        mappings.push_back(std::make_shared<KeyboardKeyToButtonMapping>(portIndex, bitmask, scancode, controlDeck,
+                                                                        nullptr, window, consoleVariable));
     }
 
     return mappings;
 }
 
 std::vector<std::shared_ptr<ControllerButtonMapping>>
-ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = ButtonMappingFactory::GetControlDeck();
+ButtonMappingFactory::CreateDefaultSDLButtonMappings(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                     std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                     std::shared_ptr<ControlDeck> controlDeck) {
     std::vector<std::shared_ptr<ControllerButtonMapping>> mappings;
 
     auto defaultButtonsForBitmask =
         controlDeck->GetControllerDefaultMappings()->GetDefaultSDLButtonToButtonMappings()[bitmask];
 
     for (const auto& sdlGamepadButton : defaultButtonsForBitmask) {
-        mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlGamepadButton));
+        mappings.push_back(std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, sdlGamepadButton, controlDeck,
+                                                                      nullptr, consoleVariable));
     }
 
     auto defaultAxisDirectionsForBitmask =
         controlDeck->GetControllerDefaultMappings()->GetDefaultSDLAxisDirectionToButtonMappings()[bitmask];
 
     for (const auto& [sdlGamepadAxis, axisDirection] : defaultAxisDirectionsForBitmask) {
-        mappings.push_back(
-            std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlGamepadAxis, axisDirection));
+        mappings.push_back(std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, sdlGamepadAxis,
+                                                                             axisDirection, controlDeck, nullptr,
+                                                                             consoleVariable));
     }
 
     return mappings;
 }
 
 std::shared_ptr<ControllerButtonMapping>
-ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
-    auto controlDeck = ButtonMappingFactory::GetControlDeck();
+ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                      std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                      std::shared_ptr<ControlDeck> controlDeck) {
     std::shared_ptr<ControllerButtonMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :
          controlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(portIndex)) {
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, button);
+                mapping = std::make_shared<SDLButtonToButtonMapping>(portIndex, bitmask, button, controlDeck, nullptr,
+                                                                     consoleVariable);
                 break;
             }
         }
@@ -173,7 +163,8 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
                 continue;
             }
 
-            mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, axis, axisDirection);
+            mapping = std::make_shared<SDLAxisDirectionToButtonMapping>(portIndex, bitmask, axis, axisDirection,
+                                                                        controlDeck, nullptr, consoleVariable);
             break;
         }
     }
@@ -182,7 +173,9 @@ ButtonMappingFactory::CreateButtonMappingFromSDLInput(uint8_t portIndex, CONTROL
 }
 
 std::shared_ptr<ControllerButtonMapping>
-ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask) {
+ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                                             std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                             std::shared_ptr<ControlDeck> controlDeck) {
     WheelDirections wheelDirections = WheelHandler::GetInstance()->GetDirections();
     WheelDirection wheelDirection;
     if (wheelDirections.X != LUS_WHEEL_NONE) {
@@ -193,6 +186,7 @@ ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(uint8_t portIndex, 
         return nullptr;
     }
 
-    return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask, wheelDirection);
+    return std::make_shared<MouseWheelToButtonMapping>(portIndex, bitmask, wheelDirection, controlDeck, nullptr,
+                                                       consoleVariable);
 }
 } // namespace Ship

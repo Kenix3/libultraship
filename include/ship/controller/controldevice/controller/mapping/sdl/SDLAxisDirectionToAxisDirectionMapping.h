@@ -27,7 +27,8 @@ class SDLAxisDirectionToAxisDirectionMapping final : public ControllerAxisDirect
     SDLAxisDirectionToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
                                            int32_t sdlControllerAxis, int32_t axisDirection,
                                            std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                           std::shared_ptr<Config> config = nullptr);
+                                           std::shared_ptr<Config> config = nullptr,
+                                           std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value from the SDL axis input. */
     float GetNormalizedAxisDirectionValue() override;

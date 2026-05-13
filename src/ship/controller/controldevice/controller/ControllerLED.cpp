@@ -1,6 +1,5 @@
 #include "ship/controller/controldevice/controller/ControllerLED.h"
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
@@ -9,12 +8,11 @@
 #include "ship/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
 namespace Ship {
-ControllerLED::ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable) : mPortIndex(portIndex) {
-    if (consoleVariable) {
-        mConsoleVariable = std::move(consoleVariable);
-    } else {
-        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    }
+ControllerLED::ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                             std::shared_ptr<ControlDeck> controlDeck)
+    : mPortIndex(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 ControllerLED::~ControllerLED() {
@@ -87,7 +85,7 @@ void ControllerLED::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDev
 }
 
 void ControllerLED::LoadLEDMappingFromConfig(std::string id) {
-    auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id);
+    auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return;
@@ -120,7 +118,7 @@ std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> Controlle
 bool ControllerLED::AddLEDMappingFromRawPress() {
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
-    mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex);
+    mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return false;

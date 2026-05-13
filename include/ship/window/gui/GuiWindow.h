@@ -120,6 +120,8 @@ class GuiWindow : public GuiElement {
     /** @brief Reads the CVar and updates mIsVisible accordingly. */
     void SyncVisibilityConsoleVariable();
 
+    void OnInit(const nlohmann::json& initArgs = {}) override;
+
   private:
     std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;

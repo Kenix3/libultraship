@@ -1,6 +1,5 @@
 #include "ship/controller/controldevice/controller/ControllerRumble.h"
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
@@ -8,8 +7,11 @@
 #include "ship/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
 
 namespace Ship {
-ControllerRumble::ControllerRumble(uint8_t portIndex) : mPortIndex(portIndex) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+ControllerRumble::ControllerRumble(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                                   std::shared_ptr<ControlDeck> controlDeck)
+    : mPortIndex(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 ControllerRumble::~ControllerRumble() {
@@ -88,7 +90,8 @@ void ControllerRumble::ClearAllMappingsForDeviceType(PhysicalDeviceType physical
 }
 
 void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
-    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex)) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex,
+                                                                              mConsoleVariable, mControlDeck)) {
         AddRumbleMapping(mapping);
     }
 
@@ -99,7 +102,7 @@ void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType)
 }
 
 void ControllerRumble::LoadRumbleMappingFromConfig(std::string id) {
-    auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id);
+    auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return;
@@ -132,7 +135,7 @@ std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> Contro
 bool ControllerRumble::AddRumbleMappingFromRawPress() {
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
-    mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex);
+    mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return false;

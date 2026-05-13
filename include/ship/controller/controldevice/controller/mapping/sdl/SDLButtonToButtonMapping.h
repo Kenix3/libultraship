@@ -23,7 +23,8 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
      */
     SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton,
                              std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                             std::shared_ptr<Config> config = nullptr);
+                             std::shared_ptr<Config> config = nullptr,
+                             std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current gamepad button state.

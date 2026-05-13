@@ -1,13 +1,15 @@
 #include "ship/controller/controldevice/controller/ControllerGyro.h"
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/controller/controldevice/controller/mapping/factories/GyroMappingFactory.h"
 
 namespace Ship {
-ControllerGyro::ControllerGyro(uint8_t portIndex) : mPortIndex(portIndex) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
+ControllerGyro::ControllerGyro(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                               std::shared_ptr<ControlDeck> controlDeck)
+    : mPortIndex(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 ControllerGyro::~ControllerGyro() {
@@ -24,7 +26,7 @@ void ControllerGyro::SetGyroMapping(std::shared_ptr<ControllerGyroMapping> mappi
 bool ControllerGyro::SetGyroMappingFromRawPress() {
     std::shared_ptr<ControllerGyroMapping> mapping = nullptr;
 
-    mapping = GyroMappingFactory::CreateGyroMappingFromSDLInput(mPortIndex);
+    mapping = GyroMappingFactory::CreateGyroMappingFromSDLInput(mPortIndex, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return false;
@@ -81,7 +83,7 @@ void ControllerGyro::ReloadGyroMappingFromConfig() {
         return;
     }
 
-    mGyroMapping = GyroMappingFactory::CreateGyroMappingFromConfig(mPortIndex, id);
+    mGyroMapping = GyroMappingFactory::CreateGyroMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck);
     mGyroMapping->SaveToConfig();
     SaveGyroMappingIdToConfig();
 }

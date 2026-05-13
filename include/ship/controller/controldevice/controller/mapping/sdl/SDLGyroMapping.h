@@ -24,7 +24,8 @@ class SDLGyroMapping final : public ControllerGyroMapping {
      * @param neutralRoll  Roll value at rest (calibration offset).
      */
     SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll,
-                   std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr);
+                   std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+                   std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Reads the gyro sensor and writes the resulting X/Y values.

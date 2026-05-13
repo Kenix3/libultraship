@@ -2,22 +2,18 @@
 
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/config/Config.h"
 
 namespace Ship {
 SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                                    uint8_t highFrequencyIntensityPercentage, std::shared_ptr<ControlDeck> controlDeck,
-                                   std::shared_ptr<Config> /*config*/)
+                                   std::shared_ptr<Config> /*config*/,
+                                   std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerRumbleMapping(PhysicalDeviceType::SDLGamepad, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);

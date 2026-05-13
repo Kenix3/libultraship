@@ -3,7 +3,6 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
-#include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/config/Config.h"
 
@@ -11,15 +10,12 @@ namespace Ship {
 MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                      WheelDirection wheelDirection,
                                                      std::shared_ptr<ControlDeck> controlDeck,
-                                                     std::shared_ptr<Config> config)
+                                                     std::shared_ptr<Config> config,
+                                                     std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseWheelToAnyMapping(wheelDirection),
       ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask, controlDeck, config) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 void MouseWheelToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

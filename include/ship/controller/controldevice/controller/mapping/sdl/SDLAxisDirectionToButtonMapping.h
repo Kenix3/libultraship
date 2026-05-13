@@ -24,7 +24,8 @@ class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, pu
      */
     SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerAxis,
                                     int32_t axisDirection, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                    std::shared_ptr<Config> config = nullptr);
+                                    std::shared_ptr<Config> config = nullptr,
+                                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current axis value.

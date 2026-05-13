@@ -1,5 +1,4 @@
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
-#include "ship/Context.h"
 #include <cmath>
 #include <stdexcept>
 
@@ -14,9 +13,12 @@ WheelHandler::~WheelHandler() {
 
 std::shared_ptr<WheelHandler> WheelHandler::mInstance;
 
-std::shared_ptr<WheelHandler> WheelHandler::GetInstance() {
+std::shared_ptr<WheelHandler> WheelHandler::GetInstance(std::shared_ptr<Window> window) {
     if (mInstance == nullptr) {
-        mInstance = std::make_shared<WheelHandler>(Context::GetInstance()->GetChildren().GetFirst<Window>());
+        if (!window) {
+            throw std::runtime_error("WheelHandler: Window required for first initialization");
+        }
+        mInstance = std::make_shared<WheelHandler>(std::move(window));
     }
     return mInstance;
 }

@@ -8,6 +8,8 @@
 
 namespace Ship {
 class ConsoleVariable;
+class ControlDeck;
+class Config;
 class Window;
 
 /** @brief Default stick sensitivity as a percentage of full scale. */
@@ -43,6 +45,8 @@ class ControllerStick {
      */
     ControllerStick(uint8_t portIndex, StickIndex stickIndex,
                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                    std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                    std::shared_ptr<Config> config = nullptr,
                     std::shared_ptr<Window> window = nullptr);
     ~ControllerStick();
 
@@ -234,6 +238,8 @@ class ControllerStick {
     MouseBtn mMouseButtonForNewMapping;
 
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Config> mConfig;
     std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship

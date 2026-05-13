@@ -10,7 +10,6 @@
 #include <sstream>
 #include <algorithm>
 
-#include "ship/Context.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -19,21 +18,14 @@
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                    std::shared_ptr<ConsoleVariable> consoleVariable,
-                                   std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> config)
+                                   std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> config,
+                                   std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
-    if (consoleVariable) {
-        mConsoleVariable = std::move(consoleVariable);
-    } else {
-        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    }
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
     mConfig = std::move(config);
-    mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
+    mWindow = std::move(window);
 }
 
 ControllerButton::~ControllerButton() {
@@ -75,7 +67,7 @@ void ControllerButton::ClearButtonMapping(std::shared_ptr<ControllerButtonMappin
 }
 
 void ControllerButton::LoadButtonMappingFromConfig(std::string id) {
-    auto mapping = ButtonMappingFactory::CreateButtonMappingFromConfig(mPortIndex, id);
+    auto mapping = ButtonMappingFactory::CreateButtonMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck, mWindow);
 
     if (mapping == nullptr) {
         return;
@@ -166,21 +158,21 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping,
-                                                               mControlDeck, mConfig);
+                                                               mControlDeck, mConfig, mWindow, mConsoleVariable);
     } else {
         auto gui = mWindow->GetGui();
         if (!gui->IsMouseOverAnyGuiItem() && gui->IsMouseOverActivePopup()) {
             if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
                 mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping,
-                                                                       mControlDeck, mConfig);
+                                                                       mControlDeck, mConfig, mConsoleVariable);
             } else {
-                mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+                mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask, mConsoleVariable, mControlDeck);
             }
         }
     }
 
     if (mapping == nullptr) {
-        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask, mConsoleVariable, mControlDeck);
     }
 
     if (mapping == nullptr) {
@@ -253,13 +245,13 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
 
 void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
-        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask, mConsoleVariable, mControlDeck)) {
             AddButtonMapping(mapping);
         }
     }
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
-        for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask, mConsoleVariable, mControlDeck, mWindow)) {
             AddButtonMapping(mapping);
         }
     }

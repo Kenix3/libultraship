@@ -3,24 +3,20 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
-#include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/config/Config.h"
+#include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                                  int32_t sdlControllerAxis, int32_t axisDirection,
                                                                  std::shared_ptr<ControlDeck> controlDeck,
-                                                                 std::shared_ptr<Config> config)
+                                                                 std::shared_ptr<Config> config,
+                                                                 std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
       ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck, config),
       SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 void SDLAxisDirectionToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {

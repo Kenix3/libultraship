@@ -1,7 +1,6 @@
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLGyroMapping.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 #include <spdlog/spdlog.h>
-#include "ship/Context.h"
 
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
@@ -11,16 +10,13 @@
 namespace Ship {
 SDLGyroMapping::SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw,
                                float neutralRoll, std::shared_ptr<ControlDeck> controlDeck,
-                               std::shared_ptr<Config> /*config*/)
+                               std::shared_ptr<Config> /*config*/,
+                               std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
       ControllerGyroMapping(PhysicalDeviceType::SDLGamepad, portIndex, sensitivity), mNeutralPitch(neutralPitch),
       mNeutralYaw(neutralYaw), mNeutralRoll(neutralRoll) {
-    mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    if (controlDeck) {
-        mControlDeck = std::move(controlDeck);
-    } else {
-        mControlDeck = Context::GetInstance()->GetChildren().GetFirst<ControlDeck>();
-    }
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 void SDLGyroMapping::Recalibrate() {
