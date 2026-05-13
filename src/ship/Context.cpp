@@ -158,7 +158,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
     // ---- Configuration ----
     auto config = std::make_shared<Config>(GetPathRelativeToAppDirectory(configFilePath),
-                                             std::dynamic_pointer_cast<Window>(window));
+                                           std::dynamic_pointer_cast<Window>(window));
     shared->GetChildren().Add(config);
 
     // Read config values needed for component construction
@@ -226,10 +226,9 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
 
 #ifdef ENABLE_SCRIPTING
     // ---- Script Loader ----
-    shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1,
-                                                             "-g -Wl", std::vector<std::string>{},
-                                                             std::vector<std::string>{}, std::vector<std::string>{},
-                                                             resourceManager));
+    shared->GetChildren().Add(std::make_shared<ScriptLoader>(
+        std::unordered_map<std::string, std::string>{}, 1, "-g -Wl", std::vector<std::string>{},
+        std::vector<std::string>{}, std::vector<std::string>{}, resourceManager));
 #endif
 
     // ---- Init all components that need it ----

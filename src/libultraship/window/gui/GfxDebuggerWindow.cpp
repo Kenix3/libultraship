@@ -20,9 +20,9 @@ using namespace Fast;
 namespace LUS {
 
 GfxDebuggerWindow::GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name,
-                                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
-                                      std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
-                                      std::shared_ptr<Ship::ResourceManager> resourceManager)
+                                     std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
+                                     std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                                     std::shared_ptr<Ship::ResourceManager> resourceManager)
     : GuiWindow(nullptr, nullptr, consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
     if (fast3dWindow) {
         mInterpreter = fast3dWindow->GetInterpreterWeak();

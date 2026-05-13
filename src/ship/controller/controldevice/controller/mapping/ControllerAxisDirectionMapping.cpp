@@ -9,8 +9,8 @@ namespace Ship {
 ControllerAxisDirectionMapping::ControllerAxisDirectionMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
                                                                StickIndex stickIndex, Direction direction,
                                                                std::shared_ptr<ControlDeck> controlDeck)
-    : ControllerInputMapping(physicalDeviceType), mPortIndex(portIndex), mStickIndex(stickIndex),
-      mDirection(direction), mControlDeck(std::move(controlDeck)) {
+    : ControllerInputMapping(physicalDeviceType), mPortIndex(portIndex), mStickIndex(stickIndex), mDirection(direction),
+      mControlDeck(std::move(controlDeck)) {
 }
 
 ControllerAxisDirectionMapping::~ControllerAxisDirectionMapping() {

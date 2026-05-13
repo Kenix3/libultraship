@@ -41,8 +41,7 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
      * @param resourceManager  ResourceManager for archive lookups.
      */
     GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name,
-                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
-                      std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow, std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
                       std::shared_ptr<Ship::ResourceManager> resourceManager);
     virtual ~GfxDebuggerWindow();
 
@@ -70,11 +69,9 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {}; ///< Last captured display list command buffer.
-    std::weak_ptr<Fast::Interpreter> mInterpreter;         ///< Weak reference to the Fast3D interpreter (constructor-injected).
-    std::shared_ptr<Fast::GfxDebugger>
-        mGfxDebugger; ///< GfxDebugger component (constructor-injected).
-    std::shared_ptr<Fast::Fast3dGui>
-        mFast3dGui; ///< Fast3dGui reference (constructor-injected).
+    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the Fast3D interpreter (constructor-injected).
+    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;         ///< GfxDebugger component (constructor-injected).
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;             ///< Fast3dGui reference (constructor-injected).
     std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< ResourceManager component (constructor-injected).
 };
 

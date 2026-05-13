@@ -18,7 +18,8 @@
 namespace Ship {
 
 Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
-                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window)
+                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck,
+                       std::shared_ptr<Window> window)
     : ControlDevice(portIndex) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);

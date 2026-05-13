@@ -45,8 +45,7 @@ class Controller : public ControlDevice {
      */
     Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
                std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
-               std::shared_ptr<ControlDeck> controlDeck = nullptr,
-               std::shared_ptr<Window> window = nullptr);
+               std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Window> window = nullptr);
 
     /** @brief Destroys the Controller and releases all mapping resources. */
     ~Controller();

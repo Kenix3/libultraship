@@ -91,7 +91,7 @@ void ControllerRumble::ClearAllMappingsForDeviceType(PhysicalDeviceType physical
 
 void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex,
-                                                                              mConsoleVariable, mControlDeck)) {
+                                                                             mConsoleVariable, mControlDeck)) {
         AddRumbleMapping(mapping);
     }
 

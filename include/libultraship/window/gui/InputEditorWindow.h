@@ -39,8 +39,7 @@ class InputEditorWindow : public Ship::GuiWindow {
      * @param window          Window for GUI and mouse capture state.
      */
     InputEditorWindow(const std::string& consoleVariable, const std::string& name,
-                      std::shared_ptr<Ship::ControlDeck> controlDeck,
-                      std::shared_ptr<Ship::Window> window);
+                      std::shared_ptr<Ship::ControlDeck> controlDeck, std::shared_ptr<Ship::Window> window);
 
     /** @brief Destroys the InputEditorWindow and releases any active rumble test state. */
     virtual ~InputEditorWindow();

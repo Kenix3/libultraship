@@ -7,7 +7,8 @@
 
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                                                   int32_t sdlControllerButton, std::shared_ptr<ControlDeck> controlDeck,
+                                                   int32_t sdlControllerButton,
+                                                   std::shared_ptr<ControlDeck> controlDeck,
                                                    std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
       ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck) {

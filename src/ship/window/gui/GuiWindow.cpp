@@ -5,8 +5,8 @@
 
 namespace Ship {
 GuiWindow::GuiWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
-                     const std::string& visibilityCvar, bool isVisible, const std::string& name,
-                     ImVec2 originalSize, uint32_t windowFlags)
+                     const std::string& visibilityCvar, bool isVisible, const std::string& name, ImVec2 originalSize,
+                     uint32_t windowFlags)
     : GuiElement(name, isVisible), mVisibilityConsoleVariable(visibilityCvar), mOriginalSize(originalSize),
       mWindowFlags(windowFlags), mConsoleVariable(std::move(consoleVariable)), mWindow(std::move(window)) {
 }

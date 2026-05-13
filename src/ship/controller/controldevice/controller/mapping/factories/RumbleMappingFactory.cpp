@@ -27,8 +27,7 @@ RumbleMappingFactory::CreateRumbleMappingFromConfig(uint8_t portIndex, std::stri
 
     if (mappingClass == "SDLRumbleMapping") {
         return std::make_shared<SDLRumbleMapping>(portIndex, lowFrequencyIntensityPercentage,
-                                                  highFrequencyIntensityPercentage, controlDeck, nullptr,
-                                                  consoleVariable);
+                                                  highFrequencyIntensityPercentage, controlDeck, consoleVariable);
     }
 
     return nullptr;
@@ -40,15 +39,13 @@ RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physical
                                                      std::shared_ptr<ControlDeck> controlDeck) {
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
         portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE, controlDeck,
-        nullptr, consoleVariable) };
+        consoleVariable) };
 
     return mappings;
 }
 
-std::shared_ptr<ControllerRumbleMapping>
-RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex,
-                                                      std::shared_ptr<ConsoleVariable> consoleVariable,
-                                                      std::shared_ptr<ControlDeck> controlDeck) {
+std::shared_ptr<ControllerRumbleMapping> RumbleMappingFactory::CreateRumbleMappingFromSDLInput(
+    uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck) {
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :
@@ -61,7 +58,7 @@ RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex,
             if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {
                 mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                              DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE, controlDeck,
-                                                             nullptr, consoleVariable);
+                                                             consoleVariable);
                 break;
             }
         }
@@ -86,7 +83,7 @@ RumbleMappingFactory::CreateRumbleMappingFromSDLInput(uint8_t portIndex,
 
             mapping = std::make_shared<SDLRumbleMapping>(portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE,
                                                          DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE, controlDeck,
-                                                         nullptr, consoleVariable);
+                                                         consoleVariable);
             break;
         }
     }

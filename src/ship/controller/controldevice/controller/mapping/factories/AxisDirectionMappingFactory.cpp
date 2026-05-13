@@ -15,12 +15,9 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
-std::shared_ptr<ControllerAxisDirectionMapping>
-AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIndex, StickIndex stickIndex,
-                                                                  std::string id,
-                                                                  std::shared_ptr<ConsoleVariable> consoleVariable,
-                                                                  std::shared_ptr<ControlDeck> controlDeck,
-                                                                  std::shared_ptr<Window> window) {
+std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(
+    uint8_t portIndex, StickIndex stickIndex, std::string id, std::shared_ptr<ConsoleVariable> consoleVariable,
+    std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + id;
     const std::string mappingClass = consoleVariable->GetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(), "");
@@ -41,7 +38,8 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
         }
 
         return std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            portIndex, stickIndex, static_cast<Direction>(direction), sdlControllerAxis, axisDirection, consoleVariable);
+            portIndex, stickIndex, static_cast<Direction>(direction), sdlControllerAxis, axisDirection, controlDeck,
+            consoleVariable);
     }
 
     if (mappingClass == "SDLButtonToAxisDirectionMapping") {
@@ -59,7 +57,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
         return std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stickIndex,
                                                                  static_cast<Direction>(direction), sdlControllerButton,
-                                                                 consoleVariable);
+                                                                 controlDeck, consoleVariable);
     }
 
     if (mappingClass == "KeyboardKeyToAxisDirectionMapping") {
@@ -74,9 +72,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex,
-                                                                   static_cast<Direction>(direction),
-                                                                   static_cast<KbScancode>(scancode), window, consoleVariable);
+        return std::make_shared<KeyboardKeyToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<KbScancode>(scancode), controlDeck,
+            window, consoleVariable);
     }
 
     if (mappingClass == "MouseButtonToAxisDirectionMapping") {
@@ -91,9 +89,9 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
             return nullptr;
         }
 
-        return std::make_shared<MouseButtonToAxisDirectionMapping>(portIndex, stickIndex,
-                                                                   static_cast<Direction>(direction),
-                                                                   static_cast<MouseBtn>(mouseButton), consoleVariable);
+        return std::make_shared<MouseButtonToAxisDirectionMapping>(
+            portIndex, stickIndex, static_cast<Direction>(direction), static_cast<MouseBtn>(mouseButton), controlDeck,
+            consoleVariable);
     }
 
     if (mappingClass == "MouseWheelToAxisDirectionMapping") {
@@ -110,26 +108,24 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(uint8_t portIn
 
         return std::make_shared<MouseWheelToAxisDirectionMapping>(
             portIndex, stickIndex, static_cast<Direction>(direction), static_cast<WheelDirection>(wheelDirection),
-            consoleVariable);
+            controlDeck, consoleVariable);
     }
 
     return nullptr;
 }
 
 std::vector<std::shared_ptr<ControllerAxisDirectionMapping>>
-AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(uint8_t portIndex, StickIndex stickIndex,
-                                                                        std::shared_ptr<ConsoleVariable> consoleVariable,
-                                                                        std::shared_ptr<ControlDeck> controlDeck,
-                                                                        std::shared_ptr<Window> window) {
+AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(
+    uint8_t portIndex, StickIndex stickIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+    std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window) {
     std::vector<std::shared_ptr<ControllerAxisDirectionMapping>> mappings;
 
     auto defaultsForStick =
         controlDeck->GetControllerDefaultMappings()->GetDefaultKeyboardKeyToAxisDirectionMappings()[stickIndex];
 
     for (const auto& [direction, scancode] : defaultsForStick) {
-        mappings.push_back(std::make_shared<KeyboardKeyToAxisDirectionMapping>(portIndex, stickIndex, direction,
-                                                                               scancode, window,
-                                                                               consoleVariable));
+        mappings.push_back(std::make_shared<KeyboardKeyToAxisDirectionMapping>(
+            portIndex, stickIndex, direction, scancode, controlDeck, window, consoleVariable));
     }
 
     return mappings;
@@ -145,8 +141,8 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
         controlDeck->GetControllerDefaultMappings()->GetDefaultSDLButtonToAxisDirectionMappings()[stickIndex];
 
     for (const auto& [direction, sdlGamepadButton] : defaultButtonsForStick) {
-        mappings.push_back(std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stickIndex, direction,
-                                                                             sdlGamepadButton, consoleVariable));
+        mappings.push_back(std::make_shared<SDLButtonToAxisDirectionMapping>(
+            portIndex, stickIndex, direction, sdlGamepadButton, controlDeck, consoleVariable));
     }
 
     auto defaultAxisDirectionsForStick =
@@ -155,17 +151,15 @@ AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(uint8_t portI
     for (const auto& [direction, sdlGamepadAxisDirection] : defaultAxisDirectionsForStick) {
         auto [sdlGamepadAxis, sdlGamepadDirection] = sdlGamepadAxisDirection;
         mappings.push_back(std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-            portIndex, stickIndex, direction, sdlGamepadAxis, sdlGamepadDirection, consoleVariable));
+            portIndex, stickIndex, direction, sdlGamepadAxis, sdlGamepadDirection, controlDeck, consoleVariable));
     }
 
     return mappings;
 }
 
-std::shared_ptr<ControllerAxisDirectionMapping>
-AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t portIndex, StickIndex stickIndex,
-                                                                    Direction direction,
-                                                                    std::shared_ptr<ConsoleVariable> consoleVariable,
-                                                                    std::shared_ptr<ControlDeck> controlDeck) {
+std::shared_ptr<ControllerAxisDirectionMapping> AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(
+    uint8_t portIndex, StickIndex stickIndex, Direction direction, std::shared_ptr<ConsoleVariable> consoleVariable,
+    std::shared_ptr<ControlDeck> controlDeck) {
     std::shared_ptr<ControllerAxisDirectionMapping> mapping = nullptr;
 
     for (auto [instanceId, gamepad] :
@@ -173,7 +167,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
         for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
             if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {
                 mapping = std::make_shared<SDLButtonToAxisDirectionMapping>(portIndex, stickIndex, direction, button,
-                                                                            consoleVariable);
+                                                                            controlDeck, consoleVariable);
                 break;
             }
         }
@@ -197,7 +191,7 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(uint8_t port
             }
 
             mapping = std::make_shared<SDLAxisDirectionToAxisDirectionMapping>(
-                portIndex, stickIndex, direction, axis, axisDirection, consoleVariable);
+                portIndex, stickIndex, direction, axis, axisDirection, controlDeck, consoleVariable);
             break;
         }
     }
@@ -220,6 +214,6 @@ AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(
     }
 
     return std::make_shared<MouseWheelToAxisDirectionMapping>(portIndex, stickIndex, direction, wheelDirection,
-                                                              consoleVariable);
+                                                              controlDeck, consoleVariable);
 }
 } // namespace Ship

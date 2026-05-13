@@ -51,7 +51,8 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<Ship:
                    std::move(controlDeck)) {
 }
 
-Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows, std::shared_ptr<Ship::Config> config,
+Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows,
+                           std::shared_ptr<Ship::Config> config,
                            std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
                            std::shared_ptr<Ship::ControlDeck> controlDeck)
     : Fast3dWindow(std::make_shared<Fast3dGui>(guiWindows), std::move(config), std::move(consoleVariables),
@@ -128,9 +129,8 @@ void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
         auto gfxDebugger = mGfxDebugger;
         auto resourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>();
         auto self = std::dynamic_pointer_cast<Fast3dWindow>(GetSharedComponent());
-        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(
-            CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger",
-            self, gfxDebugger, resourceManager));
+        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger",
+                                                                        self, gfxDebugger, resourceManager));
     }
 }
 

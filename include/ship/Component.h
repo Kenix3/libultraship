@@ -177,8 +177,8 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
      * @throws std::runtime_error if the dependency pointer is empty.
      * @throws std::runtime_error if the dependency exists but is not initialized.
      */
-    template <typename T> std::shared_ptr<T> RequireDependency(const std::shared_ptr<T>& dependency,
-                                                               const std::string& dependencyName) const;
+    template <typename T>
+    std::shared_ptr<T> RequireDependency(const std::shared_ptr<T>& dependency, const std::string& dependencyName) const;
 
   private:
     std::string mName;

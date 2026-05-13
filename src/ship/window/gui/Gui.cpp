@@ -59,8 +59,7 @@ void Gui::OnInit(const nlohmann::json& initArgs) {
     if (GetGuiWindow("Console") == nullptr) {
         auto console = Ship::Context::GetInstance()->GetChildren().GetFirst<Console>();
         AddGuiWindow(std::make_shared<ConsoleWindow>(mConsoleVariable, mWindow, console, CVAR_CONSOLE_WINDOW_OPEN,
-                                                     "Console", ImVec2(520, 600),
-                                                     ImGuiWindowFlags_NoFocusOnAppearing));
+                                                     "Console", ImVec2(520, 600), ImGuiWindowFlags_NoFocusOnAppearing));
     }
 
     ImGuiContext* ctx = ImGui::CreateContext();

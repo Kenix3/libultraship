@@ -295,8 +295,7 @@ ConsoleWindow::ConsoleWindow(std::shared_ptr<ConsoleVariable> consoleVariable, s
                              std::shared_ptr<Console> console, const std::string& visibilityCvar,
                              const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
     : GuiWindow(consoleVariable, window, visibilityCvar, false, name, originalSize, windowFlags),
-      mConsole(std::move(console)),
-      mConsoleVariables(std::move(consoleVariable)) {
+      mConsole(std::move(console)), mConsoleVariables(std::move(consoleVariable)) {
 }
 
 ConsoleWindow::~ConsoleWindow() {

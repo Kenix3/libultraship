@@ -14,8 +14,7 @@ namespace Ship {
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
                          std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
-                         std::shared_ptr<Window> window,
-                         std::shared_ptr<ConsoleVariable> consoleVariable)
+                         std::shared_ptr<Window> window, std::shared_ptr<ConsoleVariable> consoleVariable)
     : Component("ControlDeck"), mWindow(std::move(window)), mConsoleVariables(std::move(consoleVariable)) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
     mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>(mConsoleVariables);

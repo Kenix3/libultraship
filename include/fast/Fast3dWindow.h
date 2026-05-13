@@ -47,7 +47,8 @@ class Fast3dWindow : public Ship::Window {
     Fast3dWindow(std::shared_ptr<Ship::Config> config = nullptr,
                  std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
                  std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
-    Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows, std::shared_ptr<Ship::Config> config = nullptr,
+    Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows,
+                 std::shared_ptr<Ship::Config> config = nullptr,
                  std::shared_ptr<Ship::ConsoleVariable> consoleVariables = nullptr,
                  std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr);
     Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<Ship::Config> config = nullptr,

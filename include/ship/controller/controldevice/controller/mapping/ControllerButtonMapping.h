@@ -9,7 +9,6 @@
 namespace Ship {
 class ControlDeck;
 
-
 #ifndef CONTROLLERBUTTONS_T
 #define CONTROLLERBUTTONS_T uint16_t
 #endif

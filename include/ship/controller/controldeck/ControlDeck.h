@@ -47,8 +47,7 @@ class ControlDeck : public Component {
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                 std::shared_ptr<ControllerDefaultMappings> controllerDefaultMappings,
                 std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
-                std::shared_ptr<Window> window = nullptr,
-                std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
+                std::shared_ptr<Window> window = nullptr, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
     ~ControlDeck();
 
     /**

@@ -6,8 +6,7 @@
 
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor,
-                             std::shared_ptr<ControlDeck> controlDeck,
-                             std::shared_ptr<ConsoleVariable> consoleVariable)
+                             std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerLEDMapping(PhysicalDeviceType::SDLGamepad, portIndex, colorSource, savedColor) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);

@@ -27,8 +27,7 @@
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
                                  std::shared_ptr<ConsoleVariable> consoleVariable,
-                                 std::shared_ptr<ControlDeck> controlDeck,
-                                 std::shared_ptr<Window> window)
+                                 std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mSensitivityPercentage = DEFAULT_STICK_SENSITIVITY_PERCENTAGE;
@@ -134,18 +133,15 @@ void ControllerStick::AddAxisDirectionMapping(Direction direction,
 
 void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
-        for (auto mapping :
-             AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(mPortIndex, mStickIndex,
-                                                                                mConsoleVariable, mControlDeck)) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultSDLAxisDirectionMappings(
+                 mPortIndex, mStickIndex, mConsoleVariable, mControlDeck)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
-        for (auto mapping :
-             AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(mPortIndex, mStickIndex,
-                                                                                     mConsoleVariable, mControlDeck,
-                                                                                     mWindow)) {
+        for (auto mapping : AxisDirectionMappingFactory::CreateDefaultKeyboardAxisDirectionMappings(
+                 mPortIndex, mStickIndex, mConsoleVariable, mControlDeck, mWindow)) {
             AddAxisDirectionMapping(mapping->GetDirection(), mapping);
         }
     }
@@ -159,9 +155,8 @@ void ControllerStick::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) 
 }
 
 void ControllerStick::LoadAxisDirectionMappingFromConfig(std::string id) {
-    auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(mPortIndex, mStickIndex, id,
-                                                                                     mConsoleVariable, mControlDeck,
-                                                                                     mWindow);
+    auto mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromConfig(
+        mPortIndex, mStickIndex, id, mConsoleVariable, mControlDeck, mWindow);
 
     if (mapping == nullptr) {
         return;
@@ -289,20 +284,20 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                      mKeyboardScancodeForNewMapping, mControlDeck, mWindow, mConsoleVariable);
+                                                                      mKeyboardScancodeForNewMapping, mControlDeck,
+                                                                      mWindow, mConsoleVariable);
     } else if (!mWindow->GetGui()->IsMouseOverAnyGuiItem() && mWindow->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-            mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                          mMouseButtonForNewMapping, mControlDeck, mConsoleVariable);
+            mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(
+                mPortIndex, mStickIndex, direction, mMouseButtonForNewMapping, mControlDeck, mConsoleVariable);
         } else {
             mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(
                 mPortIndex, mStickIndex, direction, mConsoleVariable, mControlDeck);
         }
     }
     if (mapping == nullptr) {
-        mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(mPortIndex, mStickIndex,
-                                                                                      direction, mConsoleVariable,
-                                                                                      mControlDeck);
+        mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromSDLInput(
+            mPortIndex, mStickIndex, direction, mConsoleVariable, mControlDeck);
     }
 
     if (mapping == nullptr) {

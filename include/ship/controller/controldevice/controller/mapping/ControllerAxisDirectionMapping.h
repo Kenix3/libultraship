@@ -11,7 +11,6 @@
 namespace Ship {
 class ControlDeck;
 
-
 /** @brief Identifies which analog stick an axis mapping applies to. */
 enum StickIndex { LEFT_STICK, RIGHT_STICK };
 

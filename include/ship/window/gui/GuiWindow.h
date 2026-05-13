@@ -61,6 +61,9 @@ class GuiWindow : public GuiElement {
      */
     GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize);
 
+    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
+              uint32_t windowFlags);
+
     /**
      * @brief Minimal constructor using default size and flags.
      * @param consoleVariable CVar name for visibility.

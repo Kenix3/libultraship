@@ -10,8 +10,7 @@ KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTRO
                                                        KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck,
                                                        std::shared_ptr<Window> window,
                                                        std::shared_ptr<ConsoleVariable> consoleVariable)
-    : ControllerInputMapping(PhysicalDeviceType::Keyboard),
-      KeyboardKeyToAnyMapping(scancode, window),
+    : ControllerInputMapping(PhysicalDeviceType::Keyboard), KeyboardKeyToAnyMapping(scancode, window),
       ControllerButtonMapping(PhysicalDeviceType::Keyboard, portIndex, bitmask, controlDeck) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);

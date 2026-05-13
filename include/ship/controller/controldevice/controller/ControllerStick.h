@@ -44,8 +44,7 @@ class ControllerStick {
      */
     ControllerStick(uint8_t portIndex, StickIndex stickIndex,
                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
-                    std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                    std::shared_ptr<Window> window = nullptr);
+                    std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Window> window = nullptr);
     ~ControllerStick();
 
     /** @brief Clears all in-memory mappings and reloads them from Config. */

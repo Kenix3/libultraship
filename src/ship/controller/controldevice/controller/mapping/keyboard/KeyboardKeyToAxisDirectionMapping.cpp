@@ -12,8 +12,7 @@ KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t por
                                                                      std::shared_ptr<ControlDeck> controlDeck,
                                                                      std::shared_ptr<Window> window,
                                                                      std::shared_ptr<ConsoleVariable> consoleVariable)
-    : ControllerInputMapping(PhysicalDeviceType::Keyboard),
-      KeyboardKeyToAnyMapping(scancode, window),
+    : ControllerInputMapping(PhysicalDeviceType::Keyboard), KeyboardKeyToAnyMapping(scancode, window),
       ControllerAxisDirectionMapping(PhysicalDeviceType::Keyboard, portIndex, stickIndex, direction, controlDeck) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
