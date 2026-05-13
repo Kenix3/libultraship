@@ -12,8 +12,7 @@ KeyboardKeyToButtonMapping::KeyboardKeyToButtonMapping(uint8_t portIndex, CONTRO
                                                        KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck,
                                                        std::shared_ptr<Config> config)
     : ControllerInputMapping(PhysicalDeviceType::Keyboard),
-      KeyboardKeyToAnyMapping(scancode, controlDeck ? controlDeck->GetWindow()
-                                                    : Context::GetInstance()->GetChildren().GetFirst<Window>()),
+      KeyboardKeyToAnyMapping(scancode, Context::GetInstance()->GetChildren().GetFirst<Window>()),
       ControllerButtonMapping(PhysicalDeviceType::Keyboard, portIndex, bitmask, controlDeck, config) {
     mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     if (controlDeck) {

@@ -53,6 +53,7 @@ void Audio::OnInit(const nlohmann::json& /*initArgs*/) {
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);
 
+    SetAudioChannels(GetSavedAudioChannelsSetting());
     SetCurrentAudioBackend(GetSavedAudioBackend());
 }
 

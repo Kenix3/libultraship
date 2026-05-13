@@ -14,8 +14,7 @@ KeyboardKeyToAxisDirectionMapping::KeyboardKeyToAxisDirectionMapping(uint8_t por
                                                                      std::shared_ptr<ControlDeck> controlDeck,
                                                                      std::shared_ptr<Config> config)
     : ControllerInputMapping(PhysicalDeviceType::Keyboard),
-      KeyboardKeyToAnyMapping(scancode, controlDeck ? controlDeck->GetWindow()
-                                                    : Context::GetInstance()->GetChildren().GetFirst<Window>()),
+      KeyboardKeyToAnyMapping(scancode, Context::GetInstance()->GetChildren().GetFirst<Window>()),
       ControllerAxisDirectionMapping(PhysicalDeviceType::Keyboard, portIndex, stickIndex, direction, controlDeck,
                                      config) {
     mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
