@@ -26,7 +26,7 @@ class Window;
  *   public:
  *     using GuiWindow::GuiWindow;
  *   protected:
- *     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override {
+ *     void OnInit(const nlohmann::json& initArgs = {}) override {
  *         GuiWindow::OnInit(initArgs);
  *     }
  *     void UpdateElement() override { }
@@ -39,14 +39,17 @@ class Window;
 class GuiWindow : public GuiElement {
   public:
     /**
-     * @brief Full constructor with explicit size and window flags.
-     * @param consoleVariable  CVar name used to persist/read visibility (e.g. "gMyWindow").
+     * @brief Full constructor with constructor-injected dependencies, explicit size and window flags.
+     * @param consoleVariable  ConsoleVariable dependency for CVar read/write.
+     * @param window           Window dependency for GUI save scheduling.
+     * @param visibilityCvar   CVar name used to persist/read visibility (e.g. "gMyWindow").
      * @param isVisible        Initial visibility.
      * @param name             Window title shown in the ImGui title bar.
      * @param originalSize     Default size of the window on first open.
      * @param windowFlags      ImGui window flags (e.g. ImGuiWindowFlags_NoResize).
      */
-    GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
+    GuiWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+              const std::string& visibilityCvar, bool isVisible, const std::string& name, ImVec2 originalSize,
               uint32_t windowFlags);
 
     /**

@@ -16,6 +16,16 @@ class Events;
  */
 class EventDebuggerWindow final : public GuiWindow {
   public:
+    /**
+     * @brief Constructs an EventDebuggerWindow with constructor-injected dependencies.
+     * @param consoleVariable ConsoleVariable dependency (threaded from GuiWindow).
+     * @param window          Window dependency (threaded from GuiWindow).
+     * @param events          Events subsystem for live event inspection.
+     * @param visibilityCvar  CVar name for window visibility.
+     * @param name            Window title.
+     */
+    EventDebuggerWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                        std::shared_ptr<Events> events, const std::string& visibilityCvar, const std::string& name);
     using GuiWindow::GuiWindow;
 
     /** @brief Performs one-time initialization of the event debugger window. */

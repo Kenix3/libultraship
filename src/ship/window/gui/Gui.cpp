@@ -10,6 +10,7 @@
 #include "ship/config/Config.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
+#include "ship/debug/Console.h"
 #include "ship/resource/File.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/window/Window.h"
@@ -28,21 +29,6 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Component("Gui"),
     for (auto& guiWindow : guiWindows) {
         AddGuiWindow(guiWindow);
     }
-
-    // Add default windows if we don't already have one by the name
-    if (GetGuiWindow("Stats") == nullptr) {
-        AddGuiWindow(std::make_shared<StatsWindow>(CVAR_STATS_WINDOW_OPEN, "Stats"));
-    }
-
-    if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
-        AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>("gOpenWindows.SDLAddRemoveDeviceEventHandler",
-                                                                      "SDLAddRemoveDeviceEventHandler"));
-    }
-
-    if (GetGuiWindow("Console") == nullptr) {
-        AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),
-                                                     ImGuiWindowFlags_NoFocusOnAppearing));
-    }
 }
 
 Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
@@ -52,11 +38,30 @@ Gui::~Gui() {
     SPDLOG_TRACE("destruct gui");
 }
 
-void Gui::Init() {
+void Gui::OnInit(const nlohmann::json& initArgs) {
     mConsoleVariable = Ship::Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Window>();
     mConfig = Ship::Context::GetInstance()->GetChildren().GetFirst<Config>();
     mResourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
+
+    // Add default windows now that deps are available
+    if (GetGuiWindow("Stats") == nullptr) {
+        AddGuiWindow(std::make_shared<StatsWindow>(mConsoleVariable, mWindow, CVAR_STATS_WINDOW_OPEN, false, "Stats",
+                                                   ImVec2{ -1, -1 }, ImGuiWindowFlags_None));
+    }
+
+    if (GetGuiWindow("SDLAddRemoveDeviceEventHandler") == nullptr) {
+        AddGuiWindow(std::make_shared<SDLAddRemoveDeviceEventHandler>(mConsoleVariable, mWindow,
+                                                                      "gOpenWindows.SDLAddRemoveDeviceEventHandler",
+                                                                      "SDLAddRemoveDeviceEventHandler"));
+    }
+
+    if (GetGuiWindow("Console") == nullptr) {
+        auto console = Ship::Context::GetInstance()->GetChildren().GetFirst<Console>();
+        AddGuiWindow(std::make_shared<ConsoleWindow>(mConsoleVariable, mWindow, console, CVAR_CONSOLE_WINDOW_OPEN,
+                                                     "Console", ImVec2(520, 600),
+                                                     ImGuiWindowFlags_NoFocusOnAppearing));
+    }
 
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
@@ -98,9 +103,7 @@ void Gui::Init() {
         mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
     }
 
-    GetGuiWindow("Stats")->Init();
-    GetGuiWindow("Console")->Init();
-    GetGameOverlay()->Init();
+    GetGameOverlay()->OnInit({});
 
     mResourceManager->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",

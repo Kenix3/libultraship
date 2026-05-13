@@ -156,7 +156,7 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
     return textSize;
 }
 
-void GameOverlay::Init() {
+void GameOverlay::OnInit(const nlohmann::json& /*initArgs*/) {
     mResourceManager = Context::GetInstance()->GetChildren().GetFirst<ResourceManager>();
     mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
     mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();

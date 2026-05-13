@@ -291,6 +291,14 @@ int32_t ConsoleWindow::CheckVarType(const std::string& input) {
     return result;
 }
 
+ConsoleWindow::ConsoleWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                             std::shared_ptr<Console> console, const std::string& visibilityCvar,
+                             const std::string& name, ImVec2 originalSize, uint32_t windowFlags)
+    : GuiWindow(consoleVariable, window, visibilityCvar, false, name, originalSize, windowFlags),
+      mConsole(std::move(console)),
+      mConsoleVariables(std::move(consoleVariable)) {
+}
+
 ConsoleWindow::~ConsoleWindow() {
     SPDLOG_TRACE("destruct console window");
     delete[] mInputBuffer;
@@ -323,9 +331,9 @@ void ConsoleWindow::OnInit(const nlohmann::json& initArgs) {
     mFilterBuffer = new char[gMaxBufferSize];
     strcpy(mFilterBuffer, "");
 
-    mConsole = Context::GetInstance()->GetChildren().GetFirst<Console>();
-    mConsoleVariables = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-
+    if (!mConsole) {
+        return;
+    }
     mConsole->AddCommand("set", { SetCommand,
                                   "Sets a console variable.",
                                   { { "varName", ArgumentType::TEXT }, { "varValue", ArgumentType::TEXT } } });

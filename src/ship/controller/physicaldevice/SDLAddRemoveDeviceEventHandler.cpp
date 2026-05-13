@@ -5,9 +5,12 @@
 
 namespace Ship {
 
-SDLAddRemoveDeviceEventHandler::SDLAddRemoveDeviceEventHandler(const std::string& consoleVariable,
+SDLAddRemoveDeviceEventHandler::SDLAddRemoveDeviceEventHandler(std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                               std::shared_ptr<Window> window,
+                                                               const std::string& visibilityCvar,
                                                                const std::string& name)
-    : GuiWindow(consoleVariable, name) {
+    : GuiWindow(std::move(consoleVariable), std::move(window), visibilityCvar, false, name, ImVec2{ -1, -1 },
+                ImGuiWindowFlags_None) {
 }
 
 SDLAddRemoveDeviceEventHandler::~SDLAddRemoveDeviceEventHandler() {

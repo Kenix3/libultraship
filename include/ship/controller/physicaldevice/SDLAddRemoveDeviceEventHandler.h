@@ -4,7 +4,9 @@
 #include <memory>
 
 namespace Ship {
+class ConsoleVariable;
 class ControlDeck;
+class Window;
 
 /**
  * @brief Hidden GuiWindow that listens for SDL controller add/remove events.
@@ -16,7 +18,8 @@ class ControlDeck;
  */
 class SDLAddRemoveDeviceEventHandler : public GuiWindow {
   public:
-    SDLAddRemoveDeviceEventHandler(const std::string& consoleVariable, const std::string& name);
+    SDLAddRemoveDeviceEventHandler(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                                   const std::string& visibilityCvar, const std::string& name);
     virtual ~SDLAddRemoveDeviceEventHandler();
 
   protected:

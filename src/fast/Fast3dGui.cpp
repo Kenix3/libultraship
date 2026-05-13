@@ -53,7 +53,7 @@ void Fast3dGui::Init(GuiWindowInitData windowImpl) {
     mWindow = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::Window>();
     mConsoleVariables = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ConsoleVariable>();
     mResourceManager = Ship::Context::GetInstance()->GetChildren().GetFirst<Ship::ResourceManager>();
-    Gui::Init();
+    Gui::OnInit({});
 }
 
 bool Fast3dGui::SupportsViewports() {

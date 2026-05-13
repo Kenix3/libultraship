@@ -15,7 +15,8 @@ namespace LUS {
 InputEditorWindow::InputEditorWindow(const std::string& consoleVariable, const std::string& name,
                                       std::shared_ptr<Ship::ControlDeck> controlDeck,
                                       std::shared_ptr<Ship::Window> window)
-    : GuiWindow(consoleVariable, name), mControlDeck(std::move(controlDeck)), mWindow(std::move(window)) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None),
+      mControlDeck(std::move(controlDeck)), mWindow(std::move(window)) {
 }
 
 InputEditorWindow::~InputEditorWindow() {

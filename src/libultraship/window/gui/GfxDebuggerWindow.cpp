@@ -23,7 +23,7 @@ GfxDebuggerWindow::GfxDebuggerWindow(const std::string& consoleVariable, const s
                                       std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
                                       std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
                                       std::shared_ptr<Ship::ResourceManager> resourceManager)
-    : GuiWindow(consoleVariable, name) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
     if (fast3dWindow) {
         mInterpreter = fast3dWindow->GetInterpreterWeak();
         mFast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(fast3dWindow->GetGui());

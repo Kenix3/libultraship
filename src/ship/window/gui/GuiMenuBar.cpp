@@ -1,22 +1,26 @@
 #include "ship/window/gui/GuiMenuBar.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 
 namespace Ship {
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
-    : GuiElement(visibilityConsoleVariable, isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
+GuiMenuBar::GuiMenuBar(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                       const std::string& visibilityConsoleVariable, bool isVisible)
+    : GuiElement(visibilityConsoleVariable, isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable),
+      mConsoleVariable(std::move(consoleVariable)), mWindow(std::move(window)) {
 }
 
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) : GuiMenuBar(visibilityConsoleVariable, false) {
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
+    : GuiMenuBar(nullptr, nullptr, visibilityConsoleVariable, isVisible) {
+}
+
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable)
+    : GuiMenuBar(nullptr, nullptr, visibilityConsoleVariable, false) {
 }
 
 void GuiMenuBar::OnInit(const nlohmann::json& initArgs) {
     GuiElement::OnInit(initArgs);
-    mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    if (!mVisibilityConsoleVariable.empty()) {
+    if (mConsoleVariable && !mVisibilityConsoleVariable.empty()) {
         mIsVisible = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
     }
@@ -33,7 +37,7 @@ void GuiMenuBar::Draw() {
 }
 
 void GuiMenuBar::SyncVisibilityConsoleVariable() {
-    if (mVisibilityConsoleVariable.empty()) {
+    if (mVisibilityConsoleVariable.empty() || !mConsoleVariable || !mWindow) {
         return;
     }
 

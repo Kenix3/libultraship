@@ -228,7 +228,8 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     // ---- Script Loader ----
     shared->GetChildren().Add(std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1,
                                                              "-g -Wl", std::vector<std::string>{},
-                                                             std::vector<std::string>{}, std::vector<std::string>{}));
+                                                             std::vector<std::string>{}, std::vector<std::string>{},
+                                                             resourceManager));
 #endif
 
     // ---- Init all components that need it ----
@@ -325,7 +326,8 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
         } else if (type == "ScriptLoader") {
             return std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
                                                   std::vector<std::string>{}, std::vector<std::string>{},
-                                                  std::vector<std::string>{});
+                                                  std::vector<std::string>{},
+                                                  context->GetChildren().GetFirst<ResourceManager>());
 #endif
         }
         SPDLOG_WARN("BuildComponentsFromJson: unknown component type '{}'", type);

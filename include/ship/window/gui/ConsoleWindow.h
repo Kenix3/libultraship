@@ -31,6 +31,19 @@ class ConsoleVariable;
  */
 class ConsoleWindow : public GuiWindow {
   public:
+    /**
+     * @brief Constructs a ConsoleWindow with constructor-injected dependencies.
+     * @param consoleVariable  ConsoleVariable dependency (threaded from GuiWindow).
+     * @param window           Window dependency (threaded from GuiWindow).
+     * @param console          Console subsystem for command dispatch.
+     * @param visibilityCvar   CVar name for window visibility.
+     * @param name             Window title.
+     * @param originalSize     Default window size.
+     * @param windowFlags      ImGui window flags.
+     */
+    ConsoleWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                  std::shared_ptr<Console> console, const std::string& visibilityCvar, const std::string& name,
+                  ImVec2 originalSize, uint32_t windowFlags);
     using GuiWindow::GuiWindow;
     virtual ~ConsoleWindow();
 

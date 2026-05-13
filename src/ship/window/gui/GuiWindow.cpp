@@ -1,42 +1,45 @@
 #include "ship/window/gui/GuiWindow.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 
 namespace Ship {
+GuiWindow::GuiWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                     const std::string& visibilityCvar, bool isVisible, const std::string& name,
+                     ImVec2 originalSize, uint32_t windowFlags)
+    : GuiElement(name, isVisible), mVisibilityConsoleVariable(visibilityCvar), mOriginalSize(originalSize),
+      mWindowFlags(windowFlags), mConsoleVariable(std::move(consoleVariable)), mWindow(std::move(window)) {
+}
+
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize,
                      uint32_t windowFlags)
-    : GuiElement(name, isVisible), mVisibilityConsoleVariable(consoleVariable), mOriginalSize(originalSize),
-      mWindowFlags(windowFlags) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, isVisible, name, originalSize, windowFlags) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name, ImVec2 originalSize)
-    : GuiWindow(consoleVariable, isVisible, name, originalSize, ImGuiWindowFlags_None) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, isVisible, name, originalSize, ImGuiWindowFlags_None) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, bool isVisible, const std::string& name)
-    : GuiWindow(consoleVariable, isVisible, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, isVisible, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize,
                      uint32_t windowFlags)
-    : GuiWindow(consoleVariable, false, name, originalSize, windowFlags) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, originalSize, windowFlags) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name, ImVec2 originalSize)
-    : GuiWindow(consoleVariable, false, name, originalSize, ImGuiWindowFlags_None) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, originalSize, ImGuiWindowFlags_None) {
 }
 
 GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name)
-    : GuiWindow(consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, ImVec2{ -1, -1 }, ImGuiWindowFlags_None) {
 }
 
 void GuiWindow::OnInit(const nlohmann::json& initArgs) {
     GuiElement::OnInit(initArgs);
-    mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    if (!mVisibilityConsoleVariable.empty()) {
+    if (mConsoleVariable && !mVisibilityConsoleVariable.empty()) {
         mIsVisible = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();
     }
@@ -48,7 +51,7 @@ void GuiWindow::SetVisibility(bool visible) {
 }
 
 void GuiWindow::SyncVisibilityConsoleVariable() {
-    if (mVisibilityConsoleVariable.empty()) {
+    if (mVisibilityConsoleVariable.empty() || !mConsoleVariable || !mWindow) {
         return;
     }
 

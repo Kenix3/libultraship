@@ -3,11 +3,10 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/config/Config.h"
 
 namespace Ship {
 SDLLEDMapping::SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor,
-                             std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> /*config*/,
+                             std::shared_ptr<ControlDeck> controlDeck,
                              std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerLEDMapping(PhysicalDeviceType::SDLGamepad, portIndex, colorSource, savedColor) {
     mConsoleVariable = std::move(consoleVariable);

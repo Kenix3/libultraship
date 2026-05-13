@@ -51,7 +51,7 @@ class Gui : public Component {
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
      */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs) override;
 
     /**
      * @brief Begins a new ImGui frame.

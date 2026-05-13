@@ -47,7 +47,7 @@ class GameOverlay {
     virtual ~GameOverlay();
 
     /** @brief Initialises the overlay and loads the default font. */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs = {});
 
     /**
      * @brief Loads a font from an archive resource and registers it under @p name.

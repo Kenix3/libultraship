@@ -10,8 +10,10 @@
 #include <string>
 #include <optional>
 #include <functional>
+#include <memory>
 
 namespace Ship {
+class ResourceManager;
 
 /**
  * @brief Security level controlling which scripts are allowed to load and execute.
@@ -45,13 +47,15 @@ class ScriptLoader : public Component {
      * @param includePaths   Additional include search directories.
      * @param libraryPaths   Additional library search directories.
      * @param libraries      Libraries to link against compiled scripts.
+     * @param resourceManager ResourceManager for archive lookups during compilation.
      */
     ScriptLoader(const std::unordered_map<std::string, std::string>& compileDefines, const uint32_t codeVersion,
                  const std::string& buildOptions, const std::vector<std::string>& includePaths,
-                 const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries)
+                 const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries,
+                 std::shared_ptr<ResourceManager> resourceManager = nullptr)
         : Component("ScriptLoader"), mCodeVersion(codeVersion), mBuildOptions(buildOptions),
           mIncludePaths(includePaths), mLibraryPaths(libraryPaths), mLibraries(libraries),
-          mCompileDefines(compileDefines) {
+          mCompileDefines(compileDefines), mResourceManager(std::move(resourceManager)) {
     }
 
     /**
