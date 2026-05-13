@@ -271,6 +271,8 @@ class Window : public Component {
     std::shared_ptr<MouseStateManager> GetMouseStateManager();
 
   protected:
+    /** @brief Caches this Window on the MouseStateManager. */
+    void OnInit(const nlohmann::json& initArgs) override;
     /**
      * @brief Records the active graphics backend. Called by subclass constructors.
      * @param backend The backend ID in use.

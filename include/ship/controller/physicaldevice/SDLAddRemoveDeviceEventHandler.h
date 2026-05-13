@@ -1,9 +1,10 @@
 #pragma once
 
 #include "ship/window/gui/GuiWindow.h"
-#include "ship/controller/controldeck/ControlDeck.h"
+#include <memory>
 
 namespace Ship {
+class ControlDeck;
 
 /**
  * @brief Hidden GuiWindow that listens for SDL controller add/remove events.
@@ -19,6 +20,9 @@ class SDLAddRemoveDeviceEventHandler : public GuiWindow {
     virtual ~SDLAddRemoveDeviceEventHandler();
 
   protected:
+    /** @brief Caches ControlDeck for later use in UpdateElement(). */
+    void OnInit(const nlohmann::json& initArgs) override;
+
     /** @brief No-op – this handler does not draw any visible UI. */
     void DrawElement() override;
 

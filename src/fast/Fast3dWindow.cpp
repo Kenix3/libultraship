@@ -73,6 +73,7 @@ Fast3dWindow::~Fast3dWindow() {
 }
 
 void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
+    Window::OnInit(initArgs);
     bool gameMode = false;
 
 #ifdef __linux__

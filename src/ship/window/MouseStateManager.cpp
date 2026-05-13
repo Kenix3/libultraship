@@ -1,6 +1,5 @@
 #include "ship/window/MouseStateManager.h"
 
-#include "ship/Context.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 
@@ -11,6 +10,10 @@ MouseStateManager::MouseStateManager() {
 MouseStateManager::~MouseStateManager() {
 }
 
+void MouseStateManager::SetWindow(std::shared_ptr<Window> window) {
+    mWindow = std::move(window);
+}
+
 void MouseStateManager::StartFrame() {
     CursorVisibilityTimeoutTick();
 }
@@ -18,9 +21,6 @@ void MouseStateManager::StartFrame() {
 void MouseStateManager::CursorVisibilityTimeoutTick() {
     static Coords sPrevMousePos;
 
-    if (!mWindow) {
-        mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    }
     if (ShouldForceCursorVisibility() || mWindow->IsMouseCaptured()) {
         return;
     }
@@ -63,16 +63,10 @@ void MouseStateManager::SetForceCursorVisibility(bool visible) {
 }
 
 void MouseStateManager::ToggleMouseCaptureOverride() {
-    if (!mWindow) {
-        mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    }
     mWindow->SetMouseCapture(!mWindow->IsMouseCaptured());
 }
 
 void MouseStateManager::UpdateMouseCapture() {
-    if (!mWindow) {
-        mWindow = Context::GetInstance()->GetChildren().GetFirst<Window>();
-    }
     if (!mWindow->GetGui()->GetMenuOrMenubarVisible()) {
         mWindow->SetMouseCapture(ShouldAutoCaptureMouse());
     } else {

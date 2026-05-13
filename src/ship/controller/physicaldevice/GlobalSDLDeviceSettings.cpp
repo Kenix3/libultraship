@@ -2,16 +2,11 @@
 
 #include <string>
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 
 namespace Ship {
-GlobalSDLDeviceSettings::GlobalSDLDeviceSettings(std::shared_ptr<ConsoleVariable> consoleVariable) {
-    if (consoleVariable) {
-        mConsoleVariable = std::move(consoleVariable);
-    } else {
-        mConsoleVariable = Context::GetInstance()->GetChildren().GetFirst<ConsoleVariable>();
-    }
+GlobalSDLDeviceSettings::GlobalSDLDeviceSettings(std::shared_ptr<ConsoleVariable> consoleVariable)
+    : mConsoleVariable(std::move(consoleVariable)) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".GlobalSDLDeviceSettings";
     const int32_t defaultAxisThresholdPercentage = 25;
     mStickAxisThresholdPercentage = mConsoleVariable->GetInteger(

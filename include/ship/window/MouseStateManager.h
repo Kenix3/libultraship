@@ -20,6 +20,12 @@ class MouseStateManager {
     /** @brief Virtual destructor. */
     virtual ~MouseStateManager();
 
+    /**
+     * @brief Caches the Window dependency.
+     * @param window The Window this manager operates on.
+     */
+    void SetWindow(std::shared_ptr<Window> window);
+
     /** @brief Called at the beginning of each frame to update cursor visibility and capture state. */
     virtual void StartFrame();
 
@@ -72,7 +78,7 @@ class MouseStateManager {
     /** @brief Decrements the cursor visibility timeout counter by one tick. */
     void CursorVisibilityTimeoutTick();
 
-    std::shared_ptr<Window> mWindow; ///< Cached Window component, lazily initialized.
+    std::shared_ptr<Window> mWindow; ///< Cached Window component.
 
   private:
     bool mAutoCaptureMouse = false;

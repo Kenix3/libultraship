@@ -39,6 +39,11 @@ Window::~Window() {
     SPDLOG_DEBUG("destruct window");
 }
 
+void Window::OnInit(const nlohmann::json& initArgs) {
+    Component::OnInit(initArgs);
+    mMouseStateManager->SetWindow(std::dynamic_pointer_cast<Window>(shared_from_this()));
+}
+
 void Window::ToggleFullscreen() {
     SetFullscreen(!IsFullscreen());
 }

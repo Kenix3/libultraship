@@ -18,7 +18,7 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<ConsoleVariable> consoleVariable)
     : Component("ControlDeck"), mWindow(std::move(window)), mConsoleVariables(std::move(consoleVariable)) {
     mConnectedPhysicalDeviceManager = std::make_shared<ConnectedPhysicalDeviceManager>();
-    mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>();
+    mGlobalSDLDeviceSettings = std::make_shared<GlobalSDLDeviceSettings>(mConsoleVariables);
     mControllerDefaultMappings = controllerDefaultMappings == nullptr ? std::make_shared<ControllerDefaultMappings>()
                                                                       : controllerDefaultMappings;
 }
