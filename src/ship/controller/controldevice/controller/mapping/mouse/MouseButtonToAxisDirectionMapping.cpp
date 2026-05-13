@@ -4,16 +4,14 @@
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/config/Config.h"
 
 namespace Ship {
 MouseButtonToAxisDirectionMapping::MouseButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
                                                                      Direction direction, MouseBtn button,
                                                                      std::shared_ptr<ControlDeck> controlDeck,
-                                                                     std::shared_ptr<Config> config,
                                                                      std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseButtonToAnyMapping(button),
-      ControllerAxisDirectionMapping(PhysicalDeviceType::Mouse, portIndex, stickIndex, direction, controlDeck, config) {
+      ControllerAxisDirectionMapping(PhysicalDeviceType::Mouse, portIndex, stickIndex, direction, controlDeck) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
 }

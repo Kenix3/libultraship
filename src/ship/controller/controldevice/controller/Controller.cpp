@@ -3,7 +3,6 @@
 #include <memory>
 #include <algorithm>
 #include "ship/config/ConsoleVariable.h"
-#include "ship/config/Config.h"
 #include "ship/window/Window.h"
 #if __APPLE__
 #include <SDL_events.h>
@@ -19,19 +18,17 @@
 namespace Ship {
 
 Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
-                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck,
-                       std::shared_ptr<Config> config, std::shared_ptr<Window> window)
+                       std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window)
     : ControlDevice(portIndex) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
-    mConfig = std::move(config);
     mWindow = std::move(window);
     for (auto bitmask : bitmasks) {
         mButtons[bitmask] =
-            std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable, mControlDeck, mConfig, mWindow);
+            std::make_shared<ControllerButton>(portIndex, bitmask, mConsoleVariable, mControlDeck, mWindow);
     }
-    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable, mControlDeck, mConfig, mWindow);
-    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable, mControlDeck, mConfig, mWindow);
+    mLeftStick = std::make_shared<ControllerStick>(portIndex, LEFT_STICK, mConsoleVariable, mControlDeck, mWindow);
+    mRightStick = std::make_shared<ControllerStick>(portIndex, RIGHT_STICK, mConsoleVariable, mControlDeck, mWindow);
     mGyro = std::make_shared<ControllerGyro>(portIndex, mConsoleVariable, mControlDeck);
     mRumble = std::make_shared<ControllerRumble>(portIndex, mConsoleVariable, mControlDeck);
     mLED = std::make_shared<ControllerLED>(portIndex, mConsoleVariable, mControlDeck);

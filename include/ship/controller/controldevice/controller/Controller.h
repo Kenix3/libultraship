@@ -19,7 +19,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 class Window;
 
 /**
@@ -46,7 +45,7 @@ class Controller : public ControlDevice {
      */
     Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
                std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
-               std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+               std::shared_ptr<ControlDeck> controlDeck = nullptr,
                std::shared_ptr<Window> window = nullptr);
 
     /** @brief Destroys the Controller and releases all mapping resources. */
@@ -164,7 +163,6 @@ class Controller : public ControlDevice {
         mButtons;                                      ///< Button subsystems keyed by bitmask.
     std::shared_ptr<ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable component.
     std::shared_ptr<ControlDeck> mControlDeck;
-    std::shared_ptr<Config> mConfig;
     std::shared_ptr<Window> mWindow;
 
   private:

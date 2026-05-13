@@ -4,16 +4,14 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/config/Config.h"
 
 namespace Ship {
 MouseWheelToButtonMapping::MouseWheelToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                      WheelDirection wheelDirection,
                                                      std::shared_ptr<ControlDeck> controlDeck,
-                                                     std::shared_ptr<Config> config,
                                                      std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::Mouse), MouseWheelToAnyMapping(wheelDirection),
-      ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask, controlDeck, config) {
+      ControllerButtonMapping(PhysicalDeviceType::Mouse, portIndex, bitmask, controlDeck) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
 }

@@ -3,17 +3,15 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLAxisDirectionToButtonMapping::SDLAxisDirectionToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                                  int32_t sdlControllerAxis, int32_t axisDirection,
                                                                  std::shared_ptr<ControlDeck> controlDeck,
-                                                                 std::shared_ptr<Config> config,
                                                                  std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
-      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck, config),
+      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck),
       SDLAxisDirectionToAnyMapping(sdlControllerAxis, axisDirection) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);

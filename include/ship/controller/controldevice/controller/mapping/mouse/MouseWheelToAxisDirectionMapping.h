@@ -8,7 +8,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps a mouse scroll-wheel direction to a virtual analog stick direction.
@@ -27,7 +26,6 @@ class MouseWheelToAxisDirectionMapping final : public MouseWheelToAnyMapping, pu
      */
     MouseWheelToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
                                      WheelDirection wheelDirection, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                     std::shared_ptr<Config> config = nullptr,
                                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value derived from the wheel input. */

@@ -8,7 +8,7 @@
 
 namespace Ship {
 class ControlDeck;
-class Config;
+
 
 #ifndef CONTROLLERBUTTONS_T
 #define CONTROLLERBUTTONS_T uint16_t
@@ -30,8 +30,7 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
      * @param bitmask            The button bitmask this mapping controls.
      */
     ControllerButtonMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
-                            std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                            std::shared_ptr<Config> config = nullptr);
+                            std::shared_ptr<ControlDeck> controlDeck = nullptr);
     virtual ~ControllerButtonMapping();
 
     /**
@@ -64,7 +63,6 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
      */
     void SetPortIndex(uint8_t portIndex);
     std::shared_ptr<ControlDeck> GetControlDeck() const;
-    std::shared_ptr<Config> GetConfig() const;
 
     /** @brief Persists this mapping to the application configuration. */
     virtual void SaveToConfig() = 0;
@@ -76,6 +74,5 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
     uint8_t mPortIndex;
     CONTROLLERBUTTONS_T mBitmask;
     std::shared_ptr<ControlDeck> mControlDeck;
-    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

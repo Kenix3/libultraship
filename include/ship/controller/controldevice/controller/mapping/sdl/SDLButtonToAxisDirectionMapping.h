@@ -5,7 +5,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps an SDL gamepad button to a virtual analog stick direction.
@@ -24,7 +23,6 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
      */
     SDLButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
                                     int32_t sdlControllerButton, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                    std::shared_ptr<Config> config = nullptr,
                                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */

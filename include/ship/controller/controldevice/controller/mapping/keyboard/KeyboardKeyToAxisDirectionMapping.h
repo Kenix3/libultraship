@@ -5,7 +5,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps a keyboard key to a virtual analog stick direction.
@@ -24,7 +23,6 @@ class KeyboardKeyToAxisDirectionMapping final : public KeyboardKeyToAnyMapping, 
      */
     KeyboardKeyToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
                                       KbScancode scancode, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                      std::shared_ptr<Config> config = nullptr,
                                       std::shared_ptr<Window> window = nullptr,
                                       std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 

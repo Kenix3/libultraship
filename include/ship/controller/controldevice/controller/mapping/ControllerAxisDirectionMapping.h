@@ -10,7 +10,7 @@
 
 namespace Ship {
 class ControlDeck;
-class Config;
+
 
 /** @brief Identifies which analog stick an axis mapping applies to. */
 enum StickIndex { LEFT_STICK, RIGHT_STICK };
@@ -35,8 +35,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
      * @param direction          The direction on the stick this mapping represents.
      */
     ControllerAxisDirectionMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, StickIndex stickIndex,
-                                   Direction direction, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                                   std::shared_ptr<Config> config = nullptr);
+                                   Direction direction, std::shared_ptr<ControlDeck> controlDeck = nullptr);
     virtual ~ControllerAxisDirectionMapping();
 
     /**
@@ -76,13 +75,11 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
     void SetPortIndex(uint8_t portIndex);
 
     std::shared_ptr<ControlDeck> GetControlDeck() const;
-    std::shared_ptr<Config> GetConfig() const;
 
   protected:
     uint8_t mPortIndex;
     StickIndex mStickIndex;
     Direction mDirection;
     std::shared_ptr<ControlDeck> mControlDeck;
-    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

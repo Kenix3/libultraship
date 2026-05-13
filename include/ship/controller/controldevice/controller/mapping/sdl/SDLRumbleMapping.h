@@ -5,7 +5,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps an SDL gamepad's haptic motors to a controller rumble output.
@@ -23,7 +22,6 @@ class SDLRumbleMapping final : public ControllerRumbleMapping {
      */
     SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
                      uint8_t highFrequencyIntensityPercentage, std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                     std::shared_ptr<Config> config = nullptr,
                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Starts the rumble effect with the configured intensities. */

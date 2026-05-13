@@ -13,18 +13,16 @@
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/config/Config.h"
 
 namespace Ship {
 ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                    std::shared_ptr<ConsoleVariable> consoleVariable,
-                                   std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> config,
+                                   std::shared_ptr<ControlDeck> controlDeck,
                                    std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
-    mConfig = std::move(config);
     mWindow = std::move(window);
 }
 
@@ -158,13 +156,13 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping,
-                                                               mControlDeck, mConfig, mWindow, mConsoleVariable);
+                                                               mControlDeck, mWindow, mConsoleVariable);
     } else {
         auto gui = mWindow->GetGui();
         if (!gui->IsMouseOverAnyGuiItem() && gui->IsMouseOverActivePopup()) {
             if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
                 mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping,
-                                                                       mControlDeck, mConfig, mConsoleVariable);
+                                                                       mControlDeck, mConsoleVariable);
             } else {
                 mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask, mConsoleVariable, mControlDeck);
             }

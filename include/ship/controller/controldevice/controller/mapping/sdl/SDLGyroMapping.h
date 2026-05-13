@@ -5,7 +5,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps an SDL gamepad's gyroscope sensor to a virtual gyro input.
@@ -24,7 +23,7 @@ class SDLGyroMapping final : public ControllerGyroMapping {
      * @param neutralRoll  Roll value at rest (calibration offset).
      */
     SDLGyroMapping(uint8_t portIndex, float sensitivity, float neutralPitch, float neutralYaw, float neutralRoll,
-                   std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+                   std::shared_ptr<ControlDeck> controlDeck = nullptr,
                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**

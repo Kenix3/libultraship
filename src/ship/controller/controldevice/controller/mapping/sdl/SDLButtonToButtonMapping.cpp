@@ -4,15 +4,13 @@
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/config/Config.h"
 
 namespace Ship {
 SDLButtonToButtonMapping::SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                                                    int32_t sdlControllerButton, std::shared_ptr<ControlDeck> controlDeck,
-                                                   std::shared_ptr<Config> config,
                                                    std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad), SDLButtonToAnyMapping(sdlControllerButton),
-      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck, config) {
+      ControllerButtonMapping(PhysicalDeviceType::SDLGamepad, portIndex, bitmask, controlDeck) {
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
 }

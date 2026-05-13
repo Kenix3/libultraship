@@ -7,7 +7,6 @@
 #include "ship/controller/controldevice/controller/mapping/factories/AxisDirectionMappingFactory.h"
 
 #include "ship/config/ConsoleVariable.h"
-#include "ship/config/Config.h"
 
 #include "ship/utils/StringHelper.h"
 #include <sstream>
@@ -28,7 +27,7 @@
 namespace Ship {
 ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
                                  std::shared_ptr<ConsoleVariable> consoleVariable,
-                                 std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Config> config,
+                                 std::shared_ptr<ControlDeck> controlDeck,
                                  std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mStickIndex(stickIndex), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(KbScancode::LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
@@ -39,7 +38,6 @@ ControllerStick::ControllerStick(uint8_t portIndex, StickIndex stickIndex,
     mNotchSnapAngle = 0;
     mConsoleVariable = std::move(consoleVariable);
     mControlDeck = std::move(controlDeck);
-    mConfig = std::move(config);
     mWindow = std::move(window);
 }
 
@@ -291,13 +289,11 @@ bool ControllerStick::AddOrEditAxisDirectionMappingFromRawPress(Direction direct
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
         mapping = std::make_shared<KeyboardKeyToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                      mKeyboardScancodeForNewMapping, mControlDeck,
-                                                                      mConfig, mWindow, mConsoleVariable);
+                                                                      mKeyboardScancodeForNewMapping, mControlDeck, mWindow, mConsoleVariable);
     } else if (!mWindow->GetGui()->IsMouseOverAnyGuiItem() && mWindow->GetGui()->IsMouseOverActivePopup()) {
         if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
             mapping = std::make_shared<MouseButtonToAxisDirectionMapping>(mPortIndex, mStickIndex, direction,
-                                                                          mMouseButtonForNewMapping, mControlDeck,
-                                                                          mConfig, mConsoleVariable);
+                                                                          mMouseButtonForNewMapping, mControlDeck, mConsoleVariable);
         } else {
             mapping = AxisDirectionMappingFactory::CreateAxisDirectionMappingFromMouseWheelInput(
                 mPortIndex, mStickIndex, direction, mConsoleVariable, mControlDeck);

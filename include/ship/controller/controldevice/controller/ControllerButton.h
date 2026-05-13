@@ -10,7 +10,6 @@ namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
 class Window;
-class Config;
 
 /**
  * @brief Aggregates all ControllerButtonMapping instances for a single logical button.
@@ -34,7 +33,7 @@ class ControllerButton {
      */
     ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
                      std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
-                     std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Config> config = nullptr,
+                     std::shared_ptr<ControlDeck> controlDeck = nullptr,
                      std::shared_ptr<Window> window = nullptr);
     ~ControllerButton();
 
@@ -157,6 +156,5 @@ class ControllerButton {
     std::shared_ptr<ConsoleVariable> mConsoleVariable;
     std::shared_ptr<ControlDeck> mControlDeck;
     std::shared_ptr<Window> mWindow;
-    std::shared_ptr<Config> mConfig;
 };
 } // namespace Ship

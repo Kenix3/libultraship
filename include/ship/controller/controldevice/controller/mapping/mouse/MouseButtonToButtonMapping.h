@@ -8,7 +8,6 @@
 namespace Ship {
 class ConsoleVariable;
 class ControlDeck;
-class Config;
 
 /**
  * @brief Maps a mouse button to a virtual controller button.
@@ -26,7 +25,6 @@ class MouseButtonToButtonMapping final : public MouseButtonToAnyMapping, public 
      */
     MouseButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, MouseBtn button,
                                std::shared_ptr<ControlDeck> controlDeck = nullptr,
-                               std::shared_ptr<Config> config = nullptr,
                                std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
