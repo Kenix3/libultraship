@@ -18,6 +18,12 @@ void toggleNativeMacOSFullscreen(SDL_Window* window);
  */
 bool isNativeMacOSFullscreenActive(SDL_Window* window);
 
+/**
+ * @brief Checks whether the current process is running under Rosetta 2 (Apple's x86 translation layer).
+ * @return true if current process is an x86 process running on an ARM CPU, false otherwise.
+ */
+bool isRunningUnderRosetta();
+
 #ifdef __cplusplus
 }
 #endif
