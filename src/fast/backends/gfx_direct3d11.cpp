@@ -645,6 +645,10 @@ void GfxRenderingAPIDX11::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
 
+void GfxRenderingAPIDX11::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
+}
+
 void GfxRenderingAPIDX11::SetViewport(int x, int y, int width, int height) {
     D3D11_VIEWPORT viewport;
     viewport.TopLeftX = x;
@@ -673,9 +677,11 @@ void GfxRenderingAPIDX11::SetUseAlpha(bool use_alpha) {
 
 void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
 
-    if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask) {
+    if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask ||
+        mLastStrictDecal != mCurrentStrictDecal || mLastZmodeDecal != mCurrentZmodeDecal) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;
+        mLastStrictDecal = mCurrentStrictDecal;
 
         mDepthStencilState.Reset();
 
@@ -685,9 +691,11 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         depth_stencil_desc.DepthEnable = mCurrentDepthTest || mCurrentDepthMask;
         depth_stencil_desc.DepthWriteMask =
             mCurrentDepthMask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth_stencil_desc.DepthFunc = mCurrentDepthTest
-                                           ? (mCurrentZmodeDecal ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_LESS)
-                                           : D3D11_COMPARISON_ALWAYS;
+        depth_stencil_desc.DepthFunc =
+            mCurrentDepthTest
+                ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? D3D11_COMPARISON_EQUAL : D3D11_COMPARISON_LESS_EQUAL)
+                                      : D3D11_COMPARISON_LESS)
+                : D3D11_COMPARISON_ALWAYS;
         depth_stencil_desc.StencilEnable = false;
 
         ThrowIfFailed(mDevice->CreateDepthStencilState(&depth_stencil_desc, mDepthStencilState.GetAddressOf()));
@@ -723,7 +731,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
             default:
                 SSDB = -2;
         }
-        rasterizer_desc.SlopeScaledDepthBias = mCurrentZmodeDecal ? SSDB : 0.0f;
+        rasterizer_desc.SlopeScaledDepthBias = (mCurrentZmodeDecal && !mCurrentStrictDecal) ? SSDB : 0.0f;
         rasterizer_desc.DepthBiasClamp = 0.0f;
         rasterizer_desc.DepthClipEnable = false;
         rasterizer_desc.ScissorEnable = true;

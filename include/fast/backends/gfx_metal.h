@@ -126,6 +126,7 @@ struct FramebufferMetal {
     int8_t mLastDepthTest = -1;
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
+    int8_t mLastStrictDecal = -1;
 
     // When true, command buffer is created on the readback queue (no enqueue ordering).
     // First ReadFramebufferToCPU returns zeros and flips this; real data from frame 2+.
@@ -175,6 +176,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetCurrentPrimDepth(float depth) override;
     void SetZmodeDecal(bool decal) override;
+    void SetStrictDecal(bool on) override;
     void SetViewport(int x, int y, int width, int height) override;
     void SetScissor(int x, int y, int width, int height) override;
     void SetUseAlpha(bool useAlpha) override;

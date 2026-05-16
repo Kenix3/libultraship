@@ -199,6 +199,7 @@
 #define G_SETTARGETINTERPINDEX 0x46
 #define G_SETTILESIZE_LERP 0x4a
 #define G_INVAL_TEX_BY_PAL 0x4C
+#define G_SET_STRICT_DECAL 0x4B
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2834,6 +2835,15 @@ typedef union Gfx {
         Gfx* _g = (Gfx*)(pkt);                                                  \
         _g->words.w0 = _SHIFTL(G_INVAL_TEX_BY_PAL, 24, 8);                     \
         _g->words.w1 = (uintptr_t)(palAddr);                                    \
+    }
+
+// Toggles strict (depth-equal) decal compare for subsequent ZMODE_DEC draws,
+// restoring N64 coverage semantics. Reset to 0 after the affected draws.
+#define gSPSetStrictDecal(pkt, on)                                               \
+    {                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                  \
+        _g->words.w0 = _SHIFTL(G_SET_STRICT_DECAL, 24, 8);                     \
+        _g->words.w1 = (uintptr_t)(on);                                         \
     }
 
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \

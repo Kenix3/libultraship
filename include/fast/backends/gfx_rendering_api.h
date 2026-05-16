@@ -45,6 +45,7 @@ class GfxRenderingAPI {
     virtual void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) = 0;
     virtual void SetDepthTestAndMask(bool depth_test, bool z_upd) = 0;
     virtual void SetZmodeDecal(bool decal) = 0;
+    virtual void SetStrictDecal(bool on) = 0;
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void SetScissor(int x, int y, int width, int height) = 0;
     virtual void SetUseAlpha(bool useAlpha) = 0;
@@ -84,9 +85,11 @@ class GfxRenderingAPI {
     int8_t mCurrentDepthTest = 0;
     int8_t mCurrentDepthMask = 0;
     int8_t mCurrentZmodeDecal = 0;
+    int8_t mCurrentStrictDecal = 0;
     int8_t mLastDepthTest = -1;
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
+    int8_t mLastStrictDecal = -1;
     bool mSrgbMode = false;
     float mCurrentPrimDepth = 0.0f;
     bool mPrimDepthDirty = true;

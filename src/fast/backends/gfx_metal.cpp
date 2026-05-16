@@ -422,6 +422,10 @@ void GfxRenderingAPIMetal::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
 
+void GfxRenderingAPIMetal::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
+}
+
 void GfxRenderingAPIMetal::SetViewport(int x, int y, int width, int height) {
     FramebufferMetal& fb = mFramebuffers[mCurrentFramebuffer];
 
@@ -459,14 +463,19 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
     auto& current_framebuffer = mFramebuffers[mCurrentFramebuffer];
 
     if (current_framebuffer.mLastDepthTest != mCurrentDepthTest ||
-        current_framebuffer.mLastDepthMask != mCurrentDepthMask) {
+        current_framebuffer.mLastDepthMask != mCurrentDepthMask ||
+        current_framebuffer.mLastStrictDecal != mCurrentStrictDecal ||
+        current_framebuffer.mLastZmodeDecal != mCurrentZmodeDecal) {
         current_framebuffer.mLastDepthTest = mCurrentDepthTest;
         current_framebuffer.mLastDepthMask = mCurrentDepthMask;
+        current_framebuffer.mLastStrictDecal = mCurrentStrictDecal;
 
         MTL::DepthStencilDescriptor* depth_descriptor = MTL::DepthStencilDescriptor::alloc()->init();
         depth_descriptor->setDepthWriteEnabled(mCurrentDepthMask);
         depth_descriptor->setDepthCompareFunction(
-            mCurrentDepthTest ? (mCurrentZmodeDecal ? MTL::CompareFunctionLessEqual : MTL::CompareFunctionLess)
+            mCurrentDepthTest ? (mCurrentZmodeDecal
+                                     ? (mCurrentStrictDecal ? MTL::CompareFunctionEqual : MTL::CompareFunctionLessEqual)
+                                     : MTL::CompareFunctionLess)
                               : MTL::CompareFunctionAlways);
 
         MTL::DepthStencilState* depth_stencil_state = mDevice->newDepthStencilState(depth_descriptor);
@@ -498,7 +507,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
             default:
                 SSDB = -2;
         }
-        current_framebuffer.mCommandEncoder->setDepthBias(0, mCurrentZmodeDecal ? SSDB : 0, 0);
+        current_framebuffer.mCommandEncoder->setDepthBias(0, (mCurrentZmodeDecal && !mCurrentStrictDecal) ? SSDB : 0,
+                                                          0);
     }
 
     MTL::Buffer* vertex_buffer = mVertexBufferPool[mCurrentVertexBufferPoolIndex];
@@ -665,6 +675,7 @@ void GfxRenderingAPIMetal::EndFrame() {
         fb.mLastDepthTest = -1;
         fb.mLastDepthMask = -1;
         fb.mLastZmodeDecal = -1;
+        fb.mLastStrictDecal = -1;
     }
 
     mFrameAutoreleasePool->release();
@@ -969,6 +980,7 @@ void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
     framebuffer.mLastDepthTest = -1;
     framebuffer.mLastDepthMask = -1;
     framebuffer.mLastZmodeDecal = -1;
+    framebuffer.mLastStrictDecal = -1;
 }
 
 void GfxRenderingAPIMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
@@ -1180,6 +1192,7 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mLastDepthTest = -1;
     source_framebuffer.mLastDepthMask = -1;
     source_framebuffer.mLastZmodeDecal = -1;
+    source_framebuffer.mLastStrictDecal = -1;
 }
 
 void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {

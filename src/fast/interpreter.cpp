@@ -575,7 +575,7 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
 // command encoder would otherwise let earlier draws sample the later draw's
 // replaceRegion'd content when a texture_id is reused.
 void Interpreter::TextureCacheDeleteByPalette(const uint8_t* palAddr) {
-    for (auto it = mTextureCache.map.begin(); it != mTextureCache.map.end(); ) {
+    for (auto it = mTextureCache.map.begin(); it != mTextureCache.map.end();) {
         if (it->first.palette_addrs[0] == palAddr || it->first.palette_addrs[1] == palAddr) {
             for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
                 if (mRenderingState.mTextures[j] == &*it)
@@ -4187,9 +4187,8 @@ bool gfx_set_timg_pal_handler_custom(F3DGfx** cmd0) {
     // Use palette_dram_addr (the game-side pointer) as the texture address.
     // Cache key uniqueness: palette_dram_addr changes per sprite, preventing
     // stale texture cache hits (palette_staging is always the same pointer).
-    const uint8_t* texAddr = gfx->mRdp->palette_dram_addr[palSlot] != nullptr
-                                 ? gfx->mRdp->palette_dram_addr[palSlot]
-                                 : gfx->mRdp->palettes[palSlot];
+    const uint8_t* texAddr = gfx->mRdp->palette_dram_addr[palSlot] != nullptr ? gfx->mRdp->palette_dram_addr[palSlot]
+                                                                              : gfx->mRdp->palettes[palSlot];
     uint32_t lineSizeBytes = gfx->mRdp->texture_tile[tile].line_size_bytes;
     if (lineSizeBytes == 0) {
         lineSizeBytes = 256;
@@ -4233,6 +4232,14 @@ bool gfx_inval_tex_by_pal_handler_custom(F3DGfx** cmd0) {
     if (palAddr != nullptr) {
         gfx->TextureCacheDeleteByPalette(palAddr);
     }
+    return false;
+}
+
+bool gfx_set_strict_decal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    gfx->Flush();
+    gfx->mRapi->SetStrictDecal(cmd->words.w1 != 0);
     return false;
 }
 
@@ -4847,7 +4854,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
-    { OTR_G_SETTIMG_PAL, { "G_SETTIMG_PAL", gfx_set_timg_pal_handler_custom } },  // G_SETTIMG_PAL (0x41)
+    { OTR_G_SETTIMG_PAL, { "G_SETTIMG_PAL", gfx_set_timg_pal_handler_custom } },    // G_SETTIMG_PAL (0x41)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
@@ -4855,6 +4862,7 @@ static constexpr UcodeHandler otrHandlers = {
     { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
     { RDP_G_TRI1_WIDE, { "G_TRI1_WIDE", gfx_tri1_handler_f3dex2 } },                   // RDP_G_TRI1_WIDE (-17)
     { OTR_G_INVAL_TEX_BY_PAL, { "G_INVAL_TEX_BY_PAL", gfx_inval_tex_by_pal_handler_custom } },
+    { OTR_G_SET_STRICT_DECAL, { "G_SET_STRICT_DECAL", gfx_set_strict_decal_handler_custom } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
