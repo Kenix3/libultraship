@@ -13,7 +13,8 @@ void SDLAudioPlayer::DoClose() {
     if (mDevice != 0) {
         // Pause playback first
         SDL_PauseAudioDevice(mDevice, 1);
-        // Clear any queued audio to prevent glitches when reopening
+
+        // Prevent stale audio when reopening
         SDL_ClearQueuedAudio(mDevice);
         SDL_CloseAudioDevice(mDevice);
         mDevice = 0;
@@ -21,29 +22,44 @@ void SDLAudioPlayer::DoClose() {
 }
 
 bool SDLAudioPlayer::DoInit() {
-    if (SDL_Init(SDL_INIT_AUDIO) != 0) {
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
         SPDLOG_ERROR("SDL init error: {}", SDL_GetError());
         return false;
     }
 
-    // Always open with the correct number of output channels
-    mNumChannels = this->GetNumOutputChannels();
-
-    SDL_AudioSpec want, have;
+    SDL_AudioSpec want;
+    SDL_AudioSpec have;
     SDL_zero(want);
-    want.freq = this->GetSampleRate();
-    want.format = AUDIO_S16SYS;
-    want.channels = mNumChannels;
-    want.samples = this->GetSampleLength();
-    want.callback = NULL;
 
-    mDevice = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    want.freq = GetSampleRate();
+    want.format = AUDIO_S16SYS;
+    want.channels = GetNumOutputChannels();
+
+    // Increase backend/device buffering slightly
+    // to reduce rare underruns/glitches.
+    //
+    // IMPORTANT:
+    // This is NOT part of the emulator buffering logic.
+    // It only affects SDL/backend latency.
+    want.samples = GetSampleLength() * 2;
+
+    want.callback = nullptr;
+
+    mDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have, 0);
+
     if (mDevice == 0) {
-        SPDLOG_ERROR("SDL_OpenAudio error: {}", SDL_GetError());
+        SPDLOG_ERROR("SDL_OpenAudioDevice error: {}", SDL_GetError());
         return false;
     }
 
-    SPDLOG_INFO("SDL Audio initialized: {} channels, {} Hz", mNumChannels, this->GetSampleRate());
+    mNumChannels = have.channels;
+
+    SPDLOG_INFO(
+        "SDL audio initialized: {} Hz, {} channels, {} samples",
+        have.freq,
+        have.channels,
+        have.samples
+    );
 
     SDL_PauseAudioDevice(mDevice, 0);
     return true;
@@ -54,9 +70,6 @@ int SDLAudioPlayer::Buffered() {
 }
 
 void SDLAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
-    if (Buffered() < 6000) {
-        // Don't fill the audio buffer too much in case this happens
-        SDL_QueueAudio(mDevice, buf, len);
-    }
+    SDL_QueueAudio(mDevice, buf, len);
 }
 } // namespace Ship
