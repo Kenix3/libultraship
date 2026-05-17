@@ -42,6 +42,7 @@ typedef struct {
             uint32_t Height; ///< Framebuffer height in pixels.
         } Gx2;
     };
+    int32_t Backend;
 } GuiWindowInitData;
 
 /**
@@ -152,8 +153,8 @@ class Fast3dGui : public Ship::Gui {
      */
     ImTextureID GetTextureById(int32_t id);
 
-    std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
     GuiWindowInitData mImpl;                 ///< Backend-specific window/context handles passed to Init().
+    std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
 
   private:
     /** @brief Applies any pending resolution or MSAA changes to the render target. */
@@ -163,8 +164,7 @@ class Fast3dGui : public Ship::Gui {
      * @brief Returns the integer scaling factor applied to the game viewport.
      * @return Scaling multiplier (1 = native, 2 = 2×, etc.).
      */
-    int16_t GetIntegerScaleFactor();
-
     std::unordered_map<std::string, Ship::GuiTextureMetadata> mGuiTextures; ///< Cached GPU texture registry.
+    int16_t GetIntegerScaleFactor();
 };
 } // namespace Fast

@@ -84,7 +84,7 @@ struct ResourceIdentifierHash {
  *
  * Typical usage:
  * @code
- * auto rm = Ship::Context::GetInstance()->GetResourceManager();
+ * auto rm = Ship::Context::GetRawInstance()->GetResourceManager();
  * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
  * @endcode
  */

@@ -48,7 +48,7 @@ void Archive::Load() {
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
         isGameVersionValid =
-            Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
+            Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
 
         if (!isGameVersionValid) {
             SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(), GetGameVersion());
@@ -79,7 +79,7 @@ void Archive::Load() {
                 mHasGameVersion = true;
                 SetGameVersion(mManifest.GameVersion);
                 isGameVersionValid =
-                    Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(
+                    Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(
                         GetGameVersion());
 
                 if (!isGameVersionValid) {
@@ -108,7 +108,7 @@ void Archive::Unload() {
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
     const std::string& filePath =
-        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+        *Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 
@@ -187,8 +187,8 @@ void Archive::Validate() {
         return;
     }
 
-    auto keystore = Context::GetInstance()->GetKeystore();
-    auto manager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto keystore = Context::GetRawInstance()->GetKeystore();
+    auto manager = Context::GetRawInstance()->GetResourceManager()->GetArchiveManager();
     std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
 
     if (!keystore->HasKey(manifestKey)) {

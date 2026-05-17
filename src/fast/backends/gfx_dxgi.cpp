@@ -164,7 +164,7 @@ void GfxWindowBackendDXGI::ToggleBorderlessWindowFullScreen(bool enable, bool ca
             ShowWindow(h_wnd, SW_MAXIMIZE);
         } else {
             std::tuple<HMONITOR, RECT, BOOL> Monitor;
-            auto conf = Ship::Context::GetInstance()->GetConfig();
+            auto conf = Ship::Context::GetRawInstance()->GetConfig();
             current_width = conf->GetInt("Window.Width", 640);
             current_height = conf->GetInt("Window.Height", 480);
             mPosX = conf->GetInt("Window.PositionX", 100);
@@ -358,7 +358,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
     char fileName[256];
     Fast::WindowEvent event_impl;
     event_impl.Win32 = { h_wnd, static_cast<int>(message), static_cast<int>(w_param), static_cast<int>(l_param) };
-    auto ctx = Ship::Context::GetInstance();
+    auto ctx = Ship::Context::GetRawInstance();
     if (ctx && ctx->GetWindow() && ctx->GetWindow()->GetGui()) {
         auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(ctx->GetWindow()->GetGui());
         if (fast3dGui) {
@@ -493,7 +493,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            Ship::Context::GetInstance()->GetFileDropMgr()->SetDroppedFile(fileName);
+            Ship::Context::GetRawInstance()->GetFileDropMgr()->SetDroppedFile(fileName);
             break;
         case WM_DISPLAYCHANGE:
             self->monitor_list = GetMonitorList();
@@ -509,7 +509,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             }
             break;
         case WM_KILLFOCUS:
-            if (auto ctx = Ship::Context::GetInstance(); ctx && ctx->GetConsoleVariables()) {
+            if (auto ctx = Ship::Context::GetRawInstance(); ctx && ctx->GetConsoleVariables()) {
                 if (!ctx->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                     ControllerBlockGameInput(ALLOW_BACKGROUND_INPUTS_BLOCK_ID);
                 }
@@ -918,7 +918,7 @@ void GfxWindowBackendDXGI::SwapBuffersBegin() {
     // mLengthInVsyncFrames (now mVsyncEnabled) was used as present interval. Present interval >1 (aka fractional
     // V-Sync) breaks VRR and introduces even more input lag than capping via normal V-Sync does. Get the present
     // interval the user wants instead (V-Sync toggle).
-    mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
+    mVsyncEnabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1) ? 1 : 0;
 
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);

@@ -58,7 +58,7 @@ class TestRamArchive final : public Ship::Archive {
         return MakeFile(it->second);
     }
 
-    // Resolve hash → path locally so we don't need Context::GetInstance()
+    // Resolve hash → path locally so we don't need Context::GetRawInstance()
     std::shared_ptr<Ship::File> LoadFile(uint64_t hash) override {
         for (const auto& [path, _] : mTestFiles) {
             if (CRC64(path.c_str()) == hash) {

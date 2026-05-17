@@ -40,15 +40,18 @@ class Keystore;
  * auto ctx = Ship::Context::CreateInstance("MyApp", "app", "config.json", archivePaths);
  * // ... use ctx->GetResourceManager(), ctx->GetWindow(), etc.
  * @endcode
+ * @note Pointers to @code Context@endcode should not be stored as members. You should always access
+ * @code Context@endcode via GetRawInstance
  */
 class Context {
   public:
     /**
      * @brief Returns the currently active global Context instance.
-     * @return Shared pointer to the Context, or an empty pointer if none exists.
+     * @return Raw pointer to the Context. This should not be considered shared and should be considered invalid
+     * once the scope ends.
      */
-    static std::shared_ptr<Context> GetInstance();
-
+    static Context* GetRawInstance();
+    static void DestroyInstance();
     /**
      * @brief Creates, initializes, and stores the global Context instance.
      *
@@ -63,15 +66,15 @@ class Context {
      * @param audioSettings     Initial audio backend and channel configuration.
      * @param window            Optional pre-constructed Window to use; if nullptr a default is created.
      * @param controlDeck       Optional pre-constructed ControlDeck; if nullptr a default is created.
-     * @return Shared pointer to the fully initialized Context.
+     * @return Raw pointer to the fully initialized Context.
+     * @note The pointer returned by this function is only for convenience directly after creating an instance.
      */
-    static std::shared_ptr<Context> CreateInstance(const std::string& name, const std::string& shortName,
-                                                   const std::string& configFilePath,
-                                                   const std::vector<std::string>& archivePaths = {},
-                                                   const std::unordered_set<uint32_t>& validHashes = {},
-                                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
-                                                   std::shared_ptr<Window> window = nullptr,
-                                                   std::shared_ptr<ControlDeck> controlDeck = nullptr);
+    static Context* CreateInstance(const std::string& name, const std::string& shortName,
+                                   const std::string& configFilePath, const std::vector<std::string>& archivePaths = {},
+                                   const std::unordered_set<uint32_t>& validHashes = {},
+                                   uint32_t reservedThreadCount = 1, AudioSettings audioSettings = {},
+                                   std::shared_ptr<Window> window = nullptr,
+                                   std::shared_ptr<ControlDeck> controlDeck = nullptr);
 
     /**
      * @brief Creates a Context that has not yet been initialized.
@@ -81,10 +84,11 @@ class Context {
      * @param name           Human-readable application name.
      * @param shortName      Short application identifier.
      * @param configFilePath Path to the JSON configuration file.
-     * @return Shared pointer to the uninitialized Context.
+     * @return Raw pointer to the uninitialized Context.
+     * @note The pointer returned by this function is only for convenience directly after creating an instance.
      */
-    static std::shared_ptr<Context> CreateUninitializedInstance(const std::string& name, const std::string& shortName,
-                                                                const std::string& configFilePath);
+    static Context* CreateUninitializedInstance(const std::string& name, const std::string& shortName,
+                                                const std::string& configFilePath);
 
     /**
      * @brief Returns the platform-specific application bundle directory (e.g. the .app bundle on macOS).
@@ -266,9 +270,13 @@ class Context {
     Context() = default;
 
   private:
-    static std::weak_ptr<Context> mContext;
+    static std::unique_ptr<Context> mContext;
 
     std::shared_ptr<spdlog::logger> mLogger;
+    // We only need the spdlog threadpool on release builds because of the async logger.
+#ifndef _DEBUG
+    std::shared_ptr<spdlog::details::thread_pool> mLogThreadPool;
+#endif
     std::shared_ptr<Config> mConfig;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
     std::shared_ptr<ResourceManager> mResourceManager;

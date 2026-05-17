@@ -3,7 +3,7 @@
 #include "fast/Fast3dWindow.h"
 
 static std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger() {
-    auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetInstance()->GetWindow());
+    auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetRawInstance()->GetWindow());
     return window ? window->GetGfxDebugger() : nullptr;
 }
 

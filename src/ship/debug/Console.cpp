@@ -42,7 +42,7 @@ int32_t Console::Run(const std::string& command, std::string* output) {
     }
 
     const CommandEntry& entry = it->second;
-    int32_t commandResult = entry.Handler(Context::GetInstance()->GetConsole(), cmdArgs, output);
+    int32_t commandResult = entry.Handler(Context::GetRawInstance()->GetConsole(), cmdArgs, output);
     if (output) {
         SPDLOG_INFO("Command \"{}\" returned {} with output: {}", command, commandResult, *output);
     } else {

@@ -5,19 +5,19 @@
 extern "C" {
 
 EventID EventSystemRegisterEvent(const char* name) {
-    return Ship::Context::GetInstance()->GetEventSystem()->RegisterEvent(name);
+    return Ship::Context::GetRawInstance()->GetEventSystem()->RegisterEvent(name);
 }
 
 ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file,
                                        int line) {
-    return Ship::Context::GetInstance()->GetEventSystem()->RegisterListener(id, callback, priority, file, line);
+    return Ship::Context::GetRawInstance()->GetEventSystem()->RegisterListener(id, callback, priority, file, line);
 }
 
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {
-    Ship::Context::GetInstance()->GetEventSystem()->UnregisterListener(ev, id);
+    Ship::Context::GetRawInstance()->GetEventSystem()->UnregisterListener(ev, id);
 }
 
 void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key) {
-    Ship::Context::GetInstance()->GetEventSystem()->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
+    Ship::Context::GetRawInstance()->GetEventSystem()->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
 }
 }
