@@ -62,7 +62,9 @@ Context::~Context() {
     mConfig = nullptr;
     mLogger->flush();
     mLogger = nullptr;
+#ifndef _DEBUG
     mLogThreadPool = nullptr;
+#endif
 }
 
 Context* Context::CreateInstance(const std::string& name, const std::string& shortName,
