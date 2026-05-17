@@ -18,9 +18,8 @@ class NullAudioPlayer final : public AudioPlayer {
      * @brief Constructs a NullAudioPlayer with the given audio settings.
      * @param settings Audio configuration (rates are accepted but otherwise unused).
      */
-    NullAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
-    }
-    ~NullAudioPlayer();
+    NullAudioPlayer(AudioSettings settings) : AudioPlayer(settings) { }
+    ~NullAudioPlayer() override;
 
     /**
      * @brief Returns the desired buffered frame count so the game always produces audio.
