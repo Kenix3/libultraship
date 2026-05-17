@@ -361,7 +361,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
     window_impl.Dx11 = { mWindowBackend->GetWindowHandle(), mContext.Get(), mDevice.Get() };
     window_impl.Backend = WindowBackend::FAST3D_DXGI_DX11;
     std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
-              ->Init(window_impl);
+        ->Init(window_impl);
 }
 
 int GfxRenderingAPIDX11::GetMaxTextureSize() {
