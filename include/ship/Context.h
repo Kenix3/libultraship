@@ -270,9 +270,13 @@ class Context {
     Context() = default;
 
   private:
-    static Context* mContext;
+    static std::unique_ptr<Context> mContext;
 
     std::shared_ptr<spdlog::logger> mLogger;
+    // We only need the spdlog threadpool on release builds because of the async logger.
+#ifndef _DEBUG
+    std::shared_ptr<spdlog::details::thread_pool> mLogThreadPool;
+#endif
     std::shared_ptr<Config> mConfig;
     std::shared_ptr<ConsoleVariable> mConsoleVariables;
     std::shared_ptr<ResourceManager> mResourceManager;

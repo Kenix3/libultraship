@@ -2,6 +2,8 @@
 #include "ship/Context.h"
 #include <string>
 #include <algorithm>
+
+#include "fast/resource/type/Texture.h"
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 
