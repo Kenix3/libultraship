@@ -24,7 +24,7 @@ class CoreAudioAudioPlayer : public AudioPlayer {
      * @param settings Sample rate, buffer size, desired buffered frames, and channel mode.
      */
     CoreAudioAudioPlayer(AudioSettings settings);
-    ~CoreAudioAudioPlayer();
+    ~CoreAudioAudioPlayer() override;
 
     /**
      * @brief Returns the number of audio frames currently queued in the ring buffer.

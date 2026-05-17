@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include "ship/audio/AudioChannelsSetting.h"
+#include "ship/audio/AudioResampler.h"
 #include "ship/audio/SoundMatrixDecoder.h"
 
 namespace Ship {
@@ -12,7 +13,8 @@ namespace Ship {
  * @brief Configuration parameters shared by all AudioPlayer backends.
  */
 struct AudioSettings {
-    int32_t SampleRate = 44100;     ///< Output sample rate in Hz.
+    int32_t SampleRate = 48000;     ///< Output sample rate in Hz.
+    int32_t SourceSampleRate = 0;   ///< Source sample rate in Hz. (0 = same as SampleRate, no resampling)
     int32_t SampleLength = 1024;    ///< Number of samples per audio frame.
     int32_t DesiredBuffered = 2480; ///< Target number of frames to keep buffered.
     AudioChannelsSetting ChannelSetting =
@@ -38,7 +40,7 @@ class AudioPlayer {
      */
     AudioPlayer(AudioSettings settings) : mAudioSettings(settings) {
     }
-    ~AudioPlayer();
+    virtual ~AudioPlayer();
 
     /**
      * @brief Calls DoInit() and sets the initialised flag on success.
@@ -74,6 +76,9 @@ class AudioPlayer {
     /** @brief Returns the configured output sample rate in Hz. */
     int32_t GetSampleRate() const;
 
+    /** @brief Returns the configured source sample rate in Hz. */
+    int32_t GetSourceSampleRate() const;
+
     /** @brief Returns the configured number of samples per audio frame. */
     int32_t GetSampleLength() const;
 
@@ -88,6 +93,12 @@ class AudioPlayer {
      * @param rate New sample rate in Hz.
      */
     void SetSampleRate(int32_t rate);
+
+    /**
+     * @brief Sets the source sample rate.
+     * @param rate New sample rate in Hz.
+     */
+    void SetSourceSampleRate(int32_t rate);
 
     /**
      * @brief Sets the number of samples per audio frame.
@@ -148,6 +159,15 @@ class AudioPlayer {
   private:
     std::unique_ptr<SoundMatrixDecoder>
         mSoundMatrixDecoder; ///< Stereo-to-surround decoder (active in matrix-5.1 mode).
+    std::unique_ptr<AudioResampler> mResampler;
+
+    // Fixed-size resample output buffer — no heap allocation on the audio hot path.
+    // Sized for the worst-case ratio and maximum channel count:
+    // ceil(SampleLength * maxOutRate / minInRate) * maxChannels
+    // e.g. 32k→48k, SampleLength=1024, 6ch: ceil(1024 * 3/2) * 6 = 9216
+    // 16384 gives comfortable headroom for other ratios (e.g. 32k→96k * 6ch = 18432 — increase if needed).
+    static constexpr size_t kResampleBufSamples = 16384;
+    std::array<int16_t, kResampleBufSamples> mResampleBuf{};
 
     AudioSettings mAudioSettings;
     bool mInitialized = false;

@@ -20,7 +20,7 @@ class SDLAudioPlayer final : public AudioPlayer {
      */
     SDLAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
     }
-    ~SDLAudioPlayer();
+    ~SDLAudioPlayer() override;
 
     /**
      * @brief Returns the number of audio frames currently queued in the SDL audio device.

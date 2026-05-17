@@ -20,7 +20,7 @@ class NullAudioPlayer final : public AudioPlayer {
      */
     NullAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
     }
-    ~NullAudioPlayer();
+    ~NullAudioPlayer() override;
 
     /**
      * @brief Returns the desired buffered frame count so the game always produces audio.
