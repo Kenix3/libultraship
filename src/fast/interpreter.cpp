@@ -1353,10 +1353,25 @@ void Interpreter::ImportTextureMask(int i, int tile) {
 }
 
 void Interpreter::NormalizeVector(float v[3]) {
-    float s = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    v[0] /= s;
-    v[1] /= s;
-    v[2] /= s;
+    constexpr float kEpsilon = 1e-8f;
+
+    float s = sqrtf(
+        v[0] * v[0] +
+        v[1] * v[1] +
+        v[2] * v[2]
+    );
+
+    if (s > kEpsilon) {
+        float inv = 1.0f / s;
+
+        v[0] *= inv;
+        v[1] *= inv;
+        v[2] *= inv;
+    } else {
+        v[0] = 0.0f;
+        v[1] = 0.0f;
+        v[2] = 0.0f;
+    }
 }
 
 void Interpreter::TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]) {
@@ -1909,8 +1924,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
             tex_width[i] = line_size;
 
-            tex_width2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-            tex_height2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+            tex_width2[i] = std::lrintf(std::max((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4.f) / 4.f, 1.f));
+            tex_height2[i] = std::lrintf(std::max((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4.f) / 4.f, 1.f));
 
             // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
             // are close to rendered pixels (mipmap), not when much bigger (window scroll).
@@ -2028,8 +2043,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 }
             }
 
-            mBufVbo[mBufVboLen++] = u / tex_width[t];
-            mBufVbo[mBufVboLen++] = v / tex_height[t];
+            float invTexWidth = tex_width[t] != 0 ? 1.0f / tex_width[t] : 0.0f;
+            float invTexHeight = tex_height[t] != 0 ? 1.0f / tex_height[t] : 0.0f;
+
+            mBufVbo[mBufVboLen++] = u * invTexWidth;
+            mBufVbo[mBufVboLen++] = v * invTexHeight;
 
             bool clampS = tm & (1 << 2 * t);
             bool clampT = tm & (1 << 2 * t + 1);
