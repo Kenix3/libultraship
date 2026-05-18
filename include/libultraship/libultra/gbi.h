@@ -286,8 +286,8 @@
  */
 #define G_MAXFBZ 0x3fff /* 3b exp, 11b mantissa */
 
-#define GPACK_RGBA5551(r, g, b, a) ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a)&0x1))
-#define GPACK_ZDZ(z, dz) ((z) << 2 | (dz))
+#define GPACK_RGBA5551(r, g, b, a) ((((u32)(r) << 8) & 0xf800) | (((u32)(g) << 3) & 0x7c0) | (((u32)(b) >> 2) & 0x3e) | ((u32)(a)&0x1))
+#define GPACK_ZDZ(z, dz) ((u32)(z) << 2 | (dz))
 
 /*
  * G_MTX: parameter flags
@@ -654,38 +654,38 @@
 #define G_ZS_PRIM (1 << G_MDSFT_ZSRCSEL)
 
 /* G_SETOTHERMODE_L gSetRenderMode */
-#define AA_EN 0x8
-#define Z_CMP 0x10
-#define Z_UPD 0x20
-#define IM_RD 0x40
-#define CLR_ON_CVG 0x80
-#define CVG_DST_CLAMP 0
-#define CVG_DST_WRAP 0x100
-#define CVG_DST_FULL 0x200
-#define CVG_DST_SAVE 0x300
-#define ZMODE_OPA 0
-#define ZMODE_INTER 0x400
-#define ZMODE_XLU 0x800
-#define ZMODE_DEC 0xc00
-#define CVG_X_ALPHA 0x1000
-#define ALPHA_CVG_SEL 0x2000
-#define FORCE_BL 0x4000
-#define TEX_EDGE 0x0000 /* used to be 0x8000 */
+#define AA_EN 0x8u
+#define Z_CMP 0x10u
+#define Z_UPD 0x20u
+#define IM_RD 0x40u
+#define CLR_ON_CVG 0x80u
+#define CVG_DST_CLAMP 0u
+#define CVG_DST_WRAP 0x100u
+#define CVG_DST_FULL 0x200u
+#define CVG_DST_SAVE 0x300u
+#define ZMODE_OPA 0u
+#define ZMODE_INTER 0x400u
+#define ZMODE_XLU 0x800u
+#define ZMODE_DEC 0xc00u
+#define CVG_X_ALPHA 0x1000u
+#define ALPHA_CVG_SEL 0x2000u
+#define FORCE_BL 0x4000u
+#define TEX_EDGE 0x0000u /* used to be 0x8000 */
 
-#define G_BL_CLR_IN 0
-#define G_BL_CLR_MEM 1
-#define G_BL_CLR_BL 2
-#define G_BL_CLR_FOG 3
-#define G_BL_1MA 0
-#define G_BL_A_MEM 1
-#define G_BL_A_IN 0
-#define G_BL_A_FOG 1
-#define G_BL_A_SHADE 2
-#define G_BL_1 2
-#define G_BL_0 3
+#define G_BL_CLR_IN 0u
+#define G_BL_CLR_MEM 1u
+#define G_BL_CLR_BL 2u
+#define G_BL_CLR_FOG 3u
+#define G_BL_1MA 0u
+#define G_BL_A_MEM 1u
+#define G_BL_A_IN 0u
+#define G_BL_A_FOG 1u
+#define G_BL_A_SHADE 2u
+#define G_BL_1 2u
+#define G_BL_0 3u
 
-#define GBL_c1(m1a, m1b, m2a, m2b) (uint32_t)(m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
-#define GBL_c2(m1a, m1b, m2a, m2b) (m1a) << 28 | (m1b) << 24 | (m2a) << 20 | (m2b) << 16
+#define GBL_c1(m1a, m1b, m2a, m2b) (m1a) << 30u | (m1b) << 26u | (m2a) << 22u | (m2b) << 18u
+#define GBL_c2(m1a, m1b, m2a, m2b) (m1a) << 28u | (m1b) << 24u | (m2a) << 20u | (m2b) << 16u
 
 #define RM_AA_ZB_OPA_SURF(clk)                                                  \
     AA_EN | Z_CMP | Z_UPD | IM_RD | CVG_DST_CLAMP | ZMODE_OPA | ALPHA_CVG_SEL | \
