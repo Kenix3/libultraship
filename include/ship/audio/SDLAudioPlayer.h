@@ -18,9 +18,8 @@ class SDLAudioPlayer final : public AudioPlayer {
      * @brief Constructs an SDLAudioPlayer with the given audio settings.
      * @param settings Sample rate, buffer size, desired buffered frames, and channel mode.
      */
-    SDLAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
-    }
-    ~SDLAudioPlayer();
+    SDLAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {}
+    ~SDLAudioPlayer() override;
 
     /**
      * @brief Returns the number of audio frames currently queued in the SDL audio device.
@@ -50,6 +49,6 @@ class SDLAudioPlayer final : public AudioPlayer {
 
   private:
     SDL_AudioDeviceID mDevice = 0; ///< Handle to the opened SDL audio device.
-    int32_t mNumChannels = 2;      ///< Number of output channels (2 for stereo, 6 for 5.1).
+    uint8_t mNumChannels = 2;      ///< Number of output channels (2 for stereo, 6 for 5.1).
 };
 } // namespace Ship

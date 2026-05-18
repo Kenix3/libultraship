@@ -26,8 +26,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
      * @brief Constructs a WasapiAudioPlayer with the given audio settings.
      * @param settings Sample rate, buffer size, desired buffered frames, and channel mode.
      */
-    WasapiAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {
-    }
+    WasapiAudioPlayer(AudioSettings settings) : AudioPlayer(settings) {}
 
     /**
      * @brief Returns the number of frames currently queued in the WASAPI render buffer.
