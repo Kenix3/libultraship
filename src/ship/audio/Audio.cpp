@@ -4,6 +4,10 @@
 #include "ship/audio/CoreAudioAudioPlayer.h"
 #endif
 
+#if defined(__linux__) && ENABLE_PIPEWIRE
+#include "ship/audio/PipeWireAudioPlayer.h"
+#endif
+
 #include "ship/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -24,6 +28,11 @@ void Audio::InitAudioPlayer() {
 #ifdef __APPLE__
         case AudioBackend::COREAUDIO:
             mAudioPlayer = std::make_shared<CoreAudioAudioPlayer>(this->mAudioSettings);
+            break;
+#endif
+#if defined(__linux__) && ENABLE_PIPEWIRE
+        case AudioBackend::PIPEWIRE:
+            mAudioPlayer = std::make_shared<PipeWireAudioPlayer>(this->mAudioSettings);
             break;
 #endif
         case AudioBackend::SDL:
@@ -50,6 +59,9 @@ void Audio::Init() {
 #endif
 #ifdef __APPLE__
     mAvailableAudioBackends->push_back(AudioBackend::COREAUDIO);
+#endif
+#if defined(__linux__) && ENABLE_PIPEWIRE
+    mAvailableAudioBackends->push_back(AudioBackend::PIPEWIRE);
 #endif
     mAvailableAudioBackends->push_back(AudioBackend::SDL);
     mAvailableAudioBackends->push_back(AudioBackend::NUL);

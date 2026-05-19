@@ -17,6 +17,10 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/CoreAudioAudioPlayer.*")
 endif()
 
+if (NOT PIPEWIRE_FOUND)
+    list(FILTER Source_Files__Audio EXCLUDE REGEX "audio/PipeWireAudioPlayer.*")
+endif()
+
 source_group("audio" FILES ${Source_Files__Audio})
 target_sources(libultraship PRIVATE ${Source_Files__Audio})
 
