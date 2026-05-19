@@ -361,6 +361,7 @@ struct FBInfo {
     uint32_t applied_width, applied_height; // Up-scaled for the viewport
     uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
     bool resize;                            // Scale to match the viewport
+    bool fixedAspect;                       // Preserve aspect ratio
 };
 
 struct MaskedTextureEntry {
@@ -391,7 +392,7 @@ class Interpreter {
     void SetTargetFps(int fps);
     void SetMaxFrameLatency(int latency);
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                          uint8_t resize);
+                          uint8_t resize, bool fixedAspect);
     void SetFrameBuffer(int fb, float noiseScale);
     void CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
     void ResetFrameBuffer();
@@ -560,4 +561,4 @@ const char* GfxGetOpcodeName(int8_t opcode);
 extern "C" void gfx_texture_cache_clear();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                                      uint8_t resize);
+                                      uint8_t resize, bool fixedAspect);
