@@ -1455,9 +1455,8 @@ void Interpreter::GfxSpPopMatrix(uint32_t count) {
 
 float Interpreter::AdjXForAspectRatio(float x) const {
     // Skip widescreen adjustment for fixed-size off-screen FBs (HUD elements,
-    // small capture buffers). But resizable FBs (resize=true) are capturing
-    // the main scene and should match the window's aspect ratio.
-    if (mFbActive && mActiveFrameBuffer != mFrameBuffers.end() && !mActiveFrameBuffer->second.fixedAspect) {
+    // small capture buffers), or those which specify a fixed aspect ratio.
+    if (mFbActive && mActiveFrameBuffer != mFrameBuffers.end() && mActiveFrameBuffer->second.fixedAspect) {
         return x;
     } else {
         return x * (4.0f / 3.0f) / ((float)mCurDimensions.width / (float)mCurDimensions.height);
