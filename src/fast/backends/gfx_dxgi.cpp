@@ -17,6 +17,7 @@
 #include <versionhelpers.h>
 
 #include <shellscalingapi.h>
+#include <shellapi.h>
 
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
