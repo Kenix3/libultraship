@@ -9,8 +9,19 @@ namespace Ship {
 
 class FluidSynth final : public IMidiSynth {
 public:
-    // sampleRate must match the audio output rate (typically 44100 or 48000).
-    explicit FluidSynth(double sampleRate);
+    // sampleRate     : must match the audio output rate (typically 44100 or 48000).
+    // linearVelocity : when true, install the Graham-Smith volume curve (per
+    //                  ANMP, github.com/derselbst/ANMP). Replaces the SF2
+    //                  default vel / CC7 / CC11 → initial-attenuation modulators
+    //                  with versions that keep the perceptual concave NEGATIVE
+    //                  shape but halve the amount (960 → 480 cB). Maximum
+    //                  attenuation drops from −96 dB to −48 dB, lifting quiet
+    //                  voices while preserving dynamics shape. Default false
+    //                  preserves the standard SF2 behavior.
+    //                  (The "linear velocity" name is historical — an earlier
+    //                  prototype actually switched CC11 to linear, but that
+    //                  over-compressed the mid-range.)
+    explicit FluidSynth(double sampleRate, bool linearVelocity = false);
     ~FluidSynth() override;
 
     void LoadSoundFont(const std::string& path) override;
@@ -28,10 +39,20 @@ public:
 private:
     void InitChannel(uint8_t channel);
 
-    fluid_settings_t*  mSettings  = nullptr;
-    fluid_synth_t*     mSynth     = nullptr;
-    int                mSfontId   = FLUID_FAILED;
+    // Installs the Graham-Smith volume curve on the freshly-created
+    // fluid_synth_t (per ANMP). Replaces the SF2 default vel/CC7/CC11 →
+    // attenuation modulators with versions at halved amount (480 cB).
+    // Must be called after new_fluid_synth() but before any LoadSoundFont()
+    // so that SF2 instrument-level modulators layer correctly on top of
+    // the modified defaults. Name retained for historical reasons; see
+    // the implementation in FluidSynth.cpp for the design rationale.
+    void InstallLinearVelocityModulators();
+
+    fluid_settings_t*  mSettings        = nullptr;
+    fluid_synth_t*     mSynth           = nullptr;
+    int                mSfontId         = FLUID_FAILED;
     double             mSampleRate;
+    bool               mLinearVelocity  = false;
 
     // Protects fluid_synth_* calls from concurrent access.
     // The audio thread calls Render(); the game thread calls NoteOn/Off/etc.
