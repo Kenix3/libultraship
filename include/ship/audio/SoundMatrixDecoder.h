@@ -35,10 +35,21 @@ class SoundMatrixDecoder {
     void ResetState();
 
     /**
-     * Decode stereo to 5.1 surround
-     * @param stereoInput Interleaved stereo samples [L0, R0, L1, R1, ...]
-     * @param samplePairs Number of stereo sample pairs to process
-     * @return Pointer to internal buffer with interleaved 5.1 samples [FL, FR, C, LFE, SL, SR, ...]
+     * Decode stereo to 5.1 surround — float-pipeline entry point.
+     * @param stereoInput Interleaved stereo float samples [L0, R0, L1, R1, ...]
+     *                    in nominal [-1, 1] range.
+     * @param frames Number of stereo frames (sample pairs) to process.
+     * @return {pointer, frameCount} into the internal 6-channel float buffer
+     *         laid out as [FL, FR, C, LFE, SL, SR, ...].
+     */
+    std::tuple<const float*, int> Process(const float* stereoInput, size_t frames);
+
+    /**
+     * Decode stereo to 5.1 surround — legacy s16 entry point.
+     * Preserved byte-exactly for libultraship consumers on the s16 path.
+     * @param buf Interleaved s16 stereo samples, as bytes.
+     * @param len Length of @p buf in bytes.
+     * @return {pointer, byteLength} into the internal 6-channel s16 buffer.
      */
     std::tuple<const uint8_t*, int> Process(const uint8_t* buf, size_t len);
 
@@ -142,11 +153,17 @@ class SoundMatrixDecoder {
     float ProcessDelay(float sample, CircularDelay& buffer);
 
     /**
-     * @brief Clamps a floating-point sample to the int16_t range.
+     * @brief Soft-saturates a float sample to the nominal [-1, 1] range.
+     *
+     * The matrix mixer can briefly push peaks slightly above 1.0 when both
+     * channels are loud. A hard clip would produce harshness; the pipeline's
+     * soft-clip step handles dramatic over-budget peaks, so this helper just
+     * keeps the surround buffer numerically sane.
+     *
      * @param value Input sample value.
-     * @return Saturated 16-bit integer sample.
+     * @return Clamped float sample.
      */
-    static int16_t Saturate(float value);
+    static float Saturate(float value);
 
     int32_t mDelayLength = 0;
     double mAllPassBaseRate = 1.0; // Precomputed for ProcessAllPass
@@ -176,8 +193,10 @@ class SoundMatrixDecoder {
     CircularDelay mDelaySurrLeft;
     CircularDelay mDelaySurrRight;
 
-    // Output buffer
-    std::vector<int16_t> mSurroundBuffer;
+    // Output buffer — interleaved 6-channel float frames.
+    std::vector<float> mSurroundBuffer;
+    // Quantised mirror used by the legacy s16 Process() overload only.
+    std::vector<int16_t> mSurroundBufferS16;
 };
 
 } // namespace Ship

@@ -210,19 +210,15 @@ float SoundMatrixDecoder::ProcessDelay(float sample, CircularDelay& buffer) {
     return output;
 }
 
-int16_t SoundMatrixDecoder::Saturate(float value) {
-    if (value > 32767.0f) {
-        return 32767;
-    }
-    if (value < -32768.0f) {
-        return -32768;
-    }
-    return static_cast<int16_t>(value);
+float SoundMatrixDecoder::Saturate(float value) {
+    // Soft cap at ±1.0; upstream soft-clip handles any dramatic overshoots.
+    if (value > 1.0f)  return 1.0f;
+    if (value < -1.0f) return -1.0f;
+    return value;
 }
 
-std::tuple<const uint8_t*, int> SoundMatrixDecoder::Process(const uint8_t* buf, size_t len) {
-    const int16_t* stereoInput = reinterpret_cast<const int16_t*>(buf);
-    int samplePairs = len / (2 * sizeof(int16_t));
+std::tuple<const float*, int> SoundMatrixDecoder::Process(const float* stereoInput, size_t frames) {
+    const int samplePairs = static_cast<int>(frames);
 
     // Resize output buffer if needed
     size_t samplesNeeded = static_cast<size_t>(samplePairs) * 6;
@@ -231,8 +227,8 @@ std::tuple<const uint8_t*, int> SoundMatrixDecoder::Process(const uint8_t* buf, 
     }
 
     for (int i = 0; i < samplePairs; ++i) {
-        float inL = static_cast<float>(stereoInput[i * 2]);
-        float inR = static_cast<float>(stereoInput[i * 2 + 1]);
+        float inL = stereoInput[i * 2];
+        float inR = stereoInput[i * 2 + 1];
 
         // Center: sum of L+R, band-limited
         float ctr = (inL + inR) * Gains::gCenter;
@@ -278,7 +274,38 @@ std::tuple<const uint8_t*, int> SoundMatrixDecoder::Process(const uint8_t* buf, 
         mSurroundBuffer[i * 6 + 5] = Saturate(surrR);
     }
 
-    return { reinterpret_cast<const uint8_t*>(mSurroundBuffer.data()), samplePairs * 6 * sizeof(int16_t) };
+    return { mSurroundBuffer.data(), samplePairs };
+}
+
+// ---------------------------------------------------------------------------
+// Legacy s16 overload — wraps the float Process with conversions so
+// existing libultraship consumers see byte-exact behaviour.
+// ---------------------------------------------------------------------------
+
+std::tuple<const uint8_t*, int> SoundMatrixDecoder::Process(const uint8_t* buf, size_t len) {
+    const int16_t* stereoInput = reinterpret_cast<const int16_t*>(buf);
+    const size_t samplePairs   = len / (2 * sizeof(int16_t));
+
+    std::vector<float> stereoF(samplePairs * 2);
+    constexpr float kS16ToFloat = 1.0f / 32768.0f;
+    for (size_t i = 0; i < samplePairs * 2; i++) {
+        stereoF[i] = static_cast<float>(stereoInput[i]) * kS16ToFloat;
+    }
+
+    const auto [surroundOut, surroundFrames] = Process(stereoF.data(), samplePairs);
+
+    const size_t surroundSamples = static_cast<size_t>(surroundFrames) * 6;
+    if (mSurroundBufferS16.size() < surroundSamples) {
+        mSurroundBufferS16.resize(surroundSamples);
+    }
+    for (size_t i = 0; i < surroundSamples; i++) {
+        float v = surroundOut[i] * 32767.0f;
+        if (v >  32767.0f) v =  32767.0f;
+        if (v < -32768.0f) v = -32768.0f;
+        mSurroundBufferS16[i] = static_cast<int16_t>(v);
+    }
+    return { reinterpret_cast<const uint8_t*>(mSurroundBufferS16.data()),
+             static_cast<int>(surroundSamples * sizeof(int16_t)) };
 }
 
 } // namespace Ship

@@ -20,10 +20,13 @@ namespace Ship {
  *
  * Usage:
  *   AudioResampler r(32000, 48000, numChannels);
- *   r.Process(inS16, inFrames, outS16, outFrames);
+ *   r.Process(inFloat, inFrames, outFloat, outFrames);
  *
  * Process() returns the number of output frames actually written.
  * State (history samples) is preserved between calls for continuous streams.
+ * Samples are interleaved float in nominal [-1, 1] range; the polyphase
+ * filter is unity-gain so peaks slightly above 1.0 may pass through and
+ * should be soft-clipped by the caller (or before reaching the backend).
  */
 class AudioResampler {
   public:
@@ -31,7 +34,16 @@ class AudioResampler {
 
     /* Resample inFrames input frames into outBuf.
      * Returns number of output frames written.
-     * outBuf must be large enough for ceil(inFrames * outRate / inRate) frames. */
+     * outBuf must be large enough for ceil(inFrames * outRate / inRate) frames.
+     *
+     * Two overloads:
+     *  - float in / float out is the canonical path used by the float audio
+     *    pipeline. Samples are interleaved float in nominal [-1, 1].
+     *  - int16_t in / int16_t out is the legacy entry point preserved for
+     *    libultraship consumers still on the s16 path. It converts at the
+     *    boundaries and clamps the output to the s16 range; the inner DSP
+     *    is identical (the filter coefficients live in float either way). */
+    int32_t Process(const float* inBuf, int32_t inFrames, float* outBuf, int32_t maxOutFrames);
     int32_t Process(const int16_t* inBuf, int32_t inFrames, int16_t* outBuf, int32_t maxOutFrames);
 
     /* Maximum output frames for a given number of input frames. */

@@ -63,6 +63,19 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
     audio->Play(buf, len);
 }
 
+void AudioPlayerPlayFrameF32(const float* buf, size_t frames) {
+    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    if (audio == nullptr) {
+        return;
+    }
+
+    if (!audio->IsInitialized()) {
+        return;
+    }
+
+    audio->Play(buf, frames);
+}
+
 void SetAudioChannels(AudioChannelsSetting channels) {
     auto audio = Ship::Context::GetInstance()->GetAudio();
     if (audio == nullptr) {

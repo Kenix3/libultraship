@@ -22,12 +22,29 @@ API_EXPORT AudioChannelsSetting GetAudioChannels();
 API_EXPORT int32_t GetNumAudioChannels();
 
 /**
- * @brief Submits a frame of PCM audio to the audio output device.
+ * @brief Submits a frame of s16 PCM audio to the audio output device (legacy).
+ *
+ * Default entry point preserved for libultraship consumers on the s16
+ * audio path. Forwards to AudioPlayer::Play(uint8_t*, size_t); valid only
+ * when the player is in s16 mode (the default).
  *
  * @param buf Interleaved sample data (stereo: L,R,… or surround: FL,FR,C,LFE,SL,SR,…).
  * @param len Length of @p buf in bytes.
  */
 API_EXPORT void AudioPlayerPlayFrame(const uint8_t* buf, size_t len);
+
+/**
+ * @brief Submits a frame of float PCM audio to the audio output device.
+ *
+ * Float-pipeline entry point. Valid only when the player has been switched
+ * to float mode (see AudioPlayer::SetUseFloatPipeline). The full audio
+ * path — resample / optional mix-source sum / surround decode — runs in
+ * float at the device's output rate.
+ *
+ * @param buf Interleaved stereo float samples (L, R, L, R, …) in nominal [-1, 1] range.
+ * @param frames Number of stereo frames in @p buf.
+ */
+API_EXPORT void AudioPlayerPlayFrameF32(const float* buf, size_t frames);
 
 /**
  * @brief Changes the audio channel configuration at runtime.

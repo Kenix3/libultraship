@@ -32,12 +32,12 @@ bool SDLAudioPlayer::DoInit() {
     SDL_AudioSpec want, have;
     SDL_zero(want);
     want.freq = this->GetSampleRate();
-    want.format = AUDIO_S16SYS;
-    want.channels = mNumChannels;
-    want.samples = this->GetSampleLength();
-    want.callback = NULL;
+    want.format = this->IsUsingFloatPipeline() ? AUDIO_F32SYS : AUDIO_S16SYS;
+    want.channels = this->GetNumOutputChannels();
+    want.samples = GetSampleLength();
+    want.callback = nullptr;
 
-    mDevice = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    mDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have, 0);
     if (mDevice == 0) {
         SPDLOG_ERROR("SDL_OpenAudio error: {}", SDL_GetError());
         return false;
@@ -50,7 +50,8 @@ bool SDLAudioPlayer::DoInit() {
 }
 
 int SDLAudioPlayer::Buffered() {
-    return SDL_GetQueuedAudioSize(mDevice) / (sizeof(int16_t) * mNumChannels);
+    const size_t sampleSize = this->IsUsingFloatPipeline() ? sizeof(float) : sizeof(int16_t);
+    return SDL_GetQueuedAudioSize(mDevice) / (sampleSize * mNumChannels);
 }
 
 void SDLAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {

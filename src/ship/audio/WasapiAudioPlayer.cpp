@@ -32,11 +32,16 @@ bool WasapiAudioPlayer::SetupStream() {
         // Use GetNumOutputChannels() to determine stereo vs surround
         mNumChannels = this->GetNumOutputChannels();
 
+        // Device format mirrors the pipeline mode: 32-bit IEEE float for the
+        // HD path, 16-bit signed integer for the legacy s16 path.
+        const bool useFloat = this->IsUsingFloatPipeline();
+        const WORD formatTag = useFloat ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
+        const WORD bitsPerSample = useFloat ? 32 : 16;
         if (mNumChannels == 2) {
             WAVEFORMATEX desired;
-            desired.wFormatTag = WAVE_FORMAT_PCM;
+            desired.wFormatTag = formatTag;
             desired.nChannels = mNumChannels; // Stereo audio
-            desired.wBitsPerSample = 16;      // 16-bit audio
+            desired.wBitsPerSample = bitsPerSample;
             desired.nSamplesPerSec = this->GetSampleRate();
             desired.nBlockAlign = desired.nChannels * desired.wBitsPerSample / 8;
             desired.nAvgBytesPerSec = desired.nSamplesPerSec * desired.nBlockAlign;
@@ -46,18 +51,18 @@ bool WasapiAudioPlayer::SetupStream() {
                 AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
                 2000000, 0, &desired, nullptr));
         } else if (mNumChannels == 6) {
-            // 5.1 surround (6 channels)
+            // 5.1 surround (6 channels) — sub-format mirrors the mode.
             WAVEFORMATEXTENSIBLE desired;
             desired.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
-            desired.Format.nChannels = mNumChannels; // 6 channels for 5.1 audio
-            desired.Format.wBitsPerSample = 16;      // 16-bit audio
+            desired.Format.nChannels = mNumChannels;
+            desired.Format.wBitsPerSample = bitsPerSample;
             desired.Format.nSamplesPerSec = this->GetSampleRate();
             desired.Format.nBlockAlign = desired.Format.nChannels * desired.Format.wBitsPerSample / 8;
             desired.Format.nAvgBytesPerSec = desired.Format.nSamplesPerSec * desired.Format.nBlockAlign;
             desired.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
             desired.dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
-            desired.Samples.wValidBitsPerSample = 16;
-            desired.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+            desired.Samples.wValidBitsPerSample = bitsPerSample;
+            desired.SubFormat = useFloat ? KSDATAFORMAT_SUBTYPE_IEEE_FLOAT : KSDATAFORMAT_SUBTYPE_PCM;
 
             ThrowIfFailed(mClient->Initialize(
                 AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
@@ -129,7 +134,8 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
         }
     }
     try {
-        UINT32 frames = len / (mNumChannels * sizeof(int16_t));
+        const size_t sampleSize = this->IsUsingFloatPipeline() ? sizeof(float) : sizeof(int16_t);
+        UINT32 frames = len / (mNumChannels * sampleSize);
         UINT32 padding;
         ThrowIfFailed(mClient->GetCurrentPadding(&padding));
 
@@ -143,7 +149,7 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
 
         BYTE* data;
         ThrowIfFailed(mRenderClient->GetBuffer(frames, &data));
-        memcpy(data, buf, frames * mNumChannels * sizeof(int16_t));
+        memcpy(data, buf, frames * mNumChannels * sampleSize);
         ThrowIfFailed(mRenderClient->ReleaseBuffer(frames, 0));
 
         if (!mStarted && padding + frames > 1500) {

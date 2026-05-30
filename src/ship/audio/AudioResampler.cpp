@@ -129,7 +129,7 @@ int32_t AudioResampler::MaxOutputFrames(int32_t inFrames) const {
 //     2. Advance mPhase by Q. If mPhase >= P, subtract P and advance input by 1.
 // ---------------------------------------------------------------------------
 
-int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t* outBuf, int32_t maxOutFrames) {
+int32_t AudioResampler::Process(const float* inBuf, int32_t inFrames, float* outBuf, int32_t maxOutFrames) {
     const int histLen = kTapsPerPhase - 1;
     const int ch = mNumChannels;
 
@@ -143,11 +143,10 @@ int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t*
         window[i] = mHistory[i];
     }
 
-    /* Convert new input S16 → float, normalised to [-1, 1] for arithmetic,
-     * then back to S16 range at output. We keep S16 range (±32768) throughout
-     * to avoid an extra normalisation multiply — clampf handles the final clip. */
+    /* Append new input frames verbatim — samples are already float in the
+     * nominal [-1, 1] range so no conversion or normalisation is needed. */
     for (int i = 0; i < inFrames * ch; i++) {
-        window[histLen * ch + i] = (float)inBuf[i];
+        window[histLen * ch + i] = inBuf[i];
     }
 
     /* Resample */
@@ -163,9 +162,10 @@ int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t*
             for (int tap = 0; tap < kTapsPerPhase; tap++) {
                 acc += window[(inPos + tap) * ch + c] * coeffs[tap];
             }
-            /* Clamp to S16 range */
-            acc = acc < -32768.0f ? -32768.0f : (acc > 32767.0f ? 32767.0f : acc);
-            outBuf[outFrames * ch + c] = (int16_t)acc;
+            /* Pass through float as-is. Soft-clip happens upstream
+             * (OTRAudio_Thread's mix step); the polyphase filter is
+             * unity-gain so brief excursions slightly above 1.0 are fine. */
+            outBuf[outFrames * ch + c] = acc;
         }
         outFrames++;
 
@@ -198,6 +198,37 @@ int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t*
     }
 
     mPhase = phase;
+    return outFrames;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy s16 overload — wraps the float core with conversions at the
+// boundaries. Preserves the byte-exact behaviour libultraship consumers had
+// before the float pipeline landed.
+// ---------------------------------------------------------------------------
+
+int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t* outBuf, int32_t maxOutFrames) {
+    const int ch = mNumChannels;
+    const int totalIn  = inFrames  * ch;
+    const int totalOut = maxOutFrames * ch;
+
+    std::vector<float> inF(totalIn);
+    std::vector<float> outF(totalOut);
+
+    constexpr float kS16ToFloat = 1.0f / 32768.0f;
+    for (int i = 0; i < totalIn; i++) {
+        inF[i] = static_cast<float>(inBuf[i]) * kS16ToFloat;
+    }
+
+    const int32_t outFrames = Process(inF.data(), inFrames, outF.data(), maxOutFrames);
+
+    const int outSamples = outFrames * ch;
+    for (int i = 0; i < outSamples; i++) {
+        float v = outF[i] * 32767.0f;
+        if (v >  32767.0f) v =  32767.0f;
+        if (v < -32768.0f) v = -32768.0f;
+        outBuf[i] = static_cast<int16_t>(v);
+    }
     return outFrames;
 }
 

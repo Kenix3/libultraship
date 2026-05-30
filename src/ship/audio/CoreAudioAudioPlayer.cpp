@@ -34,7 +34,10 @@ bool CoreAudioAudioPlayer::DoInit() {
 
     mNumChannels = this->GetAudioChannels() == AudioChannelsSetting::audioStereo ? 2 : 6;
 
-    const size_t bytesPerSample = sizeof(int16_t);
+    // Sample width follows the pipeline mode: float HD = 32-bit float,
+    // legacy = 16-bit signed integer.
+    const bool useFloat = this->IsUsingFloatPipeline();
+    const size_t bytesPerSample = useFloat ? sizeof(float) : sizeof(int16_t);
     const size_t bytesPerFrame = bytesPerSample * mNumChannels;
 
     mRingBufferSize = 6000 * bytesPerFrame;
@@ -72,12 +75,14 @@ bool CoreAudioAudioPlayer::DoInit() {
     AudioStreamBasicDescription format;
     format.mSampleRate = this->GetSampleRate();
     format.mFormatID = kAudioFormatLinearPCM;
-    format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+    format.mFormatFlags = useFloat
+        ? (kLinearPCMFormatFlagIsFloat | kLinearPCMFormatFlagIsPacked)
+        : (kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked);
     format.mBytesPerPacket = bytesPerFrame;
     format.mFramesPerPacket = 1;
     format.mBytesPerFrame = bytesPerFrame;
     format.mChannelsPerFrame = mNumChannels;
-    format.mBitsPerChannel = 16;
+    format.mBitsPerChannel = useFloat ? 32 : 16;
 
     status = AudioUnitSetProperty(mAudioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &format,
                                   sizeof(format));
@@ -123,7 +128,7 @@ int CoreAudioAudioPlayer::Buffered() {
         buffered = mRingBufferSize - (mRingBufferReadPos - mRingBufferWritePos);
     }
 
-    const size_t bytesPerFrame = sizeof(int16_t) * mNumChannels;
+    const size_t bytesPerFrame = (this->IsUsingFloatPipeline() ? sizeof(float) : sizeof(int16_t)) * mNumChannels;
     int samples = buffered / bytesPerFrame;
 
     pthread_mutex_unlock(&mMutex);
@@ -133,7 +138,7 @@ int CoreAudioAudioPlayer::Buffered() {
 void CoreAudioAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     pthread_mutex_lock(&mMutex);
 
-    const size_t bytesPerFrame = sizeof(int16_t) * mNumChannels;
+    const size_t bytesPerFrame = (this->IsUsingFloatPipeline() ? sizeof(float) : sizeof(int16_t)) * mNumChannels;
     const size_t maxBuffered = 6000 * bytesPerFrame;
 
     size_t available;

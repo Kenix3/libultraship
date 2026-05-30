@@ -3,6 +3,7 @@
 #include "stddef.h"
 #include <string>
 #include <memory>
+#include <functional>
 #include "ship/audio/AudioChannelsSetting.h"
 #include "ship/audio/AudioResampler.h"
 #include "ship/audio/SoundMatrixDecoder.h"
@@ -19,6 +20,14 @@ struct AudioSettings {
     int32_t DesiredBuffered = 2480; ///< Target number of frames to keep buffered.
     AudioChannelsSetting ChannelSetting =
         AudioChannelsSetting::audioStereo; ///< Channel mode (stereo / 5.1 matrix / 5.1 raw).
+
+    /// When true, the AudioPlayer pipeline (Play / resampler / matrix decoder
+    /// / backend device format) runs in 32-bit float. Enables the optional
+    /// MixSource hook for sources rendered at the device output rate. When
+    /// false (default), the pipeline is interleaved int16 — same byte layout
+    /// and entry points the AudioPlayer always had, so existing libultraship
+    /// consumers keep working with no code change.
+    bool UseFloatPipeline = false;
 };
 
 /**
@@ -57,18 +66,32 @@ class AudioPlayer {
     virtual int32_t Buffered() = 0;
 
     /**
-     * @brief Submits a frame of PCM audio to the output device.
+     * @brief Submits a frame of PCM audio to the output device — legacy s16 path.
      *
-     * If 5.1 surround output is configured and the channel setting requires matrix
-     * decoding, the stereo @p buf is first decoded to 6-channel surround before
-     * being passed to DoPlay().
+     * Default entry point preserved for libultraship consumers. Samples are
+     * interleaved signed 16-bit; the legacy resampler / matrix-decoder
+     * boundaries do the (lossy) s16↔float conversions internally. Calls
+     * here when @c UseFloatPipeline is true are a configuration mistake
+     * and emit a warning + drop the buffer.
      *
-     * @param buf Interleaved samples:
-     *            - Stereo: (L, R, L, R, …)
-     *            - 5.1:    (FL, FR, C, LFE, SL, SR, …)
+     * @param buf Interleaved s16 samples (Stereo: (L,R,…); 5.1: (FL,FR,C,LFE,SL,SR,…)).
      * @param len Length of @p buf in bytes.
      */
     void Play(const uint8_t* buf, size_t len);
+
+    /**
+     * @brief Submits a frame of PCM audio to the output device — float pipeline.
+     *
+     * Only valid when @c UseFloatPipeline is true. The audio path stays in
+     * 32-bit float through resample, optional MixSource summing + soft-clip,
+     * surround decode, and into the backend. The MixSource (if set) runs at
+     * the device output rate, so any secondary source can render at native
+     * device quality without traversing the resampler.
+     *
+     * @param buf Interleaved stereo float samples in nominal [-1, 1].
+     * @param frames Number of stereo frames in @p buf.
+     */
+    void Play(const float* buf, size_t frames);
 
     /** @brief Returns true if Init() has been called and succeeded. */
     bool IsInitialized();
@@ -129,6 +152,49 @@ class AudioPlayer {
      */
     int32_t GetNumOutputChannels() const;
 
+    /**
+     * @brief Callback signature for a secondary stereo audio source mixed in
+     *        after the resampler.
+     *
+     * The callback fills @p stereoOut with @p frames frames of interleaved
+     * stereo float at the device's output rate (GetSampleRate()), which
+     * lets the source bypass the resampler entirely — the resampler runs
+     * only over the primary input stream. The mix sums the two sources
+     * with a tanh-style soft-clip before surround decoding (if any).
+     */
+    using MixSource = std::function<void(float* stereoOut, int frames)>;
+
+    /**
+     * @brief Installs a secondary audio source whose contribution is mixed
+     *        in at the output rate, post-resampler.
+     *
+     * Only meaningful when @c UseFloatPipeline is true (the s16 legacy path
+     * has no mix step). Pass @c nullptr to remove the source. Thread-safe
+     * with respect to the audio thread only in the sense that
+     * std::function assignment is sequentially consistent on x86; callers
+     * in practice swap this once at synth install/teardown.
+     *
+     * @return true if accepted; false (and ignored) when the player is in
+     *         the s16 legacy mode.
+     */
+    bool SetMixSource(MixSource source);
+
+    /**
+     * @brief Switches the pipeline between legacy s16 and float HD modes
+     *        at runtime.
+     *
+     * Closes the audio device, updates @c UseFloatPipeline, and reopens
+     * the device with the matching format. The Play overload that matches
+     * the new mode is the only one valid until the next switch.
+     *
+     * @return true if the device successfully reinitialised in the new
+     *         mode. On failure the previous mode is restored.
+     */
+    bool SetUseFloatPipeline(bool enabled);
+
+    /** @brief Returns whether the float pipeline mode is active. */
+    bool IsUsingFloatPipeline() const { return mAudioSettings.UseFloatPipeline; }
+
   protected:
     /**
      * @brief Opens and configures the platform audio device.
@@ -157,17 +223,32 @@ class AudioPlayer {
     virtual void DoPlay(const uint8_t* buf, size_t len) = 0;
 
   private:
+    /// Picks the right channel count (stereo for float mode, output channel
+    /// count for legacy s16 mode) and (re)constructs mResampler. No-op when
+    /// the rates already match.
+    void RebuildResampler();
+
     std::unique_ptr<SoundMatrixDecoder>
         mSoundMatrixDecoder; ///< Stereo-to-surround decoder (active in matrix-5.1 mode).
     std::unique_ptr<AudioResampler> mResampler;
 
-    // Fixed-size resample output buffer — no heap allocation on the audio hot path.
-    // Sized for the worst-case ratio and maximum channel count:
-    // ceil(SampleLength * maxOutRate / minInRate) * maxChannels
-    // e.g. 32k→48k, SampleLength=1024, 6ch: ceil(1024 * 3/2) * 6 = 9216
-    // 16384 gives comfortable headroom for other ratios (e.g. 32k→96k * 6ch = 18432 — increase if needed).
+    // Fixed-size scratch buffers — no heap allocation on the audio hot path.
+    // Sized for the worst-case ratio and channel count of the data the buffer
+    // holds at its stage. mResampleBuf holds *stereo* output-rate frames
+    // (resample step), so 2 channels suffice; mMixSourceBuf likewise holds
+    // stereo frames the secondary source writes into. mSurroundBuf is sized
+    // for 6 channels of output-rate frames (matrix-5.1 final output) so the
+    // decoder has somewhere to write before DoPlay. 16384 gives comfortable
+    // headroom for 32k→48k @ SampleLength=1024 (ceil(1024 * 3/2) * 6 = 9216)
+    // and for higher device rates (e.g. 32k→96k).
     static constexpr size_t kResampleBufSamples = 16384;
-    std::array<int16_t, kResampleBufSamples> mResampleBuf{};
+    std::array<float, kResampleBufSamples> mResampleBuf{};
+    std::array<float, kResampleBufSamples> mMixSourceBuf{};
+    // Legacy s16 path uses its own scratch so both code paths can coexist
+    // without retypeing the float buffer. 16384 × 2 B = 32 KB.
+    std::array<int16_t, kResampleBufSamples> mResampleBufS16{};
+
+    MixSource mMixSource;
 
     AudioSettings mAudioSettings;
     bool mInitialized = false;
