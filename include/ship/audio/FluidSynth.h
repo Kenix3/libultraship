@@ -32,6 +32,16 @@ public:
     void ControlChange(uint8_t channel, uint8_t cc, uint16_t value) override;
     void Render(float* out, uint32_t frameCount) override;
 
+    // Configure the synth-wide reverb. Safe to call any time after construction;
+    // takes the synth mutex. Useful for per-mode presets — callers swap reverb
+    // settings without having to rebuild the synth. Parameters mirror the
+    // FluidSynth fluid_synth_set_reverb_* calls:
+    //   roomsize : [0..1] perceived reverb tail length.
+    //   damping  : [0..1] high-frequency damping.
+    //   width    : [0..100] stereo spread.
+    //   level    : [0..1] reverb wet level.
+    void SetReverbParams(double roomsize, double damping, double width, double level);
+
     // Pitch bend range in semitones sent to FluidSynth on channel init.
     // Must match what the MidiTranslator uses. Default: 12 semitones.
     static constexpr float kPitchBendRangeSemitones = 12.0f;

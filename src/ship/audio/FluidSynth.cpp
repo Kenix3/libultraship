@@ -198,6 +198,17 @@ void FluidSynth::ControlChange(uint8_t channel, uint8_t cc, uint16_t value) {
     fluid_synth_cc(mSynth, channel, cc, (value >> 7) & 0x7F);
 }
 
+void FluidSynth::SetReverbParams(double roomsize, double damping, double width, double level) {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth) return;
+    fluid_synth_set_reverb_roomsize(mSynth, roomsize);
+    fluid_synth_set_reverb_damp(mSynth, damping);
+    fluid_synth_set_reverb_width(mSynth, width);
+    fluid_synth_set_reverb_level(mSynth, level);
+    SPDLOG_INFO("[FluidSynth] Reverb set: roomsize={} damping={} width={} level={}",
+                roomsize, damping, width, level);
+}
+
 void FluidSynth::Render(float* out, uint32_t frameCount) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
     if (!mSynth || mSfontId == FLUID_FAILED) {
