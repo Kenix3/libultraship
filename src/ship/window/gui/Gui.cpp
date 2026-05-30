@@ -161,6 +161,9 @@ void Gui::ImGuiBackendNewFrame() {
 void Gui::ImGuiWMNewFrame() {
 }
 
+void Gui::RefreshImGuiGamepads() {
+}
+
 void Gui::DrawMenu() {
     const std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetInstance()->GetConfig();

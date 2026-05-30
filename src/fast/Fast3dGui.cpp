@@ -10,6 +10,8 @@
 #include "ship/window/gui/resource/GuiTextureFactory.h"
 #include "ship/resource/File.h"
 
+#include <vector>
+
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
@@ -115,6 +117,9 @@ void Fast3dGui::ImGuiWMInit() {
         default:
             break;
     }
+
+    // Initial gamepad bind once the SDL2 backend exists (no-op for DX/Metal).
+    RefreshImGuiGamepads();
 }
 
 void Fast3dGui::ImGuiWMShutdown() {
@@ -239,6 +244,18 @@ void Fast3dGui::ImGuiWMNewFrame() {
         default:
             break;
     }
+}
+
+// Bind ImGui's SDL2 gamepad backend to the controller(s) the
+// ControlDeck has already opened
+void Fast3dGui::RefreshImGuiGamepads() {
+    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto backend = window->GetWindowBackend();
+    if (backend != WindowBackend::FAST3D_SDL_OPENGL && backend != WindowBackend::FAST3D_SDL_METAL) {
+        return;
+    }
+
+    ImGui_ImplSDL2_SetGamepadMode(ImGui_ImplSDL2_GamepadMode_AutoAll, nullptr, 0);
 }
 
 void Fast3dGui::ImGuiRenderDrawData(ImDrawData* data) {

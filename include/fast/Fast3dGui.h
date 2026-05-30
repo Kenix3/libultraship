@@ -133,6 +133,8 @@ class Fast3dGui : public Ship::Gui {
      */
     void LoadTextureFromResource(const std::string& name, std::shared_ptr<Ship::GuiTexture> texture);
 
+    void RefreshImGuiGamepads() override;
+
   protected:
     void ImGuiWMInit() override;
     void ImGuiWMShutdown() override;
