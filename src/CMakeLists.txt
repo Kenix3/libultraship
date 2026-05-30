@@ -12,6 +12,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
 option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
+option(ENABLE_FLUIDSYNTH "Enable FluidSynth synthesis backend" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -137,6 +138,14 @@ target_link_libraries(libultraship PUBLIC prism monocypher)
 if(ENABLE_SCRIPTING)
     target_link_libraries(libultraship PUBLIC libtcc libtcc1)
     target_compile_definitions(libultraship PUBLIC ENABLE_SCRIPTING)
+endif()
+
+if(ENABLE_FLUIDSYNTH)
+    find_package(FluidSynth REQUIRED)
+    target_link_libraries(libultraship PRIVATE FluidSynth::libfluidsynth)
+    target_compile_definitions(libultraship PUBLIC ENABLE_FLUIDSYNTH=1)
+else()
+    target_compile_definitions(libultraship PUBLIC ENABLE_FLUIDSYNTH=0)
 endif()
 
 #=================== Compile Options & Defs ===================
