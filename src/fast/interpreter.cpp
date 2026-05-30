@@ -578,12 +578,12 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13; // < 1.625x
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    // Skip the clamp for replacement textures
-    bool blended = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended;
-    if (!blended && (pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (!blended && (pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -647,12 +647,12 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    // Skip the clamp for replacement textures
-    bool blended = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended;
-    if (!blended && (pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (!blended && (pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -953,12 +953,12 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    // Skip the clamp for replacement textures
-    bool blended = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended;
-    if (!blended && (pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (!blended && (pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1047,12 +1047,12 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    // Skip the clamp for replacement textures
-    bool blended = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].blended;
-    if (!blended && (pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if (!blended && (pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1925,12 +1925,13 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             uint32_t loadedPx = tex_width[i] * tex_height[i];
             uint32_t renderedPx = tex_width2[i] * tex_height2[i];
             bool pyrLike = renderedPx > 0 && loadedPx > renderedPx && loadedPx * 8 < renderedPx * 13;
-            // Skip the clamp for replacement textures
-            bool blended = mRdp->loaded_texture[i].blended;
-            if (!blended && (pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            // HD replacements must clamp to the tile region
+            bool isHd = mRdp->loaded_texture[i].raw_tex_metadata.h_byte_scale != 1 ||
+                        mRdp->loaded_texture[i].raw_tex_metadata.v_pixel_scale != 1;
+            if ((isHd || pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if (!blended && (pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((isHd || pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 
