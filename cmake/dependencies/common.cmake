@@ -167,7 +167,7 @@ if(NOT TARGET libtcc)
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
             execute_process(
-                COMMAND cmd /c build-tcc.bat -c cl
+                COMMAND cmd /c [[.\build-tcc.bat]] -c cl
                 WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
                 RESULT_VARIABLE tcc_config_result
             )
