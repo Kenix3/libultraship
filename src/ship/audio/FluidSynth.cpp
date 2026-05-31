@@ -17,11 +17,12 @@ namespace {
 // the fixed sentinel "mem://current" and ignores everything else, so
 // path-based and memory-based loads coexist cleanly.
 //
-// The buffer lives on the FluidSynth instance (mLoadedBuffer); the
-// in-flight pointer below carries it through the open callback (which
-// has no user-data slot — only a filename string). LoadSoundFontFromMemory
-// is documented to run from the GUI thread only and takes the synth
-// mutex around the sfload call, so a single static slot is safe.
+// The buffers live in mLoadedBuffers on the FluidSynth instance; the
+// in-flight pointer below carries the address of the relevant buffer
+// through the open callback (which has no user-data slot — only a
+// filename string). AddSoundFontFromMemory runs from the GUI thread
+// only and takes the synth mutex around the sfload call, so a single
+// static slot is safe even with multiple SF2s loaded.
 // ----------------------------------------------------------------------
 
 struct MemoryInflight {
@@ -95,7 +96,11 @@ FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
     // once at construction. fluid_synth_set_sample_rate() is deprecated and
     // silently ignored in FluidSynth 2.x, causing silence if used instead.
     fluid_settings_setnum(mSettings, "synth.sample-rate", sampleRate);
-    fluid_settings_setint(mSettings, "synth.midi-channels", 16);
+    // 64 channels = enough headroom for the per-pair channel allocator in
+    // MidiTranslator to give each (fontId, instOrWave) pair its own MIDI
+    // channel, so per-pair effect CCs (CC91/93/74/71) don't stomp each
+    // other. Must be a multiple of 16; matches FluidSynth::kNumChannels.
+    fluid_settings_setint(mSettings, "synth.midi-channels", kNumChannels);
     // "none" = no internal audio driver; we pull samples via Render() ourselves.
     // "file" is an offline render-to-disk mode and must NOT be used here.
     fluid_settings_setstr(mSettings, "audio.driver", "none");
@@ -210,52 +215,108 @@ FluidSynth::~FluidSynth() {
     if (mSettings) delete_fluid_settings(mSettings);
 }
 
-void FluidSynth::LoadSoundFont(const std::string& path) {
+void FluidSynth::ClearSoundFonts() {
     std::lock_guard<std::mutex> lock(mSynthMutex);
-    if (!mSynth) return;
-    if (mSfontId != FLUID_FAILED) {
-        fluid_synth_sfunload(mSynth, mSfontId, /*reset_presets=*/1);
-        mSfontId = FLUID_FAILED;
-        mLoadedBuffer.clear();
-        mLoadedBuffer.shrink_to_fit();
+    if (!mSynth) {
+        mSfontIds.clear();
+        mLoadedBuffers.clear();
+        return;
     }
-    mSfontId = fluid_synth_sfload(mSynth, path.c_str(), /*reset_presets=*/1);
-    if (mSfontId == FLUID_FAILED) {
-        SPDLOG_ERROR("[FluidSynth] Failed to load SF2: {}", path);
-    } else {
-        SPDLOG_INFO("[FluidSynth] Loaded SF2: {} (id={})", path, mSfontId);
+    for (int id : mSfontIds) {
+        if (id != FLUID_FAILED) fluid_synth_sfunload(mSynth, id, /*reset_presets=*/1);
     }
-    // Channels need their RPN-0 (pitch bend range) re-pushed on the next
-    // NoteOn — reset_presets cleared channel state inside the synth.
+    mSfontIds.clear();
+    mLoadedBuffers.clear();
+    mLoadedBuffers.shrink_to_fit();
+    // reset_presets above cleared channel state inside the synth, so the
+    // RPN-0 (pitch bend range) push needs to repeat on the next NoteOn.
     for (bool& inited : mChannelInited) inited = false;
 }
 
-void FluidSynth::LoadSoundFontFromMemory(const uint8_t* data, size_t size) {
+int FluidSynth::AddSoundFont(const std::string& path) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
-    if (!mSynth || data == nullptr || size == 0) return;
-    if (mSfontId != FLUID_FAILED) {
-        fluid_synth_sfunload(mSynth, mSfontId, /*reset_presets=*/1);
-        mSfontId = FLUID_FAILED;
-        mLoadedBuffer.clear();
-        mLoadedBuffer.shrink_to_fit();
+    if (!mSynth) return FLUID_FAILED;
+    // reset_presets only on the FIRST sfont — for subsequent loads we
+    // want preset assignments on existing channels left alone so a
+    // stacked pack doesn't blow away the prior pack's program selection.
+    int resetPresets = mSfontIds.empty() ? 1 : 0;
+    int id = fluid_synth_sfload(mSynth, path.c_str(), resetPresets);
+    if (id == FLUID_FAILED) {
+        SPDLOG_ERROR("[FluidSynth] Failed to load SF2: {}", path);
+        return FLUID_FAILED;
     }
-    // Copy the buffer into instance-owned storage so it outlives the
-    // caller's data lifetime and stays alive as long as the sfont does.
-    // FluidSynth reads the SF2 fully during sfload, but holding the
-    // bytes here keeps the design robust if a future FluidSynth grows
-    // sample-on-demand loading.
-    mLoadedBuffer.assign(data, data + size);
-    sMemoryInflight = { mLoadedBuffer.data(), mLoadedBuffer.size() };
-    mSfontId = fluid_synth_sfload(mSynth, kMemorySentinel, /*reset_presets=*/1);
+    SPDLOG_INFO("[FluidSynth] Loaded SF2: {} (id={})", path, id);
+    mSfontIds.push_back(id);
+    mLoadedBuffers.emplace_back(); // empty — filesystem load owns its own data
+    if (resetPresets) {
+        for (bool& inited : mChannelInited) inited = false;
+    }
+    return id;
+}
+
+int FluidSynth::AddSoundFontFromMemory(const uint8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth || data == nullptr || size == 0) return FLUID_FAILED;
+
+    // Pre-reserve the slot so we can hand its address through the static
+    // sMemoryInflight pointer for the duration of sfload. Vector growth
+    // is fine here because the SF2 buffer lives in the vector element,
+    // which is itself a vector<uint8_t> (small, by-value relocations
+    // don't invalidate the underlying heap-allocated data).
+    mLoadedBuffers.emplace_back(data, data + size);
+    auto& buf = mLoadedBuffers.back();
+    sMemoryInflight = { buf.data(), buf.size() };
+    int resetPresets = mSfontIds.empty() ? 1 : 0;
+    int id = fluid_synth_sfload(mSynth, kMemorySentinel, resetPresets);
     sMemoryInflight = {};
-    if (mSfontId == FLUID_FAILED) {
+    if (id == FLUID_FAILED) {
         SPDLOG_ERROR("[FluidSynth] Failed to load SF2 from memory ({} bytes)", size);
-        mLoadedBuffer.clear();
-        mLoadedBuffer.shrink_to_fit();
-    } else {
-        SPDLOG_INFO("[FluidSynth] Loaded SF2 from memory ({} bytes, id={})", size, mSfontId);
+        mLoadedBuffers.pop_back();
+        return FLUID_FAILED;
     }
-    for (bool& inited : mChannelInited) inited = false;
+    SPDLOG_INFO("[FluidSynth] Loaded SF2 from memory ({} bytes, id={})", size, id);
+    mSfontIds.push_back(id);
+    if (resetPresets) {
+        for (bool& inited : mChannelInited) inited = false;
+    }
+    return id;
+}
+
+std::vector<int> FluidSynth::GetLoadedSfontIds() {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    return mSfontIds;
+}
+
+std::vector<FluidSynth::LoadedPreset> FluidSynth::EnumerateLoadedPresets() {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    std::vector<LoadedPreset> result;
+    if (!mSynth) return result;
+    for (int id : mSfontIds) {
+        if (id == FLUID_FAILED) continue;
+        fluid_sfont_t* sfont = fluid_synth_get_sfont_by_id(mSynth, id);
+        if (!sfont) continue;
+        fluid_sfont_iteration_start(sfont);
+        while (fluid_preset_t* preset = fluid_sfont_iteration_next(sfont)) {
+            LoadedPreset p;
+            p.sfontId = id;
+            p.bank    = fluid_preset_get_banknum(preset);
+            p.program = fluid_preset_get_num(preset);
+            const char* nm = fluid_preset_get_name(preset);
+            p.name = nm ? nm : "";
+            result.push_back(std::move(p));
+        }
+    }
+    return result;
+}
+
+void FluidSynth::LoadSoundFont(const std::string& path) {
+    ClearSoundFonts();
+    AddSoundFont(path);
+}
+
+void FluidSynth::LoadSoundFontFromMemory(const uint8_t* data, size_t size) {
+    ClearSoundFonts();
+    AddSoundFontFromMemory(data, size);
 }
 
 void FluidSynth::InitChannel(uint8_t channel) {
@@ -281,8 +342,8 @@ void FluidSynth::NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) {
     if (!mSynth) return;
     InitChannel(channel);
     int result = fluid_synth_noteon(mSynth, channel, note, velocity);
-    SPDLOG_TRACE("[FluidSynth] NoteOn ch={} note={} vel={} sfont={} result={}",
-                 channel, note, velocity, mSfontId, result);
+    SPDLOG_TRACE("[FluidSynth] NoteOn ch={} note={} vel={} sfonts={} result={}",
+                 channel, note, velocity, mSfontIds.size(), result);
 }
 
 void FluidSynth::NoteOff(uint8_t channel, uint8_t note) {
@@ -310,6 +371,49 @@ void FluidSynth::ProgramChange(uint8_t channel, uint16_t preset) {
     }
 
     fluid_synth_program_change(mSynth, channel, program);
+}
+
+bool FluidSynth::ProgramSelect(uint8_t channel, int sfontId,
+                               uint16_t bank, uint16_t program) {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth) return false;
+    InitChannel(channel);
+
+    // Verify the sfontId is one we loaded — fluid_synth_program_select
+    // would also reject an unknown id but its log goes through
+    // FluidSynth's own logger rather than ours; pre-check so we can
+    // emit our SPDLOG path uniformly.
+    bool known = false;
+    for (int id : mSfontIds) {
+        if (id == sfontId) { known = true; break; }
+    }
+    if (!known) {
+        SPDLOG_TRACE("[FluidSynth] ProgramSelect ch={} sfontId={} not loaded; rejecting pin",
+                     channel, sfontId);
+        return false;
+    }
+
+    // Set drum/melodic type before the select — bank 128 is the GM
+    // percussion convention and FluidSynth's voice allocator branches
+    // on channel type, not on the bank we're selecting into.
+    if (bank == 128) {
+        fluid_synth_set_channel_type(mSynth, channel, CHANNEL_TYPE_DRUM);
+    } else {
+        fluid_synth_set_channel_type(mSynth, channel, CHANNEL_TYPE_MELODIC);
+    }
+
+    int result = fluid_synth_program_select(mSynth, channel,
+                                            static_cast<unsigned int>(sfontId),
+                                            static_cast<unsigned int>(bank),
+                                            static_cast<unsigned int>(program));
+    if (result != FLUID_OK) {
+        SPDLOG_TRACE("[FluidSynth] ProgramSelect ch={} sfontId={} bank={} prog={} -> FAILED",
+                     channel, sfontId, bank, program);
+        return false;
+    }
+    SPDLOG_TRACE("[FluidSynth] ProgramSelect ch={} sfontId={} bank={} prog={} -> OK",
+                 channel, sfontId, bank, program);
+    return true;
 }
 
 void FluidSynth::PitchBend(uint8_t channel, float semitones) {
@@ -340,7 +444,7 @@ void FluidSynth::SetReverbParams(double roomsize, double damping, double width, 
 
 void FluidSynth::Render(float* out, uint32_t frameCount) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
-    if (!mSynth || mSfontId == FLUID_FAILED) {
+    if (!mSynth || mSfontIds.empty()) {
         std::memset(out, 0, frameCount * 2 * sizeof(float));
         return;
     }
