@@ -4,6 +4,8 @@
 #include "IMidiSynth.h"
 #include <fluidsynth.h>
 #include <mutex>
+#include <vector>
+#include <cstdint>
 
 namespace Ship {
 
@@ -25,6 +27,19 @@ public:
     ~FluidSynth() override;
 
     void LoadSoundFont(const std::string& path) override;
+
+    // Loads an SF2 from a memory buffer. The buffer contents are copied into
+    // an internally-owned vector so the caller may free their copy
+    // immediately after the call. Replaces any previously loaded sound
+    // font, same lifecycle as path-based LoadSoundFont.
+    //
+    // Implementation routes through a custom fluid_sfloader registered at
+    // construction; the path passed to fluid_synth_sfload is a fixed
+    // sentinel string ("mem://current") that only the memory loader
+    // responds to. The default filesystem loader rejects the sentinel
+    // and falls through, so path-based loads continue to work
+    // unchanged.
+    void LoadSoundFontFromMemory(const uint8_t* data, size_t size);
     void NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) override;
     void NoteOff(uint8_t channel, uint8_t note) override;
     void ProgramChange(uint8_t channel, uint16_t preset) override;
@@ -63,6 +78,11 @@ private:
     int                mSfontId         = FLUID_FAILED;
     double             mSampleRate;
     bool               mLinearVelocity  = false;
+
+    // Backing storage for the most recent memory-loaded SF2 (if any).
+    // Kept alive as long as the corresponding sfont is loaded so the
+    // sfloader's file callbacks have a stable buffer to read from.
+    std::vector<uint8_t> mLoadedBuffer;
 
     // Protects fluid_synth_* calls from concurrent access.
     // The audio thread calls Render(); the game thread calls NoteOn/Off/etc.

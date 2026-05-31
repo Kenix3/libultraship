@@ -3,8 +3,89 @@
 #include <spdlog/spdlog.h>
 #include <cstring>
 #include <algorithm>
+#include <cstdio>
 
 namespace Ship {
+
+namespace {
+// ----------------------------------------------------------------------
+// Memory-backed SF2 loader.
+//
+// FluidSynth's sound-font loaders are tried in order against the path
+// passed to fluid_synth_sfload(). The default loader handles any
+// filesystem path; we register an additional loader that responds to
+// the fixed sentinel "mem://current" and ignores everything else, so
+// path-based and memory-based loads coexist cleanly.
+//
+// The buffer lives on the FluidSynth instance (mLoadedBuffer); the
+// in-flight pointer below carries it through the open callback (which
+// has no user-data slot — only a filename string). LoadSoundFontFromMemory
+// is documented to run from the GUI thread only and takes the synth
+// mutex around the sfload call, so a single static slot is safe.
+// ----------------------------------------------------------------------
+
+struct MemoryInflight {
+    const uint8_t* data = nullptr;
+    size_t size = 0;
+};
+static MemoryInflight sMemoryInflight;
+
+struct MemoryHandle {
+    const uint8_t* data;
+    size_t size;
+    size_t pos;
+};
+
+constexpr const char* kMemorySentinel = "mem://current";
+
+void* MemoryOpen(const char* filename) {
+    if (filename == nullptr || std::strcmp(filename, kMemorySentinel) != 0) {
+        return nullptr;
+    }
+    if (sMemoryInflight.data == nullptr || sMemoryInflight.size == 0) {
+        return nullptr;
+    }
+    auto* h = new MemoryHandle{ sMemoryInflight.data, sMemoryInflight.size, 0 };
+    // Single-shot: clear the slot so a stray repeat sfload can't replay.
+    sMemoryInflight = {};
+    return h;
+}
+
+int MemoryRead(void* buf, fluid_long_long_t count, void* handle) {
+    auto* h = static_cast<MemoryHandle*>(handle);
+    if (count < 0 || static_cast<size_t>(count) > h->size - h->pos) {
+        return FLUID_FAILED;
+    }
+    std::memcpy(buf, h->data + h->pos, static_cast<size_t>(count));
+    h->pos += static_cast<size_t>(count);
+    return FLUID_OK;
+}
+
+int MemorySeek(void* handle, fluid_long_long_t offset, int origin) {
+    auto* h = static_cast<MemoryHandle*>(handle);
+    fluid_long_long_t newPos;
+    switch (origin) {
+        case SEEK_SET: newPos = offset; break;
+        case SEEK_CUR: newPos = static_cast<fluid_long_long_t>(h->pos) + offset; break;
+        case SEEK_END: newPos = static_cast<fluid_long_long_t>(h->size) + offset; break;
+        default:       return FLUID_FAILED;
+    }
+    if (newPos < 0 || static_cast<size_t>(newPos) > h->size) {
+        return FLUID_FAILED;
+    }
+    h->pos = static_cast<size_t>(newPos);
+    return FLUID_OK;
+}
+
+fluid_long_long_t MemoryTell(void* handle) {
+    return static_cast<fluid_long_long_t>(static_cast<MemoryHandle*>(handle)->pos);
+}
+
+int MemoryClose(void* handle) {
+    delete static_cast<MemoryHandle*>(handle);
+    return FLUID_OK;
+}
+} // namespace
 
 FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
     : mSampleRate(sampleRate), mLinearVelocity(linearVelocity) {
@@ -42,6 +123,20 @@ FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
 
     if (mLinearVelocity) {
         InstallLinearVelocityModulators();
+    }
+
+    // Register the memory-backed sound-font loader alongside the default
+    // filesystem loader. Loaders are tried in addition order: default
+    // catches real filesystem paths, ours catches the mem:// sentinel.
+    // FluidSynth takes ownership of the loader and frees it via
+    // delete_fluid_synth.
+    fluid_sfloader_t* memLoader = new_fluid_defsfloader(mSettings);
+    if (memLoader) {
+        fluid_sfloader_set_callbacks(memLoader, MemoryOpen, MemoryRead, MemorySeek, MemoryTell, MemoryClose);
+        fluid_synth_add_sfloader(mSynth, memLoader);
+    } else {
+        SPDLOG_WARN("[FluidSynth] Memory sound-font loader unavailable; "
+                    "LoadSoundFontFromMemory will fall back to default loader");
     }
 }
 
@@ -118,6 +213,12 @@ FluidSynth::~FluidSynth() {
 void FluidSynth::LoadSoundFont(const std::string& path) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
     if (!mSynth) return;
+    if (mSfontId != FLUID_FAILED) {
+        fluid_synth_sfunload(mSynth, mSfontId, /*reset_presets=*/1);
+        mSfontId = FLUID_FAILED;
+        mLoadedBuffer.clear();
+        mLoadedBuffer.shrink_to_fit();
+    }
     mSfontId = fluid_synth_sfload(mSynth, path.c_str(), /*reset_presets=*/1);
     if (mSfontId == FLUID_FAILED) {
         SPDLOG_ERROR("[FluidSynth] Failed to load SF2: {}", path);
@@ -126,6 +227,34 @@ void FluidSynth::LoadSoundFont(const std::string& path) {
     }
     // Channels need their RPN-0 (pitch bend range) re-pushed on the next
     // NoteOn — reset_presets cleared channel state inside the synth.
+    for (bool& inited : mChannelInited) inited = false;
+}
+
+void FluidSynth::LoadSoundFontFromMemory(const uint8_t* data, size_t size) {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth || data == nullptr || size == 0) return;
+    if (mSfontId != FLUID_FAILED) {
+        fluid_synth_sfunload(mSynth, mSfontId, /*reset_presets=*/1);
+        mSfontId = FLUID_FAILED;
+        mLoadedBuffer.clear();
+        mLoadedBuffer.shrink_to_fit();
+    }
+    // Copy the buffer into instance-owned storage so it outlives the
+    // caller's data lifetime and stays alive as long as the sfont does.
+    // FluidSynth reads the SF2 fully during sfload, but holding the
+    // bytes here keeps the design robust if a future FluidSynth grows
+    // sample-on-demand loading.
+    mLoadedBuffer.assign(data, data + size);
+    sMemoryInflight = { mLoadedBuffer.data(), mLoadedBuffer.size() };
+    mSfontId = fluid_synth_sfload(mSynth, kMemorySentinel, /*reset_presets=*/1);
+    sMemoryInflight = {};
+    if (mSfontId == FLUID_FAILED) {
+        SPDLOG_ERROR("[FluidSynth] Failed to load SF2 from memory ({} bytes)", size);
+        mLoadedBuffer.clear();
+        mLoadedBuffer.shrink_to_fit();
+    } else {
+        SPDLOG_INFO("[FluidSynth] Loaded SF2 from memory ({} bytes, id={})", size, mSfontId);
+    }
     for (bool& inited : mChannelInited) inited = false;
 }
 
