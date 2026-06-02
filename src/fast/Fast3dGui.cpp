@@ -111,6 +111,9 @@ void Fast3dGui::ImGuiWMInit() {
         default:
             break;
     }
+
+    // Initial gamepad bind once the SDL2 backend exists (no-op for DX/Metal).
+    RefreshImGuiGamepads();
 }
 
 void Fast3dGui::ImGuiWMShutdown() {
@@ -232,6 +235,16 @@ void Fast3dGui::ImGuiWMNewFrame() {
         default:
             break;
     }
+}
+
+// Bind ImGui's SDL2 gamepad backend to the controller(s) the
+// ControlDeck has already opened
+void Fast3dGui::RefreshImGuiGamepads() {
+    if (mImpl.Backend != WindowBackend::FAST3D_SDL_OPENGL && mImpl.Backend != WindowBackend::FAST3D_SDL_METAL) {
+        return;
+    }
+
+    ImGui_ImplSDL2_SetGamepadMode(ImGui_ImplSDL2_GamepadMode_AutoAll, nullptr, 0);
 }
 
 void Fast3dGui::ImGuiRenderDrawData(ImDrawData* data) {

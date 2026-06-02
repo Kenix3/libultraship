@@ -153,6 +153,11 @@ class Gui {
     /** @brief Re-enables ImGui gamepad navigation. */
     void UnblockGamepadNavigation();
 
+    /** @brief Re-binds the ImGui platform backend's gamepad list to the currently
+     *  connected controllers. Called once at init and on controller add/remove so it
+     *  is not re-evaluated per frame. The base implementation is a no-op. */
+    virtual void RefreshImGuiGamepads();
+
     /**
      * @brief Shuts down the ImGui context and releases backend resources.
      * @param window Pointer to the Window whose backend context should be torn down.
