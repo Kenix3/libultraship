@@ -10,8 +10,6 @@
 #include "ship/window/gui/resource/GuiTextureFactory.h"
 #include "ship/resource/File.h"
 
-#include <vector>
-
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
