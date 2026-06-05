@@ -325,16 +325,21 @@ void FluidSynth::InitChannel(uint8_t channel) {
 
     int ch = static_cast<int>(channel);
 
-    // Set pitch bend range to kPitchBendRangeSemitones via RPN 0 (MIDI spec).
-    // CC 101/100 = RPN MSB/LSB, CC 6 = Data Entry MSB (semitones),
-    // CC 38 = Data Entry LSB (cents). Null the RPN afterwards so stray CC6
-    // messages can't accidentally reset the range.
-    fluid_synth_cc(mSynth, ch, 101, 0);
-    fluid_synth_cc(mSynth, ch, 100, 0);
-    fluid_synth_cc(mSynth, ch, 6, static_cast<int>(kPitchBendRangeSemitones));
-    fluid_synth_cc(mSynth, ch, 38, 0);
-    fluid_synth_cc(mSynth, ch, 101, 127); // null RPN
-    fluid_synth_cc(mSynth, ch, 100, 127);
+    // Set pitch-bend range via the dedicated API. The MIDI-spec equivalent
+    // (CC 101/100/6/38 RPN dance) has had subtle behavior differences
+    // across FluidSynth versions; the direct setter takes a semitone count
+    // and eliminates the ambiguity.
+    fluid_synth_pitch_wheel_sens(mSynth, ch, static_cast<int>(kPitchBendRangeSemitones));
+
+    // NOTE: fluid_synth_set_gen() applies an NRPN-style ADDITIVE offset on
+    // top of whatever the SF2's instrument zone authored — it does not
+    // override. So set_gen(GEN_VIBLFOTOPITCH, 0.0f) is a no-op against a
+    // preset that set a non-zero LFO depth at zone level. The absolute
+    // override sibling, fluid_synth_set_gen2(), is not in the 2.5.2 public
+    // API, so we cannot generically silence baked LFO from the channel
+    // side. A non-zero authored GEN_VIBLFOTOPITCH has to be patched out at
+    // SF2 load time (walk the modulators) -- per-voice patching on NoteOn
+    // covers the common case; see NoteOn().
 }
 
 void FluidSynth::NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) {
@@ -344,6 +349,28 @@ void FluidSynth::NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) {
     int result = fluid_synth_noteon(mSynth, channel, note, velocity);
     SPDLOG_TRACE("[FluidSynth] NoteOn ch={} note={} vel={} sfonts={} result={}",
                  channel, note, velocity, mSfontIds.size(), result);
+
+    // Suppress SF2-author-baked LFO-to-pitch on the voices we just started.
+    // fluid_voice_gen_set() writes the generator's `val` field directly
+    // (the SF2 instrument-zone value), replacing it. Final voice generator
+    // = val + mod + nrpn, so zeroing val drops the SF2's contribution; mod
+    // and nrpn are typically zero for these gens unless something custom
+    // wired pitch wheel into them.
+    //
+    // The set_gen channel-wide setter is additive (NRPN-style) — would not
+    // override a zone-level authored value — and the absolute sibling
+    // (set_gen2) is not in the 2.5.2 public API, so per-voice patching is
+    // the only public path that works.
+    fluid_voice_t* voices[256];
+    fluid_synth_get_voicelist(mSynth, voices, 256, -1);
+    for (int i = 0; i < 256 && voices[i] != nullptr; ++i) {
+        if (fluid_voice_get_channel(voices[i]) != channel) continue;
+        if (!fluid_voice_is_playing(voices[i])) continue;
+        fluid_voice_gen_set(voices[i], GEN_VIBLFOTOPITCH, 0.0f);
+        fluid_voice_gen_set(voices[i], GEN_MODLFOTOPITCH, 0.0f);
+        fluid_voice_update_param(voices[i], GEN_VIBLFOTOPITCH);
+        fluid_voice_update_param(voices[i], GEN_MODLFOTOPITCH);
+    }
 }
 
 void FluidSynth::NoteOff(uint8_t channel, uint8_t note) {

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <cmath>
 
 namespace Ship {
 
@@ -47,9 +48,28 @@ public:
     virtual bool ProgramSelect(uint8_t channel, int sfontId,
                                uint16_t bank, uint16_t program) = 0;
 
-    // semitones is a signed float: +1.0 = one semitone up.
-    // Range needed: approximately -12.0 to +12.0.
+    // semitones is a signed float: +1.0 = one semitone up. The
+    // implementation owns the usable range and clamps out-of-range values
+    // (the FluidSynth backend clamps to its configured pitch-wheel range,
+    // approximately +/-12 semitones), so callers need not pre-clamp.
     virtual void PitchBend(uint8_t channel, float semitones) = 0;
+
+    // Convenience: bend by a frequency RATIO instead of semitones.
+    // 1.0 = no bend, 2.0 = +1 octave, 0.5 = -1 octave. Handy for engines
+    // that express pitch as a frequency/resampling scale rather than in
+    // semitones. Forwards to PitchBend, which owns the range clamp.
+    void PitchBendFactor(uint8_t channel, float freqRatio) {
+        PitchBend(channel, 12.0f * std::log2(freqRatio > 0.0f ? freqRatio : 1e-6f));
+    }
+
+    // Convenience: start a note already pitch-bent by `freqRatio` (same
+    // convention as PitchBendFactor). The bend is applied BEFORE the NoteOn
+    // so the voice attacks at the bent pitch in one step, rather than
+    // sounding at concert pitch until the next bend update lands.
+    void NoteOnPitchFactor(uint8_t channel, uint8_t note, uint8_t velocity, float freqRatio) {
+        PitchBendFactor(channel, freqRatio);
+        NoteOn(channel, note, velocity);
+    }
 
     // Standard MIDI CC. value is 0-16383 (14-bit).
     virtual void ControlChange(uint8_t channel, uint8_t cc, uint16_t value) = 0;
