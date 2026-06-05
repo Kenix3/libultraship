@@ -74,6 +74,8 @@ public:
     void PitchBend(uint8_t channel, float semitones) override;
     void ControlChange(uint8_t channel, uint8_t cc, uint16_t value) override;
     void Render(float* out, uint32_t frameCount) override;
+    uint32_t GetActiveVoiceCount() const override;
+    uint32_t GetPolyphonyLimit() const override;
 
     // Configure the synth-wide reverb. Safe to call any time after construction;
     // takes the synth mutex. Useful for per-mode presets — callers swap reverb
@@ -120,7 +122,7 @@ private:
 
     // Protects fluid_synth_* calls from concurrent access.
     // The audio thread calls Render(); the game thread calls NoteOn/Off/etc.
-    std::mutex         mSynthMutex;
+    mutable std::mutex mSynthMutex;
 
     // Which channels have had InitChannel() called. Sized to kNumChannels
     // so the translator's per-pair channel allocation can address all of

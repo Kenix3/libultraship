@@ -455,5 +455,19 @@ void FluidSynth::Render(float* out, uint32_t frameCount) {
                             out, 1, 2);
 }
 
+uint32_t FluidSynth::GetActiveVoiceCount() const {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth) return 0;
+    int n = fluid_synth_get_active_voice_count(mSynth);
+    return n < 0 ? 0u : static_cast<uint32_t>(n);
+}
+
+uint32_t FluidSynth::GetPolyphonyLimit() const {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth) return 0;
+    int n = fluid_synth_get_polyphony(mSynth);
+    return n < 0 ? 0u : static_cast<uint32_t>(n);
+}
+
 } // namespace Ship
 #endif // ENABLE_FLUIDSYNTH

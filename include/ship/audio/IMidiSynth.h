@@ -57,6 +57,14 @@ public:
     // Fill `out` with `frameCount` stereo interleaved float32 samples.
     // Called from the audio thread; must be real-time safe.
     virtual void Render(float* out, uint32_t frameCount) = 0;
+
+    // Current number of audible voices held by the synth. Used by host UIs
+    // as a real-time diagnostic — when this approaches GetPolyphonyLimit(),
+    // new NoteOns will steal existing voices and the host can correlate
+    // user-reported "cuts" with voice exhaustion. Implementations without
+    // a voice pool may return 0.
+    virtual uint32_t GetActiveVoiceCount() const = 0;
+    virtual uint32_t GetPolyphonyLimit() const = 0;
 };
 
 } // namespace Ship
