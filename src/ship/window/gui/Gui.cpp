@@ -109,18 +109,18 @@ void Gui::ImGuiWMInit() {
 }
 
 void Gui::ShutDownImGui(Ship::Window* window) {
-    ImGuiWMShutdown();
-    ImGuiBackendShutdown();
+    ImGuiWMShutdown(window);
+    ImGuiBackendShutdown(window);
     ImGui::DestroyContext();
 }
 
-void Gui::ImGuiWMShutdown() {
+void Gui::ImGuiWMShutdown(Ship::Window* window) {
 }
 
 void Gui::ImGuiBackendInit() {
 }
 
-void Gui::ImGuiBackendShutdown() {
+void Gui::ImGuiBackendShutdown(Ship::Window* window) {
 }
 
 bool Gui::SupportsViewports() {

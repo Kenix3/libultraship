@@ -137,9 +137,9 @@ class Fast3dGui : public Ship::Gui {
 
   protected:
     void ImGuiWMInit() override;
-    void ImGuiWMShutdown() override;
+    void ImGuiWMShutdown(Ship::Window* window) override;
     void ImGuiBackendInit() override;
-    void ImGuiBackendShutdown() override;
+    void ImGuiBackendShutdown(Ship::Window* window) override;
     void ImGuiBackendNewFrame() override;
     void ImGuiWMNewFrame() override;
     void ImGuiRenderDrawData(ImDrawData* data) override;

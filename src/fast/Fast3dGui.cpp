@@ -120,8 +120,11 @@ void Fast3dGui::ImGuiWMInit() {
     RefreshImGuiGamepads();
 }
 
-void Fast3dGui::ImGuiWMShutdown() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+void Fast3dGui::ImGuiWMShutdown(Ship::Window* window) {
+    if (window == nullptr) {
+        return;
+    }
+
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -177,8 +180,11 @@ void Fast3dGui::ImGuiBackendInit() {
     }
 }
 
-void Fast3dGui::ImGuiBackendShutdown() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+void Fast3dGui::ImGuiBackendShutdown(Ship::Window* window) {
+    if (window == nullptr) {
+        return;
+    }
+
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
