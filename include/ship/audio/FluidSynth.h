@@ -9,21 +9,42 @@
 
 namespace Ship {
 
+// Backend tuning supplied by the integrating game. FluidSynth has no opinion
+// on what these should be for a given title, so they are parameters rather than
+// hardcoded constants — a game sizes polyphony and gain for its own workload and
+// mix. The defaults here are FluidSynth's own stock values, so a consumer that
+// leaves a field untouched gets unsurprising upstream behavior.
+struct FluidSynthConfig {
+    // Audio output rate; must match the output device (typically 44100 or 48000).
+    // Set before new_fluid_synth — the synth reads it once at construction.
+    double sampleRate = 44100.0;
+
+    // When true, install the Graham-Smith volume curve (per ANMP,
+    // github.com/derselbst/ANMP). Replaces the SF2 default vel / CC7 / CC11 →
+    // initial-attenuation modulators with versions that keep the perceptual
+    // concave NEGATIVE shape but halve the amount (960 → 480 cB). Maximum
+    // attenuation drops from −96 dB to −48 dB, lifting quiet voices while
+    // preserving dynamics shape. False preserves standard SF2 behavior.
+    // (The name is historical — an earlier prototype actually switched CC11 to
+    // linear, but that over-compressed the mid-range.)
+    bool linearVelocity = false;
+
+    // Maximum simultaneous voices. FluidSynth's stock default is 256; a game
+    // that layers many SF2 voices (e.g. additive on top of a native engine, or
+    // one-shot percussion that holds a voice until the sample finishes) can
+    // exhaust that and see "Ringbuffer full, increase synth.polyphony" with
+    // dropped notes. Idle voices cost almost nothing, so sizing up is cheap.
+    int polyphony = 256;
+
+    // Master output gain. FluidSynth's stock default is 0.2 — conservative to
+    // avoid clipping when many voices sound at once. A game that mixes the synth
+    // against a louder source may need to lift this so the two arrive balanced.
+    double gain = 0.2;
+};
+
 class FluidSynth final : public IMidiSynth {
 public:
-    // sampleRate     : must match the audio output rate (typically 44100 or 48000).
-    // linearVelocity : when true, install the Graham-Smith volume curve (per
-    //                  ANMP, github.com/derselbst/ANMP). Replaces the SF2
-    //                  default vel / CC7 / CC11 → initial-attenuation modulators
-    //                  with versions that keep the perceptual concave NEGATIVE
-    //                  shape but halve the amount (960 → 480 cB). Maximum
-    //                  attenuation drops from −96 dB to −48 dB, lifting quiet
-    //                  voices while preserving dynamics shape. Default false
-    //                  preserves the standard SF2 behavior.
-    //                  (The "linear velocity" name is historical — an earlier
-    //                  prototype actually switched CC11 to linear, but that
-    //                  over-compressed the mid-range.)
-    explicit FluidSynth(double sampleRate, bool linearVelocity = false);
+    explicit FluidSynth(const FluidSynthConfig& config);
     ~FluidSynth() override;
 
     // Single-shot replace: unloads every previously-loaded SF2 then loads

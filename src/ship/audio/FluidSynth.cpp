@@ -88,14 +88,14 @@ int MemoryClose(void* handle) {
 }
 } // namespace
 
-FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
-    : mSampleRate(sampleRate), mLinearVelocity(linearVelocity) {
+FluidSynth::FluidSynth(const FluidSynthConfig& config)
+    : mSampleRate(config.sampleRate), mLinearVelocity(config.linearVelocity) {
 
     mSettings = new_fluid_settings();
     // Sample rate MUST be set before new_fluid_synth — the synth reads it
     // once at construction. fluid_synth_set_sample_rate() is deprecated and
     // silently ignored in FluidSynth 2.x, causing silence if used instead.
-    fluid_settings_setnum(mSettings, "synth.sample-rate", sampleRate);
+    fluid_settings_setnum(mSettings, "synth.sample-rate", config.sampleRate);
     // 64 channels = enough headroom for the per-pair channel allocator in
     // MidiTranslator to give each (fontId, instOrWave) pair its own MIDI
     // channel, so per-pair effect CCs (CC91/93/74/71) don't stomp each
@@ -105,14 +105,22 @@ FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
     // "file" is an offline render-to-disk mode and must NOT be used here.
     fluid_settings_setstr(mSettings, "audio.driver", "none");
 
-    // FluidSynth's stock synth.gain is 0.2 — conservative to avoid clipping
-    // when many SF2 voices play simultaneously. Native PCM coming out of the
-    // engine peaks near 1.0, so at 0.2 FluidSynth voices are ~5× too quiet
-    // against the native side of the additive Point B mix — independent of
-    // which modulator set is active. Lift to 1.0 so the two sources arrive
-    // balanced at the mix; the soft-clip in OTRAudio_Thread handles brief
-    // over-budget sums.
-    fluid_settings_setnum(mSettings, "synth.gain", 1.0);
+    // Master gain. Stock FluidSynth is 0.2 (conservative against clipping when
+    // many voices sound at once); the integrating game picks a value suited to
+    // its mix -- see FluidSynthConfig::gain. SoH lifts it because the native PCM
+    // it mixes against peaks near 1.0, so 0.2 would leave the synth ~5x too
+    // quiet on the additive path; its soft-clip handles brief over-budget sums.
+    fluid_settings_setnum(mSettings, "synth.gain", config.gain);
+
+    // Polyphony (max simultaneous voices). Stock FluidSynth is 256; the
+    // integrating game sizes this for its workload -- see
+    // FluidSynthConfig::polyphony. Undersizing surfaces as "Ringbuffer full,
+    // increase synth.polyphony" with dropped notes; FluidSynth frees each voice
+    // when its sample/envelope completes (no leak) and idle voices are cheap, so
+    // a generous ceiling is fine. (SoH needs headroom: it layers a full melodic
+    // mapping plus one-shot percussion -- which holds a voice until the sample
+    // finishes, NoteOff doesn't cut it -- on top of the native engine.)
+    fluid_settings_setint(mSettings, "synth.polyphony", config.polyphony);
 
     mSynth = new_fluid_synth(mSettings);
     if (!mSynth) {
@@ -123,8 +131,9 @@ FluidSynth::FluidSynth(double sampleRate, bool linearVelocity)
     // Verify the sample rate FluidSynth actually locked in.
     double actualRate = 0.0;
     fluid_settings_getnum(mSettings, "synth.sample-rate", &actualRate);
-    SPDLOG_INFO("[FluidSynth] Synth created. Requested sample rate={} actual={} linearVelocity={}",
-                sampleRate, actualRate, mLinearVelocity);
+    SPDLOG_INFO("[FluidSynth] Synth created. Requested sample rate={} actual={} linearVelocity={} "
+                "polyphony={} gain={}",
+                config.sampleRate, actualRate, mLinearVelocity, config.polyphony, config.gain);
 
     if (mLinearVelocity) {
         InstallLinearVelocityModulators();
