@@ -546,6 +546,14 @@ static uint32_t GetEffectiveLineSize(uint32_t lineSizeBytes, uint32_t fullImageL
     return tileLineSizeBytes;
 }
 
+static uint32_t GetTileSizeFromCoordinates(float low, float high) {
+    float size = (high - low + 4.0f) / 4.0f;
+    if (size <= 0.0f) {
+        return 0;
+    }
+    return static_cast<uint32_t>(lroundf(size));
+}
+
 void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
@@ -572,8 +580,8 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
     // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
     // skip both. CLAMP wrap mode always opts in.
-    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    uint32_t tile_w = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
+    uint32_t tile_h = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
     uint32_t loadedPixels = width * height;
     uint32_t renderedPixels = tile_w * tile_h;
     bool pyramidLike =
@@ -653,8 +661,8 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
     // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
     // skip both. CLAMP wrap mode always opts in.
-    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    uint32_t tile_w = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
+    uint32_t tile_h = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
     uint32_t loadedPixels = width * height;
     uint32_t renderedPixels = tile_w * tile_h;
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
@@ -975,8 +983,8 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
     // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
     // skip both. CLAMP wrap mode always opts in.
-    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    uint32_t tile_w = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
+    uint32_t tile_h = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
     uint32_t loadedPixels = width * height;
     uint32_t renderedPixels = tile_w * tile_h;
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
@@ -1080,8 +1088,8 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     // Clamp to the rendered region only when the loaded buffer is ~1.33x of it (mipmap
     // pyramid signature). Window-scrolling tiles have loaded ≈ rendered or loaded >> rendered;
     // skip both. CLAMP wrap mode always opts in.
-    uint32_t tile_w = (uint32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-    uint32_t tile_h = (uint32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+    uint32_t tile_w = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
+    uint32_t tile_h = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
     uint32_t loadedPixels = width * height;
     uint32_t renderedPixels = tile_w * tile_h;
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
@@ -1985,8 +1993,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
             tex_width[i] = line_size;
 
-            tex_width2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrs - mRdp->texture_tile[tile].uls + 4) / 4);
-            tex_height2[i] = (uint32_t)(int32_t)((mRdp->texture_tile[tile].lrt - mRdp->texture_tile[tile].ult + 4) / 4);
+            tex_width2[i] = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
+            tex_height2[i] = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
 
             // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
             // are close to rendered pixels (mipmap), not when much bigger (window scroll).
