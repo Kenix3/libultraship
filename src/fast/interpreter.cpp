@@ -3852,6 +3852,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     // from the resource, but raw textures would leave them at 0.
     rawTexMetdata.h_byte_scale = 1;
     rawTexMetdata.v_pixel_scale = 1;
+    bool resourceLoaded = false;
 
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
@@ -3871,26 +3872,32 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             rawTexMetdata.v_pixel_scale = tex->VPixelScale;
             rawTexMetdata.type = tex->Type;
             rawTexMetdata.resource = tex;
+            resourceLoaded = true;
         }
     }
 
-    // If the resolved address is still in the N64 segmented range, SegAddr
-    // failed to resolve it (segment not set up). Skip to avoid dereferencing
-    // invalid memory.
+    // If no resource was loaded and the address is still in the N64 segmented
+    // range, SegAddr failed to resolve it (segment not set up). Skip to avoid
+    // dereferencing invalid memory. When a resource was loaded, `i` is a host
+    // heap pointer into `tex->ImageData`, which can be below 0x0FFFFFFF on
+    // systems where ASLR is disabled (e.g. `setarch --addr-no-randomize` or
+    // when running under a debugger that disables ASLR by default).
     // For Windows, also check if the address is not from a dll because this validation returns a false positive caused
     // by how the virtual memory is allocated.
+    if (!resourceLoaded) {
 #ifdef _WIN32
-    HMODULE module = nullptr;
-    if (i <= 0x0FFFFFFF &&
-        !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                             reinterpret_cast<LPCSTR>(i), &module))) {
-        return false;
-    }
+        HMODULE module = nullptr;
+        if (i <= 0x0FFFFFFF &&
+            !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                 reinterpret_cast<LPCSTR>(i), &module))) {
+            return false;
+        }
 #else
-    if (i <= 0x0FFFFFFF) {
-        return false;
-    }
+        if (i <= 0x0FFFFFFF) {
+            return false;
+        }
 #endif
+    }
 
     gfx->GfxDpSetTextureImage(C0(21, 3), C0(19, 2), C0(0, 12) + 1, imgData, texFlags, rawTexMetdata, (void*)i);
 
