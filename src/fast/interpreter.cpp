@@ -1599,6 +1599,11 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
         return 0;
     }
 
+    const RDP::TmemLoadEntry* baseEntry = FindTmemLoad(base.tmem);
+    if (baseEntry == nullptr) {
+        return 0;
+    }
+
     // Upper mip tiles often have stale/unset size registers (the RDP derives
     // their coordinates by shifting), so dimensions are derived by halving the
     // base tile; the tile's line stride and the TMEM journal validate the chain.
@@ -1620,6 +1625,13 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
         h = std::max(h >> 1, 1u);
         const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
         if (entry == nullptr || !entry->linear) {
+            break;
+        }
+        // A genuine pyramid lives in one DRAM raster: every level's data must
+        // sit shortly after the base level's. This rejects stale tile state
+        // (e.g. a leftover LOD tile pointing at some other texture's load).
+        const uint8_t* levelAddr = entry->dram_addr + ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        if (levelAddr < baseEntry->dram_addr || levelAddr > baseEntry->dram_addr + 8192) {
             break;
         }
         // The level's data must fit inside the recorded load
@@ -2791,6 +2803,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         for (int t = 0; t < 2; t++) {
             if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
                 uvTransform[t][0] = uvTransform[t][2] = 1.0f;
+                // Never leave clamp bounds at zero: if this shader variant has
+                // clamp bits set, a zero bound collapses every UV to one texel.
+                texClamp[t][0] = 1.0e6f;
+                texClamp[t][1] = 1.0e6f;
                 continue;
             }
             uint32_t uv_tile = effective_tile[t];
@@ -3420,14 +3436,16 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr + start_offset_bytes;
 
-    // Record the load in the TMEM journal. LoadTile loads are strided in DRAM,
-    // so mark them non-linear — the mip importer cannot address into them.
+    // Record the load in the TMEM journal. A LoadTile covering the full image
+    // width is contiguous in DRAM (rows are adjacent) — Paper Mario loads its
+    // mip levels this way via gDPLoadMultiTile. Sub-rect loads are strided and
+    // stay non-linear, so the mip importer cannot address into them.
     {
         RDP::TmemLoadEntry& entry = mRdp->tmem_loads[mRdp->tmem_load_head];
         entry.tmem_word = mRdp->texture_tile[tile].tmem;
         entry.size_words = (orig_size_bytes + 7) / 8;
         entry.dram_addr = mRdp->texture_to_load.addr + start_offset_bytes;
-        entry.linear = false;
+        entry.linear = tile_line_size_bytes == full_image_line_size_bytes;
         mRdp->tmem_load_head = (mRdp->tmem_load_head + 1) % RDP::TMEM_JOURNAL_SIZE;
     }
 
