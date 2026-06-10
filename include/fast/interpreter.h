@@ -635,8 +635,19 @@ class Interpreter {
     // GPU palettization: the import in progress uploads raw CI indices instead of
     // decoded colors (palette lookup happens in the fragment shader).
     bool mImportIndexed = false;
-    // Global 256-entry palette texture rebuilt from the TMEM TLUT staging
-    uint32_t mPaletteTextureId = 0xFFFFFFFF;
+    // Palette textures are versioned by TLUT content and never mutated once
+    // uploaded: backends queue draw commands (Metal executes at end of frame),
+    // so rewriting a bound palette would retroactively recolor earlier draws.
+    // A content-hash ring caches one immutable 256-entry texture per TLUT.
+    static constexpr size_t PALETTE_RING_SIZE = 128;
+    uint32_t mPaletteRingTexture[PALETTE_RING_SIZE];
+    uint64_t mPaletteRingHash[PALETTE_RING_SIZE]{};
+    size_t mPaletteRingNext = 0;
+    std::unordered_map<uint64_t, size_t> mPaletteSlotByHash;
+    uint64_t mCurrentPaletteHash = 0;
+    uint32_t mBoundPaletteTexture = 0xFFFFFFFF;
+    // Returns the texture id for the current TLUT content, uploading it if new
+    uint32_t AcquirePaletteTexture();
     // Per-draw palette parameters: x = palette bank entry offset, y = filter mode
     float mPaletteParams[2][4]{};
     uint8_t* mTexUploadBuffer = nullptr;
