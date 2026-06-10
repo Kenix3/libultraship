@@ -1611,9 +1611,20 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
     uint32_t prevLine = base.line_size_bytes;
     uint32_t w = baseW;
     uint32_t h = baseH;
+    uint16_t prevTmem = base.tmem;
     for (uint32_t l = 1; l <= mRsp->texture_level && baseTile + l < 8; l++) {
         const auto& t = mRdp->texture_tile[baseTile + l];
         if (t.fmt != base.fmt || t.siz != base.siz || t.line_size_bytes == 0) {
+            break;
+        }
+        // Real pyramids place each level at a strictly higher TMEM address.
+        // Multi-tile effects (e.g. Paper Mario's sprite shading) alias the SAME
+        // data with a second tile at the same address / different palette —
+        // those are two independent texels, not mip levels.
+        if (t.tmem <= prevTmem) {
+            break;
+        }
+        if (base.fmt == G_IM_FMT_CI && t.palette != base.palette) {
             break;
         }
         // A real mip level's line is at most half the previous one (min one
@@ -1642,6 +1653,7 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
         }
         levels++;
         prevLine = t.line_size_bytes;
+        prevTmem = t.tmem;
     }
     return levels;
 }
