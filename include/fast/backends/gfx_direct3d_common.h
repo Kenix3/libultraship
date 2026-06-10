@@ -44,6 +44,7 @@ struct PerDrawCB {
     float texture_clamp[2][4];
     float fog_params[4];
     float palette_params[2][4];
+    float lod_params[4];
 };
 
 /**

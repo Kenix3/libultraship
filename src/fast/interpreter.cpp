@@ -219,6 +219,7 @@ void Interpreter::LatchCombinerUniforms() {
     memcpy(u.texture_clamp, mTextureClamp, sizeof(u.texture_clamp));
     memcpy(u.fog_params, mFogParams, sizeof(u.fog_params));
     memcpy(u.palette_params, mPaletteParams, sizeof(u.palette_params));
+    memcpy(u.lod_params, mLodParams, sizeof(u.lod_params));
 
     for (int j = 0; j < 6; j++) {
         for (int k = 0; k < 2; k++) {
@@ -1515,11 +1516,6 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
     if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) != G_CYC_2CYCLE) {
         return 0;
     }
-    // Detail/sharpen LOD modes change which tile is sampled at magnification
-    // and are not supported; fall back to non-mipmapped sampling for them.
-    if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTDETAIL)) != G_TD_CLAMP) {
-        return 0;
-    }
     if (mRsp->texture_level == 0 || baseTile >= 8) {
         return 0;
     }
@@ -2756,6 +2752,24 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
         }
 
+        // N64 LOD parameters: resolution scale for the UV derivatives, the
+        // prim_lod_min clamp, and the texture detail mode (clamp/sharpen/detail)
+        float lodParams[4] = {};
+        {
+            float resScale = 1.0f;
+            if (mFbActive && mActiveFrameBuffer != mFrameBuffers.end()) {
+                const FBInfo& fb = mActiveFrameBuffer->second;
+                if (fb.resize && fb.orig_height != 0) {
+                    resScale = (float)fb.applied_height / (float)fb.orig_height;
+                }
+            } else if (mNativeDimensions.height != 0) {
+                resScale = (float)mCurDimensions.height / (float)mNativeDimensions.height;
+            }
+            lodParams[0] = resScale;
+            lodParams[1] = mRdp->prim_lod_min / 256.0f;
+            lodParams[2] = (float)((mRdp->other_mode_h >> G_MDSFT_TEXTDETAIL) & 3);
+        }
+
         // Palette bank offset + post-lookup filter mode for CI index textures
         float paletteParams[2][4] = {};
         if (palettized[0] || palettized[1]) {
@@ -2775,12 +2789,14 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         if (memcmp(uvTransform, mUvTransform, sizeof(uvTransform)) != 0 ||
             memcmp(texClamp, mTextureClamp, sizeof(texClamp)) != 0 ||
             memcmp(fogParams, mFogParams, sizeof(fogParams)) != 0 ||
-            memcmp(paletteParams, mPaletteParams, sizeof(paletteParams)) != 0) {
+            memcmp(paletteParams, mPaletteParams, sizeof(paletteParams)) != 0 ||
+            memcmp(lodParams, mLodParams, sizeof(lodParams)) != 0) {
             Flush();
             memcpy(mUvTransform, uvTransform, sizeof(uvTransform));
             memcpy(mTextureClamp, texClamp, sizeof(texClamp));
             memcpy(mFogParams, fogParams, sizeof(fogParams));
             memcpy(mPaletteParams, paletteParams, sizeof(paletteParams));
+            memcpy(mLodParams, lodParams, sizeof(lodParams));
         }
     }
 
@@ -3426,11 +3442,12 @@ void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    if (mBufVboNumTris > 0 && mRdp->prim_lod_fraction != l) {
+    if (mBufVboNumTris > 0 && (mRdp->prim_lod_fraction != l || mRdp->prim_lod_min != m)) {
         Flush();
     }
     FlushIfRegisterChanges(mRdp->prim_color, r, g, b, a);
     mRdp->prim_lod_fraction = l;
+    mRdp->prim_lod_min = m;
     mRdp->prim_color.r = r;
     mRdp->prim_color.g = g;
     mRdp->prim_color.b = b;

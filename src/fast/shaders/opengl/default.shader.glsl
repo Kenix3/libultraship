@@ -222,6 +222,7 @@
 
     @if(o_uses_lod)
     uniform float lod_max;
+    uniform vec4 uLodParams; // x = res scale, y = prim_lod_min, z = G_TD mode
     @end
 
     uniform int texture_width[2];
@@ -261,6 +262,44 @@
         return @{texture}(tex, uv);
     }
 
+    @if(o_palette[0] || o_palette[1])
+        uniform sampler2D uTexPal;
+        uniform vec4 uPaletteParams[2];
+
+        // One CI tap: fetch the index (nearest sampler) and look it up in the
+        // 256-entry palette texture. params.x is the CI4 bank entry offset.
+        vec4 paletteTap(in sampler2D tex, in vec2 uv, in float bank) {
+            float idx = @{texture}(tex, uv).r;
+            return @{texture}(uTexPal, vec2((idx * 255.0 + bank + 0.5) / 256.0, 0.5));
+        }
+
+        // Filtering must happen after the palette lookup, like real hardware:
+        // params.y selects nearest (0), bilinear (1) or N64 three-point (2).
+        vec4 paletteSample(in sampler2D tex, in vec2 uv, in vec2 texSize, in vec4 params) {
+            if (params.y > 1.5) {
+                vec2 offset = fract(uv * texSize - vec2(0.5));
+                offset -= step(1.0, offset.x + offset.y);
+                vec4 c0 = paletteTap(tex, uv - offset / texSize, params.x);
+                vec4 c1 = paletteTap(tex, uv - vec2(offset.x - sign(offset.x), offset.y) / texSize, params.x);
+                vec4 c2 = paletteTap(tex, uv - vec2(offset.x, offset.y - sign(offset.y)) / texSize, params.x);
+                return c0 + abs(offset.x) * (c1 - c0) + abs(offset.y) * (c2 - c0);
+            } else if (params.y > 0.5) {
+                vec2 t = uv * texSize - 0.5;
+                vec2 f = fract(t);
+                vec2 base = (floor(t) + 0.5) / texSize;
+                vec2 px = vec2(1.0, 0.0) / texSize;
+                vec2 py = vec2(0.0, 1.0) / texSize;
+                vec4 c00 = paletteTap(tex, base, params.x);
+                vec4 c10 = paletteTap(tex, base + px, params.x);
+                vec4 c01 = paletteTap(tex, base + py, params.x);
+                vec4 c11 = paletteTap(tex, base + px + py, params.x);
+                return mix(mix(c00, c10, f.x), mix(c01, c11, f.x), f.y);
+            } else {
+                return paletteTap(tex, uv, params.x);
+            }
+        }
+    @end
+
     #define TEX_SIZE(tex) vec2(texture_width[tex], texture_height[tex])
 
     void main() {
@@ -288,24 +327,51 @@
 
                 @if(i == 0)
                     @if(o_uses_lod)
-                        // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                        // N64 texture LOD (RDP-accurate): max absolute UV derivative,
+                        // linear fraction between tiles, sharpen/detail handling
                         vec2 lodScaled = vTexCoordAdj0 * texSize0;
-                        vec2 lodDx = dFdx(lodScaled);
-                        vec2 lodDy = dFdy(lodScaled);
-                        float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
-                        float lodTile = min(floor(lodVal), lod_max);
-                        lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                        vec2 lodMaxD = max(abs(dFdx(lodScaled)), abs(dFdy(lodScaled)));
+                        float lodMaxDst = max(max(lodMaxD.x, lodMaxD.y) * uLodParams.x, 0.000001);
+                        if (uLodParams.z > 0.5) { // sharpen or detail
+                            lodMaxDst = max(lodMaxDst, uLodParams.y);
+                        }
+                        float lodTileBase = floor(log2(lodMaxDst));
+                        lodFrac = lodMaxDst / exp2(max(lodTileBase, 0.0)) - 1.0;
+                        if (uLodParams.z > 0.5 && uLodParams.z < 1.5 && lodMaxDst < 1.0) { // sharpen
+                            lodFrac = lodMaxDst - 1.0;
+                        }
+                        if (uLodParams.z > 1.5) { // detail: tile 0 is the detail texture
+                            if (lodFrac < 0.0) {
+                                lodFrac = lodMaxDst;
+                            }
+                            lodTileBase += 1.0;
+                        } else if (lodTileBase >= lod_max) {
+                            lodFrac = 1.0;
+                        }
+                        if (uLodParams.z > 0.5) {
+                            lodTileBase = max(lodTileBase, 0.0);
+                        } else {
+                            lodFrac = max(lodFrac, 0.0);
+                        }
+                        float lodTile0 = clamp(lodTileBase, 0.0, lod_max);
+                        float lodTile1 = clamp(lodTileBase + 1.0, 0.0, lod_max);
                     @end
                 @end
 
                 @if(i == 0)
                     @if(o_mip_lod)
-                        vec4 texVal0 = textureLod(uTex0, vTexCoordAdj0, lodTile);
+                        vec4 texVal0 = textureLod(uTex0, vTexCoordAdj0, lodTile0);
+                    @elseif(o_palette[0])
+                        vec4 texVal0 = paletteSample(uTex0, vTexCoordAdj0, texSize0, uPaletteParams[0]);
                     @else
                         vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
                     @end
                 @else
-                    vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
+                    @if(o_palette[1])
+                        vec4 texVal1 = paletteSample(uTex1, vTexCoordAdj1, texSize1, uPaletteParams[1]);
+                    @else
+                        vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
+                    @end
                 @end
 
                 @if(o_masks[i])
@@ -330,7 +396,7 @@
 
         @if(o_mip_lod)
             // TEXEL1 reads the next mip level of texture 0
-            vec4 texVal1 = textureLod(uTex0, vTexCoordAdj0, min(lodTile + 1.0, lod_max));
+            vec4 texVal1 = textureLod(uTex0, vTexCoordAdj0, lodTile1);
         @end
 
         @if(o_alpha)

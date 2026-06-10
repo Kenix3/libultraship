@@ -36,6 +36,9 @@ struct CombinerUniforms {
     // Per texel for CI index textures: x = palette bank entry offset (CI4 bank*16),
     // y = filter mode applied after the palette lookup (0 nearest, 1 bilinear, 2 three-point)
     float palette_params[2][4];
+    // N64 LOD parameters: x = resolution scale applied to the UV derivatives,
+    // y = prim_lod_min (0..1), z = G_TD mode (0 clamp, 1 sharpen, 2 detail)
+    float lod_params[4];
 };
 
 constexpr int GFX_MAX_GPU_LIGHTS = 32;

@@ -70,6 +70,7 @@ struct ShaderProgram {
     GLint y_scale_location;
     GLint mv_cols_location;
     GLint palette_params_location;
+    GLint lod_params_location;
 };
 
 /**

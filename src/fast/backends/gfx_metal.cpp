@@ -629,6 +629,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
                 simd::float4{ mCombinerUniforms.palette_params[i][0], mCombinerUniforms.palette_params[i][1],
                               mCombinerUniforms.palette_params[i][2], mCombinerUniforms.palette_params[i][3] };
         }
+        mDrawUniforms.lod_params = simd::float4{ mCombinerUniforms.lod_params[0], mCombinerUniforms.lod_params[1],
+                                                 mCombinerUniforms.lod_params[2], mCombinerUniforms.lod_params[3] };
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
         mLodMaxDirty = false;

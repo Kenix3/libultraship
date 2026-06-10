@@ -10,7 +10,7 @@ struct FrameUniforms {
 };
 
 struct DrawUniforms {
-    int textureFiltering[6];
+    int textureFiltering[7];
     float prim_depth;
     float lod_max;
     float4 inputs[6];
@@ -19,6 +19,8 @@ struct DrawUniforms {
     float4 uv_transform[2];
     float4 texture_clamp[2];
     float4 fog_params;
+    float4 palette_params[2];
+    float4 lod_params;
 };
 
 @if(o_lighting || o_texgen)
@@ -255,6 +257,45 @@ float random(float3 value) {
     return fract(sin(random) * 143758.5453);
 }
 
+@if(o_palette[0] || o_palette[1])
+// One CI tap: fetch the index (nearest sampler) and look it up in the
+// 256-entry palette texture. bank is the CI4 bank entry offset.
+float4 paletteTap(thread const texture2d<float> tex, thread const sampler texSmplr,
+                  thread const texture2d<float> pal, thread const sampler palSmplr,
+                  float2 uv, float bank) {
+    float idx = tex.sample(texSmplr, uv).r;
+    return pal.sample(palSmplr, float2((idx * 255.0 + bank + 0.5) / 256.0, 0.5));
+}
+
+// Filtering happens after the palette lookup, like real hardware:
+// params.y selects nearest (0), bilinear (1) or N64 three-point (2).
+float4 paletteSample(thread const texture2d<float> tex, thread const sampler texSmplr,
+                     thread const texture2d<float> pal, thread const sampler palSmplr,
+                     float2 uv, float2 texSize, float4 params) {
+    if (params.y > 1.5) {
+        float2 offset = fract(uv * texSize - float2(0.5));
+        offset -= float2(step(1.0, offset.x + offset.y));
+        float4 c0 = paletteTap(tex, texSmplr, pal, palSmplr, uv - offset / texSize, params.x);
+        float4 c1 = paletteTap(tex, texSmplr, pal, palSmplr, uv - float2(offset.x - sign(offset.x), offset.y) / texSize, params.x);
+        float4 c2 = paletteTap(tex, texSmplr, pal, palSmplr, uv - float2(offset.x, offset.y - sign(offset.y)) / texSize, params.x);
+        return c0 + abs(offset.x) * (c1 - c0) + abs(offset.y) * (c2 - c0);
+    } else if (params.y > 0.5) {
+        float2 t = uv * texSize - 0.5;
+        float2 f = fract(t);
+        float2 base = (floor(t) + 0.5) / texSize;
+        float2 px = float2(1.0, 0.0) / texSize;
+        float2 py = float2(0.0, 1.0) / texSize;
+        float4 c00 = paletteTap(tex, texSmplr, pal, palSmplr, base, params.x);
+        float4 c10 = paletteTap(tex, texSmplr, pal, palSmplr, base + px, params.x);
+        float4 c01 = paletteTap(tex, texSmplr, pal, palSmplr, base + py, params.x);
+        float4 c11 = paletteTap(tex, texSmplr, pal, palSmplr, base + px + py, params.x);
+        return mix(mix(c00, c10, f.x), mix(c01, c11, f.x), f.y);
+    } else {
+        return paletteTap(tex, texSmplr, pal, palSmplr, uv, params.x);
+    }
+}
+@end
+
 fragment FragOut fragmentShader(
     ProjectedVertex in [[stage_in]],
     constant FrameUniforms &frameUniforms [[buffer(0)]],
@@ -276,6 +317,9 @@ fragment FragOut fragmentShader(
 @end
 @if(o_blend[1])
     , texture2d<float> uTexBlend1 [[texture(5)]]
+@end
+@if(o_palette[0] || o_palette[1])
+    , texture2d<float> uTexPal [[texture(6)]], sampler uTexPalSmplr [[sampler(6)]]
 @end
 ) {
     @if(o_uses_lod)
@@ -300,24 +344,51 @@ fragment FragOut fragmentShader(
 
             @if(i == 0)
                 @if(o_uses_lod)
-                    // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                    // N64 texture LOD (RDP-accurate): max absolute UV derivative,
+                    // linear fraction between tiles, sharpen/detail handling
                     float2 lodScaled = vTexCoordAdj0 * texSize0;
-                    float2 lodDx = dfdx(lodScaled);
-                    float2 lodDy = dfdy(lodScaled);
-                    float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
-                    float lodTile = min(floor(lodVal), drawUniforms.lod_max);
-                    lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                    float2 lodMaxD = max(abs(dfdx(lodScaled)), abs(dfdy(lodScaled)));
+                    float lodMaxDst = max(max(lodMaxD.x, lodMaxD.y) * drawUniforms.lod_params.x, 0.000001);
+                    if (drawUniforms.lod_params.z > 0.5) { // sharpen or detail
+                        lodMaxDst = max(lodMaxDst, drawUniforms.lod_params.y);
+                    }
+                    float lodTileBase = floor(log2(lodMaxDst));
+                    lodFrac = lodMaxDst / exp2(max(lodTileBase, 0.0)) - 1.0;
+                    if (drawUniforms.lod_params.z > 0.5 && drawUniforms.lod_params.z < 1.5 && lodMaxDst < 1.0) { // sharpen
+                        lodFrac = lodMaxDst - 1.0;
+                    }
+                    if (drawUniforms.lod_params.z > 1.5) { // detail: tile 0 is the detail texture
+                        if (lodFrac < 0.0) {
+                            lodFrac = lodMaxDst;
+                        }
+                        lodTileBase += 1.0;
+                    } else if (lodTileBase >= drawUniforms.lod_max) {
+                        lodFrac = 1.0;
+                    }
+                    if (drawUniforms.lod_params.z > 0.5) {
+                        lodTileBase = max(lodTileBase, 0.0);
+                    } else {
+                        lodFrac = max(lodFrac, 0.0);
+                    }
+                    float lodTile0 = clamp(lodTileBase, 0.0, drawUniforms.lod_max);
+                    float lodTile1 = clamp(lodTileBase + 1.0, 0.0, drawUniforms.lod_max);
                 @end
             @end
 
             @if(i == 0)
                 @if(o_mip_lod)
-                    float4 texVal0 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(lodTile));
+                    float4 texVal0 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(lodTile0));
+                @elseif(o_palette[0])
+                    float4 texVal0 = paletteSample(uTex0, uTex0Smplr, uTexPal, uTexPalSmplr, vTexCoordAdj0, texSize0, drawUniforms.palette_params[0]);
                 @else
                     float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
                 @end
             @else
-                float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
+                @if(o_palette[1])
+                    float4 texVal1 = paletteSample(uTex1, uTex1Smplr, uTexPal, uTexPalSmplr, vTexCoordAdj1, texSize1, drawUniforms.palette_params[1]);
+                @else
+                    float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
+                @end
             @end
 
             @if(o_masks[i])
@@ -336,7 +407,7 @@ fragment FragOut fragmentShader(
 
     @if(o_mip_lod)
         // TEXEL1 reads the next mip level of texture 0
-        float4 texVal1 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(min(lodTile + 1.0, drawUniforms.lod_max)));
+        float4 texVal1 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(lodTile1));
     @end
 
     @if(o_alpha)

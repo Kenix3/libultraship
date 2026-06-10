@@ -70,6 +70,44 @@ cbuffer TransformCB : register(b4) {
 @if(o_blend[0]) Texture2D g_textureBlend0 : register(t4);
 @if(o_blend[1]) Texture2D g_textureBlend1 : register(t5);
 
+@if(o_palette[0] || o_palette[1])
+Texture2D g_texturePal : register(t6);
+SamplerState g_samplerPal : register(s6);
+
+// One CI tap: fetch the index (nearest sampler) and look it up in the
+// 256-entry palette texture. bank is the CI4 bank entry offset.
+float4 paletteTap(in Texture2D tex, in SamplerState tSampler, in float2 uv, in float bank) {
+    float idx = tex.Sample(tSampler, uv).r;
+    return g_texturePal.Sample(g_samplerPal, float2((idx * 255.0 + bank + 0.5) / 256.0, 0.5));
+}
+
+// Filtering happens after the palette lookup, like real hardware:
+// params.y selects nearest (0), bilinear (1) or N64 three-point (2).
+float4 paletteSampleCI(in Texture2D tex, in SamplerState tSampler, in float2 uv, in float2 texSize, in float4 params) {
+    if (params.y > 1.5) {
+        float2 offset = frac(uv * texSize - float2(0.5, 0.5));
+        offset -= step(1.0, offset.x + offset.y);
+        float4 c0 = paletteTap(tex, tSampler, uv - offset / texSize, params.x);
+        float4 c1 = paletteTap(tex, tSampler, uv - float2(offset.x - sign(offset.x), offset.y) / texSize, params.x);
+        float4 c2 = paletteTap(tex, tSampler, uv - float2(offset.x, offset.y - sign(offset.y)) / texSize, params.x);
+        return c0 + abs(offset.x) * (c1 - c0) + abs(offset.y) * (c2 - c0);
+    } else if (params.y > 0.5) {
+        float2 t = uv * texSize - 0.5;
+        float2 f = frac(t);
+        float2 base = (floor(t) + 0.5) / texSize;
+        float2 px = float2(1.0, 0.0) / texSize;
+        float2 py = float2(0.0, 1.0) / texSize;
+        float4 c00 = paletteTap(tex, tSampler, base, params.x);
+        float4 c10 = paletteTap(tex, tSampler, base + px, params.x);
+        float4 c01 = paletteTap(tex, tSampler, base + py, params.x);
+        float4 c11 = paletteTap(tex, tSampler, base + px + py, params.x);
+        return lerp(lerp(c00, c10, f.x), lerp(c01, c11, f.x), f.y);
+    } else {
+        return paletteTap(tex, tSampler, uv, params.x);
+    }
+}
+@end
+
 cbuffer PerFrameCB : register(b0) {
     uint noise_frame;
     float noise_scale;
@@ -88,13 +126,15 @@ cbuffer PerDrawCB : register(b1) {
         uint width;
         uint height;
         bool linear_filtering;
-    } textures[6];
+    } textures[7];
     float4 combiner_inputs[6];
     float4 fog_color;
     float4 grayscale_color;
     float4 uv_transform[2];
     float4 texture_clamp[2];
     float4 fog_params;
+    float4 palette_params[2];
+    float4 lod_params; // x = res scale, y = prim_lod_min, z = G_TD mode
 }
 
 // 3 point texture filtering
@@ -305,18 +345,39 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
                         int2 texSize0;
                         g_texture0.GetDimensions(texSize0.x, texSize0.y);
                     @end
-                    // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                    // N64 texture LOD (RDP-accurate): max absolute UV derivative,
+                    // linear fraction between tiles, sharpen/detail handling
                     float2 lodScaled = tc0 * float2(texSize0);
-                    float2 lodDx = ddx(lodScaled);
-                    float2 lodDy = ddy(lodScaled);
-                    float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
-                    float lodTile = min(floor(lodVal), lod_max);
-                    lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                    float2 lodMaxD = max(abs(ddx(lodScaled)), abs(ddy(lodScaled)));
+                    float lodMaxDst = max(max(lodMaxD.x, lodMaxD.y) * lod_params.x, 0.000001);
+                    if (lod_params.z > 0.5) { // sharpen or detail
+                        lodMaxDst = max(lodMaxDst, lod_params.y);
+                    }
+                    float lodTileBase = floor(log2(lodMaxDst));
+                    lodFrac = lodMaxDst / exp2(max(lodTileBase, 0.0)) - 1.0;
+                    if (lod_params.z > 0.5 && lod_params.z < 1.5 && lodMaxDst < 1.0) { // sharpen
+                        lodFrac = lodMaxDst - 1.0;
+                    }
+                    if (lod_params.z > 1.5) { // detail: tile 0 is the detail texture
+                        if (lodFrac < 0.0) {
+                            lodFrac = lodMaxDst;
+                        }
+                        lodTileBase += 1.0;
+                    } else if (lodTileBase >= lod_max) {
+                        lodFrac = 1.0;
+                    }
+                    if (lod_params.z > 0.5) {
+                        lodTileBase = max(lodTileBase, 0.0);
+                    } else {
+                        lodFrac = max(lodFrac, 0.0);
+                    }
+                    float lodTile0 = clamp(lodTileBase, 0.0, lod_max);
+                    float lodTile1 = clamp(lodTileBase + 1.0, 0.0, lod_max);
                 @end
             @end
 
             @if(i == 0 && o_mip_lod)
-                float4 texVal0 = g_texture0.SampleLevel(g_sampler0, tc0, lodTile);
+                float4 texVal0 = g_texture0.SampleLevel(g_sampler0, tc0, lodTile0);
                 @if(o_masks[0])
                     @if(o_blend[0])
                         float4 blendVal0 = g_textureBlend0.Sample(g_sampler0, tc0);
@@ -325,6 +386,17 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
                     @end
                     texVal0 = lerp(texVal0, blendVal0, g_textureMask0.Sample(g_sampler0, tc0).a);
                 @end
+            @elseif(o_palette[i])
+                @if(!s && !t)
+                    @if(i == 1)
+                        int2 texSize1;
+                        g_texture1.GetDimensions(texSize1.x, texSize1.y);
+                    @elseif(!o_uses_lod)
+                        int2 texSize0;
+                        g_texture0.GetDimensions(texSize0.x, texSize0.y);
+                    @end
+                @end
+                float4 texVal@{i} = paletteSampleCI(g_texture@{i}, g_sampler@{i}, tc@{i}, float2(texSize@{i}), palette_params[@{i}]);
             @elseif(o_three_point_filtering)
                 float4 texVal@{i};
                 if (textures[@{i}].linear_filtering) {
@@ -370,7 +442,7 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
 
     @if(o_mip_lod)
         // TEXEL1 reads the next mip level of texture 0
-        float4 texVal1 = g_texture0.SampleLevel(g_sampler0, tc0, min(lodTile + 1.0, lod_max));
+        float4 texVal1 = g_texture0.SampleLevel(g_sampler0, tc0, lodTile1);
     @end
 
     @if(o_alpha)

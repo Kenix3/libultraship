@@ -97,6 +97,9 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     if (mCurrentShaderProgram->palette_params_location >= 0) {
         glUniform4fv(mCurrentShaderProgram->palette_params_location, 2, &mCombinerUniforms.palette_params[0][0]);
     }
+    if (mCurrentShaderProgram->lod_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->lod_params_location, 1, mCombinerUniforms.lod_params);
+    }
 
     // Vertex transform: matrix palette + y flip
     if (mCurrentShaderProgram->mtx_palette_location >= 0) {
@@ -604,6 +607,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->y_scale_location = glGetUniformLocation(shader_program, "uYScale");
     prg->mv_cols_location = glGetUniformLocation(shader_program, "uMvCols");
     prg->palette_params_location = glGetUniformLocation(shader_program, "uPaletteParams");
+    prg->lod_params_location = glGetUniformLocation(shader_program, "uLodParams");
 
     LoadShader(prg);
 

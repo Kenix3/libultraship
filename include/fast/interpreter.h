@@ -362,6 +362,8 @@ struct RDP {
     bool grayscale;
 
     uint8_t prim_lod_fraction;
+    // Minimum LOD clamp from gsDPSetPrimColor's m parameter (sharpen/detail modes)
+    uint8_t prim_lod_min;
     uint16_t prim_depth;
     struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
 
@@ -608,6 +610,7 @@ class Interpreter {
     float mUvTransform[2][4]{};
     float mTextureClamp[2][4]{};
     float mFogParams[4]{};
+    float mLodParams[4]{};
 
     // GPU vertex transform: history of recent model-view-projection matrices
     // (aspect scale folded in) captured at vertex-load time. Each LoadedVertex
