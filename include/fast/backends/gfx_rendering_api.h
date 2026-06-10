@@ -42,6 +42,15 @@ class GfxRenderingAPI {
     virtual uint32_t NewTexture() = 0;
     virtual void SelectTexture(int tile, uint32_t textureId) = 0;
     virtual void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) = 0;
+    // Upload one level of a mipmapped texture to the currently selected texture.
+    // Level 0 must be uploaded first, with totalLevels indicating the full chain size.
+    // Backends without mipmap support fall back to uploading only the base level.
+    virtual void UploadTextureMip(const uint8_t* rgba32Buf, uint32_t width, uint32_t height, uint32_t level,
+                                  uint32_t totalLevels) {
+        if (level == 0) {
+            UploadTexture(rgba32Buf, width, height);
+        }
+    }
     virtual void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) = 0;
     virtual void SetDepthTestAndMask(bool depth_test, bool z_upd) = 0;
     virtual void SetZmodeDecal(bool decal) = 0;
@@ -80,6 +89,11 @@ class GfxRenderingAPI {
     virtual void SetSrgbMode() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
     virtual void SetCurrentPrimDepth(float depth) = 0;
+    // Highest mip/LOD level (as float) usable by the current draw's LOD computation.
+    // 0 means only the base level exists.
+    virtual void SetCurrentMaxLod(float maxLod) {
+        mCurrentMaxLod = maxLod;
+    }
 
   protected:
     int8_t mCurrentDepthTest = 0;
@@ -93,5 +107,6 @@ class GfxRenderingAPI {
     bool mSrgbMode = false;
     float mCurrentPrimDepth = 0.0f;
     bool mPrimDepthDirty = true;
+    float mCurrentMaxLod = 0.0f;
 };
 } // namespace Fast

@@ -76,6 +76,10 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
             case SHADER_NOISE:
                 return with_alpha ? "float4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
                                   : "float3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
+            case SHADER_LOD_FRAC:
+                return hint_single_element ? "lodFrac"
+                                           : (with_alpha ? "float4(lodFrac, lodFrac, lodFrac, lodFrac)"
+                                                         : "float3(lodFrac, lodFrac, lodFrac)");
         }
     } else {
         switch (item) {
@@ -103,6 +107,8 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
                 return "texel.w";
             case SHADER_NOISE:
                 return RAND_NOISE;
+            case SHADER_LOD_FRAC:
+                return "lodFrac";
         }
     }
     return "";
@@ -240,6 +246,8 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
+        { "o_mip_lod", cc_features.opt_mip_lod },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },

@@ -339,13 +339,18 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                     case G_CCMUX_NOISE:
                         val = SHADER_NOISE;
                         break;
+                    case G_CCMUX_LOD_FRACTION:
+                        // With G_TL_LOD the fragment shader computes the real
+                        // per-pixel LOD fraction; otherwise the RDP register
+                        // reads as 1.0 (matching the previous CPU behavior).
+                        val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
+                        break;
                     case G_CCMUX_PRIMITIVE:
                     case G_CCMUX_PRIMITIVE_ALPHA:
                     case G_CCMUX_PRIM_LOD_FRAC:
                     case G_CCMUX_SHADE:
                     case G_CCMUX_ENVIRONMENT:
                     case G_CCMUX_ENV_ALPHA:
-                    case G_CCMUX_LOD_FRACTION:
                     case G_CCMUX_KEY_CENTER:
                     case G_CCMUX_KEY_SCALE:
                     case G_CCMUX_CONVERT_K4:
@@ -400,8 +405,10 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                             val = SHADER_COMBINED;
                             break;
                         }
-                        c[i][1][j] = G_CCMUX_LOD_FRACTION;
-                        [[fallthrough]]; // for G_ACMUX_LOD_FRACTION
+                        // LOD_FRACTION in the C slot: computed in the fragment
+                        // shader when G_TL_LOD is active, constant 1.0 otherwise.
+                        val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
+                        break;
                     case G_ACMUX_1:
                         // case G_ACMUX_PRIM_LOD_FRAC: same numerical value
                         if (j != 2) {
@@ -423,6 +430,13 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
             }
         }
     }
+    // In MIP_LOD mode TEXEL1 samples the next mip level of texture 0, so the
+    // second texture slot is never bound.
+    if ((key.options & SHADER_OPT(MIP_LOD)) && usedTextures[1]) {
+        usedTextures[0] = true;
+        usedTextures[1] = false;
+    }
+
     comb->shader_id0 = shaderId0;
     comb->shader_id1 = shaderId1;
     comb->usedTextures[0] = usedTextures[0];
@@ -688,7 +702,7 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
@@ -760,7 +774,7 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
             i++;
         }
     }
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
@@ -806,7 +820,7 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
@@ -849,7 +863,7 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
@@ -900,7 +914,7 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
@@ -953,7 +967,7 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
@@ -994,7 +1008,7 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
@@ -1088,7 +1102,7 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
@@ -1170,7 +1184,7 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         height = tile_h;
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
@@ -1287,6 +1301,260 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
+const RDP::TmemLoadEntry* Interpreter::FindTmemLoad(uint16_t tmemWord) const {
+    // Scan newest-first so overlapping loads resolve to the most recent one
+    for (size_t k = 0; k < RDP::TMEM_JOURNAL_SIZE; k++) {
+        size_t idx = (mRdp->tmem_load_head + RDP::TMEM_JOURNAL_SIZE - 1 - k) % RDP::TMEM_JOURNAL_SIZE;
+        const RDP::TmemLoadEntry& entry = mRdp->tmem_loads[idx];
+        if (entry.dram_addr != nullptr && tmemWord >= entry.tmem_word &&
+            tmemWord < (uint32_t)entry.tmem_word + entry.size_words) {
+            return &entry;
+        }
+    }
+    return nullptr;
+}
+
+static uint32_t TileWidthPx(const RDP* rdp, uint32_t tile) {
+    return (uint32_t)(int32_t)((rdp->texture_tile[tile].lrs - rdp->texture_tile[tile].uls + 4) / 4);
+}
+
+static uint32_t TileHeightPx(const RDP* rdp, uint32_t tile) {
+    return (uint32_t)(int32_t)((rdp->texture_tile[tile].lrt - rdp->texture_tile[tile].ult + 4) / 4);
+}
+
+// Detect a usable mip pyramid starting at baseTile. Returns the number of extra
+// levels beyond the base that can be decoded and uploaded (0 = no mipmapping).
+uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
+    if ((mRdp->other_mode_l & G_TL_LOD) == 0) {
+        return 0;
+    }
+    if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) != G_CYC_2CYCLE) {
+        return 0;
+    }
+    // Detail/sharpen LOD modes change which tile is sampled at magnification
+    // and are not supported; fall back to non-mipmapped sampling for them.
+    if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTDETAIL)) != G_TD_CLAMP) {
+        return 0;
+    }
+    if (mRsp->texture_level == 0 || baseTile >= 8) {
+        return 0;
+    }
+
+    const auto& base = mRdp->texture_tile[baseTile];
+    const auto& loaded = mRdp->loaded_texture[base.tmem_index];
+    // Raw/IMG-flagged and scaled (HD replacement) textures don't follow N64 TMEM
+    // layout, so mip levels can't be located by TMEM offsets.
+    if ((loaded.tex_flags & (TEX_FLAG_LOAD_AS_RAW | TEX_FLAG_LOAD_AS_IMG)) != 0) {
+        return 0;
+    }
+    if (loaded.raw_tex_metadata.h_byte_scale != 1 || loaded.raw_tex_metadata.v_pixel_scale != 1) {
+        return 0;
+    }
+
+    uint32_t prevW = TileWidthPx(mRdp, baseTile);
+    uint32_t prevH = TileHeightPx(mRdp, baseTile);
+    if (prevW == 0 || prevH == 0) {
+        return 0;
+    }
+
+    uint8_t levels = 0;
+    for (uint32_t l = 1; l <= mRsp->texture_level && baseTile + l < 8; l++) {
+        const auto& t = mRdp->texture_tile[baseTile + l];
+        if (t.fmt != base.fmt || t.siz != base.siz) {
+            break;
+        }
+        uint32_t w = TileWidthPx(mRdp, baseTile + l);
+        uint32_t h = TileHeightPx(mRdp, baseTile + l);
+        if (w != std::max(prevW >> 1, 1u) || h != std::max(prevH >> 1, 1u)) {
+            break;
+        }
+        const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
+        if (entry == nullptr || !entry->linear) {
+            break;
+        }
+        levels++;
+        prevW = w;
+        prevH = h;
+    }
+    return levels;
+}
+
+// Decode one tile-shaped block of N64 texel data into RGBA32. Rows are
+// strideBytes apart in src (TMEM line stride; LoadBlock data is packed at the
+// same stride). Returns false for unsupported formats.
+static bool DecodeTileToRgba32(uint8_t fmt, uint8_t siz, const uint8_t* src, uint32_t strideBytes, uint32_t width,
+                               uint32_t height, const uint8_t* const palettes[2], uint8_t paletteIndex, uint8_t* dst) {
+    uint32_t i = 0;
+    if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_16b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint16_t col16 = (row[2 * x] << 8) | row[2 * x + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_32b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                dst[4 * i + 0] = row[4 * x + 0];
+                dst[4 * i + 1] = row[4 * x + 1];
+                dst[4 * i + 2] = row[4 * x + 2];
+                dst[4 * i + 3] = row[4 * x + 3];
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_4b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t part = (row[x / 2] >> (4 - (x % 2) * 4)) & 0xf;
+                uint8_t intensity = SCALE_3_8(part >> 1);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = (part & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_8b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = SCALE_4_8(row[x] >> 4);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = SCALE_4_8(row[x] & 0xf);
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_16b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                dst[4 * i + 0] = row[2 * x];
+                dst[4 * i + 1] = row[2 * x];
+                dst[4 * i + 2] = row[2 * x];
+                dst[4 * i + 3] = row[2 * x + 1];
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_4b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = SCALE_4_8((row[x / 2] >> (4 - (x % 2) * 4)) & 0xf);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = intensity;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_8b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = row[x];
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = intensity;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_CI && siz == G_IM_SIZ_4b) {
+        const uint8_t* palette = palettes[paletteIndex / 8];
+        if (palette == nullptr) {
+            return false;
+        }
+        palette += (paletteIndex % 8) * 16 * 2;
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t idx = (row[x / 2] >> (4 - (x % 2) * 4)) & 0xf;
+                uint16_t col16 = (palette[idx * 2] << 8) | palette[idx * 2 + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_CI && siz == G_IM_SIZ_8b) {
+        if (palettes[0] == nullptr || palettes[1] == nullptr) {
+            return false;
+        }
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t idx = row[x];
+                const uint8_t* pal = palettes[idx / 128];
+                uint16_t col16 = (pal[(idx % 128) * 2] << 8) | pal[(idx % 128) * 2 + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+// Routes base-level uploads: when a mip chain is being imported, the base level
+// must announce the total level count so backends can allocate the full chain.
+void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) {
+    if (mCurrentMipExtraLevels > 0) {
+        mRapi->UploadTextureMip(rgba32Buf, width, height, 0, mCurrentMipExtraLevels + 1u);
+    } else {
+        mRapi->UploadTexture(rgba32Buf, width, height);
+    }
+}
+
+// Decode and upload mip levels 1..N of the pyramid rooted at baseTile.
+// DetectMipChain has already validated the tile descriptors and TMEM journal.
+void Interpreter::UploadMipChain(uint32_t baseTile) {
+    uint32_t totalLevels = mCurrentMipExtraLevels + 1u;
+    for (uint32_t l = 1; l <= mCurrentMipExtraLevels; l++) {
+        uint32_t tile = baseTile + l;
+        const auto& t = mRdp->texture_tile[tile];
+        const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
+        if (entry == nullptr || !entry->linear) {
+            return;
+        }
+        const uint8_t* src = entry->dram_addr + ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        uint32_t width = TileWidthPx(mRdp, tile);
+        uint32_t height = TileHeightPx(mRdp, tile);
+        uint32_t strideBytes = t.line_size_bytes;
+        if (t.siz == G_IM_SIZ_32b) {
+            // RGBA32 tiles store the TMEM-interleaved stride (half of the DRAM stride)
+            strideBytes *= 2;
+        }
+        if (width == 0 || height == 0 || strideBytes == 0) {
+            return;
+        }
+        if (!DecodeTileToRgba32(t.fmt, t.siz, src, strideBytes, width, height, mRdp->palettes, t.palette,
+                                mTexUploadBuffer)) {
+            return;
+        }
+        mRapi->UploadTextureMip(mTexUploadBuffer, width, height, l, totalLevels);
+    }
+}
+
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
     uint8_t fmt = mRdp->texture_tile[tile].fmt;
     uint8_t siz = mRdp->texture_tile[tile].siz;
@@ -1351,6 +1619,7 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
     } else {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
     }
+    key.mip_levels = mCurrentMipExtraLevels;
 
     if (TextureCacheLookup(i, key)) {
         return;
@@ -1429,6 +1698,10 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             SPDLOG_ERROR("Invalid texture format. Fmt = {}", fmt);
             break;
     }
+
+    if (mCurrentMipExtraLevels > 0) {
+        UploadMipChain(tile);
+    }
 }
 
 void Interpreter::ImportTextureMask(int i, int tile) {
@@ -1489,7 +1762,7 @@ void Interpreter::ImportTextureMask(int i, int tile) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::NormalizeVector(float v[3]) {
@@ -1960,7 +2233,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     if (!mShaderStack.empty()) {
         cc_options |= (mShaderStack.top() << SHADER_ID_SHIFT);
     } else {
-        cc_options |= -1 << SHADER_ID_SHIFT;
+        cc_options |= (uint64_t)0xFFFF << SHADER_ID_SHIFT;
     }
 
     if (mRdp->loaded_texture[0].masked) {
@@ -1974,6 +2247,17 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     }
     if (mRdp->loaded_texture[1].blended) {
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
+    }
+
+    // N64 texture LOD: when a real mip pyramid is described by the tiles, bind it
+    // as a GPU mip chain (MIP_LOD); LOD_FRACTION is then computed per-pixel in the
+    // fragment shader from UV derivatives (TEX_LOD).
+    uint8_t mipExtraLevels = DetectMipChain(mRdp->first_tile_index);
+    if (mRdp->other_mode_l & G_TL_LOD) {
+        cc_options |= SHADER_OPT(TEX_LOD);
+    }
+    if (mipExtraLevels > 0) {
+        cc_options |= SHADER_OPT(MIP_LOD);
     }
 
     ColorCombinerKey key;
@@ -1996,9 +2280,19 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         effective_tile[i] = tile;
 
         if (comb->usedTextures[i]) {
+            // The mip variant of a texture lives under a different cache key, so a
+            // LOD-mode change must re-run the import even when the tile data didn't change.
+            if (i == 0 && mRenderingState.mTextures[0] != nullptr &&
+                mRenderingState.mTextures[0]->first.mip_levels != mipExtraLevels) {
+                mRdp->textures_changed[0] = true;
+            }
             if (mRdp->textures_changed[i]) {
                 Flush();
+                // Only the base texture slot carries a mip chain; masks and
+                // replacements are always uploaded as single-level textures.
+                mCurrentMipExtraLevels = (i == 0) ? mipExtraLevels : 0;
                 ImportTexture(i, tile, false);
+                mCurrentMipExtraLevels = 0;
                 if (mRdp->loaded_texture[i].masked) {
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
@@ -2132,6 +2426,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     mRapi->ShaderGetInfo(prg, &numInputs, usedTextures);
 
+    // Highest LOD level the shader may address: the real chain depth in mip mode,
+    // otherwise whatever gsSPTexture advertised (derivative-based LOD fraction).
+    mRapi->SetCurrentMaxLod(mipExtraLevels > 0 ? (float)mipExtraLevels : (float)mRsp->texture_level);
+
     struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
 
     for (int i = 0; i < 3; i++) {
@@ -2249,23 +2547,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         color = &tmp;
                         break;
                     }
-                    case G_CCMUX_LOD_FRACTION: {
-                        if (mRdp->other_mode_l & G_TL_LOD) {
-                            // "Hack" that works for Bowser - Peach painting
-                            float distance_frac = (v1->w - 3000.0f) / 3000.0f;
-                            if (distance_frac < 0.0f) {
-                                distance_frac = 0.0f;
-                            }
-                            if (distance_frac > 1.0f) {
-                                distance_frac = 1.0f;
-                            }
-                            tmp.r = tmp.g = tmp.b = tmp.a = distance_frac * 255.0f;
-                        } else {
-                            tmp.r = tmp.g = tmp.b = tmp.a = 255.0f;
-                        }
-                        color = &tmp;
-                        break;
-                    }
+                    // G_CCMUX_LOD_FRACTION no longer reaches the input mapping:
+                    // it is computed per-pixel in the fragment shader (TEX_LOD).
                     case G_CCMUX_KEY_CENTER:
                         color = &mRdp->key_center;
                         break;
@@ -2488,11 +2771,12 @@ void Interpreter::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t dat
 void Interpreter::GfxSpTexture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile, uint8_t on) {
     mRsp->texture_scaling_factor.s = sc;
     mRsp->texture_scaling_factor.t = tc;
-    if (mRdp->first_tile_index != tile) {
+    if (mRdp->first_tile_index != tile || mRsp->texture_level != level) {
         mRdp->textures_changed[0] = true;
         mRdp->textures_changed[1] = true;
     }
 
+    mRsp->texture_level = level;
     mRdp->first_tile_index = tile;
 }
 
@@ -2681,6 +2965,16 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     // orig_size_bytes,
     //         mRdp->texture_to_load.siz, lrs);
 
+    // Record the load in the TMEM journal (LoadBlock copies are linear in DRAM)
+    {
+        RDP::TmemLoadEntry& entry = mRdp->tmem_loads[mRdp->tmem_load_head];
+        entry.tmem_word = mRdp->texture_tile[tile].tmem;
+        entry.size_words = (orig_size_bytes + 7) / 8;
+        entry.dram_addr = mRdp->texture_to_load.addr;
+        entry.linear = true;
+        mRdp->tmem_load_head = (mRdp->tmem_load_head + 1) % RDP::TMEM_JOURNAL_SIZE;
+    }
+
     const std::string_view texPath =
         mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
             ? GetBaseTexturePath(mRdp->texture_to_load.raw_tex_metadata.resource->GetInitData()->Identifier.GetPath())
@@ -2750,6 +3044,17 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr + start_offset_bytes;
+
+    // Record the load in the TMEM journal. LoadTile loads are strided in DRAM,
+    // so mark them non-linear — the mip importer cannot address into them.
+    {
+        RDP::TmemLoadEntry& entry = mRdp->tmem_loads[mRdp->tmem_load_head];
+        entry.tmem_word = mRdp->texture_tile[tile].tmem;
+        entry.size_words = (orig_size_bytes + 7) / 8;
+        entry.dram_addr = mRdp->texture_to_load.addr + start_offset_bytes;
+        entry.linear = false;
+        mRdp->tmem_load_head = (mRdp->tmem_load_head + 1) % RDP::TMEM_JOURNAL_SIZE;
+    }
 
     const std::string_view texPath =
         mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
@@ -5571,6 +5876,8 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
     cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
     cc_features->opt_prim_depth = (shader_id1 & SHADER_OPT(PRIM_DEPTH)) != 0;
+    cc_features->opt_tex_lod = (shader_id1 & SHADER_OPT(TEX_LOD)) != 0;
+    cc_features->opt_mip_lod = (shader_id1 & SHADER_OPT(MIP_LOD)) != 0;
 
     cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
@@ -5584,6 +5891,7 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->used_blend[0] = false;
     cc_features->used_blend[1] = false;
     cc_features->numInputs = 0;
+    cc_features->uses_lod_frac = false;
 
     for (int c = 0; c < 2; c++) {
         for (int i = 0; i < 2; i++) {
@@ -5605,8 +5913,18 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
                         cc_features->usedTextures[0] = true;
                     }
                 }
+                if (cc_features->c[c][i][j] == SHADER_LOD_FRAC) {
+                    cc_features->uses_lod_frac = true;
+                }
             }
         }
+    }
+
+    // In MIP_LOD mode TEXEL1 reads the next mip level of texture 0; the second
+    // texture slot is never bound (mirrors GenerateCC).
+    if (cc_features->opt_mip_lod && cc_features->usedTextures[1]) {
+        cc_features->usedTextures[0] = true;
+        cc_features->usedTextures[1] = false;
     }
 
     for (int c = 0; c < 2; c++) {

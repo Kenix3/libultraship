@@ -365,7 +365,7 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
 
     MTL::Texture* texture = texture_data->texture;
     if (texture_data->texture == nullptr || texture_data->texture->width() != width ||
-        texture_data->texture->height() != height) {
+        texture_data->texture->height() != height || texture_data->texture->mipmapLevelCount() != 1) {
         if (texture_data->texture != nullptr)
             texture_data->texture->release();
 
@@ -376,6 +376,42 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
     NS::UInteger bytes_per_row = bytes_per_pixel * width;
     texture->replaceRegion(region, 0, rgba32_buf, bytes_per_row);
     texture_data->texture = texture;
+    texture_data->mip_levels = 1;
+
+    autorelease_pool->release();
+}
+
+void GfxRenderingAPIMetal::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t width, uint32_t height, uint32_t level,
+                                            uint32_t totalLevels) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
+    TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
+
+    NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+
+    if (level == 0) {
+        if (texture_data->texture == nullptr || texture_data->texture->width() != width ||
+            texture_data->texture->height() != height || texture_data->texture->mipmapLevelCount() != totalLevels) {
+            if (texture_data->texture != nullptr)
+                texture_data->texture->release();
+
+            MTL::TextureDescriptor* texture_descriptor =
+                MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatRGBA8Unorm, width, height, true);
+            texture_descriptor->setArrayLength(1);
+            texture_descriptor->setMipmapLevelCount(totalLevels);
+            texture_descriptor->setSampleCount(1);
+            texture_descriptor->setStorageMode(MTL::StorageModeShared);
+            texture_data->texture = mDevice->newTexture(texture_descriptor);
+        }
+        texture_data->mip_levels = totalLevels;
+    }
+
+    if (texture_data->texture != nullptr && level < texture_data->texture->mipmapLevelCount()) {
+        MTL::Region region = MTL::Region::Make2D(0, 0, width, height);
+        texture_data->texture->replaceRegion(region, level, rgba32_buf, 4 * width);
+    }
 
     autorelease_pool->release();
 }
@@ -398,6 +434,9 @@ void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, ui
                                           : MTL::SamplerMinMagFilterNearest;
     sampler_descriptor->setMinFilter(filter);
     sampler_descriptor->setMagFilter(filter);
+    // Mip chains are sampled with explicit integer LODs (level()) in the shader;
+    // Nearest picks the exact level. Harmless for single-level textures.
+    sampler_descriptor->setMipFilter(MTL::SamplerMipFilterNearest);
     sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
     sampler_descriptor->setTAddressMode(gfx_cm_to_metal(cmt));
     sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
@@ -415,6 +454,13 @@ void GfxRenderingAPIMetal::SetCurrentPrimDepth(float depth) {
     if (depth != mCurrentPrimDepth) {
         mCurrentPrimDepth = depth;
         mPrimDepthDirty = true;
+    }
+}
+
+void GfxRenderingAPIMetal::SetCurrentMaxLod(float maxLod) {
+    if (maxLod != mCurrentMaxLod) {
+        mCurrentMaxLod = maxLod;
+        mLodMaxDirty = true;
     }
 }
 
@@ -547,10 +593,12 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
     }
 
-    if (textures_changed || mPrimDepthDirty) {
+    if (textures_changed || mPrimDepthDirty || mLodMaxDirty) {
         mDrawUniforms.prim_depth = mCurrentPrimDepth;
+        mDrawUniforms.lod_max = mCurrentMaxLod;
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
+        mLodMaxDirty = false;
     }
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {

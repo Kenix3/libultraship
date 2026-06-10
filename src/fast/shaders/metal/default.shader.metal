@@ -11,9 +11,8 @@ struct FrameUniforms {
 
 struct DrawUniforms {
     int textureFiltering[6];
-    @if(o_prim_depth)
     float prim_depth;
-    @end
+    float lod_max;
 };
 
 struct FragOut {
@@ -183,6 +182,9 @@ fragment FragOut fragmentShader(
     , texture2d<float> uTexBlend1 [[texture(5)]]
 @end
 ) {
+    @if(o_uses_lod)
+        float lodFrac = 0.0;
+    @end
     @for(i in 0..2)
         @if(o_textures[i])
             @{s = o_clamp[i][0]}
@@ -200,7 +202,27 @@ fragment FragOut fragmentShader(
                 @end
             @end
 
-            float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
+            @if(i == 0)
+                @if(o_uses_lod)
+                    // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                    float2 lodScaled = vTexCoordAdj0 * texSize0;
+                    float2 lodDx = dfdx(lodScaled);
+                    float2 lodDy = dfdy(lodScaled);
+                    float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
+                    float lodTile = min(floor(lodVal), drawUniforms.lod_max);
+                    lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                @end
+            @end
+
+            @if(i == 0)
+                @if(o_mip_lod)
+                    float4 texVal0 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(lodTile));
+                @else
+                    float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
+                @end
+            @else
+                float4 texVal@{i} = hookTexture2D(uTex@{i}, uTex@{i}Smplr, vTexCoordAdj@{i}, texSize@{i}, drawUniforms.textureFiltering[@{i}]);
+            @end
 
             @if(o_masks[i])
                 float2 maskSize@{i} = float2(uTexMask@{i}.get_width(), uTexMask@{i}.get_height());
@@ -215,7 +237,12 @@ fragment FragOut fragmentShader(
             @end
         @end
     @end
-    
+
+    @if(o_mip_lod)
+        // TEXEL1 reads the next mip level of texture 0
+        float4 texVal1 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(min(lodTile + 1.0, drawUniforms.lod_max)));
+    @end
+
     @if(o_alpha)
         float4 texel;
     @else

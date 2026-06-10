@@ -63,7 +63,8 @@ enum {
     SHADER_TEXEL1A,
     SHADER_1,
     SHADER_COMBINED,
-    SHADER_NOISE
+    SHADER_NOISE,
+    SHADER_LOD_FRAC
 };
 
 #ifdef __cplusplus
@@ -85,6 +86,8 @@ enum class ShaderOpts {
     TEXEL0_BLEND,
     TEXEL1_BLEND,
     PRIM_DEPTH,
+    TEX_LOD,      // G_TL_LOD: LOD_FRACTION comes from per-pixel UV derivatives
+    MIP_LOD,      // a real mip pyramid is bound to TEXEL0; TEXEL1 = next mip level
     PRISM_SHADER, // 16-bit width
     MAX
 };
@@ -118,6 +121,9 @@ struct CCFeatures {
     bool opt_invisible;
     bool opt_grayscale;
     bool opt_prim_depth;
+    bool opt_tex_lod;  // LOD_FRACTION computed from per-pixel UV derivatives
+    bool opt_mip_lod;  // TEXEL0 carries a real mip pyramid; TEXEL1 = next mip level
+    bool uses_lod_frac; // any combiner slot references SHADER_LOD_FRAC
     bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
@@ -141,8 +147,8 @@ class GfxWindowBackend;
 class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 17;
-constexpr int16_t ShaderIdUnmask(int id) {
+constexpr size_t SHADER_ID_SHIFT = 19;
+constexpr int16_t ShaderIdUnmask(uint64_t id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
 
@@ -190,6 +196,9 @@ struct TextureCacheKey {
     uint8_t fmt, siz;
     uint8_t palette_index;
     uint32_t size_bytes;
+    // Number of mip levels uploaded for this texture (0 or 1 = just the base level).
+    // Part of the key so the same data uploaded with/without a mip chain doesn't collide.
+    uint8_t mip_levels;
 
     bool operator==(const TextureCacheKey&) const noexcept = default;
 
@@ -261,6 +270,9 @@ struct RSP {
         uint16_t s, t;
     } texture_scaling_factor;
 
+    // Max mip level from gsSPTexture (number of mip levels - 1). 0 = no mipmapping.
+    uint8_t texture_level;
+
     struct LoadedVertex loaded_vertices[MAX_VERTICES + 4];
 };
 
@@ -304,6 +316,19 @@ struct RDP {
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
     } texture_tile[8];
     bool textures_changed[2];
+
+    // Journal of recent TMEM loads so mip-pyramid tiles can be mapped back to their
+    // DRAM source even when each level was loaded with its own LoadBlock command.
+    // Only linear loads (LoadBlock) are recorded; LoadTile loads are strided in DRAM
+    // and are marked non-linear so the mip importer can skip them.
+    static constexpr size_t TMEM_JOURNAL_SIZE = 8;
+    struct TmemLoadEntry {
+        uint16_t tmem_word;       // TMEM start, in 64-bit words
+        uint16_t size_words;      // length in 64-bit words
+        const uint8_t* dram_addr; // DRAM source of the load
+        bool linear;              // true when DRAM data is contiguous (LoadBlock)
+    } tmem_loads[TMEM_JOURNAL_SIZE];
+    uint8_t tmem_load_head; // next slot to write (circular)
 
     uint8_t first_tile_index;
 
@@ -448,6 +473,12 @@ class Interpreter {
     void ImportTextureImg(int tile, bool importReplacement);
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
+    // Mipmapping support: detect a usable mip pyramid in the tile descriptors,
+    // route base-level uploads, and decode/upload the extra levels.
+    uint8_t DetectMipChain(uint32_t baseTile) const;
+    void UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
+    void UploadMipChain(uint32_t baseTile);
+    const RDP::TmemLoadEntry* FindTmemLoad(uint16_t tmemWord) const;
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
 
     /**
@@ -524,6 +555,9 @@ class Interpreter {
     GfxTextureCache mTextureCache{};
     std::unordered_map<const void*, std::shared_ptr<Ship::IResource>> mResolvedResourceCache;
     bool mResolvedResourceCacheEnabled = false;
+    // Extra mip levels (beyond the base) for the texture import in progress.
+    // Set around ImportTexture calls in GfxSpTri1; 0 everywhere else.
+    uint8_t mCurrentMipExtraLevels{};
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
     uint8_t* mTexUploadBuffer = nullptr;
@@ -582,6 +616,7 @@ class Interpreter {
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
+const char* gfx_get_current_ucode_name();
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);

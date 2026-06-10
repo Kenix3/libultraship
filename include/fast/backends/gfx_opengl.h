@@ -51,6 +51,7 @@ struct ShaderProgram {
     GLint texture_width_location;
     GLint texture_height_location;
     GLint texture_filtering_location;
+    GLint lod_max_location;
 };
 
 /**
@@ -72,6 +73,8 @@ struct TextureInfo {
     uint16_t width;
     uint16_t height;
     uint16_t filtering;
+    // Total mip levels uploaded (0/1 = base level only)
+    uint8_t mip_levels;
 };
 
 /**
@@ -98,6 +101,8 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void UploadTextureMip(const uint8_t* rgba32Buf, uint32_t width, uint32_t height, uint32_t level,
+                          uint32_t totalLevels) override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetCurrentPrimDepth(float depth) override;
@@ -149,7 +154,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     int8_t mLastBlendEnabled = -1;
     int8_t mLastScissorEnabled = -1;
 
-    std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
+    std::map<std::pair<uint64_t, uint64_t>, ShaderProgram> mShaderProgramPool;
     ShaderProgram* mCurrentShaderProgram;
     ShaderProgram* mLastLoadedShader = nullptr;
 

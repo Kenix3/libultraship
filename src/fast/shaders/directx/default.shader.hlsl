@@ -98,10 +98,11 @@ float4 tex2D3PointFilter(in Texture2D tex, in SamplerState tSampler, in float2 t
 }
 @end
 
-@if(o_prim_depth)
+@if(o_prim_depth || o_uses_lod)
 cbuffer PerPrimDepthCB : register(b2) {
     float prim_depth;
-    float3 _pad; // pad to 16-byte cbuffer alignment
+    float lod_max;
+    float2 _pad; // pad to 16-byte cbuffer alignment
 }
 @end
 
@@ -195,6 +196,9 @@ struct PSOutput {
 };
 
 PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
+    @if(o_uses_lod)
+        float lodFrac = 0.0;
+    @end
     @for(i in 0..2)
         @if(o_textures[i])
             float2 tc@{i} = input.uv@{i};
@@ -212,7 +216,33 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
                 @end
             @end
 
-            @if(o_three_point_filtering)
+            @if(i == 0)
+                @if(o_uses_lod)
+                    @if(!s && !t)
+                        int2 texSize0;
+                        g_texture0.GetDimensions(texSize0.x, texSize0.y);
+                    @end
+                    // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                    float2 lodScaled = tc0 * float2(texSize0);
+                    float2 lodDx = ddx(lodScaled);
+                    float2 lodDy = ddy(lodScaled);
+                    float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
+                    float lodTile = min(floor(lodVal), lod_max);
+                    lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                @end
+            @end
+
+            @if(i == 0 && o_mip_lod)
+                float4 texVal0 = g_texture0.SampleLevel(g_sampler0, tc0, lodTile);
+                @if(o_masks[0])
+                    @if(o_blend[0])
+                        float4 blendVal0 = g_textureBlend0.Sample(g_sampler0, tc0);
+                    @else
+                        float4 blendVal0 = float4(0, 0, 0, 0);
+                    @end
+                    texVal0 = lerp(texVal0, blendVal0, g_textureMask0.Sample(g_sampler0, tc0).a);
+                @end
+            @elseif(o_three_point_filtering)
                 float4 texVal@{i};
                 if (textures[@{i}].linear_filtering) {
                     @if(o_masks[i])
@@ -255,7 +285,12 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
         @end
     @end
 
-    @if(o_alpha) 
+    @if(o_mip_lod)
+        // TEXEL1 reads the next mip level of texture 0
+        float4 texVal1 = g_texture0.SampleLevel(g_sampler0, tc0, min(lodTile + 1.0, lod_max));
+    @end
+
+    @if(o_alpha)
         float4 texel;
     @else
         float3 texel;

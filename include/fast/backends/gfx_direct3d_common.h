@@ -43,7 +43,8 @@ struct PerDrawCB {
  */
 struct PerPrimDepthCB {
     float prim_depth;
-    float _pad[3]; // 16-byte CB alignment
+    float lod_max;
+    float _pad[2]; // 16-byte CB alignment
 };
 
 /**
@@ -62,6 +63,8 @@ struct TextureData {
     Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler_state;
     uint32_t width;
     uint32_t height;
+    // Total mip levels uploaded (0/1 = base level only)
+    uint32_t mip_levels;
     bool linear_filtering;
 };
 
@@ -128,9 +131,12 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void UploadTextureMip(const uint8_t* rgba32Buf, uint32_t width, uint32_t height, uint32_t level,
+                          uint32_t totalLevels) override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetCurrentPrimDepth(float depth) override;
+    void SetCurrentMaxLod(float maxLod) override;
     void SetZmodeDecal(bool decal) override;
     void SetStrictDecal(bool on) override;
     void SetViewport(int x, int y, int width, int height) override;
@@ -207,7 +213,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     PerDrawCB mPerDrawCbData;
     PerPrimDepthCB mPerPrimDepthCbData;
 
-    std::map<std::pair<uint64_t, uint32_t>, struct ShaderProgramD3D11> mShaderProgramPool;
+    std::map<std::pair<uint64_t, uint64_t>, struct ShaderProgramD3D11> mShaderProgramPool;
 
     std::vector<struct TextureData> mTextures;
     int mCurrentTile;
@@ -222,6 +228,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     int32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     FilteringMode mCurrentFilterMode = FILTER_NONE;
+    bool mLodMaxDirty = true;
 
     // Previous states (to prevent setting states needlessly)
 

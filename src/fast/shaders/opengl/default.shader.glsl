@@ -125,6 +125,10 @@
     uniform float prim_depth;
     @end
 
+    @if(o_uses_lod)
+    uniform float lod_max;
+    @end
+
     uniform int texture_width[2];
     uniform int texture_height[2];
     uniform int texture_filtering[2];
@@ -165,6 +169,9 @@
     #define TEX_SIZE(tex) vec2(texture_width[tex], texture_height[tex])
 
     void main() {
+        @if(o_uses_lod)
+            float lodFrac = 0.0;
+        @end
         @for(i in 0..2)
             @if(o_textures[i])
                 @{s = o_clamp[i][0]}
@@ -184,7 +191,27 @@
                     @end
                 @end
 
-                vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
+                @if(i == 0)
+                    @if(o_uses_lod)
+                        // N64 texture LOD: per-pixel level from the screen-space UV footprint
+                        vec2 lodScaled = vTexCoordAdj0 * texSize0;
+                        vec2 lodDx = dFdx(lodScaled);
+                        vec2 lodDy = dFdy(lodScaled);
+                        float lodVal = max(0.5 * log2(max(max(dot(lodDx, lodDx), dot(lodDy, lodDy)), 0.000001)), 0.0);
+                        float lodTile = min(floor(lodVal), lod_max);
+                        lodFrac = clamp(lodVal - lodTile, 0.0, 1.0);
+                    @end
+                @end
+
+                @if(i == 0)
+                    @if(o_mip_lod)
+                        vec4 texVal0 = textureLod(uTex0, vTexCoordAdj0, lodTile);
+                    @else
+                        vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
+                    @end
+                @else
+                    vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
+                @end
 
                 @if(o_masks[i])
                     @if(opengles) 
@@ -206,9 +233,14 @@
             @end
         @end
 
-        @if(o_alpha) 
+        @if(o_mip_lod)
+            // TEXEL1 reads the next mip level of texture 0
+            vec4 texVal1 = textureLod(uTex0, vTexCoordAdj0, min(lodTile + 1.0, lod_max));
+        @end
+
+        @if(o_alpha)
             vec4 texel;
-        @else 
+        @else
             vec3 texel;
         @end
 
