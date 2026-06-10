@@ -10,25 +10,16 @@
             @{attr} vec2 aTexCoord@{i};
             @{out} vec2 vTexCoord@{i};
             @{update_floats(2)}
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        @{attr} float aTexClampS@{i};
-                        @{out} float vTexClampS@{i};
-                    @else
-                        @{attr} float aTexClampT@{i};
-                        @{out} float vTexClampT@{i};
-                    @end
-                    @{update_floats(1)}
-                @end
-            @end
         @end
     @end
 
+    @if(o_textures[0] || o_textures[1])
+        uniform vec4 uUvTransform[2];
+    @end
+
     @if(o_fog)
-        @{attr} float aFogFactor;
         @{out} float vFogFactor;
-        @{update_floats(1)}
+        uniform vec4 uFogParams;
     @end
 
     @if(o_shade || o_lighting)
@@ -71,20 +62,25 @@
     void main() {
         @for(i in 0..2)
             @if(o_textures[i])
-                vTexCoord@{i} = aTexCoord@{i};
-                @for(j in 0..2)
-                    @if(o_clamp[i][j])
-                        @if(j == 0)
-                            vTexClampS@{i} = aTexClampS@{i};
-                        @else
-                            vTexClampT@{i} = aTexClampT@{i};
-                        @end
-                    @end
-                @end
+                // Tile shift/origin/bilerp/size pipeline folded into one transform
+                vTexCoord@{i} = vec2(aTexCoord@{i}.x * uUvTransform[@{i}].x + uUvTransform[@{i}].y,
+                                     aTexCoord@{i}.y * uUvTransform[@{i}].z + uUvTransform[@{i}].w);
             @end
         @end
         @if(o_fog)
-            vFogFactor = aFogFactor;
+            // N64 RSP fog from clip-space z/w; uFogParams.w selects the source
+            // (0: computed, 1: constant register, 2: legacy vertex-alpha fallback)
+            float fogW = abs(aVtxPos.w) < 0.001 ? 0.001 : aVtxPos.w;
+            float fogWinv = 1.0 / fogW;
+            if (fogWinv < 0.0) {
+                fogWinv = 32767.0;
+            }
+            float fogCalc = clamp(aVtxPos.z * fogWinv * uFogParams.x + uFogParams.y, 0.0, 255.0) / 255.0;
+            @if(o_shade && o_alpha)
+                vFogFactor = uFogParams.w > 1.5 ? aShade.a : (uFogParams.w > 0.5 ? uFogParams.z : fogCalc);
+            @else
+                vFogFactor = uFogParams.w > 0.5 ? uFogParams.z : fogCalc;
+            @end
         @end
         @if(o_texgen)
             // N64 texgen: project the vertex normal onto the lookat vectors, then
@@ -104,6 +100,16 @@
             @end
             @if(o_textures[1])
                 vTexCoord1 = vec2(texgenDotX * uTexgen1.x + uTexgen1.y, texgenDotY * uTexgen1.z + uTexgen1.w);
+            @end
+        @end
+        @if(o_shade && o_alpha)
+            // Standard fog forces shade alpha to 1.0 (the factor rides vFogFactor);
+            // blend-color mode (fog mode 1) preserves the vertex alpha.
+            float shadeAlpha = aShade.a;
+            @if(o_fog)
+                if (uFogParams.w < 0.5 || uFogParams.w > 1.5) {
+                    shadeAlpha = 1.0;
+                }
             @end
         @end
         @if(o_shade)
@@ -135,12 +141,16 @@
                 }
                 litColor = min(litColor, vec3(1.0));
                 @if(o_alpha)
-                    vShade = vec4(litColor, aShade.a);
+                    vShade = vec4(litColor, shadeAlpha);
                 @else
                     vShade = litColor;
                 @end
             @else
-                vShade = aShade;
+                @if(o_alpha)
+                    vShade = vec4(aShade.rgb, shadeAlpha);
+                @else
+                    vShade = aShade;
+                @end
             @end
         @end
         gl_Position = aVtxPos;
@@ -156,16 +166,11 @@
     @for(i in 0..2)
         @if(o_textures[i])
             @{attr} vec2 vTexCoord@{i};
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        @{attr} float vTexClampS@{i};
-                    @else
-                        @{attr} float vTexClampT@{i};
-                    @end
-                @end
-            @end
         @end
+    @end
+
+    @if(o_textures[0] || o_textures[1])
+        uniform vec4 uTexClamp[2];
     @end
 
     @if(o_fog) @{attr} float vFogFactor;
@@ -262,11 +267,11 @@
                     vec2 vTexCoordAdj@{i} = vTexCoord@{i};
                 @else
                     @if(s && t)
-                        vec2 vTexCoordAdj@{i} = clamp(vTexCoord@{i}, 0.5 / texSize@{i}, vec2(vTexClampS@{i}, vTexClampT@{i}));
+                        vec2 vTexCoordAdj@{i} = clamp(vTexCoord@{i}, 0.5 / texSize@{i}, uTexClamp[@{i}].xy);
                     @elseif(s)
-                        vec2 vTexCoordAdj@{i} = vec2(clamp(vTexCoord@{i}.s, 0.5 / texSize@{i}.s, vTexClampS@{i}), vTexCoord@{i}.t);
+                        vec2 vTexCoordAdj@{i} = vec2(clamp(vTexCoord@{i}.s, 0.5 / texSize@{i}.s, uTexClamp[@{i}].x), vTexCoord@{i}.t);
                     @else
-                        vec2 vTexCoordAdj@{i} = vec2(vTexCoord@{i}.s, clamp(vTexCoord@{i}.t, 0.5 / texSize@{i}.t, vTexClampT@{i}));
+                        vec2 vTexCoordAdj@{i} = vec2(vTexCoord@{i}.s, clamp(vTexCoord@{i}.t, 0.5 / texSize@{i}.t, uTexClamp[@{i}].y));
                     @end
                 @end
 

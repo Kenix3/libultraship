@@ -16,6 +16,9 @@ struct DrawUniforms {
     float4 inputs[6];
     float4 fog_color;
     float4 grayscale_color;
+    float4 uv_transform[2];
+    float4 texture_clamp[2];
+    float4 fog_params;
 };
 
 @if(o_lighting || o_texgen)
@@ -45,21 +48,7 @@ struct Vertex {
         @if(o_textures[i])
             float2 texCoord@{i} [[attribute(@{get_vertex_index()})]];
             @{update_floats(2)}
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        float texClampS@{i} [[attribute(@{get_vertex_index()})]];
-                    @else
-                        float texClampT@{i} [[attribute(@{get_vertex_index()})]];
-                    @end
-                    @{update_floats(1)}
-                @end
-            @end
         @end
-    @end
-    @if(o_fog)
-        float fogFactor [[attribute(@{get_vertex_index()})]];
-        @{update_floats(1)}
     @end
     @if(o_shade || o_lighting)
         @if(o_alpha)
@@ -80,15 +69,6 @@ struct ProjectedVertex {
     @for(i in 0..2)
         @if(o_textures[i])
             float2 texCoord@{i};
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        float texClampS@{i};
-                    @else
-                        float texClampT@{i};
-                    @end
-                @end
-            @end
         @end
     @end
     @if(o_fog)
@@ -105,6 +85,7 @@ struct ProjectedVertex {
 };
 
 vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
+    , constant DrawUniforms& drawUniforms [[buffer(2)]]
 @if(o_lighting || o_texgen)
     , constant LightUniforms& lightUniforms [[buffer(1)]]
 @end
@@ -112,20 +93,27 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
     ProjectedVertex out;
     @for(i in 0..2)
         @if(o_textures[i])
-            out.texCoord@{i} = in.texCoord@{i};
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        out.texClampS@{i} = in.texClampS@{i};
-                    @else
-                        out.texClampT@{i} = in.texClampT@{i};
-                    @end
-                @end
-            @end
+            // Tile shift/origin/bilerp/size pipeline folded into one transform
+            out.texCoord@{i} = float2(in.texCoord@{i}.x * drawUniforms.uv_transform[@{i}].x + drawUniforms.uv_transform[@{i}].y,
+                                      in.texCoord@{i}.y * drawUniforms.uv_transform[@{i}].z + drawUniforms.uv_transform[@{i}].w);
         @end
     @end
     @if(o_fog)
-        out.fogFactor = in.fogFactor;
+        // N64 RSP fog from clip-space z/w (position.z was packed as (z+w)/2);
+        // fog_params.w selects the source (0: computed, 1: constant, 2: vertex alpha)
+        float fogZ = 2.0 * in.position.z - in.position.w;
+        float fogW = abs(in.position.w) < 0.001 ? 0.001 : in.position.w;
+        float fogWinv = 1.0 / fogW;
+        if (fogWinv < 0.0) {
+            fogWinv = 32767.0;
+        }
+        float fogCalc = clamp(fogZ * fogWinv * drawUniforms.fog_params.x + drawUniforms.fog_params.y, 0.0, 255.0) / 255.0;
+        @if(o_shade && o_alpha)
+            out.fogFactor = drawUniforms.fog_params.w > 1.5 ? in.shade.w
+                            : (drawUniforms.fog_params.w > 0.5 ? drawUniforms.fog_params.z : fogCalc);
+        @else
+            out.fogFactor = drawUniforms.fog_params.w > 0.5 ? drawUniforms.fog_params.z : fogCalc;
+        @end
     @end
     @if(o_texgen)
         // N64 texgen: project the vertex normal onto the lookat vectors, then
@@ -147,6 +135,15 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
         @if(o_textures[1])
             out.texCoord1 = float2(texgenDotX * lightUniforms.texgen_uv[1].x + lightUniforms.texgen_uv[1].y,
                                    texgenDotY * lightUniforms.texgen_uv[1].z + lightUniforms.texgen_uv[1].w);
+        @end
+    @end
+    @if(o_shade && o_alpha)
+        // Standard fog forces shade alpha to 1.0; blend-color mode preserves it
+        float shadeAlpha = in.shade.w;
+        @if(o_fog)
+            if (drawUniforms.fog_params.w < 0.5 || drawUniforms.fog_params.w > 1.5) {
+                shadeAlpha = 1.0;
+            }
         @end
     @end
     @if(o_shade)
@@ -181,12 +178,16 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
             }
             litColor = min(litColor, float3(1.0));
             @if(o_alpha)
-                out.shade = float4(litColor, in.shade.w);
+                out.shade = float4(litColor, shadeAlpha);
             @else
                 out.shade = litColor;
             @end
         @else
-            out.shade = in.shade;
+            @if(o_alpha)
+                out.shade = float4(in.shade.xyz, shadeAlpha);
+            @else
+                out.shade = in.shade;
+            @end
         @end
     @end
     out.position = in.position;
@@ -267,11 +268,11 @@ fragment FragOut fragmentShader(
                 float2 vTexCoordAdj@{i} = in.texCoord@{i};
             @else
                 @if(s && t)
-                    float2 vTexCoordAdj@{i} = fast::clamp(in.texCoord@{i}, float2(0.5) / texSize@{i}, float2(in.texClampS@{i}, in.texClampT@{i}));
+                    float2 vTexCoordAdj@{i} = fast::clamp(in.texCoord@{i}, float2(0.5) / texSize@{i}, drawUniforms.texture_clamp[@{i}].xy);
                 @elseif(s)
-                    float2 vTexCoordAdj@{i} = float2(fast::clamp(in.texCoord@{i}.x, 0.5 / texSize@{i}.x, in.texClampS@{i}), in.texCoord@{i}.y);
+                    float2 vTexCoordAdj@{i} = float2(fast::clamp(in.texCoord@{i}.x, 0.5 / texSize@{i}.x, drawUniforms.texture_clamp[@{i}].x), in.texCoord@{i}.y);
                 @else
-                    float2 vTexCoordAdj@{i} = float2(in.texCoord@{i}.x, fast::clamp(in.texCoord@{i}.y, 0.5 / texSize@{i}.y, in.texClampT@{i}));
+                    float2 vTexCoordAdj@{i} = float2(in.texCoord@{i}.x, fast::clamp(in.texCoord@{i}.y, 0.5 / texSize@{i}.y, drawUniforms.texture_clamp[@{i}].y));
                 @end
             @end
 

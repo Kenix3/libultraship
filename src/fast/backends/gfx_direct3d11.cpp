@@ -456,32 +456,10 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
             ied[ied_index++] = {
                 "TEXCOORD", i, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
             };
-            if (cc_features.clamp[i][0]) {
-                ied[ied_index++] = { "TEXCLAMPS",
-                                     i,
-                                     DXGI_FORMAT_R32_FLOAT,
-                                     0,
-                                     D3D11_APPEND_ALIGNED_ELEMENT,
-                                     D3D11_INPUT_PER_VERTEX_DATA,
-                                     0 };
-            }
-            if (cc_features.clamp[i][1]) {
-                ied[ied_index++] = { "TEXCLAMPT",
-                                     i,
-                                     DXGI_FORMAT_R32_FLOAT,
-                                     0,
-                                     D3D11_APPEND_ALIGNED_ELEMENT,
-                                     D3D11_INPUT_PER_VERTEX_DATA,
-                                     0 };
-            }
         }
     }
-    if (cc_features.opt_fog) {
-        // Only the fog factor varies per vertex; the fog color is a per-draw constant
-        ied[ied_index++] = {
-            "FOG", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
-        };
-    }
+    // Clamp bounds are per-draw constants and the fog factor is computed in the
+    // vertex shader, so neither is a vertex attribute anymore.
     if (cc_features.opt_shade || cc_features.opt_lighting) {
         DXGI_FORMAT format = cc_features.opt_alpha ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
         ied[ied_index++] = { "SHADE", 0, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
@@ -826,6 +804,9 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         memcpy(mPerDrawCbData.fog_color, mCombinerUniforms.fog_color, sizeof(mPerDrawCbData.fog_color));
         memcpy(mPerDrawCbData.grayscale_color, mCombinerUniforms.grayscale_color,
                sizeof(mPerDrawCbData.grayscale_color));
+        memcpy(mPerDrawCbData.uv_transform, mCombinerUniforms.uv_transform, sizeof(mPerDrawCbData.uv_transform));
+        memcpy(mPerDrawCbData.texture_clamp, mCombinerUniforms.texture_clamp, sizeof(mPerDrawCbData.texture_clamp));
+        memcpy(mPerDrawCbData.fog_params, mCombinerUniforms.fog_params, sizeof(mPerDrawCbData.fog_params));
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -902,7 +883,10 @@ void GfxRenderingAPIDX11::StartFrame() {
     ID3D11Buffer* buffers[3] = { mPerFrameCb.Get(), mPerDrawCb.Get(), mPerPrimDepthCb.Get() };
     mContext->PSSetConstantBuffers(0, 3, buffers);
 
-    // Lighting/texgen constant buffer for the vertex shader (b3)
+    // Vertex shader constant buffers: PerDrawCB (b1: UV transform, fog params)
+    // and the lighting/texgen buffer (b3)
+    ID3D11Buffer* vs_draw_buffers[1] = { mPerDrawCb.Get() };
+    mContext->VSSetConstantBuffers(1, 1, vs_draw_buffers);
     ID3D11Buffer* vs_buffers[1] = { mLightCb.Get() };
     mContext->VSSetConstantBuffers(3, 1, vs_buffers);
 

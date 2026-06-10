@@ -15,22 +15,12 @@ struct PSInput {
     @if(o_textures[i])
         float2 uv@{i} : TEXCOORD@{i};
         @{update_floats(2)}
-        @for(j in 0..2)
-            @if(o_clamp[i][j])
-                @if(j == 0)
-                    float texClampS@{i} : TEXCLAMPS@{i};
-                @else
-                    float texClampT@{i} : TEXCLAMPT@{i};
-                @end
-                @{update_floats(1)}
-            @end
-        @end
     @end
 @end
 
 @if(o_fog)
+// Interstage only: computed in the vertex shader, not a vertex attribute
 float fogFactor : FOG;
-@{update_floats(1)}
 @end
 
 @if(o_shade)
@@ -94,6 +84,9 @@ cbuffer PerDrawCB : register(b1) {
     float4 combiner_inputs[6];
     float4 fog_color;
     float4 grayscale_color;
+    float4 uv_transform[2];
+    float4 texture_clamp[2];
+    float4 fog_params;
 }
 
 // 3 point texture filtering
@@ -127,18 +120,6 @@ PSInput VSMain(
     @if(o_textures[i])
         , float2 uv@{i} : TEXCOORD@{i}
     @end
-    @for(j in 0..2)
-        @if(o_clamp[i][j])
-            @if(j == 0)
-                , float texClampS@{i} : TEXCLAMPS@{i}
-            @else
-                , float texClampT@{i} : TEXCLAMPT@{i}
-            @end
-        @end
-    @end
-@end
-@if(o_fog)
-    , float fogFactor : FOG
 @end
 @if(o_shade || o_lighting)
     @if(o_alpha)
@@ -155,21 +136,37 @@ PSInput VSMain(
     result.position = position;
     @for(i in 0..2)
         @if(o_textures[i])
-            result.uv@{i} = uv@{i};
-            @for(j in 0..2)
-                @if(o_clamp[i][j])
-                    @if(j == 0)
-                        result.texClampS@{i} = texClampS@{i};
-                    @else
-                        result.texClampT@{i} = texClampT@{i};
-                    @end
-                @end
-            @end
+            // Tile shift/origin/bilerp/size pipeline folded into one transform
+            result.uv@{i} = float2(uv@{i}.x * uv_transform[@{i}].x + uv_transform[@{i}].y,
+                                   uv@{i}.y * uv_transform[@{i}].z + uv_transform[@{i}].w);
         @end
     @end
 
     @if(o_fog)
-        result.fogFactor = fogFactor;
+        // N64 RSP fog from clip-space z/w (position.z was packed as (z+w)/2);
+        // fog_params.w selects the source (0: computed, 1: constant, 2: vertex alpha)
+        float fogZ = 2.0 * position.z - position.w;
+        float fogW = abs(position.w) < 0.001 ? 0.001 : position.w;
+        float fogWinv = 1.0 / fogW;
+        if (fogWinv < 0.0) {
+            fogWinv = 32767.0;
+        }
+        float fogCalc = clamp(fogZ * fogWinv * fog_params.x + fog_params.y, 0.0, 255.0) / 255.0;
+        @if(o_shade && o_alpha)
+            result.fogFactor = fog_params.w > 1.5 ? shade.a : (fog_params.w > 0.5 ? fog_params.z : fogCalc);
+        @else
+            result.fogFactor = fog_params.w > 0.5 ? fog_params.z : fogCalc;
+        @end
+    @end
+
+    @if(o_shade && o_alpha)
+        // Standard fog forces shade alpha to 1.0; blend-color mode preserves it
+        float shadeAlpha = shade.a;
+        @if(o_fog)
+            if (fog_params.w < 0.5 || fog_params.w > 1.5) {
+                shadeAlpha = 1.0;
+            }
+        @end
     @end
 
     @if(o_texgen)
@@ -225,12 +222,16 @@ PSInput VSMain(
             }
             litColor = min(litColor, float3(1.0, 1.0, 1.0));
             @if(o_alpha)
-                result.shade = float4(litColor, shade.a);
+                result.shade = float4(litColor, shadeAlpha);
             @else
                 result.shade = litColor;
             @end
         @else
-            result.shade = shade;
+            @if(o_alpha)
+                result.shade = float4(shade.rgb, shadeAlpha);
+            @else
+                result.shade = shade;
+            @end
         @end
     @end
 
@@ -273,11 +274,11 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
                 int2 texSize@{i};
                 g_texture@{i}.GetDimensions(texSize@{i}.x, texSize@{i}.y);
                 @if(s && t)
-                    tc@{i} = clamp(tc@{i}, 0.5 / texSize@{i}, float2(input.texClampS@{i}, input.texClampT@{i}));
+                    tc@{i} = clamp(tc@{i}, 0.5 / texSize@{i}, texture_clamp[@{i}].xy);
                 @elseif(s)
-                    tc@{i} = float2(clamp(tc@{i}.x, 0.5 / texSize@{i}.x, input.texClampS@{i}), tc@{i}.y);
+                    tc@{i} = float2(clamp(tc@{i}.x, 0.5 / texSize@{i}.x, texture_clamp[@{i}].x), tc@{i}.y);
                 @else
-                    tc@{i} = float2(tc@{i}.x, clamp(tc@{i}.y, 0.5 / texSize@{i}.y, input.texClampT@{i}));
+                    tc@{i} = float2(tc@{i}.x, clamp(tc@{i}.y, 0.5 / texSize@{i}.y, texture_clamp[@{i}].y));
                 @end
             @end
 

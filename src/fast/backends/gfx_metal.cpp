@@ -614,11 +614,25 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         mDrawUniforms.grayscale_color =
             simd::float4{ mCombinerUniforms.grayscale_color[0], mCombinerUniforms.grayscale_color[1],
                           mCombinerUniforms.grayscale_color[2], mCombinerUniforms.grayscale_color[3] };
+        for (int i = 0; i < 2; i++) {
+            mDrawUniforms.uv_transform[i] =
+                simd::float4{ mCombinerUniforms.uv_transform[i][0], mCombinerUniforms.uv_transform[i][1],
+                              mCombinerUniforms.uv_transform[i][2], mCombinerUniforms.uv_transform[i][3] };
+            mDrawUniforms.texture_clamp[i] =
+                simd::float4{ mCombinerUniforms.texture_clamp[i][0], mCombinerUniforms.texture_clamp[i][1],
+                              mCombinerUniforms.texture_clamp[i][2], mCombinerUniforms.texture_clamp[i][3] };
+        }
+        mDrawUniforms.fog_params = simd::float4{ mCombinerUniforms.fog_params[0], mCombinerUniforms.fog_params[1],
+                                                 mCombinerUniforms.fog_params[2], mCombinerUniforms.fog_params[3] };
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
         mLodMaxDirty = false;
         mCombinerUniformsDirty = false;
     }
+
+    // The vertex shader reads the same DrawUniforms (UV transform, fog params);
+    // setVertexBytes is per-encoder state, so re-send every draw.
+    current_framebuffer.mCommandEncoder->setVertexBytes(&mDrawUniforms, sizeof(DrawUniforms), 2);
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {
         current_framebuffer.mLastShaderProgram = mShaderProgram;

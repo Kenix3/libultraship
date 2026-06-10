@@ -151,6 +151,9 @@ struct DrawUniforms {
     simd::float4 inputs[6];
     simd::float4 fog_color;
     simd::float4 grayscale_color;
+    simd::float4 uv_transform[2];
+    simd::float4 texture_clamp[2];
+    simd::float4 fog_params;
 };
 
 /** @brief Buffer payload used for batched pixel-depth coordinate queries. */

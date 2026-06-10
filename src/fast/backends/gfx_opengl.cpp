@@ -85,6 +85,15 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     if (mCurrentShaderProgram->grayscale_color_location >= 0) {
         glUniform4fv(mCurrentShaderProgram->grayscale_color_location, 1, mCombinerUniforms.grayscale_color);
     }
+    if (mCurrentShaderProgram->uv_transform_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->uv_transform_location, 2, &mCombinerUniforms.uv_transform[0][0]);
+    }
+    if (mCurrentShaderProgram->tex_clamp_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->tex_clamp_location, 2, &mCombinerUniforms.texture_clamp[0][0]);
+    }
+    if (mCurrentShaderProgram->fog_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->fog_params_location, 1, mCombinerUniforms.fog_params);
+    }
 
     // Lighting/texgen uniforms (vertex shader)
     if (mCurrentShaderProgram->lights_location >= 0) {
@@ -528,22 +537,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
             prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
             prg->attribSizes[cnt] = 2;
             ++cnt;
-
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    snprintf(name, sizeof(name), "aTexClamp%s%d", j == 0 ? "S" : "T", i);
-                    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
-                    prg->attribSizes[cnt] = 1;
-                    ++cnt;
-                }
-            }
         }
-    }
-
-    if (cc_features.opt_fog) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aFogFactor");
-        prg->attribSizes[cnt] = 1;
-        ++cnt;
     }
 
     if (cc_features.opt_shade || cc_features.opt_lighting) {
@@ -587,6 +581,9 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->lookat_y_location = glGetUniformLocation(shader_program, "uLookatY");
     prg->texgen0_location = glGetUniformLocation(shader_program, "uTexgen0");
     prg->texgen1_location = glGetUniformLocation(shader_program, "uTexgen1");
+    prg->uv_transform_location = glGetUniformLocation(shader_program, "uUvTransform");
+    prg->tex_clamp_location = glGetUniformLocation(shader_program, "uTexClamp");
+    prg->fog_params_location = glGetUniformLocation(shader_program, "uFogParams");
 
     LoadShader(prg);
 

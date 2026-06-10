@@ -63,6 +63,9 @@ struct ShaderProgram {
     GLint lookat_y_location;
     GLint texgen0_location;
     GLint texgen1_location;
+    GLint uv_transform_location;
+    GLint tex_clamp_location;
+    GLint fog_params_location;
 };
 
 /**

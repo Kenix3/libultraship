@@ -169,6 +169,11 @@ void Interpreter::LatchCombinerUniforms() {
     u.grayscale_color[2] = mRdp->grayscale_color.b / 255.0f;
     u.grayscale_color[3] = mRdp->grayscale_color.a / 255.0f; // lerp factor
 
+    // Vertex-pipeline constants latched in GfxSpTri1 for the pending batch
+    memcpy(u.uv_transform, mUvTransform, sizeof(u.uv_transform));
+    memcpy(u.texture_clamp, mTextureClamp, sizeof(u.texture_clamp));
+    memcpy(u.fog_params, mFogParams, sizeof(u.fog_params));
+
     for (int j = 0; j < 6; j++) {
         for (int k = 0; k < 2; k++) {
             RGBA* color;
@@ -2087,23 +2092,9 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         d->z = z;
         d->w = w;
 
-        if (mRsp->geometry_mode & G_FOG) {
-            if (fabsf(w) < 0.001f) {
-                // To avoid division by zero
-                w = 0.001f;
-            }
-
-            float winv = 1.0f / w;
-            if (winv < 0.0f) {
-                winv = std::numeric_limits<int16_t>::max();
-            }
-
-            float fog_z = z * winv * mRsp->fog_mul + mRsp->fog_offset;
-            fog_z = Ship::Math::clamp(fog_z, 0.0f, 255.0f);
-            d->color.a = fog_z; // Use alpha variable to store fog factor
-        } else {
-            d->color.a = v->cn[3];
-        }
+        // The fog factor is computed in the vertex shader (from clip-space z/w and
+        // the fog_mul/fog_offset uniforms); the alpha slot keeps the vertex alpha.
+        d->color.a = v->cn[3];
     }
 }
 
@@ -2599,6 +2590,67 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         mRapi->SetLightingUniforms(lu);
     }
 
+    // Per-draw vertex-pipeline constants: the UV tile transform and clamp bounds
+    // are folded into uniforms (the vertex shader applies uv = raw * scale +
+    // offset), and the fog factor source is selected here. A change mid-batch
+    // flushes the queued triangles, same as the other uniform latches.
+    {
+        float uvTransform[2][4] = {};
+        float texClamp[2][4] = {};
+        const bool bilerp_half = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
+        for (int t = 0; t < 2; t++) {
+            if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
+                uvTransform[t][0] = uvTransform[t][2] = 1.0f;
+                continue;
+            }
+            uint32_t uv_tile = effective_tile[t];
+            float scale[2] = { 1.0f, 1.0f };
+            const int shift_amount[2] = { mRdp->texture_tile[uv_tile].shifts, mRdp->texture_tile[uv_tile].shiftt };
+            for (int axis = 0; axis < 2; axis++) {
+                if (shift_amount[axis] != 0) {
+                    if (shift_amount[axis] <= 10) {
+                        scale[axis] /= (float)(1 << shift_amount[axis]);
+                    } else {
+                        scale[axis] *= (float)(1 << (16 - shift_amount[axis]));
+                    }
+                }
+            }
+            const float half = bilerp_half ? 0.5f : 0.0f;
+            uvTransform[t][0] = scale[0] / (float)tex_width[t];
+            uvTransform[t][1] = (half - mRdp->texture_tile[uv_tile].uls / 4.0f) / (float)tex_width[t];
+            uvTransform[t][2] = scale[1] / (float)tex_height[t];
+            uvTransform[t][3] = (half - mRdp->texture_tile[uv_tile].ult / 4.0f) / (float)tex_height[t];
+            texClamp[t][0] = (tex_width2[t] - 0.5f) / (float)tex_width[t];
+            texClamp[t][1] = (tex_height2[t] - 0.5f) / (float)tex_height[t];
+        }
+
+        float fogParams[4] = {};
+        if (use_fog) {
+            if (use_blend_color) {
+                // Shroud/blend mode: constant factor from the fog alpha register
+                fogParams[2] = mRdp->fog_color.a / 255.0f;
+                fogParams[3] = 1.0f;
+            } else if (mRsp->geometry_mode & G_FOG) {
+                // Computed in the vertex shader from clip-space z/w
+                fogParams[0] = (float)mRsp->fog_mul;
+                fogParams[1] = (float)mRsp->fog_offset;
+                fogParams[3] = 0.0f;
+            } else {
+                // Fog blender without G_FOG: legacy behavior used the vertex alpha
+                fogParams[3] = 2.0f;
+            }
+        }
+
+        if (memcmp(uvTransform, mUvTransform, sizeof(uvTransform)) != 0 ||
+            memcmp(texClamp, mTextureClamp, sizeof(texClamp)) != 0 ||
+            memcmp(fogParams, mFogParams, sizeof(fogParams)) != 0) {
+            Flush();
+            memcpy(mUvTransform, uvTransform, sizeof(uvTransform));
+            memcpy(mTextureClamp, texClamp, sizeof(texClamp));
+            memcpy(mFogParams, fogParams, sizeof(fogParams));
+        }
+    }
+
     struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
 
     for (int i = 0; i < 3; i++) {
@@ -2612,64 +2664,19 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         mBufVbo[mBufVboLen++] = z;
         mBufVbo[mBufVboLen++] = w;
 
+        // Raw RSP texture coordinates: the tile shift/origin/bilerp/size pipeline
+        // runs in the vertex shader via the per-draw uv_transform uniforms, and
+        // the clamp bounds are uniforms too.
         for (int t = 0; t < 2; t++) {
             if (!usedTextures[t]) {
                 continue;
             }
-            float u = v_arr[i]->u / 32.0f;
-            float v = v_arr[i]->v / 32.0f;
-
-            uint32_t uv_tile = effective_tile[t];
-            int shifts = mRdp->texture_tile[uv_tile].shifts;
-            int shiftt = mRdp->texture_tile[uv_tile].shiftt;
-            if (shifts != 0) {
-                if (shifts <= 10) {
-                    u /= 1 << shifts;
-                } else {
-                    u *= 1 << (16 - shifts);
-                }
-            }
-            if (shiftt != 0) {
-                if (shiftt <= 10) {
-                    v /= 1 << shiftt;
-                } else {
-                    v *= 1 << (16 - shiftt);
-                }
-            }
-
-            u -= mRdp->texture_tile[uv_tile].uls / 4.0f;
-            v -= mRdp->texture_tile[uv_tile].ult / 4.0f;
-
-            if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
-                // Linear filter adds 0.5f to the coordinates
-                if (!is_rect) {
-                    u += 0.5f;
-                    v += 0.5f;
-                }
-            }
-
-            mBufVbo[mBufVboLen++] = u / tex_width[t];
-            mBufVbo[mBufVboLen++] = v / tex_height[t];
-
-            bool clampS = tm & (1 << 2 * t);
-            bool clampT = tm & (1 << 2 * t + 1);
-
-            if (clampS) {
-                mBufVbo[mBufVboLen++] = (tex_width2[t] - 0.5f) / tex_width[t];
-            }
-
-            if (clampT) {
-                mBufVbo[mBufVboLen++] = (tex_height2[t] - 0.5f) / tex_height[t];
-            }
+            mBufVbo[mBufVboLen++] = v_arr[i]->u / 32.0f;
+            mBufVbo[mBufVboLen++] = v_arr[i]->v / 32.0f;
         }
 
-        if (use_fog) {
-            // Fog/blend color is a per-draw uniform now; only the factor is
-            // per-vertex. In blend-color (shroud) mode the factor is the constant
-            // fog alpha; otherwise it's the RSP-computed fog value.
-            mBufVbo[mBufVboLen++] =
-                use_blend_color ? mRdp->fog_color.a / 255.0f : v_arr[i]->color.a / 255.0f;
-        }
+        // The fog factor is derived in the vertex shader (fog_params uniform);
+        // nothing fog-related is packed per vertex anymore.
 
         // Grayscale color and all constant combiner inputs (prim, env, keys, K4/K5,
         // prim LOD fraction) are per-draw uniforms latched in LatchCombinerUniforms.
@@ -2688,13 +2695,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 mBufVbo[mBufVboLen++] = v_arr[i]->color.b / 255.0f;
             }
             if (use_alpha) {
-                if (use_fog && !use_blend_color) {
-                    // Shade alpha is 100% for standard fog (the vertex alpha slot
-                    // holds the fog factor); blend color mode preserves it.
-                    mBufVbo[mBufVboLen++] = 1.0f;
-                } else {
-                    mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f;
-                }
+                // Raw vertex alpha; the standard-fog "shade alpha = 1.0" override
+                // is applied in the vertex shader based on the fog mode.
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f;
             }
         }
 

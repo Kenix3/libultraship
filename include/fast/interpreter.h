@@ -588,6 +588,12 @@ class Interpreter {
     // Last lighting/texgen uniforms handed to the backend; a change mid-batch
     // forces a flush so queued triangles keep their values.
     LightingUniforms mLatchedLighting{};
+    // Per-draw vertex-pipeline constants (UV transform, clamp bounds, fog factor
+    // source), latched in GfxSpTri1 with the same flush-on-change rule and copied
+    // into the combiner uniforms at flush time.
+    float mUvTransform[2][4]{};
+    float mTextureClamp[2][4]{};
+    float mFogParams[4]{};
     uint8_t* mTexUploadBuffer = nullptr;
 
     GfxDimensions mGfxCurrentWindowDimensions{}; // gfx_current_window_dimensions;

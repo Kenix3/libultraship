@@ -24,6 +24,15 @@ struct CombinerUniforms {
     float inputs[6][4];
     float fog_color[4];       // rgb = fog (or blend) color; a unused
     float grayscale_color[4]; // rgb = target color, a = lerp factor
+    // Per texture: (scaleS, offsetS, scaleT, offsetT). The vertex shader maps raw
+    // RSP texture coordinates to final UVs with uv = raw * scale + offset (the
+    // whole tile shift/origin/bilerp/size pipeline folded into one transform).
+    float uv_transform[2][4];
+    // Per texture: (clampS bound, clampT bound, unused, unused) in final UV space
+    float texture_clamp[2][4];
+    // Fog factor source: x = fog_mul, y = fog_offset, z = constant factor,
+    // w = mode (0: compute from z/w, 1: constant z, 2: vertex alpha)
+    float fog_params[4];
 };
 
 constexpr int GFX_MAX_GPU_LIGHTS = 32;
