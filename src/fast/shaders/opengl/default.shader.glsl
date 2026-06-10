@@ -26,27 +26,46 @@
     @end
 
     @if(o_fog)
-        @{attr} vec4 aFog;
-        @{out} vec4 vFog;
-        @{update_floats(4)}
+        @{attr} float aFogFactor;
+        @{out} float vFogFactor;
+        @{update_floats(1)}
     @end
 
-    @if(o_grayscale)
-        @{attr} vec4 aGrayscaleColor;
-        @{out} vec4 vGrayscaleColor;
-        @{update_floats(4)}
-    @end
-
-    @for(i in 0..o_inputs)
+    @if(o_shade || o_lighting)
         @if(o_alpha)
-            @{attr} vec4 aInput@{i + 1};
-            @{out} vec4 vInput@{i + 1};
+            @{attr} vec4 aShade;
             @{update_floats(4)}
         @else
-            @{attr} vec3 aInput@{i + 1};
-            @{out} vec3 vInput@{i + 1};
+            @{attr} vec3 aShade;
             @{update_floats(3)}
         @end
+    @end
+    @if(o_shade)
+        @if(o_alpha)
+            @{out} vec4 vShade;
+        @else
+            @{out} vec3 vShade;
+        @end
+    @end
+
+    @if(o_point_lighting)
+        @{attr} vec3 aWorldPos;
+        @{update_floats(3)}
+    @end
+
+    @if(o_lighting)
+        uniform vec4 uAmbient;
+        uniform int uNumLights;
+        uniform vec4 uLights[96];
+        @if(o_point_lighting)
+            uniform vec4 uMvRows[3];
+        @end
+    @end
+    @if(o_texgen)
+        uniform vec4 uLookatX;
+        uniform vec4 uLookatY;
+        @if(o_textures[0]) uniform vec4 uTexgen0;
+        @if(o_textures[1]) uniform vec4 uTexgen1;
     @end
 
     void main() {
@@ -65,13 +84,64 @@
             @end
         @end
         @if(o_fog)
-            vFog = aFog;
+            vFogFactor = aFogFactor;
         @end
-        @if(o_grayscale)
-            vGrayscaleColor = aGrayscaleColor;
+        @if(o_texgen)
+            // N64 texgen: project the vertex normal onto the lookat vectors, then
+            // run the result through the standard tile/scale UV pipeline (folded
+            // into the per-draw uTexgen linear transforms).
+            float texgenDotX = clamp(dot(aShade.xyz, uLookatX.xyz) / 127.0, -1.0, 1.0);
+            float texgenDotY = clamp(dot(aShade.xyz, uLookatY.xyz) / 127.0, -1.0, 1.0);
+            @if(o_texgen_linear)
+                texgenDotX = acos(-texgenDotX) * 0.159155;
+                texgenDotY = acos(-texgenDotY) * 0.159155;
+            @else
+                texgenDotX = (texgenDotX + 1.0) / 4.0;
+                texgenDotY = (texgenDotY + 1.0) / 4.0;
+            @end
+            @if(o_textures[0])
+                vTexCoord0 = vec2(texgenDotX * uTexgen0.x + uTexgen0.y, texgenDotY * uTexgen0.z + uTexgen0.w);
+            @end
+            @if(o_textures[1])
+                vTexCoord1 = vec2(texgenDotX * uTexgen1.x + uTexgen1.y, texgenDotY * uTexgen1.z + uTexgen1.w);
+            @end
         @end
-        @for(i in 0..o_inputs)
-            vInput@{i + 1} = aInput@{i + 1};
+        @if(o_shade)
+            @if(o_lighting)
+                // N64 RSP lighting: aShade carries the raw signed vertex normal
+                vec3 litColor = uAmbient.rgb;
+                for (int i = 0; i < uNumLights; i++) {
+                    float intensity = 0.0;
+                    @if(o_point_lighting)
+                    if (uLights[i * 3].w > 0.5) {
+                        vec3 distVec = uLights[i * 3 + 2].xyz - aWorldPos;
+                        float distSq = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z * 2.0;
+                        float dist = sqrt(distSq);
+                        vec3 lightModel = vec3(dot(distVec, uMvRows[0].xyz), dot(distVec, uMvRows[1].xyz), dot(distVec, uMvRows[2].xyz));
+                        vec3 lightIntensity = clamp(4.0 * lightModel / distSq, -1.0, 1.0);
+                        float totalIntensity = clamp(dot(lightIntensity, aShade.xyz), -1.0, 1.0);
+                        float distF = floor(dist);
+                        float attenuation = (distF * uLights[i * 3 + 1].w * 2.0 + distF * distF * uLights[i * 3 + 2].w / 8.0) / 65535.0 + 1.0;
+                        intensity = totalIntensity / attenuation;
+                    } else {
+                        intensity = dot(aShade.xyz, uLights[i * 3 + 1].xyz) / 127.0;
+                    }
+                    @else
+                        intensity = dot(aShade.xyz, uLights[i * 3 + 1].xyz) / 127.0;
+                    @end
+                    if (intensity > 0.0) {
+                        litColor += intensity * uLights[i * 3].rgb;
+                    }
+                }
+                litColor = min(litColor, vec3(1.0));
+                @if(o_alpha)
+                    vShade = vec4(litColor, aShade.a);
+                @else
+                    vShade = litColor;
+                @end
+            @else
+                vShade = aShade;
+            @end
         @end
         gl_Position = aVtxPos;
         @if(opengles)
@@ -98,15 +168,24 @@
         @end
     @end
 
-    @if(o_fog) @{attr} vec4 vFog;
-    @if(o_grayscale) @{attr} vec4 vGrayscaleColor;
+    @if(o_fog) @{attr} float vFogFactor;
 
-    @for(i in 0..o_inputs)
+    @if(o_shade)
         @if(o_alpha)
-            @{attr} vec4 vInput@{i + 1};
+            @{attr} vec4 vShade;
         @else
-            @{attr} vec3 vInput@{i + 1};
+            @{attr} vec3 vShade;
         @end
+    @end
+
+    @if(o_inputs)
+        uniform vec4 uInputs[@{o_inputs}];
+    @end
+    @if(o_fog)
+        uniform vec4 uFogColor;
+    @end
+    @if(o_grayscale)
+        uniform vec4 uGrayscaleColor;
     @end
 
     @if(o_textures[0]) uniform sampler2D uTex0;
@@ -286,9 +365,9 @@
         // TODO discard if alpha is 0?
         @if(o_fog)
             @if(o_alpha)
-                texel = vec4(mix(texel.rgb, vFog.rgb, vFog.a), texel.a);
+                texel = vec4(mix(texel.rgb, uFogColor.rgb, vFogFactor), texel.a);
             @else
-                texel = mix(texel, vFog.rgb, vFog.a);
+                texel = mix(texel, uFogColor.rgb, vFogFactor);
             @end
         @end
 
@@ -302,8 +381,8 @@
 
         @if(o_grayscale)
             float intensity = (texel.r + texel.g + texel.b) / 3.0;
-            vec3 new_texel = vGrayscaleColor.rgb * intensity;
-            texel.rgb = mix(texel.rgb, new_texel, vGrayscaleColor.a);
+            vec3 new_texel = uGrayscaleColor.rgb * intensity;
+            texel.rgb = mix(texel.rgb, new_texel, uGrayscaleColor.a);
         @end
 
         @if(o_alpha)

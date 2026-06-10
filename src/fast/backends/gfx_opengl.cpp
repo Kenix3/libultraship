@@ -74,6 +74,41 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     glUniform1f(mCurrentShaderProgram->prim_depth_location, mCurrentPrimDepth);
     glUniform1f(mCurrentShaderProgram->lod_max_location, mCurrentMaxLod);
 
+    // Combiner constants (uniform state is per-program in GL, so upload each draw)
+    if (mCurrentShaderProgram->combiner_inputs_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->combiner_inputs_location, mCurrentShaderProgram->numInputs,
+                     &mCombinerUniforms.inputs[0][0]);
+    }
+    if (mCurrentShaderProgram->fog_color_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->fog_color_location, 1, mCombinerUniforms.fog_color);
+    }
+    if (mCurrentShaderProgram->grayscale_color_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->grayscale_color_location, 1, mCombinerUniforms.grayscale_color);
+    }
+
+    // Lighting/texgen uniforms (vertex shader)
+    if (mCurrentShaderProgram->lights_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->ambient_location, 1, mLightingUniforms.ambient);
+        glUniform1i(mCurrentShaderProgram->num_lights_location, mLightingUniforms.num_lights);
+        if (mLightingUniforms.num_lights > 0) {
+            glUniform4fv(mCurrentShaderProgram->lights_location, mLightingUniforms.num_lights * 3,
+                         &mLightingUniforms.lights[0][0][0]);
+        }
+        if (mCurrentShaderProgram->mv_rows_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->mv_rows_location, 3, &mLightingUniforms.mv_rows[0][0]);
+        }
+    }
+    if (mCurrentShaderProgram->lookat_x_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->lookat_x_location, 1, mLightingUniforms.lookat_x);
+        glUniform4fv(mCurrentShaderProgram->lookat_y_location, 1, mLightingUniforms.lookat_y);
+        if (mCurrentShaderProgram->texgen0_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->texgen0_location, 1, mLightingUniforms.texgen[0]);
+        }
+        if (mCurrentShaderProgram->texgen1_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->texgen1_location, 1, mLightingUniforms.texgen[1]);
+        }
+    }
+
     if (mCurrentShaderProgram->usedTextures[0] || mCurrentShaderProgram->usedTextures[1]) {
         GLint filtering[2] = { textures[mCurrentTextureIds[0]].filtering, textures[mCurrentTextureIds[1]].filtering };
         glUniform1iv(mCurrentShaderProgram->texture_filtering_location, 2, filtering);
@@ -119,13 +154,20 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_1:
                 return with_alpha ? "vec4(1.0, 1.0, 1.0, 1.0)" : "vec3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
-                return with_alpha || !inputs_have_alpha ? "vInput1" : "vInput1.rgb";
+                return with_alpha ? "uInputs[0]" : "uInputs[0].rgb";
             case SHADER_INPUT_2:
-                return with_alpha || !inputs_have_alpha ? "vInput2" : "vInput2.rgb";
+                return with_alpha ? "uInputs[1]" : "uInputs[1].rgb";
             case SHADER_INPUT_3:
-                return with_alpha || !inputs_have_alpha ? "vInput3" : "vInput3.rgb";
+                return with_alpha ? "uInputs[2]" : "uInputs[2].rgb";
             case SHADER_INPUT_4:
-                return with_alpha || !inputs_have_alpha ? "vInput4" : "vInput4.rgb";
+                return with_alpha ? "uInputs[3]" : "uInputs[3].rgb";
+            case SHADER_INPUT_5:
+                return with_alpha ? "uInputs[4]" : "uInputs[4].rgb";
+            case SHADER_INPUT_6:
+                return with_alpha ? "uInputs[5]" : "uInputs[5].rgb";
+            case SHADER_INPUT_7:
+                // Per-vertex shade color
+                return with_alpha || !inputs_have_alpha ? "vShade" : "vShade.rgb";
             case SHADER_TEXEL0:
                 return first_cycle ? (with_alpha ? "texVal0" : "texVal0.rgb")
                                    : (with_alpha ? "texVal1" : "texVal1.rgb");
@@ -165,13 +207,19 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_1:
                 return "1.0";
             case SHADER_INPUT_1:
-                return "vInput1.a";
+                return "uInputs[0].a";
             case SHADER_INPUT_2:
-                return "vInput2.a";
+                return "uInputs[1].a";
             case SHADER_INPUT_3:
-                return "vInput3.a";
+                return "uInputs[2].a";
             case SHADER_INPUT_4:
-                return "vInput4.a";
+                return "uInputs[3].a";
+            case SHADER_INPUT_5:
+                return "uInputs[4].a";
+            case SHADER_INPUT_6:
+                return "uInputs[5].a";
+            case SHADER_INPUT_7:
+                return "vShade.a";
             case SHADER_TEXEL0:
                 return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL0A:
@@ -267,6 +315,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "o_prim_depth", cc_features.opt_prim_depth },
         { "o_mip_lod", cc_features.opt_mip_lod },
         { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
+        { "o_shade", cc_features.opt_shade },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
@@ -366,6 +415,11 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
                                      { "o_grayscale", cc_features.opt_grayscale },
                                      { "o_alpha", cc_features.opt_alpha },
                                      { "o_inputs", cc_features.numInputs },
+                                     { "o_shade", cc_features.opt_shade },
+                                     { "o_lighting", cc_features.opt_lighting },
+                                     { "o_point_lighting", cc_features.opt_point_lighting },
+                                     { "o_texgen", cc_features.opt_texgen },
+                                     { "o_texgen_linear", cc_features.opt_texgen_linear },
                                      { "update_floats", (InvokeFunc)UpdateFloats },
 #ifdef __APPLE__
                                      { "GLSL_VERSION", "#version 410 core" },
@@ -487,22 +541,20 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     }
 
     if (cc_features.opt_fog) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aFog");
-        prg->attribSizes[cnt] = 4;
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aFogFactor");
+        prg->attribSizes[cnt] = 1;
         ++cnt;
     }
 
-    if (cc_features.opt_grayscale) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aGrayscaleColor");
-        prg->attribSizes[cnt] = 4;
-        ++cnt;
-    }
-
-    for (int i = 0; i < cc_features.numInputs; i++) {
-        char name[16];
-        snprintf(name, sizeof(name), "aInput%d", i + 1);
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
+    if (cc_features.opt_shade || cc_features.opt_lighting) {
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aShade");
         prg->attribSizes[cnt] = cc_features.opt_alpha ? 4 : 3;
+        ++cnt;
+    }
+
+    if (cc_features.opt_point_lighting) {
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aWorldPos");
+        prg->attribSizes[cnt] = 3;
         ++cnt;
     }
 
@@ -524,6 +576,17 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->texture_height_location = glGetUniformLocation(shader_program, "texture_height");
     prg->texture_filtering_location = glGetUniformLocation(shader_program, "texture_filtering");
     prg->lod_max_location = glGetUniformLocation(shader_program, "lod_max");
+    prg->combiner_inputs_location = glGetUniformLocation(shader_program, "uInputs");
+    prg->fog_color_location = glGetUniformLocation(shader_program, "uFogColor");
+    prg->grayscale_color_location = glGetUniformLocation(shader_program, "uGrayscaleColor");
+    prg->ambient_location = glGetUniformLocation(shader_program, "uAmbient");
+    prg->num_lights_location = glGetUniformLocation(shader_program, "uNumLights");
+    prg->lights_location = glGetUniformLocation(shader_program, "uLights");
+    prg->mv_rows_location = glGetUniformLocation(shader_program, "uMvRows");
+    prg->lookat_x_location = glGetUniformLocation(shader_program, "uLookatX");
+    prg->lookat_y_location = glGetUniformLocation(shader_program, "uLookatY");
+    prg->texgen0_location = glGetUniformLocation(shader_program, "uTexgen0");
+    prg->texgen1_location = glGetUniformLocation(shader_program, "uTexgen1");
 
     LoadShader(prg);
 
@@ -618,6 +681,9 @@ void GfxRenderingAPIOGL::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t wi
         info.height = height;
         info.mip_levels = totalLevels;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (GLint)totalLevels - 1);
+        // Make the min filter mip-aware immediately; SetSamplerParameters may not
+        // run again when the wrap/filter state happens to match its defaults.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     }
 }
 

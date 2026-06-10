@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <cstring>
 
 #include <unordered_map>
 #include <set>
@@ -15,6 +16,34 @@ struct GfxClipParameters {
 };
 
 enum FilteringMode { FILTER_THREE_POINT, FILTER_LINEAR, FILTER_NONE };
+
+// Per-draw color-combiner constants, latched at flush time. The combiner
+// formula runs on the GPU; these are the RDP register operands it reads.
+// inputs[] is filled according to the combiner's shader_input_mapping.
+struct CombinerUniforms {
+    float inputs[6][4];
+    float fog_color[4];       // rgb = fog (or blend) color; a unused
+    float grayscale_color[4]; // rgb = target color, a = lerp factor
+};
+
+constexpr int GFX_MAX_GPU_LIGHTS = 32;
+
+// Per-draw lighting/texgen state, consumed by the vertex shader when the
+// LIGHTING/TEXGEN shader options are active. Layout is mirrored in the shader
+// templates; keep the two in sync.
+struct LightingUniforms {
+    // Per light: [0] = rgb color (0..1) + w = 1.0 for point lights, 0.0 directional;
+    //            [1] = model-space direction coefficients + w = kc (linear atten);
+    //            [2] = world-space position + w = kq (quadratic atten)
+    float lights[GFX_MAX_GPU_LIGHTS][3][4];
+    float ambient[4];     // rgb ambient light (0..1)
+    float lookat_x[4];    // model-space lookat coefficients for texgen
+    float lookat_y[4];
+    float texgen[2][4];   // per texture: (scaleS, offsetS, scaleT, offsetT)
+    float mv_rows[3][4];  // top modelview rows for point lighting transpose-multiply
+    int32_t num_lights;   // excluding ambient
+    int32_t padding[3];
+};
 
 // A hash function used to hash a: pair<float, float>
 struct hash_pair_ff {
@@ -94,6 +123,20 @@ class GfxRenderingAPI {
     virtual void SetCurrentMaxLod(float maxLod) {
         mCurrentMaxLod = maxLod;
     }
+    // Combiner constants for the next DrawTriangles call.
+    virtual void SetCombinerUniforms(const CombinerUniforms& uniforms) {
+        if (memcmp(&uniforms, &mCombinerUniforms, sizeof(CombinerUniforms)) != 0) {
+            mCombinerUniforms = uniforms;
+            mCombinerUniformsDirty = true;
+        }
+    }
+    // Lighting/texgen state for the next DrawTriangles call (vertex shader).
+    virtual void SetLightingUniforms(const LightingUniforms& uniforms) {
+        if (memcmp(&uniforms, &mLightingUniforms, sizeof(LightingUniforms)) != 0) {
+            mLightingUniforms = uniforms;
+            mLightingUniformsDirty = true;
+        }
+    }
 
   protected:
     int8_t mCurrentDepthTest = 0;
@@ -108,5 +151,9 @@ class GfxRenderingAPI {
     float mCurrentPrimDepth = 0.0f;
     bool mPrimDepthDirty = true;
     float mCurrentMaxLod = 0.0f;
+    CombinerUniforms mCombinerUniforms = {};
+    bool mCombinerUniformsDirty = true;
+    LightingUniforms mLightingUniforms = {};
+    bool mLightingUniformsDirty = true;
 };
 } // namespace Fast

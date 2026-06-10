@@ -302,6 +302,12 @@ void GfxRenderingAPIDX11::Init() {
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerPrimDepthCb.GetAddressOf()),
                   mWindowBackend->GetWindowHandle(), "Failed to create per-prim-depth constant buffer.");
 
+    // Create lighting/texgen constant buffer (vertex shader)
+
+    constant_buffer_desc.ByteWidth = sizeof(LightingUniforms);
+    ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mLightCb.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to create lighting constant buffer.");
+
     // Create compute shader that can be used to retrieve depth buffer values
 
     const char* shader_source = R"(
@@ -471,22 +477,18 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
         }
     }
     if (cc_features.opt_fog) {
+        // Only the fog factor varies per vertex; the fog color is a per-draw constant
         ied[ied_index++] = {
-            "FOG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
+            "FOG", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
         };
     }
-    if (cc_features.opt_grayscale) {
-        ied[ied_index++] = { "GRAYSCALE",
-                             0,
-                             DXGI_FORMAT_R32G32B32A32_FLOAT,
-                             0,
-                             D3D11_APPEND_ALIGNED_ELEMENT,
-                             D3D11_INPUT_PER_VERTEX_DATA,
-                             0 };
-    }
-    for (unsigned int i = 0; i < cc_features.numInputs; i++) {
+    if (cc_features.opt_shade || cc_features.opt_lighting) {
         DXGI_FORMAT format = cc_features.opt_alpha ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
-        ied[ied_index++] = { "INPUT", i, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+        ied[ied_index++] = { "SHADE", 0, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+    }
+    if (cc_features.opt_point_lighting) {
+        ied[ied_index++] = { "WORLDPOS",       0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,
+                             D3D11_INPUT_PER_VERTEX_DATA, 0 };
     }
 
     ThrowIfFailed(mDevice->CreateInputLayout(ied, ied_index, vs->GetBufferPointer(), vs->GetBufferSize(),
@@ -818,13 +820,28 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         }
     }
 
-    // Set per-draw constant buffer
-    if (textures_changed) {
+    // Set per-draw constant buffer (texture metadata + combiner constants)
+    if (textures_changed || mCombinerUniformsDirty) {
+        memcpy(mPerDrawCbData.combiner_inputs, mCombinerUniforms.inputs, sizeof(mPerDrawCbData.combiner_inputs));
+        memcpy(mPerDrawCbData.fog_color, mCombinerUniforms.fog_color, sizeof(mPerDrawCbData.fog_color));
+        memcpy(mPerDrawCbData.grayscale_color, mCombinerUniforms.grayscale_color,
+               sizeof(mPerDrawCbData.grayscale_color));
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
         memcpy(ms.pData, &mPerDrawCbData, sizeof(PerDrawCB));
         mContext->Unmap(mPerDrawCb.Get(), 0);
+        mCombinerUniformsDirty = false;
+    }
+
+    // Lighting/texgen uniforms for the vertex shader
+    if (mLightingUniformsDirty) {
+        D3D11_MAPPED_SUBRESOURCE light_ms;
+        ZeroMemory(&light_ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        mContext->Map(mLightCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &light_ms);
+        memcpy(light_ms.pData, &mLightingUniforms, sizeof(LightingUniforms));
+        mContext->Unmap(mLightCb.Get(), 0);
+        mLightingUniformsDirty = false;
     }
 
     // G_ZS_PRIM / texture LOD: upload prim_depth+lod_max cbuffer when either changed
@@ -884,6 +901,10 @@ void GfxRenderingAPIDX11::StartFrame() {
     // Set per-frame constant buffer
     ID3D11Buffer* buffers[3] = { mPerFrameCb.Get(), mPerDrawCb.Get(), mPerPrimDepthCb.Get() };
     mContext->PSSetConstantBuffers(0, 3, buffers);
+
+    // Lighting/texgen constant buffer for the vertex shader (b3)
+    ID3D11Buffer* vs_buffers[1] = { mLightCb.Get() };
+    mContext->VSSetConstantBuffers(3, 1, vs_buffers);
 
     mPerFrameCbData.noise_frame++;
     if (mPerFrameCbData.noise_frame > 150) {
@@ -1312,13 +1333,20 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
             case SHADER_1:
                 return with_alpha ? "float4(1.0, 1.0, 1.0, 1.0)" : "float3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
-                return with_alpha || !inputs_have_alpha ? "input.input1" : "input.input1.rgb";
+                return with_alpha ? "combiner_inputs[0]" : "combiner_inputs[0].rgb";
             case SHADER_INPUT_2:
-                return with_alpha || !inputs_have_alpha ? "input.input2" : "input.input2.rgb";
+                return with_alpha ? "combiner_inputs[1]" : "combiner_inputs[1].rgb";
             case SHADER_INPUT_3:
-                return with_alpha || !inputs_have_alpha ? "input.input3" : "input.input3.rgb";
+                return with_alpha ? "combiner_inputs[2]" : "combiner_inputs[2].rgb";
             case SHADER_INPUT_4:
-                return with_alpha || !inputs_have_alpha ? "input.input4" : "input.input4.rgb";
+                return with_alpha ? "combiner_inputs[3]" : "combiner_inputs[3].rgb";
+            case SHADER_INPUT_5:
+                return with_alpha ? "combiner_inputs[4]" : "combiner_inputs[4].rgb";
+            case SHADER_INPUT_6:
+                return with_alpha ? "combiner_inputs[5]" : "combiner_inputs[5].rgb";
+            case SHADER_INPUT_7:
+                // Per-vertex shade color
+                return with_alpha || !inputs_have_alpha ? "input.shade" : "input.shade.rgb";
             case SHADER_TEXEL0:
                 return first_cycle ? (with_alpha ? "texVal0" : "texVal0.rgb")
                                    : (with_alpha ? "texVal1" : "texVal1.rgb");
@@ -1359,13 +1387,19 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
             case SHADER_1:
                 return "1.0";
             case SHADER_INPUT_1:
-                return "input.input1.a";
+                return "combiner_inputs[0].a";
             case SHADER_INPUT_2:
-                return "input.input2.a";
+                return "combiner_inputs[1].a";
             case SHADER_INPUT_3:
-                return "input.input3.a";
+                return "combiner_inputs[2].a";
             case SHADER_INPUT_4:
-                return "input.input4.a";
+                return "combiner_inputs[3].a";
+            case SHADER_INPUT_5:
+                return "combiner_inputs[4].a";
+            case SHADER_INPUT_6:
+                return "combiner_inputs[5].a";
+            case SHADER_INPUT_7:
+                return "input.shade.a";
             case SHADER_TEXEL0:
                 return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL0A:
@@ -1488,6 +1522,11 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_prim_depth", cc_features.opt_prim_depth },
         { "o_mip_lod", cc_features.opt_mip_lod },
         { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
+        { "o_shade", cc_features.opt_shade },
+        { "o_lighting", cc_features.opt_lighting },
+        { "o_point_lighting", cc_features.opt_point_lighting },
+        { "o_texgen", cc_features.opt_texgen },
+        { "o_texgen_linear", cc_features.opt_texgen_linear },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },

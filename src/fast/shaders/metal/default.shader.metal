@@ -13,7 +13,23 @@ struct DrawUniforms {
     int textureFiltering[6];
     float prim_depth;
     float lod_max;
+    float4 inputs[6];
+    float4 fog_color;
+    float4 grayscale_color;
 };
+
+@if(o_lighting || o_texgen)
+// Mirrors struct LightingUniforms in gfx_rendering_api.h
+struct LightUniforms {
+    float4 lights[96]; // 3 float4 per light: color/isPoint, dir/kc, pos/kq
+    float4 ambient;
+    float4 lookat_x;
+    float4 lookat_y;
+    float4 texgen_uv[2];
+    float4 mv_rows[3];
+    int num_lights;
+};
+@end
 
 struct FragOut {
     float4 color [[color(0)]];
@@ -42,21 +58,21 @@ struct Vertex {
         @end
     @end
     @if(o_fog)
-        float4 fog [[attribute(@{get_vertex_index()})]];
-        @{update_floats(4)}
+        float fogFactor [[attribute(@{get_vertex_index()})]];
+        @{update_floats(1)}
     @end
-    @if(o_grayscale)
-        float4 grayscale [[attribute(@{get_vertex_index()})]];
-        @{update_floats(4)}
-    @end
-    @for(i in 0..o_inputs)
+    @if(o_shade || o_lighting)
         @if(o_alpha)
-            float4 input@{i + 1} [[attribute(@{get_vertex_index()})]];
+            float4 shade [[attribute(@{get_vertex_index()})]];
             @{update_floats(4)}
         @else
-            float3 input@{i + 1} [[attribute(@{get_vertex_index()})]];
+            float3 shade [[attribute(@{get_vertex_index()})]];
             @{update_floats(3)}
         @end
+    @end
+    @if(o_point_lighting)
+        float3 worldPos [[attribute(@{get_vertex_index()})]];
+        @{update_floats(3)}
     @end
 };
 
@@ -76,22 +92,23 @@ struct ProjectedVertex {
         @end
     @end
     @if(o_fog)
-        float4 fog;
+        float fogFactor;
     @end
-    @if(o_grayscale)
-        float4 grayscale;
-    @end
-    @for(i in 0..o_inputs)
+    @if(o_shade)
         @if(o_alpha)
-            float4 input@{i + 1};
+            float4 shade;
         @else
-            float3 input@{i + 1};
+            float3 shade;
         @end
     @end
     float4 position [[position]];
 };
 
-vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]) {
+vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
+@if(o_lighting || o_texgen)
+    , constant LightUniforms& lightUniforms [[buffer(1)]]
+@end
+) {
     ProjectedVertex out;
     @for(i in 0..2)
         @if(o_textures[i])
@@ -108,13 +125,69 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]) {
         @end
     @end
     @if(o_fog)
-        out.fog = in.fog;
+        out.fogFactor = in.fogFactor;
     @end
-    @if(o_grayscale)
-        out.grayscale = in.grayscale;
+    @if(o_texgen)
+        // N64 texgen: project the vertex normal onto the lookat vectors, then
+        // run the result through the tile/scale UV pipeline (folded into the
+        // per-draw texgen linear transforms).
+        float texgenDotX = clamp(dot(in.shade.xyz, lightUniforms.lookat_x.xyz) / 127.0, -1.0, 1.0);
+        float texgenDotY = clamp(dot(in.shade.xyz, lightUniforms.lookat_y.xyz) / 127.0, -1.0, 1.0);
+        @if(o_texgen_linear)
+            texgenDotX = acos(-texgenDotX) * 0.159155;
+            texgenDotY = acos(-texgenDotY) * 0.159155;
+        @else
+            texgenDotX = (texgenDotX + 1.0) / 4.0;
+            texgenDotY = (texgenDotY + 1.0) / 4.0;
+        @end
+        @if(o_textures[0])
+            out.texCoord0 = float2(texgenDotX * lightUniforms.texgen_uv[0].x + lightUniforms.texgen_uv[0].y,
+                                   texgenDotY * lightUniforms.texgen_uv[0].z + lightUniforms.texgen_uv[0].w);
+        @end
+        @if(o_textures[1])
+            out.texCoord1 = float2(texgenDotX * lightUniforms.texgen_uv[1].x + lightUniforms.texgen_uv[1].y,
+                                   texgenDotY * lightUniforms.texgen_uv[1].z + lightUniforms.texgen_uv[1].w);
+        @end
     @end
-    @for(i in 0..o_inputs)
-         out.input@{i + 1} = in.input@{i + 1};
+    @if(o_shade)
+        @if(o_lighting)
+            // N64 RSP lighting: in.shade carries the raw signed vertex normal
+            float3 litColor = lightUniforms.ambient.xyz;
+            for (int i = 0; i < lightUniforms.num_lights; i++) {
+                float intensity = 0.0;
+                @if(o_point_lighting)
+                if (lightUniforms.lights[i * 3].w > 0.5) {
+                    float3 distVec = lightUniforms.lights[i * 3 + 2].xyz - in.worldPos;
+                    float distSq = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z * 2.0;
+                    float dist = sqrt(distSq);
+                    float3 lightModel = float3(dot(distVec, lightUniforms.mv_rows[0].xyz),
+                                               dot(distVec, lightUniforms.mv_rows[1].xyz),
+                                               dot(distVec, lightUniforms.mv_rows[2].xyz));
+                    float3 lightIntensity = clamp(4.0 * lightModel / distSq, -1.0, 1.0);
+                    float totalIntensity = clamp(dot(lightIntensity, in.shade.xyz), -1.0, 1.0);
+                    float distF = floor(dist);
+                    float attenuation = (distF * lightUniforms.lights[i * 3 + 1].w * 2.0 +
+                                         distF * distF * lightUniforms.lights[i * 3 + 2].w / 8.0) / 65535.0 + 1.0;
+                    intensity = totalIntensity / attenuation;
+                } else {
+                    intensity = dot(in.shade.xyz, lightUniforms.lights[i * 3 + 1].xyz) / 127.0;
+                }
+                @else
+                    intensity = dot(in.shade.xyz, lightUniforms.lights[i * 3 + 1].xyz) / 127.0;
+                @end
+                if (intensity > 0.0) {
+                    litColor += intensity * lightUniforms.lights[i * 3].xyz;
+                }
+            }
+            litColor = min(litColor, float3(1.0));
+            @if(o_alpha)
+                out.shade = float4(litColor, in.shade.w);
+            @else
+                out.shade = litColor;
+            @end
+        @else
+            out.shade = in.shade;
+        @end
     @end
     out.position = in.position;
     return out;
@@ -296,16 +369,16 @@ fragment FragOut fragmentShader(
 
     @if(o_fog)
         @if(o_alpha)
-            texel = float4(mix(texel.xyz, in.fog.xyz, in.fog.w), texel.w);
+            texel = float4(mix(texel.xyz, drawUniforms.fog_color.xyz, in.fogFactor), texel.w);
         @else
-            texel = mix(texel, in.fog.xyz, in.fog.w);
+            texel = mix(texel, drawUniforms.fog_color.xyz, in.fogFactor);
         @end
     @end
 
     @if(o_grayscale)
         float intensity = (texel.x + texel.y + texel.z) / 3.0;
-        float3 new_texel = in.grayscale.xyz * intensity;
-        texel.xyz = mix(texel.xyz, new_texel, in.grayscale.w);
+        float3 new_texel = drawUniforms.grayscale_color.xyz * intensity;
+        texel.xyz = mix(texel.xyz, new_texel, drawUniforms.grayscale_color.w);
     @end
 
     @if(o_alpha && o_noise)

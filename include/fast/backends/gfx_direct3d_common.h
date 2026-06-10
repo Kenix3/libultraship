@@ -36,6 +36,10 @@ struct PerDrawCB {
         uint32_t linear_filtering;
         uint32_t padding;
     } mTextures[SHADER_MAX_TEXTURES];
+    // Combiner constants (must mirror the cbuffer layout in the HLSL template)
+    float combiner_inputs[6][4];
+    float fog_color[4];
+    float grayscale_color[4];
 };
 
 /**
@@ -195,6 +199,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerPrimDepthCb;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> mLightCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mCoordBuffer;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mCoordBufferSrv;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mDepthValueOutputBuffer;

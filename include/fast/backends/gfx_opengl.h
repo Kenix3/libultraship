@@ -52,6 +52,17 @@ struct ShaderProgram {
     GLint texture_height_location;
     GLint texture_filtering_location;
     GLint lod_max_location;
+    GLint combiner_inputs_location;
+    GLint fog_color_location;
+    GLint grayscale_color_location;
+    GLint ambient_location;
+    GLint num_lights_location;
+    GLint lights_location;
+    GLint mv_rows_location;
+    GLint lookat_x_location;
+    GLint lookat_y_location;
+    GLint texgen0_location;
+    GLint texgen1_location;
 };
 
 /**

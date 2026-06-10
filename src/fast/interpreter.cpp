@@ -138,10 +138,102 @@ static constexpr float N64_PRIM_DEPTH_MAX = 32767.0f;
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
         mRapi->SetCurrentPrimDepth((float)mRdp->prim_depth / N64_PRIM_DEPTH_MAX);
+        LatchCombinerUniforms();
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
     }
+}
+
+// The color-combiner formula runs on the GPU; this latches its constant operands
+// (prim, env, chroma key, convert K, fog/grayscale colors) from the RDP registers
+// for the batch that is about to be drawn. Register writes mid-batch flush first
+// (FlushIfRegisterChanges), so the values here apply to every queued triangle.
+void Interpreter::LatchCombinerUniforms() {
+    if (mPendingCombiner == nullptr) {
+        return;
+    }
+
+    CombinerUniforms u = {};
+
+    const uint8_t blend_src = mRdp->other_mode_l >> 30;
+    const bool use_blend_color = blend_src == G_BL_CLR_BL;
+    const RGBA& fog_reg = use_blend_color ? mRdp->blend_color : mRdp->fog_color;
+    u.fog_color[0] = fog_reg.r / 255.0f;
+    u.fog_color[1] = fog_reg.g / 255.0f;
+    u.fog_color[2] = fog_reg.b / 255.0f;
+    u.fog_color[3] = 1.0f;
+
+    u.grayscale_color[0] = mRdp->grayscale_color.r / 255.0f;
+    u.grayscale_color[1] = mRdp->grayscale_color.g / 255.0f;
+    u.grayscale_color[2] = mRdp->grayscale_color.b / 255.0f;
+    u.grayscale_color[3] = mRdp->grayscale_color.a / 255.0f; // lerp factor
+
+    for (int j = 0; j < 6; j++) {
+        for (int k = 0; k < 2; k++) {
+            RGBA* color;
+            RGBA tmp;
+            switch (mPendingCombiner->shader_input_mapping[k][j]) {
+                    // Note: CCMUX constants and ACMUX constants used here have the
+                    // same value, which is why this works (except LOD fraction,
+                    // which never reaches the input mapping).
+                case G_CCMUX_PRIMITIVE:
+                    color = &mRdp->prim_color;
+                    break;
+                case G_CCMUX_ENVIRONMENT:
+                    color = &mRdp->env_color;
+                    break;
+                case G_CCMUX_PRIMITIVE_ALPHA: {
+                    tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_ENV_ALPHA: {
+                    tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_PRIM_LOD_FRAC: {
+                    tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_KEY_CENTER:
+                    color = &mRdp->key_center;
+                    break;
+                case G_CCMUX_KEY_SCALE:
+                    color = &mRdp->key_scale;
+                    break;
+                case G_CCMUX_CONVERT_K4: {
+                    tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_CONVERT_K5: {
+                    tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
+                    color = &tmp;
+                    break;
+                }
+                case G_ACMUX_PRIM_LOD_FRAC:
+                    tmp.a = mRdp->prim_lod_fraction;
+                    color = &tmp;
+                    break;
+                default:
+                    memset(&tmp, 0, sizeof(tmp));
+                    color = &tmp;
+                    break;
+            }
+            if (k == 0) {
+                u.inputs[j][0] = color->r / 255.0f;
+                u.inputs[j][1] = color->g / 255.0f;
+                u.inputs[j][2] = color->b / 255.0f;
+            } else {
+                u.inputs[j][3] = color->a / 255.0f;
+            }
+        }
+    }
+
+    mRapi->SetCombinerUniforms(u);
 }
 
 ShaderProgram* Interpreter::LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1) {
@@ -202,6 +294,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     uint64_t shaderId1 = key.options;
     uint8_t shaderInputMapping[2][7] = { { 0 } };
     bool usedTextures[2]{};
+    bool usedShade = false;
     for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
         uint32_t rgbA = (key.combine_mode >> (i * 28)) & 0xf;
         uint32_t rgbB = (key.combine_mode >> (i * 28 + 4)) & 0xf;
@@ -345,10 +438,15 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                         // reads as 1.0 (matching the previous CPU behavior).
                         val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
                         break;
+                    case G_CCMUX_SHADE:
+                        // Shade is the only per-vertex combiner source; it gets the
+                        // dedicated SHADER_INPUT_7 slot (a varying, not a uniform).
+                        val = SHADER_INPUT_7;
+                        usedShade = true;
+                        break;
                     case G_CCMUX_PRIMITIVE:
                     case G_CCMUX_PRIMITIVE_ALPHA:
                     case G_CCMUX_PRIM_LOD_FRAC:
-                    case G_CCMUX_SHADE:
                     case G_CCMUX_ENVIRONMENT:
                     case G_CCMUX_ENV_ALPHA:
                     case G_CCMUX_KEY_CENTER:
@@ -356,6 +454,12 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                     case G_CCMUX_CONVERT_K4:
                     case G_CCMUX_CONVERT_K5:
                         if (inputNumber[c[i][0][j]] == 0) {
+                            // Constant sources become uniform slots 1..6. More than 6
+                            // distinct constants can't happen with real combine modes;
+                            // reuse the last slot if it somehow does.
+                            if (nextInputNumber > SHADER_INPUT_6) {
+                                nextInputNumber = SHADER_INPUT_6;
+                            }
                             shaderInputMapping[0][nextInputNumber - 1] = c[i][0][j];
                             inputNumber[c[i][0][j]] = nextInputNumber++;
                         }
@@ -409,6 +513,11 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                         // shader when G_TL_LOD is active, constant 1.0 otherwise.
                         val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
                         break;
+                    case G_ACMUX_SHADE:
+                        // Shade alpha rides the same dedicated varying as shade color
+                        val = SHADER_INPUT_7;
+                        usedShade = true;
+                        break;
                     case G_ACMUX_1:
                         // case G_ACMUX_PRIM_LOD_FRAC: same numerical value
                         if (j != 2) {
@@ -417,9 +526,11 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                         }
                         [[fallthrough]]; // for G_ACMUX_PRIM_LOD_FRAC
                     case G_ACMUX_PRIMITIVE:
-                    case G_ACMUX_SHADE:
                     case G_ACMUX_ENVIRONMENT:
                         if (inputNumber[c[i][1][j]] == 0) {
+                            if (nextInputNumber > SHADER_INPUT_6) {
+                                nextInputNumber = SHADER_INPUT_6;
+                            }
                             shaderInputMapping[1][nextInputNumber - 1] = c[i][1][j];
                             inputNumber[c[i][1][j]] = nextInputNumber++;
                         }
@@ -441,6 +552,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     comb->shader_id1 = shaderId1;
     comb->usedTextures[0] = usedTextures[0];
     comb->usedTextures[1] = usedTextures[1];
+    comb->usedShade = usedShade;
     // comb->prg = gfx_lookup_or_create_mShaderProgram(shader_id0, shader_id1);
     memcpy(comb->shader_input_mapping, shaderInputMapping, sizeof(shaderInputMapping));
 }
@@ -1917,6 +2029,9 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
             world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
             world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
         }
+        d->world_pos[0] = world_pos[0];
+        d->world_pos[1] = world_pos[1];
+        d->world_pos[2] = world_pos[2];
 
         x = AdjXForAspectRatio(x);
 
@@ -1924,108 +2039,21 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
 
         if (mRsp->geometry_mode & G_LIGHTING) {
+            // Lighting and texgen now run in the vertex shader. The light/lookat
+            // direction coefficients are still computed here (they depend on the
+            // modelview matrix at vertex-load time) and are passed as uniforms.
             if (mRsp->lights_changed) {
                 for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
                     CalculateNormalDir(&mRsp->current_lights[i].l, mRsp->current_lights_coeffs[i]);
                 }
-                /*static const Light_t lookat_x = {{0, 0, 0}, 0, {0, 0, 0}, 0, {127, 0, 0}, 0};
-                static const Light_t lookat_y = {{0, 0, 0}, 0, {0, 0, 0}, 0, {0, 127, 0}, 0};*/
                 CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
                 CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
                 mRsp->lights_changed = false;
             }
 
-            int r = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[0];
-            int g = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[1];
-            int b = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[2];
-
-            for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
-                float intensity = 0;
-                if ((mRsp->geometry_mode & G_LIGHTING_POSITIONAL) && (mRsp->current_lights[i].p.unk3 != 0)) {
-                    // Calculate distance from the light to the vertex
-                    float dist_vec[3] = { mRsp->current_lights[i].p.pos[0] - world_pos[0],
-                                          mRsp->current_lights[i].p.pos[1] - world_pos[1],
-                                          mRsp->current_lights[i].p.pos[2] - world_pos[2] };
-                    float dist_sq =
-                        dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] +
-                        dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
-                    float dist = sqrt(dist_sq);
-
-                    // Transform distance vector (which acts as a direction light vector) into model's space
-                    float light_model[3];
-                    TransposedMatrixMul(light_model, dist_vec,
-                                        mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
-
-                    // Calculate intensity for each axis using standard formula for intensity
-                    float light_intensity[3];
-                    for (int light_i = 0; light_i < 3; light_i++) {
-                        light_intensity[light_i] = 4.0f * light_model[light_i] / dist_sq;
-                        light_intensity[light_i] = std::clamp(light_intensity[light_i], -1.0f, 1.0f);
-                    }
-
-                    // Adjust intensity based on surface normal and sum up total
-                    float total_intensity =
-                        light_intensity[0] * vn->n[0] + light_intensity[1] * vn->n[1] + light_intensity[2] * vn->n[2];
-                    total_intensity = std::clamp(total_intensity, -1.0f, 1.0f);
-
-                    // Attenuate intensity based on attenuation values.
-                    // Example formula found at https://ogldev.org/www/tutorial20/tutorial20.html
-                    // Specific coefficients for MM's microcode sourced from GLideN64
-                    // https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
-                    float distf = floorf(dist);
-                    float attenuation = (distf * mRsp->current_lights[i].p.unk7 * 2.0f +
-                                         distf * distf * mRsp->current_lights[i].p.unkE / 8.0f) /
-                                            (float)0xFFFF +
-                                        1.0f;
-                    intensity = total_intensity / attenuation;
-                } else {
-                    intensity += vn->n[0] * mRsp->current_lights_coeffs[i][0];
-                    intensity += vn->n[1] * mRsp->current_lights_coeffs[i][1];
-                    intensity += vn->n[2] * mRsp->current_lights_coeffs[i][2];
-                    intensity /= 127.0f;
-                }
-                if (intensity > 0.0f) {
-                    r += intensity * mRsp->current_lights[i].l.col[0];
-                    g += intensity * mRsp->current_lights[i].l.col[1];
-                    b += intensity * mRsp->current_lights[i].l.col[2];
-                }
-            }
-
-            d->color.r = r > 255 ? 255 : r;
-            d->color.g = g > 255 ? 255 : g;
-            d->color.b = b > 255 ? 255 : b;
-
-            if (mRsp->geometry_mode & G_TEXTURE_GEN) {
-                float dotx = 0, doty = 0;
-                dotx += vn->n[0] * mRsp->current_lookat_coeffs[0][0];
-                dotx += vn->n[1] * mRsp->current_lookat_coeffs[0][1];
-                dotx += vn->n[2] * mRsp->current_lookat_coeffs[0][2];
-                doty += vn->n[0] * mRsp->current_lookat_coeffs[1][0];
-                doty += vn->n[1] * mRsp->current_lookat_coeffs[1][1];
-                doty += vn->n[2] * mRsp->current_lookat_coeffs[1][2];
-
-                dotx /= 127.0f;
-                doty /= 127.0f;
-
-                dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
-                doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
-
-                if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
-                    // Not sure exactly what formula we should use to get accurate values
-                    /*dotx = (2.906921f * dotx * dotx + 1.36114f) * dotx;
-                    doty = (2.906921f * doty * doty + 1.36114f) * doty;
-                    dotx = (dotx + 1.0f) / 4.0f;
-                    doty = (doty + 1.0f) / 4.0f;*/
-                    dotx = acosf(-dotx) /* M_PI */ * 0.159155f;
-                    doty = acosf(-doty) /* M_PI */ * 0.159155f;
-                } else {
-                    dotx = (dotx + 1.0f) / 4.0f;
-                    doty = (doty + 1.0f) / 4.0f;
-                }
-
-                U = (int32_t)(dotx * mRsp->texture_scaling_factor.s);
-                V = (int32_t)(doty * mRsp->texture_scaling_factor.t);
-            }
+            d->normal[0] = vn->n[0];
+            d->normal[1] = vn->n[1];
+            d->normal[2] = vn->n[2];
         } else {
             d->color.r = v->cn[0];
             d->color.g = v->cn[1];
@@ -2088,6 +2116,29 @@ void Interpreter::GfxSpModifyVertex(uint16_t vtx_idx, uint8_t where, uint32_t va
     LoadedVertex* v = &mRsp->loaded_vertices[vtx_idx];
     v->u = s;
     v->v = t;
+}
+
+// Cheap pre-parse of a combine mode for SHADE references, used to decide whether
+// the GPU lighting path is needed before the full combiner is generated. May
+// report shade for slots that GenerateCC later normalizes away (harmless: it
+// only creates an extra shader variant), but never misses a real reference.
+static bool CombineModeUsesShade(uint64_t combine_mode, bool is2Cyc) {
+    for (uint32_t i = 0; i < (is2Cyc ? 2u : 1u); i++) {
+        uint32_t rgbA = (combine_mode >> (i * 28)) & 0xf;
+        uint32_t rgbB = (combine_mode >> (i * 28 + 4)) & 0xf;
+        uint32_t rgbC = (combine_mode >> (i * 28 + 8)) & 0x1f;
+        uint32_t rgbD = (combine_mode >> (i * 28 + 13)) & 7;
+        uint32_t alphaA = (combine_mode >> (i * 28 + 16)) & 7;
+        uint32_t alphaB = (combine_mode >> (i * 28 + 16 + 3)) & 7;
+        uint32_t alphaC = (combine_mode >> (i * 28 + 16 + 6)) & 7;
+        uint32_t alphaD = (combine_mode >> (i * 28 + 16 + 9)) & 7;
+        if (rgbA == G_CCMUX_SHADE || rgbB == G_CCMUX_SHADE || rgbC == G_CCMUX_SHADE || rgbD == G_CCMUX_SHADE ||
+            rgbC == G_CCMUX_SHADE_ALPHA || alphaA == G_ACMUX_SHADE || alphaB == G_ACMUX_SHADE ||
+            alphaC == G_ACMUX_SHADE || alphaD == G_ACMUX_SHADE) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool is_rect) {
@@ -2260,11 +2311,36 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(MIP_LOD);
     }
 
+    // GPU lighting/texgen: the vertex shader computes the shade color from raw
+    // vertex normals and the RSP light state, and generates env-mapped UVs.
+    const bool lighting_geom = (mRsp->geometry_mode & G_LIGHTING) != 0;
+    const bool use_texgen = lighting_geom && (mRsp->geometry_mode & G_TEXTURE_GEN) != 0;
+    const bool lit_shade = lighting_geom && CombineModeUsesShade(mRdp->combine_mode, use_2cyc);
+    if (lit_shade || use_texgen) {
+        cc_options |= SHADER_OPT(LIGHTING);
+        if (lit_shade && (mRsp->geometry_mode & G_LIGHTING_POSITIONAL)) {
+            cc_options |= SHADER_OPT(POINT_LIGHTING);
+        }
+        if (use_texgen) {
+            cc_options |= SHADER_OPT(TEXGEN);
+            if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
+                cc_options |= SHADER_OPT(TEXGEN_LINEAR);
+            }
+        }
+    }
+
     ColorCombinerKey key;
     key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
 
     ColorCombiner* comb = LookupOrCreateColorCombiner(key);
+
+    // Different combiners can share a shader program but map different RDP
+    // registers into the uniform slots; never mix them in one batch.
+    if (mPendingCombiner != comb) {
+        Flush();
+        mPendingCombiner = comb;
+    }
 
     uint32_t tm = 0;
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
@@ -2430,6 +2506,99 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     // otherwise whatever gsSPTexture advertised (derivative-based LOD fraction).
     mRapi->SetCurrentMaxLod(mipExtraLevels > 0 ? (float)mipExtraLevels : (float)mRsp->texture_level);
 
+    // Latch lighting/texgen uniforms for the vertex shader. Light directions are
+    // model-space coefficients computed at vertex-load time (CalculateNormalDir);
+    // a change mid-batch flushes the queued triangles first.
+    if (cc_options & SHADER_OPT(LIGHTING)) {
+        LightingUniforms lu = {};
+        int numLights = mRsp->current_num_lights - 1;
+        if (numLights < 0) {
+            numLights = 0;
+        }
+        if (numLights > GFX_MAX_GPU_LIGHTS) {
+            numLights = GFX_MAX_GPU_LIGHTS;
+        }
+        lu.num_lights = numLights;
+
+        const int ambientIdx = mRsp->current_num_lights > 0 ? mRsp->current_num_lights - 1 : 0;
+        const F3DLight_t& ambient = mRsp->current_lights[ambientIdx].l;
+        lu.ambient[0] = ambient.col[0] / 255.0f;
+        lu.ambient[1] = ambient.col[1] / 255.0f;
+        lu.ambient[2] = ambient.col[2] / 255.0f;
+
+        const bool point_lighting = (cc_options & SHADER_OPT(POINT_LIGHTING)) != 0;
+        for (int i = 0; i < numLights; i++) {
+            const bool is_point = point_lighting && mRsp->current_lights[i].p.unk3 != 0;
+            lu.lights[i][0][0] = mRsp->current_lights[i].l.col[0] / 255.0f;
+            lu.lights[i][0][1] = mRsp->current_lights[i].l.col[1] / 255.0f;
+            lu.lights[i][0][2] = mRsp->current_lights[i].l.col[2] / 255.0f;
+            lu.lights[i][0][3] = is_point ? 1.0f : 0.0f;
+            lu.lights[i][1][0] = mRsp->current_lights_coeffs[i][0];
+            lu.lights[i][1][1] = mRsp->current_lights_coeffs[i][1];
+            lu.lights[i][1][2] = mRsp->current_lights_coeffs[i][2];
+            if (is_point) {
+                lu.lights[i][1][3] = (float)mRsp->current_lights[i].p.unk7;  // kc
+                lu.lights[i][2][0] = (float)mRsp->current_lights[i].p.pos[0];
+                lu.lights[i][2][1] = (float)mRsp->current_lights[i].p.pos[1];
+                lu.lights[i][2][2] = (float)mRsp->current_lights[i].p.pos[2];
+                lu.lights[i][2][3] = (float)mRsp->current_lights[i].p.unkE; // kq
+            }
+        }
+
+        if (cc_options & SHADER_OPT(TEXGEN)) {
+            lu.lookat_x[0] = mRsp->current_lookat_coeffs[0][0];
+            lu.lookat_x[1] = mRsp->current_lookat_coeffs[0][1];
+            lu.lookat_x[2] = mRsp->current_lookat_coeffs[0][2];
+            lu.lookat_y[0] = mRsp->current_lookat_coeffs[1][0];
+            lu.lookat_y[1] = mRsp->current_lookat_coeffs[1][1];
+            lu.lookat_y[2] = mRsp->current_lookat_coeffs[1][2];
+
+            // Fold the entire CPU UV pipeline (gsSPTexture scale, tile shift, tile
+            // origin, bilerp half-texel, texture size normalize) into a linear
+            // transform per texture: uv = dot * scale + offset.
+            const bool bilerp_half =
+                (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
+            for (int t = 0; t < 2; t++) {
+                if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
+                    continue;
+                }
+                uint32_t tile = effective_tile[t];
+                float scale[2] = { (float)mRsp->texture_scaling_factor.s / 32.0f,
+                                   (float)mRsp->texture_scaling_factor.t / 32.0f };
+                const int shift_amount[2] = { mRdp->texture_tile[tile].shifts, mRdp->texture_tile[tile].shiftt };
+                for (int axis = 0; axis < 2; axis++) {
+                    if (shift_amount[axis] != 0) {
+                        if (shift_amount[axis] <= 10) {
+                            scale[axis] /= (float)(1 << shift_amount[axis]);
+                        } else {
+                            scale[axis] *= (float)(1 << (16 - shift_amount[axis]));
+                        }
+                    }
+                }
+                const float half = bilerp_half ? 0.5f : 0.0f;
+                lu.texgen[t][0] = scale[0] / (float)tex_width[t];
+                lu.texgen[t][1] = (half - mRdp->texture_tile[tile].uls / 4.0f) / (float)tex_width[t];
+                lu.texgen[t][2] = scale[1] / (float)tex_height[t];
+                lu.texgen[t][3] = (half - mRdp->texture_tile[tile].ult / 4.0f) / (float)tex_height[t];
+            }
+        }
+
+        if (point_lighting) {
+            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
+            for (int row = 0; row < 3; row++) {
+                lu.mv_rows[row][0] = mtx[row][0];
+                lu.mv_rows[row][1] = mtx[row][1];
+                lu.mv_rows[row][2] = mtx[row][2];
+            }
+        }
+
+        if (memcmp(&lu, &mLatchedLighting, sizeof(LightingUniforms)) != 0) {
+            Flush();
+            mLatchedLighting = lu;
+        }
+        mRapi->SetLightingUniforms(lu);
+    }
+
     struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
 
     for (int i = 0; i < 3; i++) {
@@ -2495,106 +2664,45 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
 
         if (use_fog) {
-            if (use_blend_color) {
-                // Shroud/blend mode: blend toward blend_color using fog alpha as factor
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.a / 255.0f;
+            // Fog/blend color is a per-draw uniform now; only the factor is
+            // per-vertex. In blend-color (shroud) mode the factor is the constant
+            // fog alpha; otherwise it's the RSP-computed fog value.
+            mBufVbo[mBufVboLen++] =
+                use_blend_color ? mRdp->fog_color.a / 255.0f : v_arr[i]->color.a / 255.0f;
+        }
+
+        // Grayscale color and all constant combiner inputs (prim, env, keys, K4/K5,
+        // prim LOD fraction) are per-draw uniforms latched in LatchCombinerUniforms.
+        // Shade is the only combiner source that still varies per vertex: it is
+        // either the vertex color, or — under G_LIGHTING — the raw vertex normal
+        // that the vertex shader turns into a lit color (and texgen UVs).
+        const bool normals_in_shade = (cc_options & SHADER_OPT(LIGHTING)) != 0;
+        if (comb->usedShade || normals_in_shade) {
+            if (normals_in_shade) {
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[0];
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[1];
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[2];
             } else {
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.r / 255.0f;
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.g / 255.0f;
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.b / 255.0f;
             }
-        }
-
-        if (use_grayscale) {
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
-        }
-
-        for (int j = 0; j < numInputs; j++) {
-            RGBA* color;
-            RGBA tmp;
-            for (int k = 0; k < 1 + (use_alpha ? 1 : 0); k++) {
-                switch (comb->shader_input_mapping[k][j]) {
-                        // Note: CCMUX constants and ACMUX constants used here have same value, which is why this works
-                        // (except LOD fraction).
-                    case G_CCMUX_PRIMITIVE:
-                        color = &mRdp->prim_color;
-                        break;
-                    case G_CCMUX_SHADE:
-                        color = &v_arr[i]->color;
-                        break;
-                    case G_CCMUX_ENVIRONMENT:
-                        color = &mRdp->env_color;
-                        break;
-                    case G_CCMUX_PRIMITIVE_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_ENV_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_PRIM_LOD_FRAC: {
-                        tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
-                        color = &tmp;
-                        break;
-                    }
-                    // G_CCMUX_LOD_FRACTION no longer reaches the input mapping:
-                    // it is computed per-pixel in the fragment shader (TEX_LOD).
-                    case G_CCMUX_KEY_CENTER:
-                        color = &mRdp->key_center;
-                        break;
-                    case G_CCMUX_KEY_SCALE:
-                        color = &mRdp->key_scale;
-                        break;
-                    case G_CCMUX_CONVERT_K4: {
-                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_CONVERT_K5: {
-                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
-                        color = &tmp;
-                        break;
-                    }
-                    case G_ACMUX_PRIM_LOD_FRAC:
-                        tmp.a = mRdp->prim_lod_fraction;
-                        color = &tmp;
-                        break;
-                    default:
-                        memset(&tmp, 0, sizeof(tmp));
-                        color = &tmp;
-                        break;
-                }
-                if (k == 0) {
-                    mBufVbo[mBufVboLen++] = color->r / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->g / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->b / 255.0f;
+            if (use_alpha) {
+                if (use_fog && !use_blend_color) {
+                    // Shade alpha is 100% for standard fog (the vertex alpha slot
+                    // holds the fog factor); blend color mode preserves it.
+                    mBufVbo[mBufVboLen++] = 1.0f;
                 } else {
-                    if (use_fog && !use_blend_color && color == &v_arr[i]->color) {
-                        // Shade alpha is 100% for standard fog, blend color mode preserves
-                        // it since fog alpha is the blend factor
-                        mBufVbo[mBufVboLen++] = 1.0f;
-                    } else {
-                        mBufVbo[mBufVboLen++] = color->a / 255.0f;
-                    }
+                    mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f;
                 }
             }
         }
 
-        // struct RGBA *color = &v_arr[i]->color;
-        // mBufVbo[mBufVboLen++] = color->r / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->g / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->b / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->a / 255.0f;
+        if (cc_options & SHADER_OPT(POINT_LIGHTING)) {
+            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[0];
+            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[1];
+            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[2];
+        }
     }
 
     if (++mBufVboNumTris == MAX_TRI_BUFFER) {
@@ -3127,7 +3235,16 @@ static inline int16_t sign_extend_9(uint32_t v) {
     return (int16_t)((v & 0x100) ? (int32_t)(v | 0xFFFFFE00u) : (int32_t)v);
 }
 
+// Combiner constants are uniforms latched at flush time, so a register write
+// that would change the value mid-batch has to flush the pending triangles first.
+void Interpreter::FlushIfRegisterChanges(const RGBA& reg, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (mBufVboNumTris > 0 && (reg.r != r || reg.g != g || reg.b != b || reg.a != a)) {
+        Flush();
+    }
+}
+
 void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->grayscale_color, r, g, b, a);
     mRdp->grayscale_color.r = r;
     mRdp->grayscale_color.g = g;
     mRdp->grayscale_color.b = b;
@@ -3135,6 +3252,7 @@ void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_
 }
 
 void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->env_color, r, g, b, a);
     mRdp->env_color.r = r;
     mRdp->env_color.g = g;
     mRdp->env_color.b = b;
@@ -3142,6 +3260,10 @@ void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (mBufVboNumTris > 0 && mRdp->prim_lod_fraction != l) {
+        Flush();
+    }
+    FlushIfRegisterChanges(mRdp->prim_color, r, g, b, a);
     mRdp->prim_lod_fraction = l;
     mRdp->prim_color.r = r;
     mRdp->prim_color.g = g;
@@ -3150,6 +3272,7 @@ void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, 
 }
 
 void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->fog_color, r, g, b, a);
     mRdp->fog_color.r = r;
     mRdp->fog_color.g = g;
     mRdp->fog_color.b = b;
@@ -3157,6 +3280,7 @@ void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->blend_color, r, g, b, a);
     mRdp->blend_color.r = r;
     mRdp->blend_color.g = g;
     mRdp->blend_color.b = b;
@@ -4835,6 +4959,10 @@ bool gfx_set_key_r_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    if (gfx->mBufVboNumTris > 0 &&
+        (gfx->mRdp->key_center.r != C1(8, 8) || gfx->mRdp->key_scale.r != C1(0, 8))) {
+        gfx->Flush();
+    }
     gfx->mRdp->key_center.r = C1(8, 8);
     gfx->mRdp->key_scale.r = C1(0, 8);
     return false;
@@ -4845,6 +4973,11 @@ bool gfx_set_key_gb_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    if (gfx->mBufVboNumTris > 0 &&
+        (gfx->mRdp->key_center.g != C1(24, 8) || gfx->mRdp->key_scale.g != C1(16, 8) ||
+         gfx->mRdp->key_center.b != C1(8, 8) || gfx->mRdp->key_scale.b != C1(0, 8))) {
+        gfx->Flush();
+    }
     gfx->mRdp->key_center.g = C1(24, 8);
     gfx->mRdp->key_scale.g = C1(16, 8);
     gfx->mRdp->key_center.b = C1(8, 8);
@@ -4858,6 +4991,10 @@ bool gfx_set_convert_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    // K4/K5 feed the combiner uniforms; conservatively flush before changing them
+    if (gfx->mBufVboNumTris > 0) {
+        gfx->Flush();
+    }
     gfx->mRdp->convert_k[0] = sign_extend_9(C0(13, 9));
     gfx->mRdp->convert_k[1] = sign_extend_9(C0(4, 9));
     // k2 is split across w0 and w1
@@ -5878,6 +6015,10 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->opt_prim_depth = (shader_id1 & SHADER_OPT(PRIM_DEPTH)) != 0;
     cc_features->opt_tex_lod = (shader_id1 & SHADER_OPT(TEX_LOD)) != 0;
     cc_features->opt_mip_lod = (shader_id1 & SHADER_OPT(MIP_LOD)) != 0;
+    cc_features->opt_lighting = (shader_id1 & SHADER_OPT(LIGHTING)) != 0;
+    cc_features->opt_point_lighting = (shader_id1 & SHADER_OPT(POINT_LIGHTING)) != 0;
+    cc_features->opt_texgen = (shader_id1 & SHADER_OPT(TEXGEN)) != 0;
+    cc_features->opt_texgen_linear = (shader_id1 & SHADER_OPT(TEXGEN_LINEAR)) != 0;
 
     cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
@@ -5892,14 +6033,19 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->used_blend[1] = false;
     cc_features->numInputs = 0;
     cc_features->uses_lod_frac = false;
+    cc_features->opt_shade = false;
 
     for (int c = 0; c < 2; c++) {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 4; j++) {
-                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_7) {
+                // INPUT_1..6 are per-draw uniform slots; INPUT_7 is the shade varying
+                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_6) {
                     if (cc_features->c[c][i][j] > cc_features->numInputs) {
                         cc_features->numInputs = cc_features->c[c][i][j];
                     }
+                }
+                if (cc_features->c[c][i][j] == SHADER_INPUT_7) {
+                    cc_features->opt_shade = true;
                 }
                 if (cc_features->c[c][i][j] == SHADER_TEXEL0 || cc_features->c[c][i][j] == SHADER_TEXEL0A) {
                     cc_features->usedTextures[0] = true;
@@ -5966,8 +6112,10 @@ extern "C" void gfx_texture_cache_clear() {
 
 extern "C" void gfx_shader_cache_clear() {
     auto instance = Fast::mInstance.lock().get();
+    instance->Flush();
     instance->mColorCombinerPool.clear();
     instance->mPrevCombiner = Fast::mInstance.lock().get()->mColorCombinerPool.end();
+    instance->mPendingCombiner = nullptr;
     instance->mRenderingState.mShaderProgram = nullptr;
     instance->mRapi->ClearShaderCache();
 }

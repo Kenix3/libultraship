@@ -29,24 +29,33 @@ struct PSInput {
 @end
 
 @if(o_fog)
-float4 fog : FOG;
-@{update_floats(4)}
-@end
-@if(o_grayscale)
-float4 grayscale : GRAYSCALE;
-@{update_floats(4)}
+float fogFactor : FOG;
+@{update_floats(1)}
 @end
 
-@for(i in 0..o_inputs)
+@if(o_shade)
     @if(o_alpha)
-        float4 input@{i + 1} : INPUT@{i};
+        float4 shade : SHADE;
         @{update_floats(4)}
     @else
-        float3 input@{i + 1} : INPUT@{i};
+        float3 shade : SHADE;
         @{update_floats(3)}
     @end
 @end
 };
+
+@if(o_lighting || o_texgen)
+// Mirrors struct LightingUniforms in gfx_rendering_api.h
+cbuffer LightCB : register(b3) {
+    float4 lights[96]; // 3 float4 per light: color/isPoint, dir/kc, pos/kq
+    float4 ambient;
+    float4 lookat_x;
+    float4 lookat_y;
+    float4 texgen_uv[2];
+    float4 mv_rows[3];
+    int num_lights;
+}
+@end
 
 @if(o_textures[0]) 
     Texture2D g_texture0 : register(t0);
@@ -73,19 +82,25 @@ float random(in float3 value) {
     return frac(sin(random) * 143758.5453);
 }
 
-// 3 point texture filtering
-// Original author: ArthurCarvalho
-// Based on GLSL implementation by twinaphex, mupen64plus-libretro project.
-
-@if(o_three_point_filtering && (o_textures[0] || o_textures[1]))
+// Per-draw constants: texture metadata for 3-point filtering plus the combiner
+// constant operands (prim, env, keys, K4/K5, fog/grayscale colors).
+// Layout must mirror struct PerDrawCB in gfx_direct3d_common.h.
 cbuffer PerDrawCB : register(b1) {
     struct {
         uint width;
         uint height;
         bool linear_filtering;
-    } textures[2];
+    } textures[6];
+    float4 combiner_inputs[6];
+    float4 fog_color;
+    float4 grayscale_color;
 }
 
+// 3 point texture filtering
+// Original author: ArthurCarvalho
+// Based on GLSL implementation by twinaphex, mupen64plus-libretro project.
+
+@if(o_three_point_filtering && (o_textures[0] || o_textures[1]))
 #define TEX_OFFSET(tex, tSampler, texCoord, off, texSize) tex.Sample(tSampler, texCoord - off / texSize)
 
 float4 tex2D3PointFilter(in Texture2D tex, in SamplerState tSampler, in float2 texCoord, in float2 texSize) {
@@ -123,17 +138,17 @@ PSInput VSMain(
     @end
 @end
 @if(o_fog)
-    , float4 fog : FOG
+    , float fogFactor : FOG
 @end
-@if(o_grayscale)
-    , float4 grayscale : GRAYSCALE
-@end
-@for(i in 0..o_inputs)
+@if(o_shade || o_lighting)
     @if(o_alpha)
-        , float4 input@{i + 1} : INPUT@{i}
+        , float4 shade : SHADE
     @else
-        , float3 input@{i + 1} : INPUT@{i}
+        , float3 shade : SHADE
     @end
+@end
+@if(o_point_lighting)
+    , float3 worldPos : WORLDPOS
 @end
 ) {
     PSInput result;
@@ -154,18 +169,68 @@ PSInput VSMain(
     @end
 
     @if(o_fog)
-        result.fog = fog;
+        result.fogFactor = fogFactor;
     @end
 
-    @if(o_grayscale)
-        result.grayscale = grayscale;
-    @end
-
-    @for(i in 0..o_inputs)
-        @if(o_alpha)
-            result.input@{i + 1} = input@{i + 1};
+    @if(o_texgen)
+        // N64 texgen: project the vertex normal onto the lookat vectors, then run
+        // the result through the tile/scale UV pipeline (folded into texgen_uv).
+        float texgenDotX = clamp(dot(shade.xyz, lookat_x.xyz) / 127.0, -1.0, 1.0);
+        float texgenDotY = clamp(dot(shade.xyz, lookat_y.xyz) / 127.0, -1.0, 1.0);
+        @if(o_texgen_linear)
+            texgenDotX = acos(-texgenDotX) * 0.159155;
+            texgenDotY = acos(-texgenDotY) * 0.159155;
         @else
-            result.input@{i + 1} = float4(input@{i + 1}, 1.0);
+            texgenDotX = (texgenDotX + 1.0) / 4.0;
+            texgenDotY = (texgenDotY + 1.0) / 4.0;
+        @end
+        @if(o_textures[0])
+            result.uv0 = float2(texgenDotX * texgen_uv[0].x + texgen_uv[0].y,
+                                texgenDotY * texgen_uv[0].z + texgen_uv[0].w);
+        @end
+        @if(o_textures[1])
+            result.uv1 = float2(texgenDotX * texgen_uv[1].x + texgen_uv[1].y,
+                                texgenDotY * texgen_uv[1].z + texgen_uv[1].w);
+        @end
+    @end
+
+    @if(o_shade)
+        @if(o_lighting)
+            // N64 RSP lighting: the shade input carries the raw signed vertex normal
+            float3 litColor = ambient.rgb;
+            for (int i = 0; i < num_lights; i++) {
+                float intensity = 0.0;
+                @if(o_point_lighting)
+                if (lights[i * 3].w > 0.5) {
+                    float3 distVec = lights[i * 3 + 2].xyz - worldPos;
+                    float distSq = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z * 2.0;
+                    float dist = sqrt(distSq);
+                    float3 lightModel = float3(dot(distVec, mv_rows[0].xyz), dot(distVec, mv_rows[1].xyz),
+                                               dot(distVec, mv_rows[2].xyz));
+                    float3 lightIntensity = clamp(4.0 * lightModel / distSq, -1.0, 1.0);
+                    float totalIntensity = clamp(dot(lightIntensity, shade.xyz), -1.0, 1.0);
+                    float distF = floor(dist);
+                    float attenuation = (distF * lights[i * 3 + 1].w * 2.0 +
+                                         distF * distF * lights[i * 3 + 2].w / 8.0) / 65535.0 + 1.0;
+                    intensity = totalIntensity / attenuation;
+                } else {
+                    intensity = dot(shade.xyz, lights[i * 3 + 1].xyz) / 127.0;
+                }
+                @else
+                    intensity = dot(shade.xyz, lights[i * 3 + 1].xyz) / 127.0;
+                @end
+                if (intensity > 0.0) {
+                    litColor += intensity * lights[i * 3].rgb;
+                }
+            }
+            litColor = min(litColor, float3(1.0, 1.0, 1.0));
+            @if(o_alpha)
+                result.shade = float4(litColor, shade.a);
+            @else
+                result.shade = litColor;
+            @end
+        @else
+            result.shade = shade;
         @end
     @end
 
@@ -342,16 +407,16 @@ PSOutput PSMain(PSInput input, float4 screenSpace : SV_Position) {
     // TODO discard if alpha is 0?
     @if(o_fog)
         @if(o_alpha)
-            texel = float4(lerp(texel.rgb, input.fog.rgb, input.fog.a), texel.a);
+            texel = float4(lerp(texel.rgb, fog_color.rgb, input.fogFactor), texel.a);
         @else
-            texel = lerp(texel, input.fog.rgb, input.fog.a);
+            texel = lerp(texel, fog_color.rgb, input.fogFactor);
         @end
     @end
 
     @if(o_grayscale)
         float intensity = (texel.r + texel.g + texel.b) / 3.0;
-        float3 new_texel = input.grayscale.rgb * intensity;
-        texel.rgb = lerp(texel.rgb, new_texel, input.grayscale.a);
+        float3 new_texel = grayscale_color.rgb * intensity;
+        texel.rgb = lerp(texel.rgb, new_texel, grayscale_color.a);
     @end
 
     @if(o_alpha && o_noise)

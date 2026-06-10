@@ -86,9 +86,13 @@ enum class ShaderOpts {
     TEXEL0_BLEND,
     TEXEL1_BLEND,
     PRIM_DEPTH,
-    TEX_LOD,      // G_TL_LOD: LOD_FRACTION comes from per-pixel UV derivatives
-    MIP_LOD,      // a real mip pyramid is bound to TEXEL0; TEXEL1 = next mip level
-    PRISM_SHADER, // 16-bit width
+    TEX_LOD,        // G_TL_LOD: LOD_FRACTION comes from per-pixel UV derivatives
+    MIP_LOD,        // a real mip pyramid is bound to TEXEL0; TEXEL1 = next mip level
+    LIGHTING,       // shade color computed in the vertex shader from normals + lights
+    POINT_LIGHTING, // point (positional) lights are present; needs world pos + MV rows
+    TEXGEN,         // UVs generated in the vertex shader from normals (env mapping)
+    TEXGEN_LINEAR,  // acos-based texgen variant
+    PRISM_SHADER,   // 16-bit width
     MAX
 };
 
@@ -124,6 +128,11 @@ struct CCFeatures {
     bool opt_tex_lod;  // LOD_FRACTION computed from per-pixel UV derivatives
     bool opt_mip_lod;  // TEXEL0 carries a real mip pyramid; TEXEL1 = next mip level
     bool uses_lod_frac; // any combiner slot references SHADER_LOD_FRAC
+    bool opt_shade;     // combiner reads the per-vertex shade color (SHADER_INPUT_7)
+    bool opt_lighting;  // shade computed in the vertex shader from normals + lights
+    bool opt_point_lighting;
+    bool opt_texgen;
+    bool opt_texgen_linear;
     bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
@@ -147,7 +156,7 @@ class GfxWindowBackend;
 class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 19;
+constexpr size_t SHADER_ID_SHIFT = 23;
 constexpr int16_t ShaderIdUnmask(uint64_t id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -233,7 +242,11 @@ struct LoadedVertex {
     float x, y, z, w;
     float u, v;
     struct RGBA color;
+    // Raw signed vertex normal (when G_LIGHTING); consumed by the vertex shader
+    int8_t normal[3];
     uint8_t clip_rej;
+    // World-space position for point (positional) lighting
+    float world_pos[3];
 };
 
 struct RawTexMetadata {
@@ -375,7 +388,11 @@ struct ColorCombiner {
     uint64_t shader_id0;
     uint64_t shader_id1;
     bool usedTextures[2];
+    // Combiner reads the per-vertex shade color (mapped to SHADER_INPUT_7)
+    bool usedShade;
     struct ShaderProgram* prg[16];
+    // Which RDP register feeds each constant input slot ([0] = color, [1] = alpha).
+    // Slots are limited to SHADER_INPUT_1..6; consumed by FillCombinerUniforms.
     uint8_t shader_input_mapping[2][7];
 };
 
@@ -452,6 +469,11 @@ class Interpreter {
 
     // private: TODO make these private
     void Flush();
+    // Fill the combiner-constant uniforms for the pending batch from RDP state
+    // and hand them to the rendering backend.
+    void LatchCombinerUniforms();
+    // Flush pending triangles when a combiner-visible RDP register is about to change.
+    void FlushIfRegisterChanges(const RGBA& reg, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1);
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
     void ShaderCacheClear();
@@ -560,6 +582,12 @@ class Interpreter {
     uint8_t mCurrentMipExtraLevels{};
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
+    // Combiner the currently batched triangles were packed with; its input mapping
+    // selects which RDP registers feed the combiner uniforms at flush time.
+    ColorCombiner* mPendingCombiner = nullptr;
+    // Last lighting/texgen uniforms handed to the backend; a change mid-batch
+    // forces a flush so queued triangles keep their values.
+    LightingUniforms mLatchedLighting{};
     uint8_t* mTexUploadBuffer = nullptr;
 
     GfxDimensions mGfxCurrentWindowDimensions{}; // gfx_current_window_dimensions;

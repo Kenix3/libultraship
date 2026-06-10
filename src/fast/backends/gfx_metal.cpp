@@ -275,6 +275,7 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     prg->usedTextures[5] = cc_features.used_blend[1];
     prg->numInputs = cc_features.numInputs;
     prg->numFloats = numFloats;
+    prg->usedLighting = cc_features.opt_lighting || cc_features.opt_texgen;
 
     // Prepoluate pipeline state cache with program and available msaa levels
     for (int i = 0; i < ARRAY_COUNT(mMsaaNumQualityLevels); i++) {
@@ -572,6 +573,13 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         current_framebuffer.mHasBoundFragShader = true;
     }
 
+    // Lighting/texgen uniforms for the vertex shader. setVertexBytes is per-encoder
+    // state, so re-send for every lit draw (encoders are recreated per frame).
+    if (mShaderProgram->usedLighting) {
+        current_framebuffer.mCommandEncoder->setVertexBytes(&mLightingUniforms, sizeof(LightingUniforms), 1);
+        mLightingUniformsDirty = false;
+    }
+
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
         if (mShaderProgram->usedTextures[i]) {
             if (current_framebuffer.mLastBoundTextures[i] != mTextures[mCurrentTextureIds[i]].texture) {
@@ -593,12 +601,23 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
     }
 
-    if (textures_changed || mPrimDepthDirty || mLodMaxDirty) {
+    if (textures_changed || mPrimDepthDirty || mLodMaxDirty || mCombinerUniformsDirty) {
         mDrawUniforms.prim_depth = mCurrentPrimDepth;
         mDrawUniforms.lod_max = mCurrentMaxLod;
+        for (int i = 0; i < 6; i++) {
+            mDrawUniforms.inputs[i] =
+                simd::float4{ mCombinerUniforms.inputs[i][0], mCombinerUniforms.inputs[i][1],
+                              mCombinerUniforms.inputs[i][2], mCombinerUniforms.inputs[i][3] };
+        }
+        mDrawUniforms.fog_color = simd::float4{ mCombinerUniforms.fog_color[0], mCombinerUniforms.fog_color[1],
+                                                mCombinerUniforms.fog_color[2], mCombinerUniforms.fog_color[3] };
+        mDrawUniforms.grayscale_color =
+            simd::float4{ mCombinerUniforms.grayscale_color[0], mCombinerUniforms.grayscale_color[1],
+                          mCombinerUniforms.grayscale_color[2], mCombinerUniforms.grayscale_color[3] };
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
         mLodMaxDirty = false;
+        mCombinerUniformsDirty = false;
     }
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {
