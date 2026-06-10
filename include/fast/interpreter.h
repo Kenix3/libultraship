@@ -346,7 +346,7 @@ struct RDP {
     // DRAM source even when each level was loaded with its own LoadBlock command.
     // Only linear loads (LoadBlock) are recorded; LoadTile loads are strided in DRAM
     // and are marked non-linear so the mip importer can skip them.
-    static constexpr size_t TMEM_JOURNAL_SIZE = 8;
+    static constexpr size_t TMEM_JOURNAL_SIZE = 32;
     struct TmemLoadEntry {
         uint16_t tmem_word;       // TMEM start, in 64-bit words
         uint16_t size_words;      // length in 64-bit words

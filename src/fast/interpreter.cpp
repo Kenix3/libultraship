@@ -1786,6 +1786,9 @@ void Interpreter::UploadMipChain(uint32_t baseTile) {
     uint32_t totalLevels = mCurrentMipExtraLevels + 1u;
     uint32_t width = TileWidthPx(mRdp, baseTile);
     uint32_t height = TileHeightPx(mRdp, baseTile);
+    // Upper mip tiles often carry a stale/unset palette field (games only set it
+    // on the render tile); all levels of a pyramid share the base tile's bank.
+    const uint8_t basePalette = mRdp->texture_tile[baseTile].palette;
     for (uint32_t l = 1; l <= mCurrentMipExtraLevels; l++) {
         uint32_t tile = baseTile + l;
         const auto& t = mRdp->texture_tile[tile];
@@ -1806,7 +1809,7 @@ void Interpreter::UploadMipChain(uint32_t baseTile) {
         if (width == 0 || height == 0 || strideBytes == 0) {
             return;
         }
-        if (!DecodeTileToRgba32(t.fmt, t.siz, src, strideBytes, width, height, mRdp->palettes, t.palette,
+        if (!DecodeTileToRgba32(t.fmt, t.siz, src, strideBytes, width, height, mRdp->palettes, basePalette,
                                 mTexUploadBuffer)) {
             return;
         }
@@ -2856,7 +2859,13 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 if (!palettized[t]) {
                     continue;
                 }
-                const auto& ptile = mRdp->texture_tile[effective_tile[t]];
+                // Under G_TL_LOD tile 1 is a mip level of tile 0 and shares its
+                // palette bank (upper tiles often carry a stale palette field)
+                uint32_t bank_tile = effective_tile[t];
+                if (t == 1 && (mRdp->other_mode_l & G_TL_LOD)) {
+                    bank_tile = effective_tile[0];
+                }
+                const auto& ptile = mRdp->texture_tile[bank_tile];
                 paletteParams[t][0] = ptile.siz == G_IM_SIZ_4b ? (float)(ptile.palette * 16) : 0.0f;
                 paletteParams[t][1] = mode;
             }
