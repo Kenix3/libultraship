@@ -1593,30 +1593,43 @@ uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
         return 0;
     }
 
-    uint32_t prevW = TileWidthPx(mRdp, baseTile);
-    uint32_t prevH = TileHeightPx(mRdp, baseTile);
-    if (prevW == 0 || prevH == 0) {
+    const uint32_t baseW = TileWidthPx(mRdp, baseTile);
+    const uint32_t baseH = TileHeightPx(mRdp, baseTile);
+    if (baseW == 0 || baseH == 0) {
         return 0;
     }
 
+    // Upper mip tiles often have stale/unset size registers (the RDP derives
+    // their coordinates by shifting), so dimensions are derived by halving the
+    // base tile; the tile's line stride and the TMEM journal validate the chain.
     uint8_t levels = 0;
+    uint32_t prevLine = base.line_size_bytes;
+    uint32_t w = baseW;
+    uint32_t h = baseH;
     for (uint32_t l = 1; l <= mRsp->texture_level && baseTile + l < 8; l++) {
         const auto& t = mRdp->texture_tile[baseTile + l];
-        if (t.fmt != base.fmt || t.siz != base.siz) {
+        if (t.fmt != base.fmt || t.siz != base.siz || t.line_size_bytes == 0) {
             break;
         }
-        uint32_t w = TileWidthPx(mRdp, baseTile + l);
-        uint32_t h = TileHeightPx(mRdp, baseTile + l);
-        if (w != std::max(prevW >> 1, 1u) || h != std::max(prevH >> 1, 1u)) {
+        // A real mip level's line is at most half the previous one (min one
+        // 64-bit word); equal-size tiles are separate textures, not a pyramid.
+        if (t.line_size_bytes > std::max(prevLine / 2, 8u)) {
             break;
         }
+        w = std::max(w >> 1, 1u);
+        h = std::max(h >> 1, 1u);
         const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
         if (entry == nullptr || !entry->linear) {
             break;
         }
+        // The level's data must fit inside the recorded load
+        uint32_t strideBytes = t.line_size_bytes * (t.siz == G_IM_SIZ_32b ? 2u : 1u);
+        uint32_t offsetBytes = ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        if (offsetBytes + strideBytes * h > (uint32_t)entry->size_words * 8) {
+            break;
+        }
         levels++;
-        prevW = w;
-        prevH = h;
+        prevLine = t.line_size_bytes;
     }
     return levels;
 }
@@ -1771,6 +1784,8 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
 // DetectMipChain has already validated the tile descriptors and TMEM journal.
 void Interpreter::UploadMipChain(uint32_t baseTile) {
     uint32_t totalLevels = mCurrentMipExtraLevels + 1u;
+    uint32_t width = TileWidthPx(mRdp, baseTile);
+    uint32_t height = TileHeightPx(mRdp, baseTile);
     for (uint32_t l = 1; l <= mCurrentMipExtraLevels; l++) {
         uint32_t tile = baseTile + l;
         const auto& t = mRdp->texture_tile[tile];
@@ -1779,8 +1794,10 @@ void Interpreter::UploadMipChain(uint32_t baseTile) {
             return;
         }
         const uint8_t* src = entry->dram_addr + ((uint32_t)t.tmem - entry->tmem_word) * 8;
-        uint32_t width = TileWidthPx(mRdp, tile);
-        uint32_t height = TileHeightPx(mRdp, tile);
+        // Dimensions derived by halving the base (upper tile size registers are
+        // unreliable); stride comes from the tile's own line setting.
+        width = std::max(width >> 1, 1u);
+        height = std::max(height >> 1, 1u);
         uint32_t strideBytes = t.line_size_bytes;
         if (t.siz == G_IM_SIZ_32b) {
             // RGBA32 tiles store the TMEM-interleaved stride (half of the DRAM stride)
@@ -2467,9 +2484,24 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     for (int i = 0; i < 2; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
 
-        // No LOD support: force both slots to the base mip level.
         if (i == 1 && mRdp->first_tile_index >= 2) {
             tile = mRdp->first_tile_index;
+        }
+
+        // LOD safety net: when G_TL_LOD is on but no GPU mip chain could be
+        // built, TEXEL1 was meant to be the next mip of TEXEL0. If tile 1's
+        // TMEM data belongs to the same load as tile 0 (one pyramid), the
+        // tmem-index heuristic would bind an unrelated texture for it — sample
+        // tile 0 instead (the LOD fraction then blends identical texels).
+        if (i == 1 && tile != mRdp->first_tile_index && (mRdp->other_mode_l & G_TL_LOD) && mipExtraLevels == 0 &&
+            (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE) {
+            const uint16_t baseTmem = mRdp->texture_tile[mRdp->first_tile_index].tmem;
+            const uint16_t lodTmem = mRdp->texture_tile[tile].tmem;
+            const RDP::TmemLoadEntry* e0 = FindTmemLoad(baseTmem);
+            const RDP::TmemLoadEntry* e1 = FindTmemLoad(lodTmem);
+            if (e0 != nullptr && e0 == e1 && lodTmem != baseTmem) {
+                tile = mRdp->first_tile_index;
+            }
         }
         effective_tile[i] = tile;
 
