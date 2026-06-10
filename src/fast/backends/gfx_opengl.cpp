@@ -339,7 +339,10 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
         { "o_mip_lod", cc_features.opt_mip_lod },
-        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac ||
+                            (cc_features.opt_tex_lod && cc_features.usedTextures[0] && cc_features.usedTextures[1]) },
+        { "o_two_tile_lod", cc_features.opt_tex_lod && !cc_features.opt_mip_lod && cc_features.usedTextures[0] &&
+                                cc_features.usedTextures[1] },
         { "o_shade", cc_features.opt_shade },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
         { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },

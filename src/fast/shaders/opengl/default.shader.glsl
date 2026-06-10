@@ -399,6 +399,16 @@
             vec4 texVal1 = textureLod(uTex0, vTexCoordAdj0, lodTile1);
         @end
 
+        @if(o_two_tile_lod)
+            // N64 LOD tile selection: both texel slots clamp to the available
+            // levels (with one level, TEXEL1 reads tile 0 too — never the stale
+            // contents of the unused second tile)
+            vec4 lodSample0 = texVal0;
+            vec4 lodSample1 = texVal1;
+            texVal0 = lodTile0 < 0.5 ? lodSample0 : lodSample1;
+            texVal1 = lodTile1 < 0.5 ? lodSample0 : lodSample1;
+        @end
+
         @if(o_alpha)
             vec4 texel;
         @else

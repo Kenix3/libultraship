@@ -410,6 +410,14 @@ fragment FragOut fragmentShader(
         float4 texVal1 = uTex0.sample(uTex0Smplr, vTexCoordAdj0, level(lodTile1));
     @end
 
+    @if(o_two_tile_lod)
+        // N64 LOD tile selection: both texel slots clamp to the available levels
+        float4 lodSample0 = texVal0;
+        float4 lodSample1 = texVal1;
+        texVal0 = lodTile0 < 0.5 ? lodSample0 : lodSample1;
+        texVal1 = lodTile1 < 0.5 ? lodSample0 : lodSample1;
+    @end
+
     @if(o_alpha)
         float4 texel;
     @else

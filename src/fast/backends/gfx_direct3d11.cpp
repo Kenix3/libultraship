@@ -1534,7 +1534,10 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
         { "o_mip_lod", cc_features.opt_mip_lod },
-        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac ||
+                            (cc_features.opt_tex_lod && cc_features.usedTextures[0] && cc_features.usedTextures[1]) },
+        { "o_two_tile_lod", cc_features.opt_tex_lod && !cc_features.opt_mip_lod && cc_features.usedTextures[0] &&
+                                cc_features.usedTextures[1] },
         { "o_shade", cc_features.opt_shade },
         { "o_lighting", cc_features.opt_lighting },
         { "o_point_lighting", cc_features.opt_point_lighting },
