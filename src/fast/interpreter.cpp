@@ -2875,13 +2875,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 if (!palettized[t]) {
                     continue;
                 }
-                // Under G_TL_LOD tile 1 is a mip level of tile 0 and shares its
-                // palette bank (upper tiles often carry a stale palette field)
-                uint32_t bank_tile = effective_tile[t];
-                if (t == 1 && (mRdp->other_mode_l & G_TL_LOD)) {
-                    bank_tile = effective_tile[0];
-                }
-                const auto& ptile = mRdp->texture_tile[bank_tile];
+                const auto& ptile = mRdp->texture_tile[effective_tile[t]];
                 paletteParams[t][0] = ptile.siz == G_IM_SIZ_4b ? (float)(ptile.palette * 16) : 0.0f;
                 paletteParams[t][1] = mode;
             }
