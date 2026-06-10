@@ -94,6 +94,19 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     if (mCurrentShaderProgram->fog_params_location >= 0) {
         glUniform4fv(mCurrentShaderProgram->fog_params_location, 1, mCombinerUniforms.fog_params);
     }
+    if (mCurrentShaderProgram->palette_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->palette_params_location, 2, &mCombinerUniforms.palette_params[0][0]);
+    }
+
+    // Vertex transform: matrix palette + y flip
+    if (mCurrentShaderProgram->mtx_palette_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->mtx_palette_location, GFX_MTX_PALETTE_SIZE * 4,
+                     &mTransformUniforms.mtx_palette[0][0][0]);
+        glUniform4fv(mCurrentShaderProgram->y_scale_location, 1, mTransformUniforms.y_scale);
+    }
+    if (mCurrentShaderProgram->mv_cols_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->mv_cols_location, 3, &mLightingUniforms.mv_cols[0][0]);
+    }
 
     // Lighting/texgen uniforms (vertex shader)
     if (mCurrentShaderProgram->lights_location >= 0) {
@@ -326,6 +339,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac },
         { "o_shade", cc_features.opt_shade },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
@@ -530,6 +544,10 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->attribSizes[cnt] = 4;
     ++cnt;
 
+    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aMtxSlot");
+    prg->attribSizes[cnt] = 1;
+    ++cnt;
+
     for (int i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             char name[32];
@@ -546,11 +564,8 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
         ++cnt;
     }
 
-    if (cc_features.opt_point_lighting) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aWorldPos");
-        prg->attribSizes[cnt] = 3;
-        ++cnt;
-    }
+    // (world position for point lighting is derived in the VS from the
+    // object-space position and the modelview columns — no extra attribute)
 
     prg->openglProgramId = shader_program;
     prg->numInputs = cc_features.numInputs;
@@ -560,6 +575,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
     prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->numFloats = numFloats;
     prg->numAttribs = cnt;
 
@@ -584,6 +600,10 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->uv_transform_location = glGetUniformLocation(shader_program, "uUvTransform");
     prg->tex_clamp_location = glGetUniformLocation(shader_program, "uTexClamp");
     prg->fog_params_location = glGetUniformLocation(shader_program, "uFogParams");
+    prg->mtx_palette_location = glGetUniformLocation(shader_program, "uMtxPalette");
+    prg->y_scale_location = glGetUniformLocation(shader_program, "uYScale");
+    prg->mv_cols_location = glGetUniformLocation(shader_program, "uMvCols");
+    prg->palette_params_location = glGetUniformLocation(shader_program, "uPaletteParams");
 
     LoadShader(prg);
 
@@ -610,6 +630,10 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     if (cc_features.used_blend[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
         glUniform1i(sampler_location, 5);
+    }
+    if (cc_features.used_palette[0] || cc_features.used_palette[1]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexPal");
+        glUniform1i(sampler_location, SHADER_PALETTE_TEXTURE);
     }
 
     return prg;
@@ -763,6 +787,23 @@ void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
 }
 
 void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
+    // N64 backface culling. The RSP cross product C = (v1-v2) x (v3-v2) relates
+    // to rasterizer winding via the VS y flip: signed area A = (yFlipped ? C : -C),
+    // and GL's default front face is CCW (A > 0). keepSign > 0 keeps C > 0.
+    const bool yFlipped = mTransformUniforms.y_scale[0] < 0.0f;
+    if (mCurrentCullKeepSign != mLastCullKeepSign ||
+        (mCurrentCullKeepSign != 0 && yFlipped != mLastCullYFlipped)) {
+        mLastCullKeepSign = mCurrentCullKeepSign;
+        mLastCullYFlipped = yFlipped;
+        if (mCurrentCullKeepSign == 0) {
+            glDisable(GL_CULL_FACE);
+        } else {
+            glEnable(GL_CULL_FACE);
+            const bool keepCCW = (mCurrentCullKeepSign > 0) == yFlipped;
+            glCullFace(keepCCW ? GL_BACK : GL_FRONT);
+        }
+    }
+
     if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask ||
         mCurrentStrictDecal != mLastStrictDecal || mCurrentZmodeDecal != mLastZmodeDecal) {
         mLastDepthTest = mCurrentDepthTest;

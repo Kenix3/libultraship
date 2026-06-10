@@ -30,9 +30,16 @@ struct LightUniforms {
     float4 lookat_y;
     float4 texgen_uv[2];
     float4 mv_rows[3];
+    float4 mv_cols[3];
     int num_lights;
 };
 @end
+
+// Mirrors struct TransformUniforms in gfx_rendering_api.h
+struct TransformUniforms {
+    float4 mtx_palette[32]; // 4 float4 rows per slot
+    float4 y_scale;
+};
 
 struct FragOut {
     float4 color [[color(0)]];
@@ -44,6 +51,8 @@ struct FragOut {
 struct Vertex {
     float4 position [[attribute(@{get_vertex_index()})]];
     @{update_floats(4)}
+    float mtxSlot [[attribute(@{get_vertex_index()})]];
+    @{update_floats(1)}
     @for(i in 0..2)
         @if(o_textures[i])
             float2 texCoord@{i} [[attribute(@{get_vertex_index()})]];
@@ -58,10 +67,6 @@ struct Vertex {
             float3 shade [[attribute(@{get_vertex_index()})]];
             @{update_floats(3)}
         @end
-    @end
-    @if(o_point_lighting)
-        float3 worldPos [[attribute(@{get_vertex_index()})]];
-        @{update_floats(3)}
     @end
 };
 
@@ -86,11 +91,20 @@ struct ProjectedVertex {
 
 vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
     , constant DrawUniforms& drawUniforms [[buffer(2)]]
+    , constant TransformUniforms& transformUniforms [[buffer(3)]]
 @if(o_lighting || o_texgen)
     , constant LightUniforms& lightUniforms [[buffer(1)]]
 @end
 ) {
     ProjectedVertex out;
+
+    // RSP position transform: matrix palette entry selected per vertex
+    int mtxBase = int(in.mtxSlot + 0.5) * 4;
+    float4 clipPos = in.position.x * transformUniforms.mtx_palette[mtxBase] +
+                     in.position.y * transformUniforms.mtx_palette[mtxBase + 1] +
+                     in.position.z * transformUniforms.mtx_palette[mtxBase + 2] +
+                     in.position.w * transformUniforms.mtx_palette[mtxBase + 3];
+
     @for(i in 0..2)
         @if(o_textures[i])
             // Tile shift/origin/bilerp/size pipeline folded into one transform
@@ -99,10 +113,10 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
         @end
     @end
     @if(o_fog)
-        // N64 RSP fog from clip-space z/w (position.z was packed as (z+w)/2);
+        // N64 RSP fog from clip-space z/w;
         // fog_params.w selects the source (0: computed, 1: constant, 2: vertex alpha)
-        float fogZ = 2.0 * in.position.z - in.position.w;
-        float fogW = abs(in.position.w) < 0.001 ? 0.001 : in.position.w;
+        float fogZ = clipPos.z;
+        float fogW = abs(clipPos.w) < 0.001 ? 0.001 : clipPos.w;
         float fogWinv = 1.0 / fogW;
         if (fogWinv < 0.0) {
             fogWinv = 32767.0;
@@ -146,6 +160,12 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
             }
         @end
     @end
+    @if(o_point_lighting)
+        // World-space position derived from the object-space vertex position
+        float3 worldPos = float3(dot(in.position, lightUniforms.mv_cols[0]),
+                                 dot(in.position, lightUniforms.mv_cols[1]),
+                                 dot(in.position, lightUniforms.mv_cols[2]));
+    @end
     @if(o_shade)
         @if(o_lighting)
             // N64 RSP lighting: in.shade carries the raw signed vertex normal
@@ -154,7 +174,7 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
                 float intensity = 0.0;
                 @if(o_point_lighting)
                 if (lightUniforms.lights[i * 3].w > 0.5) {
-                    float3 distVec = lightUniforms.lights[i * 3 + 2].xyz - in.worldPos;
+                    float3 distVec = lightUniforms.lights[i * 3 + 2].xyz - worldPos;
                     float distSq = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z * 2.0;
                     float dist = sqrt(distSq);
                     float3 lightModel = float3(dot(distVec, lightUniforms.mv_rows[0].xyz),
@@ -190,7 +210,9 @@ vertex ProjectedVertex vertexShader(Vertex in [[stage_in]]
             @end
         @end
     @end
-    out.position = in.position;
+    // Metal clip space: z in 0..1; y flip is carried in the uniform
+    out.position = float4(clipPos.x, clipPos.y * transformUniforms.y_scale.x,
+                          (clipPos.z + clipPos.w) / 2.0, clipPos.w);
     return out;
 }
 // END - BEGIN FRAGMENT SHADER

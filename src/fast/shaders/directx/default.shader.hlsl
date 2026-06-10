@@ -11,6 +11,7 @@
 
 struct PSInput {
     float4 position : SV_POSITION;
+    @{update_floats(1)} // aMtxSlot vertex attribute (matrix palette index)
 @for(i in 0..2)
     @if(o_textures[i])
         float2 uv@{i} : TEXCOORD@{i};
@@ -43,9 +44,16 @@ cbuffer LightCB : register(b3) {
     float4 lookat_y;
     float4 texgen_uv[2];
     float4 mv_rows[3];
+    float4 mv_cols[3];
     int num_lights;
 }
 @end
+
+// Mirrors struct TransformUniforms in gfx_rendering_api.h
+cbuffer TransformCB : register(b4) {
+    float4 mtx_palette[32]; // 4 float4 rows per slot
+    float4 y_scale;
+}
 
 @if(o_textures[0]) 
     Texture2D g_texture0 : register(t0);
@@ -116,6 +124,7 @@ cbuffer PerPrimDepthCB : register(b2) {
 
 PSInput VSMain(
     float4 position : POSITION
+    , float mtxSlot : MTXSLOT
 @for(i in 0..2)
     @if(o_textures[i])
         , float2 uv@{i} : TEXCOORD@{i}
@@ -128,12 +137,16 @@ PSInput VSMain(
         , float3 shade : SHADE
     @end
 @end
-@if(o_point_lighting)
-    , float3 worldPos : WORLDPOS
-@end
 ) {
     PSInput result;
-    result.position = position;
+
+    // RSP position transform: matrix palette entry selected per vertex
+    int mtxBase = int(mtxSlot + 0.5) * 4;
+    float4 clipPos = position.x * mtx_palette[mtxBase] + position.y * mtx_palette[mtxBase + 1] +
+                     position.z * mtx_palette[mtxBase + 2] + position.w * mtx_palette[mtxBase + 3];
+
+    // D3D clip space: z in 0..1; y flip is carried in the uniform
+    result.position = float4(clipPos.x, clipPos.y * y_scale.x, (clipPos.z + clipPos.w) / 2.0, clipPos.w);
     @for(i in 0..2)
         @if(o_textures[i])
             // Tile shift/origin/bilerp/size pipeline folded into one transform
@@ -143,10 +156,10 @@ PSInput VSMain(
     @end
 
     @if(o_fog)
-        // N64 RSP fog from clip-space z/w (position.z was packed as (z+w)/2);
+        // N64 RSP fog from clip-space z/w;
         // fog_params.w selects the source (0: computed, 1: constant, 2: vertex alpha)
-        float fogZ = 2.0 * position.z - position.w;
-        float fogW = abs(position.w) < 0.001 ? 0.001 : position.w;
+        float fogZ = clipPos.z;
+        float fogW = abs(clipPos.w) < 0.001 ? 0.001 : clipPos.w;
         float fogWinv = 1.0 / fogW;
         if (fogWinv < 0.0) {
             fogWinv = 32767.0;
@@ -191,6 +204,10 @@ PSInput VSMain(
         @end
     @end
 
+    @if(o_point_lighting)
+        // World-space position derived from the object-space vertex position
+        float3 worldPos = float3(dot(position, mv_cols[0]), dot(position, mv_cols[1]), dot(position, mv_cols[2]));
+    @end
     @if(o_shade)
         @if(o_lighting)
             // N64 RSP lighting: the shade input carries the raw signed vertex normal

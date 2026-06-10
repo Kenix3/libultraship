@@ -308,6 +308,12 @@ void GfxRenderingAPIDX11::Init() {
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mLightCb.GetAddressOf()),
                   mWindowBackend->GetWindowHandle(), "Failed to create lighting constant buffer.");
 
+    // Create transform constant buffer (vertex shader matrix palette)
+
+    constant_buffer_desc.ByteWidth = sizeof(TransformUniforms);
+    ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mTransformCb.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to create transform constant buffer.");
+
     // Create compute shader that can be used to retrieve depth buffer values
 
     const char* shader_source = R"(
@@ -451,6 +457,9 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     ied[ied_index++] = {
         "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
     };
+    ied[ied_index++] = {
+        "MTXSLOT", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
+    };
     for (UINT i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             ied[ied_index++] = {
@@ -464,10 +473,8 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
         DXGI_FORMAT format = cc_features.opt_alpha ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
         ied[ied_index++] = { "SHADE", 0, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
     }
-    if (cc_features.opt_point_lighting) {
-        ied[ied_index++] = { "WORLDPOS",       0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,
-                             D3D11_INPUT_PER_VERTEX_DATA, 0 };
-    }
+    // (world position for point lighting is derived in the VS from the
+    // object-space position and the modelview columns — no extra attribute)
 
     ThrowIfFailed(mDevice->CreateInputLayout(ied, ied_index, vs->GetBufferPointer(), vs->GetBufferSize(),
                                              prg->input_layout.GetAddressOf()));
@@ -505,6 +512,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     prg->usedTextures[2] = cc_features.used_masks[0];
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->usedTextures[5] = cc_features.used_blend[1];
 
     return (struct ShaderProgram*)(mShaderProgram = prg);
@@ -729,8 +737,9 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         mContext->OMSetDepthStencilState(mDepthStencilState.Get(), 0);
     }
 
-    if (mLastZmodeDecal != mCurrentZmodeDecal) {
+    if (mLastZmodeDecal != mCurrentZmodeDecal || mLastCullKeepSign != mCurrentCullKeepSign) {
         mLastZmodeDecal = mCurrentZmodeDecal;
+        mLastCullKeepSign = mCurrentCullKeepSign;
 
         mRasterizerState.Reset();
 
@@ -738,7 +747,12 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         ZeroMemory(&rasterizer_desc, sizeof(D3D11_RASTERIZER_DESC));
 
         rasterizer_desc.FillMode = D3D11_FILL_SOLID;
-        rasterizer_desc.CullMode = D3D11_CULL_NONE;
+        // N64 backface culling: D3D NDC keeps y up and FrontCounterClockwise is
+        // set; with no VS y flip the signed area A = -C, so keeping C > 0 keeps
+        // clockwise triangles, i.e. cull the front (CCW) faces.
+        rasterizer_desc.CullMode = mCurrentCullKeepSign > 0
+                                       ? D3D11_CULL_FRONT
+                                       : (mCurrentCullKeepSign < 0 ? D3D11_CULL_BACK : D3D11_CULL_NONE);
         rasterizer_desc.FrontCounterClockwise = true;
         rasterizer_desc.DepthBias = 0;
         // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
@@ -807,6 +821,8 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         memcpy(mPerDrawCbData.uv_transform, mCombinerUniforms.uv_transform, sizeof(mPerDrawCbData.uv_transform));
         memcpy(mPerDrawCbData.texture_clamp, mCombinerUniforms.texture_clamp, sizeof(mPerDrawCbData.texture_clamp));
         memcpy(mPerDrawCbData.fog_params, mCombinerUniforms.fog_params, sizeof(mPerDrawCbData.fog_params));
+        memcpy(mPerDrawCbData.palette_params, mCombinerUniforms.palette_params,
+               sizeof(mPerDrawCbData.palette_params));
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -823,6 +839,16 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         memcpy(light_ms.pData, &mLightingUniforms, sizeof(LightingUniforms));
         mContext->Unmap(mLightCb.Get(), 0);
         mLightingUniformsDirty = false;
+    }
+
+    // Matrix palette + y flip for the vertex shader
+    if (mTransformUniformsDirty) {
+        D3D11_MAPPED_SUBRESOURCE transform_ms;
+        ZeroMemory(&transform_ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        mContext->Map(mTransformCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &transform_ms);
+        memcpy(transform_ms.pData, &mTransformUniforms, sizeof(TransformUniforms));
+        mContext->Unmap(mTransformCb.Get(), 0);
+        mTransformUniformsDirty = false;
     }
 
     // G_ZS_PRIM / texture LOD: upload prim_depth+lod_max cbuffer when either changed
@@ -883,12 +909,14 @@ void GfxRenderingAPIDX11::StartFrame() {
     ID3D11Buffer* buffers[3] = { mPerFrameCb.Get(), mPerDrawCb.Get(), mPerPrimDepthCb.Get() };
     mContext->PSSetConstantBuffers(0, 3, buffers);
 
-    // Vertex shader constant buffers: PerDrawCB (b1: UV transform, fog params)
-    // and the lighting/texgen buffer (b3)
+    // Vertex shader constant buffers: PerDrawCB (b1: UV transform, fog params),
+    // the lighting/texgen buffer (b3), and the matrix palette (b4)
     ID3D11Buffer* vs_draw_buffers[1] = { mPerDrawCb.Get() };
     mContext->VSSetConstantBuffers(1, 1, vs_draw_buffers);
     ID3D11Buffer* vs_buffers[1] = { mLightCb.Get() };
     mContext->VSSetConstantBuffers(3, 1, vs_buffers);
+    ID3D11Buffer* vs_transform_buffers[1] = { mTransformCb.Get() };
+    mContext->VSSetConstantBuffers(4, 1, vs_transform_buffers);
 
     mPerFrameCbData.noise_frame++;
     if (mPerFrameCbData.noise_frame > 150) {
@@ -1512,6 +1540,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_texgen", cc_features.opt_texgen },
         { "o_texgen_linear", cc_features.opt_texgen_linear },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },

@@ -92,6 +92,8 @@ enum class ShaderOpts {
     POINT_LIGHTING, // point (positional) lights are present; needs world pos + MV rows
     TEXGEN,         // UVs generated in the vertex shader from normals (env mapping)
     TEXGEN_LINEAR,  // acos-based texgen variant
+    TEXEL0_PALETTE, // TEXEL0 is a CI index texture; palette lookup in the shader
+    TEXEL1_PALETTE, // TEXEL1 is a CI index texture; palette lookup in the shader
     PRISM_SHADER,   // 16-bit width
     MAX
 };
@@ -109,10 +111,11 @@ struct ColorCombinerKey {
 #endif
 };
 
-#define SHADER_MAX_TEXTURES 6
+#define SHADER_MAX_TEXTURES 7
 #define SHADER_FIRST_TEXTURE 0
 #define SHADER_FIRST_MASK_TEXTURE 2
 #define SHADER_FIRST_REPLACEMENT_TEXTURE 4
+#define SHADER_PALETTE_TEXTURE 6
 
 struct CCFeatures {
     int c[2][2][4];
@@ -134,6 +137,7 @@ struct CCFeatures {
     bool opt_texgen;
     bool opt_texgen_linear;
     bool usedTextures[2];
+    bool used_palette[2]; // texel is a CI index texture; palette lookup in the shader
     bool used_masks[2];
     bool used_blend[2];
     bool clamp[2][2];
@@ -156,7 +160,7 @@ class GfxWindowBackend;
 class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 23;
+constexpr size_t SHADER_ID_SHIFT = 25;
 constexpr int16_t ShaderIdUnmask(uint64_t id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -208,6 +212,9 @@ struct TextureCacheKey {
     // Number of mip levels uploaded for this texture (0 or 1 = just the base level).
     // Part of the key so the same data uploaded with/without a mip chain doesn't collide.
     uint8_t mip_levels;
+    // 1 = uploaded as a CI index texture (palette applied in the shader). Indexed
+    // entries do not key on palette contents, which is what makes TLUT swaps free.
+    uint8_t indexed;
 
     bool operator==(const TextureCacheKey&) const noexcept = default;
 
@@ -239,14 +246,16 @@ struct RGBA {
 };
 
 struct LoadedVertex {
+    // Object-space position (w normally 1). The vertex shader transforms it with
+    // the matrix-palette entry selected by mtx_slot. Rectangle/s2dex paths store
+    // final clip coordinates here and reference the identity palette entry.
     float x, y, z, w;
     float u, v;
     struct RGBA color;
     // Raw signed vertex normal (when G_LIGHTING); consumed by the vertex shader
     int8_t normal[3];
-    uint8_t clip_rej;
-    // World-space position for point (positional) lighting
-    float world_pos[3];
+    // Index into the interpreter's matrix history captured at vertex-load time
+    uint8_t mtx_slot;
 };
 
 struct RawTexMetadata {
@@ -329,6 +338,9 @@ struct RDP {
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
     } texture_tile[8];
     bool textures_changed[2];
+    // Set when a TLUT load changes the palette staging; the GPU palette texture
+    // is rebuilt lazily on the next palettized draw.
+    bool palette_texture_dirty;
 
     // Journal of recent TMEM loads so mip-pyramid tiles can be mapped back to their
     // DRAM source even when each level was loaded with its own LoadBlock command.
@@ -400,6 +412,8 @@ struct RenderingState {
     uint8_t depth_test_and_mask; // 1: depth test, 2: depth mask
     bool decal_mode;
     bool alpha_blend;
+    // GPU backface culling: sign of the kept RSP cross product (0 = no culling)
+    int8_t cull_keep_sign;
     struct XYWidthHeight viewport, scissor;
     struct ShaderProgram* mShaderProgram;
     TextureCacheNode* mTextures[SHADER_MAX_TEXTURES];
@@ -594,6 +608,34 @@ class Interpreter {
     float mUvTransform[2][4]{};
     float mTextureClamp[2][4]{};
     float mFogParams[4]{};
+
+    // GPU vertex transform: history of recent model-view-projection matrices
+    // (aspect scale folded in) captured at vertex-load time. Each LoadedVertex
+    // references an entry; GfxSpTri1 maps the referenced entries onto the small
+    // per-draw matrix palette uploaded to the vertex shader.
+    static constexpr size_t MTX_HISTORY_SIZE = 64;
+    float mMtxHistory[MTX_HISTORY_SIZE][4][4]{};
+    uint8_t mMtxHistoryHead = 0;
+    uint8_t mMtxHistoryCurrent = 0;
+    bool mMtxCurrentValid = false;
+    float mMtxCurrentAspect = 1.0f;
+    uint8_t mMtxIdentityEntry = 0;
+    bool mMtxIdentityValid = false;
+    // Per-batch mapping from history entry -> palette slot (-1 = not in palette)
+    int8_t mBatchSlotForHistory[MTX_HISTORY_SIZE]{};
+    uint8_t mBatchMtxCount = 0;
+    TransformUniforms mTransform{};
+
+    uint8_t AppendMtxHistory(const float m[4][4], float aspectScale);
+    uint8_t GetIdentityMtxSlot();
+
+    // GPU palettization: the import in progress uploads raw CI indices instead of
+    // decoded colors (palette lookup happens in the fragment shader).
+    bool mImportIndexed = false;
+    // Global 256-entry palette texture rebuilt from the TMEM TLUT staging
+    uint32_t mPaletteTextureId = 0xFFFFFFFF;
+    // Per-draw palette parameters: x = palette bank entry offset, y = filter mode
+    float mPaletteParams[2][4]{};
     uint8_t* mTexUploadBuffer = nullptr;
 
     GfxDimensions mGfxCurrentWindowDimensions{}; // gfx_current_window_dimensions;

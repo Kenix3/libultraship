@@ -4,6 +4,12 @@
 
 @if(VERTEX_SHADER)
     @{attr} vec4 aVtxPos;
+    @{attr} float aMtxSlot;
+    @{update_floats(1)}
+
+    // Matrix palette: 4 vec4 rows per slot; clip = obj.x*r0 + obj.y*r1 + obj.z*r2 + obj.w*r3
+    uniform vec4 uMtxPalette[32];
+    uniform vec4 uYScale;
 
     @for(i in 0..2)
         @if(o_textures[i])
@@ -39,17 +45,13 @@
         @end
     @end
 
-    @if(o_point_lighting)
-        @{attr} vec3 aWorldPos;
-        @{update_floats(3)}
-    @end
-
     @if(o_lighting)
         uniform vec4 uAmbient;
         uniform int uNumLights;
         uniform vec4 uLights[96];
         @if(o_point_lighting)
             uniform vec4 uMvRows[3];
+            uniform vec4 uMvCols[3];
         @end
     @end
     @if(o_texgen)
@@ -60,6 +62,11 @@
     @end
 
     void main() {
+        // RSP position transform: matrix palette entry selected per vertex
+        int mtxBase = int(aMtxSlot + 0.5) * 4;
+        vec4 clipPos = aVtxPos.x * uMtxPalette[mtxBase] + aVtxPos.y * uMtxPalette[mtxBase + 1] +
+                       aVtxPos.z * uMtxPalette[mtxBase + 2] + aVtxPos.w * uMtxPalette[mtxBase + 3];
+
         @for(i in 0..2)
             @if(o_textures[i])
                 // Tile shift/origin/bilerp/size pipeline folded into one transform
@@ -70,12 +77,12 @@
         @if(o_fog)
             // N64 RSP fog from clip-space z/w; uFogParams.w selects the source
             // (0: computed, 1: constant register, 2: legacy vertex-alpha fallback)
-            float fogW = abs(aVtxPos.w) < 0.001 ? 0.001 : aVtxPos.w;
+            float fogW = abs(clipPos.w) < 0.001 ? 0.001 : clipPos.w;
             float fogWinv = 1.0 / fogW;
             if (fogWinv < 0.0) {
                 fogWinv = 32767.0;
             }
-            float fogCalc = clamp(aVtxPos.z * fogWinv * uFogParams.x + uFogParams.y, 0.0, 255.0) / 255.0;
+            float fogCalc = clamp(clipPos.z * fogWinv * uFogParams.x + uFogParams.y, 0.0, 255.0) / 255.0;
             @if(o_shade && o_alpha)
                 vFogFactor = uFogParams.w > 1.5 ? aShade.a : (uFogParams.w > 0.5 ? uFogParams.z : fogCalc);
             @else
@@ -112,6 +119,10 @@
                 }
             @end
         @end
+        @if(o_point_lighting)
+            // World-space position derived from the object-space vertex position
+            vec3 worldPos = vec3(dot(aVtxPos, uMvCols[0]), dot(aVtxPos, uMvCols[1]), dot(aVtxPos, uMvCols[2]));
+        @end
         @if(o_shade)
             @if(o_lighting)
                 // N64 RSP lighting: aShade carries the raw signed vertex normal
@@ -120,7 +131,7 @@
                     float intensity = 0.0;
                     @if(o_point_lighting)
                     if (uLights[i * 3].w > 0.5) {
-                        vec3 distVec = uLights[i * 3 + 2].xyz - aWorldPos;
+                        vec3 distVec = uLights[i * 3 + 2].xyz - worldPos;
                         float distSq = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z * 2.0;
                         float dist = sqrt(distSq);
                         vec3 lightModel = vec3(dot(distVec, uMvRows[0].xyz), dot(distVec, uMvRows[1].xyz), dot(distVec, uMvRows[2].xyz));
@@ -153,7 +164,7 @@
                 @end
             @end
         @end
-        gl_Position = aVtxPos;
+        gl_Position = vec4(clipPos.x, clipPos.y * uYScale.x, clipPos.z, clipPos.w);
         @if(opengles)
             gl_Position.z *= 0.3f;
         @end

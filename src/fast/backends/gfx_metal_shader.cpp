@@ -267,6 +267,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "o_texgen", cc_features.opt_texgen },
         { "o_texgen_linear", cc_features.opt_texgen_linear },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },

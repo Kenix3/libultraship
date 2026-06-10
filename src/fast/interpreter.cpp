@@ -116,6 +116,7 @@ Interpreter::Interpreter() {
     mRsp = new RSP();
     mRdp = new RDP();
     mBufVbo = new float[MAX_TRI_BUFFER * (32 * 3)];
+    memset(mBatchSlotForHistory, -1, sizeof(mBatchSlotForHistory));
 }
 
 Interpreter::~Interpreter() {
@@ -139,10 +140,54 @@ void Interpreter::Flush() {
     if (mBufVboLen > 0) {
         mRapi->SetCurrentPrimDepth((float)mRdp->prim_depth / N64_PRIM_DEPTH_MAX);
         LatchCombinerUniforms();
+        mRapi->SetTransformUniforms(mTransform);
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
+        // Palette slots are assigned per batch; the next batch starts empty
+        memset(mBatchSlotForHistory, -1, sizeof(mBatchSlotForHistory));
+        mBatchMtxCount = 0;
     }
+}
+
+// Record a model-view-projection matrix (with the widescreen aspect scale folded
+// into its x output column) in the history ring. Entries stay valid long enough
+// for any vertex still in the RSP pool to be drawn; the ring is far deeper than
+// any realistic number of matrix loads within a vertex pool's lifetime.
+uint8_t Interpreter::AppendMtxHistory(const float m[4][4], float aspectScale) {
+    uint8_t slot = mMtxHistoryHead;
+    mMtxHistoryHead = (mMtxHistoryHead + 1) % MTX_HISTORY_SIZE;
+    for (int i = 0; i < 4; i++) {
+        mMtxHistory[slot][i][0] = m[i][0] * aspectScale;
+        mMtxHistory[slot][i][1] = m[i][1];
+        mMtxHistory[slot][i][2] = m[i][2];
+        mMtxHistory[slot][i][3] = m[i][3];
+    }
+    if (mMtxIdentityValid && slot == mMtxIdentityEntry) {
+        mMtxIdentityValid = false;
+    }
+    if (mMtxCurrentValid && slot == mMtxHistoryCurrent) {
+        mMtxCurrentValid = false;
+    }
+    // A new entry at this slot invalidates any palette mapping that pointed here
+    if (mBatchSlotForHistory[slot] >= 0) {
+        Flush();
+    }
+    return slot;
+}
+
+// Rectangle and s2dex paths write final clip coordinates directly into the
+// vertex pool; they reference an identity palette entry so the vertex shader
+// passes them through unchanged.
+uint8_t Interpreter::GetIdentityMtxSlot() {
+    if (!mMtxIdentityValid) {
+        static const float identity[4][4] = {
+            { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 }
+        };
+        mMtxIdentityEntry = AppendMtxHistory(identity, 1.0f);
+        mMtxIdentityValid = true;
+    }
+    return mMtxIdentityEntry;
 }
 
 // The color-combiner formula runs on the GPU; this latches its constant operands
@@ -173,6 +218,7 @@ void Interpreter::LatchCombinerUniforms() {
     memcpy(u.uv_transform, mUvTransform, sizeof(u.uv_transform));
     memcpy(u.texture_clamp, mTextureClamp, sizeof(u.texture_clamp));
     memcpy(u.fog_params, mFogParams, sizeof(u.fog_params));
+    memcpy(u.palette_params, mPaletteParams, sizeof(u.palette_params));
 
     for (int j = 0; j < 6; j++) {
         for (int k = 0; k < 2; k++) {
@@ -1147,13 +1193,16 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     uint32_t palIdx = mRdp->texture_tile[tile].palette; // 0-15
 
-    const uint8_t* palette;
+    const bool indexed = mImportIndexed;
+    const uint8_t* palette = nullptr;
 
-    if (mRdp->palettes[palIdx / 8] == nullptr) {
-        SPDLOG_WARN("CI4: null palette slot {} for palIdx={}", palIdx / 8, palIdx);
-        return;
+    if (!indexed) {
+        if (mRdp->palettes[palIdx / 8] == nullptr) {
+            SPDLOG_WARN("CI4: null palette slot {} for palIdx={}", palIdx / 8, palIdx);
+            return;
+        }
+        palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
     }
-    palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
     uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
                                                       mRdp->texture_tile[tile].line_size_bytes);
@@ -1206,6 +1255,15 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
             uint32_t srcPixelIdx = y * (fullImageLineSizeBytes * 2) + x;
             uint8_t byte = addr[srcPixelIdx / 2];
             uint8_t idx = (byte >> (4 - (srcPixelIdx % 2) * 4)) & 0xf;
+            if (indexed) {
+                // Raw nibble; the palette bank and lookup are applied in the shader
+                mTexUploadBuffer[4 * i + 0] = idx;
+                mTexUploadBuffer[4 * i + 1] = 0;
+                mTexUploadBuffer[4 * i + 2] = 0;
+                mTexUploadBuffer[4 * i + 3] = 255;
+                i++;
+                continue;
+            }
             uint16_t col16 = (palette[idx * 2] << 8) | palette[idx * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
             uint8_t r = col16 >> 11;
@@ -1240,7 +1298,8 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    if (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr) {
+    const bool indexed = mImportIndexed;
+    if (!indexed && (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr)) {
         SPDLOG_WARN("CI8: null palette (pal0={}, pal1={})", static_cast<const void*>(mRdp->palettes[0]),
                     static_cast<const void*>(mRdp->palettes[1]));
         return;
@@ -1249,6 +1308,14 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     for (uint32_t i = 0, j = 0; i < sizeBytes; j += fullImageLineSizeBytes - lineSizeBytes) {
         for (uint32_t k = 0; k < lineSizeBytes; i++, k++, j++) {
             uint8_t idx = addr[j];
+            if (indexed) {
+                // Raw index; the palette lookup is applied in the shader
+                mTexUploadBuffer[4 * i + 0] = idx;
+                mTexUploadBuffer[4 * i + 1] = 0;
+                mTexUploadBuffer[4 * i + 2] = 0;
+                mTexUploadBuffer[4 * i + 3] = 255;
+                continue;
+            }
             uint16_t col16 = (mRdp->palettes[idx / 128][(idx % 128) * 2] << 8) |
                              mRdp->palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
@@ -1737,6 +1804,14 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
     }
     key.mip_levels = mCurrentMipExtraLevels;
+    if (mImportIndexed) {
+        // Index textures don't depend on palette contents: the palette lookup
+        // happens in the shader, so TLUT swaps reuse the same cache entry.
+        key.palette_addrs[0] = nullptr;
+        key.palette_addrs[1] = nullptr;
+        key.palette_index = 0;
+        key.indexed = 1;
+    }
 
     if (TextureCacheLookup(i, key)) {
         return;
@@ -1968,6 +2043,8 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
         mRsp->lights_changed = 1;
     }
     MatrixMul(mRsp->MP_matrix, mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1], mRsp->P_matrix);
+    // The next vertex load captures the new MP matrix into the history ring
+    mMtxCurrentValid = false;
 }
 
 void Interpreter::GfxSpPopMatrix(uint32_t count) {
@@ -1981,6 +2058,7 @@ void Interpreter::GfxSpPopMatrix(uint32_t count) {
         }
     }
     mRsp->lights_changed = true;
+    mMtxCurrentValid = false;
 }
 
 float Interpreter::AdjXForAspectRatio(float x) const {
@@ -2009,6 +2087,16 @@ void Interpreter::AdjustWidthHeightForScale(uint32_t& width, uint32_t& height, u
 }
 
 void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vertices) {
+    // The position transform runs in the vertex shader: capture the current
+    // model-view-projection (with the widescreen aspect scale folded in) in the
+    // matrix history once per matrix/aspect change and tag each vertex with it.
+    const float aspectScale = AdjXForAspectRatio(1.0f);
+    if (!mMtxCurrentValid || aspectScale != mMtxCurrentAspect) {
+        mMtxHistoryCurrent = AppendMtxHistory(mRsp->MP_matrix, aspectScale);
+        mMtxCurrentAspect = aspectScale;
+        mMtxCurrentValid = true;
+    }
+
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const F3DVtx_t* v = &vertices[i].v;
         const F3DVtx_tn* vn = &vertices[i].n;
@@ -2018,27 +2106,11 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
             return;
         }
 
-        float x = v->ob[0] * mRsp->MP_matrix[0][0] + v->ob[1] * mRsp->MP_matrix[1][0] +
-                  v->ob[2] * mRsp->MP_matrix[2][0] + mRsp->MP_matrix[3][0];
-        float y = v->ob[0] * mRsp->MP_matrix[0][1] + v->ob[1] * mRsp->MP_matrix[1][1] +
-                  v->ob[2] * mRsp->MP_matrix[2][1] + mRsp->MP_matrix[3][1];
-        float z = v->ob[0] * mRsp->MP_matrix[0][2] + v->ob[1] * mRsp->MP_matrix[1][2] +
-                  v->ob[2] * mRsp->MP_matrix[2][2] + mRsp->MP_matrix[3][2];
-        float w = v->ob[0] * mRsp->MP_matrix[0][3] + v->ob[1] * mRsp->MP_matrix[1][3] +
-                  v->ob[2] * mRsp->MP_matrix[2][3] + mRsp->MP_matrix[3][3];
-
-        float world_pos[3] = { 0.0 };
-        if (mRsp->geometry_mode & G_LIGHTING_POSITIONAL) {
-            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
-            world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
-            world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
-            world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
-        }
-        d->world_pos[0] = world_pos[0];
-        d->world_pos[1] = world_pos[1];
-        d->world_pos[2] = world_pos[2];
-
-        x = AdjXForAspectRatio(x);
+        d->x = v->ob[0];
+        d->y = v->ob[1];
+        d->z = v->ob[2];
+        d->w = 1.0f;
+        d->mtx_slot = mMtxHistoryCurrent;
 
         short U = v->tc[0] * mRsp->texture_scaling_factor.s >> 16;
         short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
@@ -2068,29 +2140,9 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         d->u = U;
         d->v = V;
 
-        // trivial clip rejection
-        d->clip_rej = 0;
-        if (x < -w) {
-            d->clip_rej |= 1; // CLIP_LEFT
-        }
-        if (x > w) {
-            d->clip_rej |= 2; // CLIP_RIGHT
-        }
-        if (y < -w) {
-            d->clip_rej |= 4; // CLIP_BOTTOM
-        }
-        if (y > w) {
-            d->clip_rej |= 8; // CLIP_TOP
-        }
-        // if (z < -w) d->clip_rej |= 16; // CLIP_NEAR
-        if (z > w) {
-            d->clip_rej |= 32; // CLIP_FAR
-        }
-
-        d->x = x;
-        d->y = y;
-        d->z = z;
-        d->w = w;
+        // Clip rejection and backface culling are handled by the GPU now (it
+        // clips natively, and face culling is set per draw from the geometry
+        // mode), so no per-vertex clip flags are computed here.
 
         // The fog factor is computed in the vertex shader (from clip-space z/w and
         // the fog_mul/fog_offset uniforms); the alpha slot keeps the vertex alpha.
@@ -2138,50 +2190,34 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     struct LoadedVertex* v3 = &mRsp->loaded_vertices[vtx3_idx];
     struct LoadedVertex* v_arr[3] = { v1, v2, v3 };
 
-    // if (rand()%2) return;
-
-    if (v1->clip_rej & v2->clip_rej & v3->clip_rej) {
-        // The whole triangle lies outside the visible area
-        return;
-    }
-
     const uint32_t cull_both = get_attr(CULL_BOTH);
     const uint32_t cull_front = get_attr(CULL_FRONT);
     const uint32_t cull_back = get_attr(CULL_BACK);
 
-    if ((mRsp->geometry_mode & cull_both) != 0) {
-        float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
-        float dy1 = v1->y / (v1->w) - v2->y / (v2->w);
-        float dx2 = v3->x / (v3->w) - v2->x / (v2->w);
-        float dy2 = v3->y / (v3->w) - v2->y / (v2->w);
-        float cross = dx1 * dy2 - dy1 * dx2;
-
-        if ((v1->w < 0) ^ (v2->w < 0) ^ (v3->w < 0)) {
-            // If one vertex lies behind the eye, negating cross will give the correct result.
-            // If all vertices lie behind the eye, the triangle will be rejected anyway.
-            cross = -cross;
-        }
-
-        // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
-        // so apply it regardless of the active microcode handler.
-        if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
-            cross = -cross;
-        }
-
-        auto cull_type = mRsp->geometry_mode & cull_both;
-
-        if (cull_type == cull_front) {
-            if (cross <= 0) {
-                return;
-            }
-        } else if (cull_type == cull_back) {
-            if (cross >= 0) {
-                return;
-            }
-        } else if (cull_type == cull_both) {
-            // Why is this even an option?
-            return;
-        }
+    // Backface culling runs on the GPU rasterizer now. The keep-sign convention
+    // matches the RSP cross product C = (v1-v2) x (v3-v2) in pre-y-flip clip
+    // space: G_CULL_FRONT keeps C > 0, G_CULL_BACK keeps C < 0. Triangles with
+    // vertices behind the eye are handled by GPU clipping (more accurately than
+    // the old CPU sign heuristic).
+    int8_t cull_keep_sign = 0;
+    const uint32_t cull_type = mRsp->geometry_mode & cull_both;
+    if (cull_type == cull_both) {
+        // Why is this even an option?
+        return;
+    } else if (cull_type == cull_front) {
+        cull_keep_sign = 1;
+    } else if (cull_type == cull_back) {
+        cull_keep_sign = -1;
+    }
+    // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
+    // so apply it regardless of the active microcode handler.
+    if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
+        cull_keep_sign = -cull_keep_sign;
+    }
+    if (cull_keep_sign != mRenderingState.cull_keep_sign) {
+        Flush();
+        mRapi->SetCullMode(cull_keep_sign);
+        mRenderingState.cull_keep_sign = cull_keep_sign;
     }
 
     // depth_test is set when the fragment has a depth value to compare (either from vertex Z via
@@ -2320,6 +2356,39 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
     }
 
+    // GPU palettization: CI textures upload raw indices and the palette lookup
+    // (plus post-lookup bilinear/3-point filtering) runs in the fragment shader.
+    // The same index texture is reused across TLUT swaps. Mip chains, masked or
+    // blended textures, and HD/raw replacements fall back to CPU decoding.
+    bool palettized[2] = { false, false };
+    for (int i = 0; i < 2; i++) {
+        uint32_t pal_tile = mRdp->first_tile_index + i;
+        if (i == 1 && mRdp->first_tile_index >= 2) {
+            pal_tile = mRdp->first_tile_index;
+        }
+        const auto& pt = mRdp->texture_tile[pal_tile];
+        const auto& plt = mRdp->loaded_texture[pt.tmem_index];
+        if (pt.fmt != G_IM_FMT_CI || (pt.siz != G_IM_SIZ_4b && pt.siz != G_IM_SIZ_8b)) {
+            continue;
+        }
+        if (plt.masked || plt.blended || (plt.tex_flags & (TEX_FLAG_LOAD_AS_RAW | TEX_FLAG_LOAD_AS_IMG)) != 0 ||
+            plt.raw_tex_metadata.h_byte_scale != 1 || plt.raw_tex_metadata.v_pixel_scale != 1) {
+            continue;
+        }
+        if (i == 0 && mipExtraLevels > 0) {
+            continue;
+        }
+        if (pt.siz == G_IM_SIZ_4b) {
+            if (mRdp->palettes[pt.palette / 8] == nullptr) {
+                continue;
+            }
+        } else if (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr) {
+            continue;
+        }
+        palettized[i] = true;
+        cc_options |= i == 0 ? SHADER_OPT(TEXEL0_PALETTE) : SHADER_OPT(TEXEL1_PALETTE);
+    }
+
     ColorCombinerKey key;
     key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
@@ -2347,18 +2416,21 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         effective_tile[i] = tile;
 
         if (comb->usedTextures[i]) {
-            // The mip variant of a texture lives under a different cache key, so a
-            // LOD-mode change must re-run the import even when the tile data didn't change.
-            if (i == 0 && mRenderingState.mTextures[0] != nullptr &&
-                mRenderingState.mTextures[0]->first.mip_levels != mipExtraLevels) {
-                mRdp->textures_changed[0] = true;
+            // The mip/indexed variants of a texture live under different cache keys,
+            // so a mode change must re-run the import even when the tile data didn't change.
+            if (mRenderingState.mTextures[i] != nullptr &&
+                ((i == 0 && mRenderingState.mTextures[0]->first.mip_levels != mipExtraLevels) ||
+                 mRenderingState.mTextures[i]->first.indexed != (palettized[i] ? 1 : 0))) {
+                mRdp->textures_changed[i] = true;
             }
             if (mRdp->textures_changed[i]) {
                 Flush();
                 // Only the base texture slot carries a mip chain; masks and
                 // replacements are always uploaded as single-level textures.
                 mCurrentMipExtraLevels = (i == 0) ? mipExtraLevels : 0;
+                mImportIndexed = palettized[i];
                 ImportTexture(i, tile, false);
+                mImportIndexed = false;
                 mCurrentMipExtraLevels = 0;
                 if (mRdp->loaded_texture[i].masked) {
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
@@ -2455,6 +2527,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
 
             bool linear_filter = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            if (palettized[i]) {
+                // Index textures must never be interpolated by the sampler;
+                // filtering happens in the shader after the palette lookup.
+                linear_filter = false;
+            }
             if (linear_filter != mRenderingState.mTextures[i]->second.linear_filter ||
                 cms != mRenderingState.mTextures[i]->second.cms || cmt != mRenderingState.mTextures[i]->second.cmt) {
                 Flush();
@@ -2469,6 +2546,36 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 mRenderingState.mTextures[i]->second.cms = cms;
                 mRenderingState.mTextures[i]->second.cmt = cmt;
             }
+        }
+    }
+
+    // Bind (and lazily rebuild) the global palette texture for palettized draws
+    if (palettized[0] || palettized[1]) {
+        if (mPaletteTextureId == 0xFFFFFFFF) {
+            mPaletteTextureId = mRapi->NewTexture();
+            mRdp->palette_texture_dirty = true;
+        }
+        if (mRdp->palette_texture_dirty) {
+            Flush();
+            uint8_t palBuf[256 * 4];
+            for (int e = 0; e < 256; e++) {
+                const uint8_t* half = mRdp->palettes[e / 128];
+                if (half == nullptr) {
+                    palBuf[4 * e + 0] = palBuf[4 * e + 1] = palBuf[4 * e + 2] = palBuf[4 * e + 3] = 0;
+                    continue;
+                }
+                uint16_t col16 = (half[(e % 128) * 2] << 8) | half[(e % 128) * 2 + 1];
+                palBuf[4 * e + 0] = SCALE_5_8(col16 >> 11);
+                palBuf[4 * e + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                palBuf[4 * e + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                palBuf[4 * e + 3] = (col16 & 1) ? 255 : 0;
+            }
+            mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteTextureId);
+            mRapi->UploadTexture(palBuf, 256, 1);
+            mRapi->SetSamplerParameters(SHADER_PALETTE_TEXTURE, false, G_TX_CLAMP, G_TX_CLAMP);
+            mRdp->palette_texture_dirty = false;
+        } else {
+            mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteTextureId);
         }
     }
 
@@ -2581,6 +2688,14 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 lu.mv_rows[row][1] = mtx[row][1];
                 lu.mv_rows[row][2] = mtx[row][2];
             }
+            // Columns (incl. translation) let the VS derive the world-space
+            // position from the object-space vertex position.
+            for (int col = 0; col < 3; col++) {
+                lu.mv_cols[col][0] = mtx[0][col];
+                lu.mv_cols[col][1] = mtx[1][col];
+                lu.mv_cols[col][2] = mtx[2][col];
+                lu.mv_cols[col][3] = mtx[3][col];
+            }
         }
 
         if (memcmp(&lu, &mLatchedLighting, sizeof(LightingUniforms)) != 0) {
@@ -2641,28 +2756,76 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
         }
 
+        // Palette bank offset + post-lookup filter mode for CI index textures
+        float paletteParams[2][4] = {};
+        if (palettized[0] || palettized[1]) {
+            const bool pal_linear = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            const FilteringMode fm = mRapi->GetTextureFilter();
+            const float mode = (!pal_linear || fm == FILTER_NONE) ? 0.0f : (fm == FILTER_THREE_POINT ? 2.0f : 1.0f);
+            for (int t = 0; t < 2; t++) {
+                if (!palettized[t]) {
+                    continue;
+                }
+                const auto& ptile = mRdp->texture_tile[effective_tile[t]];
+                paletteParams[t][0] = ptile.siz == G_IM_SIZ_4b ? (float)(ptile.palette * 16) : 0.0f;
+                paletteParams[t][1] = mode;
+            }
+        }
+
         if (memcmp(uvTransform, mUvTransform, sizeof(uvTransform)) != 0 ||
             memcmp(texClamp, mTextureClamp, sizeof(texClamp)) != 0 ||
-            memcmp(fogParams, mFogParams, sizeof(fogParams)) != 0) {
+            memcmp(fogParams, mFogParams, sizeof(fogParams)) != 0 ||
+            memcmp(paletteParams, mPaletteParams, sizeof(paletteParams)) != 0) {
             Flush();
             memcpy(mUvTransform, uvTransform, sizeof(uvTransform));
             memcpy(mTextureClamp, texClamp, sizeof(texClamp));
             memcpy(mFogParams, fogParams, sizeof(fogParams));
+            memcpy(mPaletteParams, paletteParams, sizeof(paletteParams));
         }
     }
 
+    // Per-batch y inversion for the vertex shader (z convention is per-backend
+    // and lives in the shader templates).
     struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
+    const float y_scale = clip_parameters.invertY ? -1.0f : 1.0f;
+    if (y_scale != mTransform.y_scale[0] && mBufVboNumTris > 0) {
+        Flush();
+    }
+    mTransform.y_scale[0] = y_scale;
+
+    // Map the triangle's matrix-history entries onto the per-draw palette,
+    // flushing if the palette is full (the batch restarts with empty slots).
+    uint8_t mtx_slots[3];
+    for (int attempt = 0; attempt < 2; attempt++) {
+        bool flushed = false;
+        for (int k = 0; k < 3; k++) {
+            const uint8_t h = v_arr[k]->mtx_slot;
+            int8_t slot = mBatchSlotForHistory[h];
+            if (slot < 0) {
+                if (mBatchMtxCount == GFX_MTX_PALETTE_SIZE) {
+                    Flush();
+                    flushed = true;
+                    break;
+                }
+                slot = (int8_t)mBatchMtxCount++;
+                mBatchSlotForHistory[h] = slot;
+                memcpy(mTransform.mtx_palette[slot], mMtxHistory[h], sizeof(mTransform.mtx_palette[slot]));
+            }
+            mtx_slots[k] = (uint8_t)slot;
+        }
+        if (!flushed) {
+            break;
+        }
+    }
 
     for (int i = 0; i < 3; i++) {
-        float z = v_arr[i]->z, w = v_arr[i]->w;
-        if (clip_parameters.z_is_from_0_to_1) {
-            z = (z + w) / 2.0f;
-        }
-
+        // Object-space position (or clip-space + identity matrix for rects);
+        // the vertex shader applies the palette matrix, y flip and z convention.
         mBufVbo[mBufVboLen++] = v_arr[i]->x;
-        mBufVbo[mBufVboLen++] = clip_parameters.invertY ? -v_arr[i]->y : v_arr[i]->y;
-        mBufVbo[mBufVboLen++] = z;
-        mBufVbo[mBufVboLen++] = w;
+        mBufVbo[mBufVboLen++] = v_arr[i]->y;
+        mBufVbo[mBufVboLen++] = v_arr[i]->z;
+        mBufVbo[mBufVboLen++] = v_arr[i]->w;
+        mBufVbo[mBufVboLen++] = (float)mtx_slots[i];
 
         // Raw RSP texture coordinates: the tile shift/origin/bilerp/size pipeline
         // runs in the vertex shader via the per-draw uv_transform uniforms, and
@@ -2701,11 +2864,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
         }
 
-        if (cc_options & SHADER_OPT(POINT_LIGHTING)) {
-            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[0];
-            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[1];
-            mBufVbo[mBufVboLen++] = v_arr[i]->world_pos[2];
-        }
+        // The world-space position for point lighting is derived in the vertex
+        // shader from the object-space position and the modelview columns.
     }
 
     if (++mBufVboNumTris == MAX_TRI_BUFFER) {
@@ -2964,6 +3124,9 @@ void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uin
 
 void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
     SUPPORT_CHECK(mRdp->texture_to_load.siz == G_IM_SIZ_16b);
+
+    // The GPU palette texture mirrors the TLUT staging; rebuild it lazily
+    mRdp->palette_texture_dirty = true;
 
     uint16_t tmem = mRdp->texture_tile[tile].tmem;
     const uint8_t* src = mRdp->texture_to_load.addr;
@@ -3329,25 +3492,32 @@ void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_
     struct LoadedVertex* lr = &mRsp->loaded_vertices[MAX_VERTICES + 2];
     struct LoadedVertex* ur = &mRsp->loaded_vertices[MAX_VERTICES + 3];
 
+    // Final clip coordinates pass through the identity palette entry
+    const uint8_t identity_slot = GetIdentityMtxSlot();
+
     ul->x = ulxf;
     ul->y = ulyf;
     ul->z = -1.0f;
     ul->w = 1.0f;
+    ul->mtx_slot = identity_slot;
 
     ll->x = ulxf;
     ll->y = lryf;
     ll->z = -1.0f;
     ll->w = 1.0f;
+    ll->mtx_slot = identity_slot;
 
     lr->x = lrxf;
     lr->y = lryf;
     lr->z = -1.0f;
     lr->w = 1.0f;
+    lr->mtx_slot = identity_slot;
 
     ur->x = lrxf;
     ur->y = ulyf;
     ur->z = -1.0f;
     ur->w = 1.0f;
+    ur->mtx_slot = identity_slot;
 
     // The coordinates for texture rectangle shall bypass the viewport setting
     struct XYWidthHeight default_viewport;
@@ -5522,6 +5692,7 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
+    mMtxCurrentValid = false;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
@@ -6099,6 +6270,9 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     if (cc_features->usedTextures[1] && shader_id1 & SHADER_OPT(TEXEL1_BLEND)) {
         cc_features->used_blend[1] = true;
     }
+
+    cc_features->used_palette[0] = cc_features->usedTextures[0] && (shader_id1 & SHADER_OPT(TEXEL0_PALETTE)) != 0;
+    cc_features->used_palette[1] = cc_features->usedTextures[1] && (shader_id1 & SHADER_OPT(TEXEL1_PALETTE)) != 0;
 
     cc_features->shader_id = Fast::ShaderIdUnmask(shader_id1);
 }

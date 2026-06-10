@@ -273,6 +273,7 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
     prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->numInputs = cc_features.numInputs;
     prg->numFloats = numFloats;
     prg->usedLighting = cc_features.opt_lighting || cc_features.opt_texgen;
@@ -535,7 +536,6 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         current_framebuffer.mLastZmodeDecal = mCurrentZmodeDecal;
 
         current_framebuffer.mCommandEncoder->setTriangleFillMode(MTL::TriangleFillModeFill);
-        current_framebuffer.mCommandEncoder->setCullMode(MTL::CullModeNone);
         current_framebuffer.mCommandEncoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
 
         // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
@@ -624,6 +624,11 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
         mDrawUniforms.fog_params = simd::float4{ mCombinerUniforms.fog_params[0], mCombinerUniforms.fog_params[1],
                                                  mCombinerUniforms.fog_params[2], mCombinerUniforms.fog_params[3] };
+        for (int i = 0; i < 2; i++) {
+            mDrawUniforms.palette_params[i] =
+                simd::float4{ mCombinerUniforms.palette_params[i][0], mCombinerUniforms.palette_params[i][1],
+                              mCombinerUniforms.palette_params[i][2], mCombinerUniforms.palette_params[i][3] };
+        }
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
         mLodMaxDirty = false;
@@ -633,6 +638,17 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
     // The vertex shader reads the same DrawUniforms (UV transform, fog params);
     // setVertexBytes is per-encoder state, so re-send every draw.
     current_framebuffer.mCommandEncoder->setVertexBytes(&mDrawUniforms, sizeof(DrawUniforms), 2);
+    // Matrix palette + y flip for the vertex shader
+    current_framebuffer.mCommandEncoder->setVertexBytes(&mTransformUniforms, sizeof(TransformUniforms), 3);
+    mTransformUniformsDirty = false;
+
+    // N64 backface culling: Metal NDC keeps y up and the front face is CCW; with
+    // no VS y flip the signed area A = -C, so keeping C > 0 keeps clockwise
+    // triangles, i.e. cull the front (CCW) faces.
+    MTL::CullMode cull = mCurrentCullKeepSign > 0
+                             ? MTL::CullModeFront
+                             : (mCurrentCullKeepSign < 0 ? MTL::CullModeBack : MTL::CullModeNone);
+    current_framebuffer.mCommandEncoder->setCullMode(cull);
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {
         current_framebuffer.mLastShaderProgram = mShaderProgram;

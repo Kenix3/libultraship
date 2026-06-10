@@ -33,9 +33,22 @@ struct CombinerUniforms {
     // Fog factor source: x = fog_mul, y = fog_offset, z = constant factor,
     // w = mode (0: compute from z/w, 1: constant z, 2: vertex alpha)
     float fog_params[4];
+    // Per texel for CI index textures: x = palette bank entry offset (CI4 bank*16),
+    // y = filter mode applied after the palette lookup (0 nearest, 1 bilinear, 2 three-point)
+    float palette_params[2][4];
 };
 
 constexpr int GFX_MAX_GPU_LIGHTS = 32;
+constexpr int GFX_MTX_PALETTE_SIZE = 8;
+
+// Per-draw vertex transform state. Vertices carry object-space positions plus a
+// matrix palette slot; the vertex shader computes clip = obj.x*row0 + obj.y*row1
+// + obj.z*row2 + obj.w*row3 from the slot's matrix (the RSP model-view-projection
+// captured at vertex-load time, widescreen aspect scale pre-folded into column 0).
+struct TransformUniforms {
+    float mtx_palette[GFX_MTX_PALETTE_SIZE][4][4];
+    float y_scale[4]; // x = +1/-1 framebuffer y inversion applied in the VS
+};
 
 // Per-draw lighting/texgen state, consumed by the vertex shader when the
 // LIGHTING/TEXGEN shader options are active. Layout is mirrored in the shader
@@ -50,6 +63,9 @@ struct LightingUniforms {
     float lookat_y[4];
     float texgen[2][4];   // per texture: (scaleS, offsetS, scaleT, offsetT)
     float mv_rows[3][4];  // top modelview rows for point lighting transpose-multiply
+    // Modelview columns (incl. translation): world[j] = dot(vec4(obj,1), mv_cols[j]).
+    // Used to derive the world-space position for point lighting in the VS.
+    float mv_cols[3][4];
     int32_t num_lights;   // excluding ambient
     int32_t padding[3];
 };
@@ -146,6 +162,21 @@ class GfxRenderingAPI {
             mLightingUniformsDirty = true;
         }
     }
+    // Matrix palette + y-flip for the next DrawTriangles call (vertex shader).
+    virtual void SetTransformUniforms(const TransformUniforms& uniforms) {
+        if (memcmp(&uniforms, &mTransformUniforms, sizeof(TransformUniforms)) != 0) {
+            mTransformUniforms = uniforms;
+            mTransformUniformsDirty = true;
+        }
+    }
+    // N64 backface culling, expressed as the sign of the RSP screen-space cross
+    // product C = (v1-v2) x (v3-v2) computed in pre-y-flip clip space:
+    //   keepSign = +1 keeps C > 0 (G_CULL_FRONT), -1 keeps C < 0 (G_CULL_BACK),
+    //   0 disables culling. Backends map this onto rasterizer face culling,
+    //   accounting for their NDC conventions and any VS y inversion.
+    virtual void SetCullMode(int8_t keepSign) {
+        mCurrentCullKeepSign = keepSign;
+    }
 
   protected:
     int8_t mCurrentDepthTest = 0;
@@ -164,5 +195,9 @@ class GfxRenderingAPI {
     bool mCombinerUniformsDirty = true;
     LightingUniforms mLightingUniforms = {};
     bool mLightingUniformsDirty = true;
+    TransformUniforms mTransformUniforms = {};
+    bool mTransformUniformsDirty = true;
+    int8_t mCurrentCullKeepSign = 0;
+    int8_t mLastCullKeepSign = -128; // forces initial apply
 };
 } // namespace Fast
