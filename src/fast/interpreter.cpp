@@ -117,6 +117,7 @@ Interpreter::Interpreter() {
     mRdp = new RDP();
     mBufVbo = new float[MAX_TRI_BUFFER * (32 * 3)];
     memset(mBatchSlotForHistory, -1, sizeof(mBatchSlotForHistory));
+    memset(mPaletteRingTexture, 0xFF, sizeof(mPaletteRingTexture));
 }
 
 Interpreter::~Interpreter() {
@@ -653,6 +654,67 @@ std::shared_ptr<Ship::IResource> Interpreter::ResolveResourceCached(const char* 
         mResolvedResourceCache[path] = res;
     }
     return res;
+}
+
+// FNV-1a over the TLUT staging (both halves), tracking null halves distinctly
+static uint64_t HashTlutContent(const RDP* rdp) {
+    uint64_t h = 1469598103934665603ull;
+    for (int half = 0; half < 2; half++) {
+        const uint8_t* p = rdp->palettes[half];
+        h = (h ^ (p != nullptr ? 0x55u : 0xAAu)) * 1099511628211ull;
+        if (p == nullptr) {
+            continue;
+        }
+        for (int b = 0; b < 256; b++) {
+            h = (h ^ p[b]) * 1099511628211ull;
+        }
+    }
+    return h;
+}
+
+uint32_t Interpreter::AcquirePaletteTexture() {
+    if (mRdp->palette_texture_dirty) {
+        mCurrentPaletteHash = HashTlutContent(mRdp);
+        mRdp->palette_texture_dirty = false;
+    }
+
+    auto it = mPaletteSlotByHash.find(mCurrentPaletteHash);
+    if (it != mPaletteSlotByHash.end()) {
+        return mPaletteRingTexture[it->second];
+    }
+
+    // New TLUT content: the upload below rebinds texture slot 6, so draw any
+    // queued triangles first (they were packed against the previous palette).
+    Flush();
+
+    // Take the next ring slot (recycled slots are many rebuilds old, so no
+    // queued draw still references their content)
+    const size_t slot = mPaletteRingNext++ % PALETTE_RING_SIZE;
+    if (mPaletteRingTexture[slot] == 0xFFFFFFFF) {
+        mPaletteRingTexture[slot] = mRapi->NewTexture();
+    } else {
+        mPaletteSlotByHash.erase(mPaletteRingHash[slot]);
+    }
+    mPaletteRingHash[slot] = mCurrentPaletteHash;
+    mPaletteSlotByHash[mCurrentPaletteHash] = slot;
+
+    uint8_t palBuf[256 * 4];
+    for (int e = 0; e < 256; e++) {
+        const uint8_t* half = mRdp->palettes[e / 128];
+        if (half == nullptr) {
+            palBuf[4 * e + 0] = palBuf[4 * e + 1] = palBuf[4 * e + 2] = palBuf[4 * e + 3] = 0;
+            continue;
+        }
+        uint16_t col16 = (half[(e % 128) * 2] << 8) | half[(e % 128) * 2 + 1];
+        palBuf[4 * e + 0] = SCALE_5_8(col16 >> 11);
+        palBuf[4 * e + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+        palBuf[4 * e + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+        palBuf[4 * e + 3] = (col16 & 1) ? 255 : 0;
+    }
+    mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteRingTexture[slot]);
+    mRapi->UploadTexture(palBuf, 256, 1);
+    mRapi->SetSamplerParameters(SHADER_PALETTE_TEXTURE, false, G_TX_CLAMP, G_TX_CLAMP);
+    return mPaletteRingTexture[slot];
 }
 
 void Interpreter::TextureCacheClear() {
@@ -2545,34 +2607,16 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         }
     }
 
-    // Bind (and lazily rebuild) the global palette texture for palettized draws
+    // Bind the palette texture matching the current TLUT content. Palette
+    // textures are immutable once uploaded (see AcquirePaletteTexture), so the
+    // only flush needed is when the *binding* for queued triangles would change.
     if (palettized[0] || palettized[1]) {
-        if (mPaletteTextureId == 0xFFFFFFFF) {
-            mPaletteTextureId = mRapi->NewTexture();
-            mRdp->palette_texture_dirty = true;
-        }
-        if (mRdp->palette_texture_dirty) {
+        const uint32_t palTexture = AcquirePaletteTexture();
+        if (palTexture != mBoundPaletteTexture) {
             Flush();
-            uint8_t palBuf[256 * 4];
-            for (int e = 0; e < 256; e++) {
-                const uint8_t* half = mRdp->palettes[e / 128];
-                if (half == nullptr) {
-                    palBuf[4 * e + 0] = palBuf[4 * e + 1] = palBuf[4 * e + 2] = palBuf[4 * e + 3] = 0;
-                    continue;
-                }
-                uint16_t col16 = (half[(e % 128) * 2] << 8) | half[(e % 128) * 2 + 1];
-                palBuf[4 * e + 0] = SCALE_5_8(col16 >> 11);
-                palBuf[4 * e + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
-                palBuf[4 * e + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
-                palBuf[4 * e + 3] = (col16 & 1) ? 255 : 0;
-            }
-            mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteTextureId);
-            mRapi->UploadTexture(palBuf, 256, 1);
-            mRapi->SetSamplerParameters(SHADER_PALETTE_TEXTURE, false, G_TX_CLAMP, G_TX_CLAMP);
-            mRdp->palette_texture_dirty = false;
-        } else {
-            mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteTextureId);
+            mBoundPaletteTexture = palTexture;
         }
+        mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, palTexture);
     }
 
     struct ShaderProgram* prg = comb->prg[tm];
