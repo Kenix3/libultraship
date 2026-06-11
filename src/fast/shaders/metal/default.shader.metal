@@ -411,11 +411,9 @@ fragment FragOut fragmentShader(
     @end
 
     @if(o_two_tile_lod)
-        // N64 LOD tile selection: both texel slots clamp to the available levels
-        float4 lodSample0 = texVal0;
-        float4 lodSample1 = texVal1;
-        texVal0 = lodTile0 < 0.5 ? lodSample0 : lodSample1;
-        texVal1 = lodTile1 < 0.5 ? lodSample0 : lodSample1;
+        // N64 LOD tile selection: TEXEL0's tile clamps to the max level; the
+        // hardware's second texel is always lod_tile + 1 (real tile 1).
+        texVal0 = lodTile0 < 0.5 ? texVal0 : texVal1;
     @end
 
     @if(o_alpha)
