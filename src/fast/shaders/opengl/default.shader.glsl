@@ -194,7 +194,7 @@
         @end
     @end
 
-    @if(o_inputs)
+    @if(o_has_inputs)
         uniform vec4 uInputs[@{o_inputs}];
     @end
     @if(o_fog)
