@@ -601,7 +601,7 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
     }
 
-    if (textures_changed || mPrimDepthDirty || mLodMaxDirty || mCombinerUniformsDirty) {
+    if (textures_changed || mPrimDepthDirty || mLodMaxDirty || mCombinerUniformsDirty || mCustomUniformsDirty) {
         mDrawUniforms.prim_depth = mCurrentPrimDepth;
         mDrawUniforms.lod_max = mCurrentMaxLod;
         for (int i = 0; i < 6; i++) {
@@ -630,10 +630,15 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
         mDrawUniforms.lod_params = simd::float4{ mCombinerUniforms.lod_params[0], mCombinerUniforms.lod_params[1],
                                                  mCombinerUniforms.lod_params[2], mCombinerUniforms.lod_params[3] };
+        for (int i = 0; i < GFX_NUM_CUSTOM_UNIFORMS; i++) {
+            mDrawUniforms.uCustom[i] = simd::float4{ mCustomUniforms.regs[i][0], mCustomUniforms.regs[i][1],
+                                                     mCustomUniforms.regs[i][2], mCustomUniforms.regs[i][3] };
+        }
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
         mLodMaxDirty = false;
         mCombinerUniformsDirty = false;
+        mCustomUniformsDirty = false;
     }
 
     // The vertex shader reads the same DrawUniforms (UV transform, fog params);

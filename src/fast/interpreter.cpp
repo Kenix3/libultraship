@@ -18,6 +18,7 @@
 #include <vector>
 #include <list>
 #include <stack>
+#include <chrono>
 #include "fast/resource/type/Light.h"
 
 #ifndef _LANGUAGE_C
@@ -34,8 +35,11 @@
 
 #include "ship/window/gui/Gui.h"
 #include "ship/resource/ResourceManager.h"
+#include "ship/resource/archive/ArchiveManager.h"
 #include "ship/utils/Utils.h"
 #include "ship/config/ConsoleVariable.h"
+#include "ship/resource/factory/ShaderFactory.h"
+#include <nlohmann/json.hpp>
 
 #include "libultraship/libultra/os.h"
 
@@ -142,6 +146,7 @@ void Interpreter::Flush() {
         mRapi->SetCurrentPrimDepth((float)mRdp->prim_depth / N64_PRIM_DEPTH_MAX);
         LatchCombinerUniforms();
         mRapi->SetTransformUniforms(mTransform);
+        mRapi->SetCustomUniforms(mCustomUniforms);
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
@@ -4283,6 +4288,31 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
     return false;
 }
 
+void Interpreter::SetCustomUniform(uint8_t idx, const float values[4]) {
+    if (idx >= GFX_NUM_CUSTOM_UNIFORMS) {
+        SPDLOG_ERROR("SetCustomUniform: register {} out of range (max {})", idx, GFX_NUM_CUSTOM_UNIFORMS - 1);
+        return;
+    }
+    if (memcmp(mCustomUniforms.regs[idx], values, sizeof(float) * 4) != 0) {
+        // Split the batch so the new value only affects draws issued after this point
+        Flush();
+        memcpy(mCustomUniforms.regs[idx], values, sizeof(float) * 4);
+    }
+}
+
+bool gfx_set_uniform_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    const uint8_t idx = (uint8_t)C0(0, 8);
+    // w1 points at four floats owned by the game; values are sampled each time
+    // the display list executes.
+    const float* values = (const float*)gfx->SegAddr(cmd->words.w1);
+    if (values != nullptr) {
+        gfx->SetCustomUniform(idx, values);
+    }
+    return false;
+}
+
 bool gfx_push_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -4295,22 +4325,218 @@ bool gfx_push_shader(F3DGfx** cmd0) {
 
     path = &path[7];
 
-    size_t shaderId = static_cast<size_t>(-1);
-    for (const auto& shader : gfx->mShaders) {
-        if (strcmp(shader.second, path) == 0) {
-            shaderId = shader.first;
-            break;
+    gfx->mShaderStack.push(gfx->RegisterShaderPath(path));
+
+    return false;
+}
+
+size_t Interpreter::RegisterShaderPath(const char* path) {
+    for (const auto& shader : mShaders) {
+        if (shader.second == path) {
+            return shader.first;
         }
     }
 
-    if (shaderId == static_cast<size_t>(-1)) {
-        shaderId = gfx->mShadersIndex++;
-        gfx->mShaders[shaderId] = path;
+    // 0xFFFF is the "no custom shader" sentinel in the combiner options
+    if ((mShadersIndex & 0xFFFF) == 0xFFFF) {
+        mShadersIndex++;
+    }
+    size_t shaderId = mShadersIndex++;
+    mShaders[shaderId] = path;
+    return shaderId;
+}
+
+// ========================= post-processing chain =========================
+
+int Interpreter::RegisterPostPass(const char* o2rShaderPath) {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    const int id = mPostPassNextId++;
+    mPostPasses.push_back({ id, o2rShaderPath, true });
+    return id;
+}
+
+void Interpreter::UnregisterPostPass(int id) {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    std::erase_if(mPostPasses, [id](const PostPass& p) { return p.id == id; });
+}
+
+void Interpreter::ClearPostPasses() {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    mPostPasses.clear();
+}
+
+bool Interpreter::HasPostPasses() {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    for (const auto& pass : mPostPasses) {
+        if (pass.enabled) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Optional shader-pack style configuration shipped in the o2r:
+// shaders/post/pipeline.json = { "passes": [ { "shader": "<o2r path>", "enabled": true } ] }
+void Interpreter::LoadPostPassManifest() {
+    mPostManifestChecked = true;
+
+    auto resourceManager = Ship::Context::GetInstance()->GetResourceManager();
+    if (resourceManager == nullptr || resourceManager->GetArchiveManager() == nullptr ||
+        !resourceManager->GetArchiveManager()->HasFile("shaders/post/pipeline.json")) {
+        return;
     }
 
-    gfx->mShaderStack.push(shaderId);
+    auto init = std::make_shared<Ship::ResourceInitData>();
+    init->Type = (uint32_t)Ship::ResourceType::Shader; // raw text blob
+    init->ByteOrder = Ship::Endianness::Native;
+    init->Format = RESOURCE_FORMAT_BINARY;
+    auto res =
+        std::static_pointer_cast<Ship::Shader>(resourceManager->LoadResource("shaders/post/pipeline.json", true, init));
+    if (res == nullptr) {
+        return;
+    }
 
-    return false;
+    auto text = static_cast<std::string*>(res->GetRawPointer());
+    if (text == nullptr) {
+        return;
+    }
+
+    nlohmann::json manifest = nlohmann::json::parse(*text, nullptr, false);
+    if (manifest.is_discarded() || !manifest.contains("passes") || !manifest["passes"].is_array()) {
+        SPDLOG_ERROR("shaders/post/pipeline.json is malformed; ignoring");
+        return;
+    }
+
+    for (const auto& entry : manifest["passes"]) {
+        if (!entry.contains("shader") || !entry["shader"].is_string()) {
+            continue;
+        }
+        const std::string shader = entry["shader"].get<std::string>();
+        const bool enabled = entry.value("enabled", true);
+        std::lock_guard<std::mutex> lock(mPostPassMutex);
+        mPostPasses.push_back({ mPostPassNextId++, shader, enabled });
+        SPDLOG_INFO("Post pass registered from manifest: {} ({})", shader, enabled ? "enabled" : "disabled");
+    }
+}
+
+// Runs the registered passes as fullscreen draws through the regular
+// interpreter pipeline (custom shader id + IMAGERECT), ping-ponging between
+// two managed framebuffers. The game image is the first input; the result is
+// presented by pointing mGfxFrameBuffer at the returned framebuffer.
+int Interpreter::RunPostPasses() {
+    std::vector<PostPass> passes;
+    {
+        std::lock_guard<std::mutex> lock(mPostPassMutex);
+        for (const auto& pass : mPostPasses) {
+            if (pass.enabled) {
+                passes.push_back(pass);
+            }
+        }
+    }
+    if (passes.empty() || !mRendersToFb) {
+        return -1;
+    }
+
+    // Lazily create the ping-pong targets; resize=1 lets the per-frame
+    // framebuffer-dimension tracking keep them at render resolution, and
+    // forceFixedAspect makes a 0..native rect span the full target exactly.
+    for (int i = 0; i < 2; i++) {
+        if (mPostPassFb[i] < 0) {
+            mPostPassFb[i] =
+                CreateFrameBuffer((uint32_t)mNativeDimensions.width, (uint32_t)mNativeDimensions.height,
+                                  (uint32_t)mNativeDimensions.width, (uint32_t)mNativeDimensions.height, 1, true);
+        }
+    }
+
+    // The chain needs a single-sampled input
+    int srcFb = mGameFb;
+    if (mMsaaLevel > 1) {
+        mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
+        srcFb = mGameFbMsaaResolved;
+    }
+
+    // Save the RDP state the chain clobbers (GfxDpImageRectangle rewrites the
+    // tile-0 descriptor and the loaded-texture metadata in place)
+    const uint64_t savedCombine = mRdp->combine_mode;
+    const uint32_t savedOmh = mRdp->other_mode_h;
+    const uint32_t savedOml = mRdp->other_mode_l;
+    const XYWidthHeight savedScissor = mRdp->scissor;
+    const auto savedTile0 = mRdp->texture_tile[0];
+    const auto savedLoadTex0 = mRdp->loaded_texture[0];
+    const auto savedLoadTex1 = mRdp->loaded_texture[1];
+    const uint8_t savedFirstTile = mRdp->first_tile_index;
+    const bool savedTexChanged0 = mRdp->textures_changed[0];
+    const bool savedTexChanged1 = mRdp->textures_changed[1];
+    // Clear the rendering-state texture cache before drawing: the forced
+    // re-import heuristic (mip/indexed comparison) would otherwise fire
+    // against the game's last texture and import it over the fb binding.
+    mRenderingState.mTextures[0] = nullptr;
+    mRenderingState.mTextures[1] = nullptr;
+    // GfxDpImageRectangle re-imports textures when the active tile differs from
+    // its argument; tile 0 must already be current or the flush would import
+    // from the game's stale texture_to_load pointer instead of the bound fb.
+    mRdp->first_tile_index = 0;
+
+    const int32_t w = (int32_t)mNativeDimensions.width;
+    const int32_t h = (int32_t)mNativeDimensions.height;
+
+    int cur = srcFb;
+    int pingpong = 0;
+    for (const auto& pass : passes) {
+        const int dst = mPostPassFb[pingpong];
+
+        Flush();
+        SetFrameBuffer(dst, 1.0f);
+        mActiveFrameBuffer = mFrameBuffers.find(dst);
+        mFbActive = true;
+
+        // Previous image on tile 0
+        mRapi->SelectTextureFb(cur);
+        mRdp->textures_changed[0] = false;
+        mRdp->textures_changed[1] = false;
+
+        // Deterministic state: 1-cycle, point filtering, no blending, no depth
+        mRdp->other_mode_h = 0;
+        mRdp->other_mode_l = 0;
+        GfxDpSetCombineMode(color_comb(0, 0, 0, G_CCMUX_TEXEL0), alpha_comb(0, 0, 0, G_ACMUX_TEXEL0), 0, 0);
+        GfxDpSetScissor(0, 0, 0, (uint32_t)(w << 2), (uint32_t)(h << 2));
+
+        mShaderStack.push(RegisterShaderPath(pass.path.c_str()));
+        GfxDpImageRectangle(0, w, h, 0, 0, 0, 0, w << 2, h << 2, (int16_t)w, (int16_t)h);
+        Flush();
+        mShaderStack.pop();
+
+        cur = dst;
+        pingpong ^= 1;
+    }
+
+    // Restore the surrounding frame state
+    mRdp->combine_mode = savedCombine;
+    mRdp->other_mode_h = savedOmh;
+    mRdp->other_mode_l = savedOml;
+    mRdp->scissor = savedScissor;
+    mRdp->texture_tile[0] = savedTile0;
+    mRdp->loaded_texture[0] = savedLoadTex0;
+    mRdp->loaded_texture[1] = savedLoadTex1;
+    mRdp->first_tile_index = savedFirstTile;
+    // Match how game-authored fb-texture draws behave: leave the changed flags
+    // as they were and let the next SETTIMG re-arm the import with coherent
+    // descriptors. Forcing a re-import here can pair a stale tile descriptor
+    // with the wrong loaded texture.
+    mRdp->textures_changed[0] = savedTexChanged0;
+    mRdp->textures_changed[1] = savedTexChanged1;
+    // The chain re-bound textures behind the rendering-state cache's back;
+    // clear the cached entries so the next draw's forced-reimport heuristic
+    // (mip/indexed comparison) doesn't fire against stale state.
+    mRenderingState.mTextures[0] = nullptr;
+    mRenderingState.mTextures[1] = nullptr;
+    mRdp->viewport_or_scissor_changed = true;
+    mRenderingState.viewport = {};
+    mRenderingState.scissor = {};
+    mFbActive = false;
+    mActiveFrameBuffer = mFrameBuffers.end();
+
+    return cur;
 }
 
 bool gfx_pop_shader(F3DGfx** cmd0) {
@@ -4325,10 +4551,9 @@ bool gfx_pop_shader(F3DGfx** cmd0) {
 const char* gfx_get_shader(int16_t id) {
     Interpreter* gfx = mInstance.lock().get();
 
-    for (const std::pair<size_t, const char*>& shader : gfx->mShaders) {
-        if (shader.first == id) {
-            return shader.second;
-        }
+    auto it = gfx->mShaders.find((size_t)(uint16_t)id);
+    if (it != gfx->mShaders.end()) {
+        return it->second.c_str();
     }
 
     return nullptr; // Use no shader
@@ -5601,6 +5826,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_SETTIMG_PAL, { "G_SETTIMG_PAL", gfx_set_timg_pal_handler_custom } },    // G_SETTIMG_PAL (0x41)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
+    { OTR_G_SETUNIFORM, { "G_SETUNIFORM", gfx_set_uniform_handler_custom } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
     { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
     { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
@@ -5961,7 +6187,7 @@ void Interpreter::StartFrame() {
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
+    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1 || HasPostPasses()) {
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
@@ -5972,9 +6198,15 @@ void Interpreter::StartFrame() {
             mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
                                                mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
         }
-        if (mMsaaLevel > 1 && !ViewportMatchesRendererResolution()) {
-            mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
-                                               false, false, false, false);
+        if (mMsaaLevel > 1 && (!ViewportMatchesRendererResolution() || HasPostPasses())) {
+            if (!ViewportMatchesRendererResolution()) {
+                mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
+                                                   false, false, false, false);
+            } else {
+                // Post chain needs a single-sample input matching the game fb
+                mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mGfxCurrentWindowDimensions.width,
+                                                   mGfxCurrentWindowDimensions.height, 1, false, false, false, false);
+            }
         }
     } else {
         mRendersToFb = false;
@@ -5987,6 +6219,24 @@ GfxExecStack g_exec_stack = {};
 
 void Interpreter::RunGuiOnly() {
     SpReset();
+
+    // Engine built-in custom uniform registers (see CustomUniforms):
+    // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
+    {
+        static auto sCustomTimeStart = std::chrono::steady_clock::now();
+        const double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - sCustomTimeStart).count();
+        const double delta = mCustomFrameCount == 0 ? 0.0 : now - mCustomTimeSeconds;
+        mCustomTimeSeconds = now;
+        mCustomFrameCount++;
+        mCustomUniforms.regs[0][0] = (float)mCustomFrameCount;
+        mCustomUniforms.regs[0][1] = (float)now;
+        mCustomUniforms.regs[0][2] = (float)delta;
+        mCustomUniforms.regs[0][3] = 0.0f;
+        mCustomUniforms.regs[1][0] = (float)mCurDimensions.width;
+        mCustomUniforms.regs[1][1] = (float)mCurDimensions.height;
+        mCustomUniforms.regs[1][2] = mCurDimensions.width > 0 ? 1.0f / mCurDimensions.width : 0.0f;
+        mCustomUniforms.regs[1][3] = mCurDimensions.height > 0 ? 1.0f / mCurDimensions.height : 0.0f;
+    }
 
     mGetPixelDepthPending.clear();
     mGetPixelDepthCached.clear();
@@ -6029,6 +6279,24 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
                       const std::unordered_map<Gfx*, Gfx*>& dl_replacements) {
     SpReset();
 
+    // Engine built-in custom uniform registers (see CustomUniforms):
+    // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
+    {
+        static auto sCustomTimeStart = std::chrono::steady_clock::now();
+        const double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - sCustomTimeStart).count();
+        const double delta = mCustomFrameCount == 0 ? 0.0 : now - mCustomTimeSeconds;
+        mCustomTimeSeconds = now;
+        mCustomFrameCount++;
+        mCustomUniforms.regs[0][0] = (float)mCustomFrameCount;
+        mCustomUniforms.regs[0][1] = (float)now;
+        mCustomUniforms.regs[0][2] = (float)delta;
+        mCustomUniforms.regs[0][3] = 0.0f;
+        mCustomUniforms.regs[1][0] = (float)mCurDimensions.width;
+        mCustomUniforms.regs[1][1] = (float)mCurDimensions.height;
+        mCustomUniforms.regs[1][2] = mCurDimensions.width > 0 ? 1.0f / mCurDimensions.width : 0.0f;
+        mCustomUniforms.regs[1][3] = mCurDimensions.height > 0 ? 1.0f / mCurDimensions.height : 0.0f;
+    }
+
     mGetPixelDepthPending.clear();
     mGetPixelDepthCached.clear();
 
@@ -6070,10 +6338,18 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mGfxFrameBuffer = 0;
     currentDir = std::stack<std::string>();
 
+    if (!mPostManifestChecked) {
+        LoadPostPassManifest();
+    }
+    const int postOutputFb = RunPostPasses();
+
     if (mRendersToFb) {
         mRapi->StartDrawToFramebuffer(0, 1);
         mRapi->ClearFramebuffer(true, true);
-        if (mMsaaLevel > 1) {
+        if (postOutputFb >= 0) {
+            // Post-processed image; MSAA was already resolved inside the chain
+            mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(postOutputFb);
+        } else if (mMsaaLevel > 1) {
             if (!ViewportMatchesRendererResolution()) {
                 mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
                 mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
@@ -6406,6 +6682,31 @@ extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t 
 
 extern "C" void gfx_texture_cache_clear() {
     Fast::mInstance.lock().get()->TextureCacheClear();
+}
+
+extern "C" void gfx_set_custom_uniform(uint8_t idx, const float values[4]) {
+    if (auto gfx = Fast::mInstance.lock()) {
+        gfx->SetCustomUniform(idx, values);
+    }
+}
+
+extern "C" int gfx_register_post_pass(const char* o2rShaderPath) {
+    if (auto gfx = Fast::mInstance.lock()) {
+        return gfx->RegisterPostPass(o2rShaderPath);
+    }
+    return -1;
+}
+
+extern "C" void gfx_unregister_post_pass(int id) {
+    if (auto gfx = Fast::mInstance.lock()) {
+        gfx->UnregisterPostPass(id);
+    }
+}
+
+extern "C" void gfx_clear_post_passes() {
+    if (auto gfx = Fast::mInstance.lock()) {
+        gfx->ClearPostPasses();
+    }
 }
 
 extern "C" void gfx_shader_cache_clear() {

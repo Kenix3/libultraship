@@ -21,6 +21,8 @@ struct DrawUniforms {
     float4 fog_params;
     float4 palette_params[2];
     float4 lod_params;
+    // Game-bindable register file; lockstep with DrawUniforms in gfx_metal.h
+    float4 uCustom[16];
 };
 
 @if(o_lighting || o_texgen)

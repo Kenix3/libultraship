@@ -156,6 +156,8 @@ struct DrawUniforms {
     simd::float4 fog_params;
     simd::float4 palette_params[2];
     simd::float4 lod_params;
+    // Game-bindable register file; lockstep with the metal template's DrawUniforms
+    simd::float4 uCustom[16];
 };
 
 /** @brief Buffer payload used for batched pixel-depth coordinate queries. */

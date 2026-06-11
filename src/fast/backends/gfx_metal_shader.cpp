@@ -233,6 +233,11 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
 
     prism::Processor processor;
     prism::ContextItems context = {
+        { "BACKEND", "metal" },
+        { "BACKEND_OPENGL", false },
+        { "BACKEND_VULKAN", false },
+        { "BACKEND_METAL", true },
+        { "BACKEND_DIRECTX", false },
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },

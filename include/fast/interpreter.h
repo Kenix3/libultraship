@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <vector>
 #include <stack>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -161,6 +162,11 @@ class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
 constexpr size_t SHADER_ID_SHIFT = 25;
+// The 16-bit custom shader id is packed into the combiner options immediately
+// after the ShaderOpts flags; adding a ShaderOpt past PRISM_SHADER would
+// silently overlap the id field.
+static_assert(static_cast<size_t>(ShaderOpts::PRISM_SHADER) == SHADER_ID_SHIFT,
+              "ShaderOpts grew into the shader-id bitfield (see SHADER_ID_SHIFT)");
 constexpr int16_t ShaderIdUnmask(uint64_t id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -464,6 +470,21 @@ class Interpreter {
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                           uint8_t resize, bool forceFixedAspect = false);
     void SetFrameBuffer(int fb, float noiseScale);
+    // ---- Post-processing chain ----
+    // Each registered pass is a prism shader template applied as a fullscreen
+    // step over the game image at the end of the frame (first pass samples the
+    // game framebuffer, later passes sample the previous pass). Returns a
+    // handle for UnregisterPostPass. Thread-safe; takes effect next frame.
+    int RegisterPostPass(const char* o2rShaderPath);
+    void UnregisterPostPass(int id);
+    void ClearPostPasses();
+    bool HasPostPasses();
+
+    // Write one register of the custom uniform file (uCustom in shader
+    // templates). Flushes the pending batch when the value changes so the
+    // new value only affects subsequent draws. Registers 0-1 are engine
+    // built-ins (see CustomUniforms); games use 2..GFX_NUM_CUSTOM_UNIFORMS-1.
+    void SetCustomUniform(uint8_t idx, const float values[4]);
     void CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
     void ResetFrameBuffer();
     void AdjustPixelDepthCoordinates(float& x, float& y);
@@ -692,11 +713,35 @@ class Interpreter {
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
     const std::unordered_map<Gfx*, Gfx*>* mCurDlReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
-    std::unordered_map<size_t, const char*> mShaders;
+    // Registered custom shader templates (id -> o2r path). Paths are owned
+    // copies: ids live in compiled-pipeline cache keys for the whole session.
+    std::unordered_map<size_t, std::string> mShaders;
 
     typedef size_t ShaderId;
     std::stack<ShaderId> mShaderStack;
-    size_t mShadersIndex;
+    size_t mShadersIndex = 0;
+    CustomUniforms mCustomUniforms{};
+    uint32_t mCustomFrameCount = 0;
+    double mCustomTimeSeconds = 0.0;
+
+    // Post-processing chain state (see RegisterPostPass)
+    struct PostPass {
+        int id;
+        std::string path; // o2r path without the __OTR__ prefix
+        bool enabled;
+    };
+    std::vector<PostPass> mPostPasses;
+    std::mutex mPostPassMutex;
+    int mPostPassNextId = 1;
+    int mPostPassFb[2] = { -1, -1 }; // ping-pong targets, created lazily
+    bool mPostManifestChecked = false;
+    // Registers (or finds) a custom shader template path, returning its id for
+    // the combiner key. Shared by G_PUSH_SHADER and the post-process chain.
+    size_t RegisterShaderPath(const char* path);
+    // Executes the registered passes over the game framebuffer; returns the
+    // rapi framebuffer id holding the final image, or -1 when nothing ran.
+    int RunPostPasses();
+    void LoadPostPassManifest();
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
     // Interpolation factor for the current rendered frame within a game tick:
@@ -715,6 +760,10 @@ const char* GfxGetOpcodeName(int8_t opcode);
 } // namespace Fast
 
 extern "C" void gfx_texture_cache_clear();
+extern "C" void gfx_set_custom_uniform(uint8_t idx, const float values[4]);
+extern "C" int gfx_register_post_pass(const char* o2rShaderPath);
+extern "C" void gfx_unregister_post_pass(int id);
+extern "C" void gfx_clear_post_passes();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize, bool forceFixedAspect = false);
