@@ -4606,14 +4606,14 @@ bool gfx_pop_shader(F3DGfx** cmd0) {
     return false;
 }
 
-static std::string ShaderSettingCVarKey(const std::string& path, const std::string& var) {
-    std::string key = "gShaderSettings." + path + "." + var;
-    for (auto& ch : key) {
-        if (ch == '/') {
+static std::string ShaderSettingCVarKey(const Interpreter::ShaderSettings& entry, const std::string& var) {
+    std::string label = !entry.pack.empty() ? entry.pack : entry.path;
+    for (auto& ch : label) {
+        if (ch == '/' || ch == ' ' || ch == '.') {
             ch = '_';
         }
     }
-    return key;
+    return "gShaderSettings." + label + "." + var;
 }
 
 void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::SettingDecl>& decls) {
@@ -4644,7 +4644,7 @@ void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::Set
         if (!known) {
             entry.decls.push_back(decl);
             auto cvars = Ship::Context::GetInstance()->GetConsoleVariables();
-            const std::string key = ShaderSettingCVarKey(entry.path, decl.var);
+            const std::string key = ShaderSettingCVarKey(entry, decl.var);
             std::array<float, 4> v = { 0.0f, 0.0f, 0.0f, 0.0f };
             if (decl.type == "color") {
                 static const char* sSuffix[3] = { ".R", ".G", ".B" };
@@ -4711,7 +4711,7 @@ void Interpreter::SetShaderSettingValue(size_t shaderId, const std::string& var,
         }
     }
     auto cvars = Ship::Context::GetInstance()->GetConsoleVariables();
-    const std::string key = ShaderSettingCVarKey(it->second.path, var);
+    const std::string key = ShaderSettingCVarKey(it->second, var);
     if (decl != nullptr && decl->type == "color") {
         static const char* sSuffix[3] = { ".R", ".G", ".B" };
         for (int i = 0; i < 3; i++) {
