@@ -1494,7 +1494,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(sDX11ResourceManager->LoadResource(path, true, init));
+    auto res = static_pointer_cast<Ship::Shader>(sDX11ResourceManager->LoadResource(path, false, init));
     if (res == nullptr) {
         return std::nullopt;
     }
