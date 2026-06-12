@@ -289,6 +289,14 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "append_formula", (InvokeFunc)p_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        if (sv.isToggle) {
+            context[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
+        } else {
+            context[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
+        }
+    }
     processor.populate(context);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -312,6 +320,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     processor.load(*shader);
     processor.bind_include_loader(metal_include_fs);
     result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== METAL SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("====================================");

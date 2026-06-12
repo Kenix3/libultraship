@@ -17,6 +17,7 @@
 #include "fast/types.h"
 #include "fast/ucodehandlers.h"
 #include "backends/gfx_rendering_api.h"
+#include <prism/processor.h>
 #include "fast/debug/GfxDebugger.h"
 
 #include "fast/resource/type/Texture.h"
@@ -470,6 +471,17 @@ class Interpreter {
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                           uint8_t resize, bool forceFixedAspect = false);
     void SetFrameBuffer(int fb, float noiseScale);
+    struct PostPass {
+        int id;
+        std::string path;
+        bool enabled;
+    };
+    struct ShaderSettings {
+        std::string path;
+        std::vector<prism::SettingDecl> decls;
+        std::unordered_map<std::string, float> values;
+    };
+
     // ---- Post-processing chain ----
     // Each registered pass is a prism shader template applied as a fullscreen
     // step over the game image at the end of the frame (first pass samples the
@@ -479,6 +491,18 @@ class Interpreter {
     void UnregisterPostPass(int id);
     void ClearPostPasses();
     bool HasPostPasses();
+    // Snapshot for UI display; enable state edited via SetPostPassEnabled.
+    std::vector<PostPass> GetPostPasses();
+    void SetPostPassEnabled(int id, bool enabled);
+    // Settings registry for UI display (render thread only).
+    const std::map<size_t, ShaderSettings>& GetShaderSettingsRegistry() {
+        return mShaderSettings;
+    }
+    // Updates a setting, persists it to a CVar and recompiles all shaders.
+    void SetShaderSettingValue(size_t shaderId, const std::string& var, float value);
+    // Updates the stored value only (used while a slider is being dragged so
+    // the widget tracks the drag); commit with SetShaderSettingValue.
+    void UpdateShaderSettingValue(size_t shaderId, const std::string& var, float value);
 
     // Write one register of the custom uniform file (uCustom in shader
     // templates). Flushes the pending batch when the value changes so the
@@ -725,13 +749,21 @@ class Interpreter {
     double mCustomTimeSeconds = 0.0;
 
     // Post-processing chain state (see RegisterPostPass)
-    struct PostPass {
-        int id;
-        std::string path; // o2r path without the __OTR__ prefix
-        bool enabled;
-    };
     std::vector<PostPass> mPostPasses;
     std::mutex mPostPassMutex;
+
+    // Tweakable shader settings discovered from @setting(...) directives at
+    // compile time (see gfx_register_shader_settings). Values are baked into
+    // the generated shader source; edits recompile via gfx_shader_cache_clear.
+    std::map<size_t, ShaderSettings> mShaderSettings;
+
+    // Per-display-list shader mapping ("materials" in the shader-pack
+    // manifest): o2r DL path -> shader template path. Scopes are cmd_stack
+    // depths at which a mapped shader was pushed; popped on the matching ENDDL.
+    std::unordered_map<std::string, std::string> mMaterialShaders;
+    std::vector<size_t> mDlShaderScopes;
+    void ApplyMaterialShader(const char* dlistPath);
+    void PopMaterialShaderScopes();
     int mPostPassNextId = 1;
     int mPostPassFb[2] = { -1, -1 }; // ping-pong targets, created lazily
     bool mPostManifestChecked = false;
@@ -755,6 +787,17 @@ const char* gfx_get_current_ucode_name();
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);
+
+// Shader-pack settings plumbing used by the backend shader builders:
+// register the @setting declarations discovered while processing a template,
+// and fetch the current values to inject into the prism context.
+struct ShaderSettingValue {
+    std::string var;
+    bool isToggle;
+    float value;
+};
+void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::SettingDecl>& decls);
+std::vector<ShaderSettingValue> gfx_get_shader_setting_values(int16_t shaderId);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 } // namespace Fast

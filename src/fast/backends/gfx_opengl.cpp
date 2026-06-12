@@ -407,6 +407,14 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "vOutColor", "gl_FragColor" },
 #endif
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        if (sv.isToggle) {
+            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
+        } else {
+            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
+        }
+    }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -430,6 +438,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     processor.load(*shader);
     processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");
@@ -482,6 +491,14 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
                                      { "opengles", false }
 #endif
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        if (sv.isToggle) {
+            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
+        } else {
+            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
+        }
+    }
     processor.populate(mContext);
 
     auto init = std::make_shared<Ship::ResourceInitData>();
@@ -506,6 +523,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     processor.load(*shader);
     processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== VERTEX SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");

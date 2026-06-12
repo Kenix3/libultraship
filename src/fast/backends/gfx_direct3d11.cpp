@@ -1565,6 +1565,14 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "append_formula", (InvokeFunc)prism_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        if (sv.isToggle) {
+            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
+        } else {
+            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
+        }
+    }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -1589,6 +1597,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     processor.load(*shader);
     processor.bind_include_loader(dx_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     numFloats = raw_numFloats;
     // SPDLOG_INFO("=========== DX11 SHADER ============");
     // SPDLOG_INFO(result);

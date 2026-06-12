@@ -4330,6 +4330,31 @@ bool gfx_push_shader(F3DGfx** cmd0) {
     return false;
 }
 
+void Interpreter::ApplyMaterialShader(const char* dlistPath) {
+    if (mMaterialShaders.empty() || dlistPath == nullptr) {
+        return;
+    }
+    if (gfx_check_image_signature(dlistPath)) {
+        dlistPath = &dlistPath[7];
+    }
+    auto it = mMaterialShaders.find(dlistPath);
+    if (it == mMaterialShaders.end()) {
+        return;
+    }
+    mShaderStack.push(RegisterShaderPath(it->second.c_str()));
+    mDlShaderScopes.push_back(g_exec_stack.cmd_stack.size());
+}
+
+void Interpreter::PopMaterialShaderScopes() {
+    const size_t depth = g_exec_stack.cmd_stack.size();
+    while (!mDlShaderScopes.empty() && mDlShaderScopes.back() == depth) {
+        if (!mShaderStack.empty()) {
+            mShaderStack.pop();
+        }
+        mDlShaderScopes.pop_back();
+    }
+}
+
 size_t Interpreter::RegisterShaderPath(const char* path) {
     for (const auto& shader : mShaders) {
         if (shader.second == path) {
@@ -4365,6 +4390,21 @@ void Interpreter::ClearPostPasses() {
     mPostPasses.clear();
 }
 
+std::vector<Interpreter::PostPass> Interpreter::GetPostPasses() {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    return mPostPasses;
+}
+
+void Interpreter::SetPostPassEnabled(int id, bool enabled) {
+    std::lock_guard<std::mutex> lock(mPostPassMutex);
+    for (auto& pass : mPostPasses) {
+        if (pass.id == id) {
+            pass.enabled = enabled;
+            return;
+        }
+    }
+}
+
 bool Interpreter::HasPostPasses() {
     std::lock_guard<std::mutex> lock(mPostPassMutex);
     for (const auto& pass : mPostPasses) {
@@ -4375,8 +4415,6 @@ bool Interpreter::HasPostPasses() {
     return false;
 }
 
-// Optional shader-pack style configuration shipped in the o2r:
-// shaders/post/pipeline.json = { "passes": [ { "shader": "<o2r path>", "enabled": true } ] }
 void Interpreter::LoadPostPassManifest() {
     mPostManifestChecked = true;
 
@@ -4402,12 +4440,14 @@ void Interpreter::LoadPostPassManifest() {
     }
 
     nlohmann::json manifest = nlohmann::json::parse(*text, nullptr, false);
-    if (manifest.is_discarded() || !manifest.contains("passes") || !manifest["passes"].is_array()) {
+    if (manifest.is_discarded()) {
         SPDLOG_ERROR("shaders/post/pipeline.json is malformed; ignoring");
         return;
     }
 
-    for (const auto& entry : manifest["passes"]) {
+    const auto passes =
+        manifest.contains("passes") && manifest["passes"].is_array() ? manifest["passes"] : nlohmann::json::array();
+    for (const auto& entry : passes) {
         if (!entry.contains("shader") || !entry["shader"].is_string()) {
             continue;
         }
@@ -4416,6 +4456,21 @@ void Interpreter::LoadPostPassManifest() {
         std::lock_guard<std::mutex> lock(mPostPassMutex);
         mPostPasses.push_back({ mPostPassNextId++, shader, enabled });
         SPDLOG_INFO("Post pass registered from manifest: {} ({})", shader, enabled ? "enabled" : "disabled");
+    }
+
+    // Per-display-list shader mappings: apply `shader` to the DL at `dlist`
+    // whenever it is executed by o2r path or hash.
+    if (manifest.contains("materials") && manifest["materials"].is_array()) {
+        for (const auto& entry : manifest["materials"]) {
+            if (!entry.contains("dlist") || !entry["dlist"].is_string() || !entry.contains("shader") ||
+                !entry["shader"].is_string() || !entry.value("enabled", true)) {
+                continue;
+            }
+            const std::string dlist = entry["dlist"].get<std::string>();
+            const std::string shader = entry["shader"].get<std::string>();
+            mMaterialShaders[dlist] = shader;
+            SPDLOG_INFO("Material shader registered from manifest: {} -> {}", dlist, shader);
+        }
     }
 }
 
@@ -4546,6 +4601,84 @@ bool gfx_pop_shader(F3DGfx** cmd0) {
     gfx->mShaderStack.pop();
 
     return false;
+}
+
+static std::string ShaderSettingCVarKey(const std::string& path, const std::string& var) {
+    std::string key = "gShaderSettings." + path + "." + var;
+    for (auto& ch : key) {
+        if (ch == '/') {
+            ch = '_';
+        }
+    }
+    return key;
+}
+
+void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::SettingDecl>& decls) {
+    if ((uint16_t)shaderId == 0xFFFF || decls.empty()) {
+        return;
+    }
+    auto gfx = mInstance.lock();
+    if (gfx == nullptr) {
+        return;
+    }
+    auto& entry = gfx->mShaderSettings[(size_t)(uint16_t)shaderId];
+    if (entry.path.empty()) {
+        const char* path = gfx_get_shader(shaderId);
+        entry.path = path != nullptr ? path : "";
+    }
+    for (const auto& decl : decls) {
+        bool known = false;
+        for (const auto& existing : entry.decls) {
+            if (existing.var == decl.var) {
+                known = true;
+                break;
+            }
+        }
+        if (!known) {
+            entry.decls.push_back(decl);
+            entry.values[decl.var] = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
+                ShaderSettingCVarKey(entry.path, decl.var).c_str(), decl.def);
+        }
+    }
+}
+
+std::vector<ShaderSettingValue> gfx_get_shader_setting_values(int16_t shaderId) {
+    std::vector<ShaderSettingValue> out;
+    if ((uint16_t)shaderId == 0xFFFF) {
+        return out;
+    }
+    auto gfx = mInstance.lock();
+    if (gfx == nullptr) {
+        return out;
+    }
+    auto it = gfx->mShaderSettings.find((size_t)(uint16_t)shaderId);
+    if (it == gfx->mShaderSettings.end()) {
+        return out;
+    }
+    for (const auto& decl : it->second.decls) {
+        out.push_back({ decl.var, decl.type == "toggle", it->second.values.at(decl.var) });
+    }
+    return out;
+}
+
+void Interpreter::UpdateShaderSettingValue(size_t shaderId, const std::string& var, float value) {
+    auto it = mShaderSettings.find(shaderId);
+    if (it != mShaderSettings.end()) {
+        it->second.values[var] = value;
+    }
+}
+
+void Interpreter::SetShaderSettingValue(size_t shaderId, const std::string& var, float value) {
+    auto it = mShaderSettings.find(shaderId);
+    if (it == mShaderSettings.end()) {
+        return;
+    }
+    it->second.values[var] = value;
+    auto cvars = Ship::Context::GetInstance()->GetConsoleVariables();
+    cvars->SetFloat(ShaderSettingCVarKey(it->second.path, var).c_str(), value);
+    cvars->Save();
+    // Settings are baked into the generated source; recompile everything
+    gfx_shader_cache_clear();
 }
 
 const char* gfx_get_shader(int16_t id) {
@@ -4681,6 +4814,8 @@ bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
 
     if (C0(16, 1) == 0 && nDL != nullptr) {
         g_exec_stack.call(*cmd0, nDL);
+        Interpreter* gfx = mInstance.lock().get();
+        gfx->ApplyMaterialShader((const char*)fileName);
     } else {
         if (nDL != nullptr) {
             (*cmd0) = nDL;
@@ -4742,6 +4877,12 @@ bool gfx_dl_otr_hash_handler_custom(F3DGfx** cmd0) {
 
         if (gfx != 0) {
             g_exec_stack.call(cmd, gfx);
+            Interpreter* interp = mInstance.lock().get();
+            const char* dlPath =
+                Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
+            if (dlPath != nullptr) {
+                interp->ApplyMaterialShader(dlPath);
+            }
         }
     } else {
         Interpreter* gfx = mInstance.lock().get();
@@ -4811,6 +4952,8 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
 bool gfx_end_dl_handler_common(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     gfx->mMarkerOn = false;
+    // Close any material-shader scope opened for the DL that is returning
+    gfx->PopMaterialShaderScopes();
     g_exec_stack.ret();
     return true;
 }
@@ -6036,6 +6179,7 @@ void Interpreter::SpReset() {
     while (!mShaderStack.empty()) {
         mShaderStack.pop();
     }
+    mDlShaderScopes.clear();
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
