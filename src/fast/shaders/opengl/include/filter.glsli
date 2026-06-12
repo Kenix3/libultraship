@@ -1,4 +1,4 @@
-@prism(type='fragment', name='Fast3D Filtering', version='1.0.0', description='WRAP/TEX_OFFSET macros, sRGB conversion, N64 three-point filtering and the hookTexture2D dispatcher', author='Fast3D')
+@prism(type='fragment', name='Fast3D Filtering', version='1.0.0', description='WRAP/TEX_OFFSET macros - sRGB conversion - N64 three-point filtering and the hookTexture2D dispatcher', author='Fast3D')
     #define TEX_OFFSET(off) @{texture}(tex, texCoord - off / texSize)
     #define WRAP(x, low, high) clamp((x), (low), (high))
 
