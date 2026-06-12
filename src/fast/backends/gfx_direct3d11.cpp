@@ -1566,12 +1566,8 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
     // Inject current values for @setting-declared tweakables (compile-time)
-    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
-        if (sv.isToggle) {
-            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
-        } else {
-            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
-        }
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
     }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();

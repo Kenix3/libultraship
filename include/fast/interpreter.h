@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <vector>
 #include <stack>
+#include <array>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -479,7 +480,8 @@ class Interpreter {
     struct ShaderSettings {
         std::string path;
         std::vector<prism::SettingDecl> decls;
-        std::unordered_map<std::string, float> values;
+        // Current values; scalar types use [0], colors use [0..2]
+        std::unordered_map<std::string, std::array<float, 4>> values;
     };
 
     // ---- Post-processing chain ----
@@ -498,11 +500,12 @@ class Interpreter {
     const std::map<size_t, ShaderSettings>& GetShaderSettingsRegistry() {
         return mShaderSettings;
     }
-    // Updates a setting, persists it to a CVar and recompiles all shaders.
-    void SetShaderSettingValue(size_t shaderId, const std::string& var, float value);
-    // Updates the stored value only (used while a slider is being dragged so
-    // the widget tracks the drag); commit with SetShaderSettingValue.
-    void UpdateShaderSettingValue(size_t shaderId, const std::string& var, float value);
+    // Updates a setting, persists it to CVars and recompiles all shaders.
+    // Scalar types pass the value in components[0]; colors use [0..2].
+    void SetShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]);
+    // Updates the stored value only (used while a slider/picker is being
+    // dragged so the widget tracks the drag); commit with SetShaderSettingValue.
+    void UpdateShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]);
 
     // Write one register of the custom uniform file (uCustom in shader
     // templates). Flushes the pending batch when the value changes so the
@@ -790,14 +793,9 @@ const char* gfx_get_shader(int16_t id);
 
 // Shader-pack settings plumbing used by the backend shader builders:
 // register the @setting declarations discovered while processing a template,
-// and fetch the current values to inject into the prism context.
-struct ShaderSettingValue {
-    std::string var;
-    bool isToggle;
-    float value;
-};
+// and fetch the current values pre-formatted as prism context items.
 void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::SettingDecl>& decls);
-std::vector<ShaderSettingValue> gfx_get_shader_setting_values(int16_t shaderId);
+std::vector<std::pair<std::string, prism::ContextTypes>> gfx_get_shader_setting_values(int16_t shaderId);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 } // namespace Fast

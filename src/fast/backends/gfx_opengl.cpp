@@ -408,12 +408,8 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
 #endif
     };
     // Inject current values for @setting-declared tweakables (compile-time)
-    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
-        if (sv.isToggle) {
-            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
-        } else {
-            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
-        }
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
     }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
@@ -492,12 +488,8 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
 #endif
     };
     // Inject current values for @setting-declared tweakables (compile-time)
-    for (const auto& sv : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
-        if (sv.isToggle) {
-            mContext[sv.var] = prism::ContextTypes{ (int)(sv.value != 0.0f) };
-        } else {
-            mContext[sv.var] = prism::ContextTypes{ prism::format_float_literal(sv.value) };
-        }
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
     }
     processor.populate(mContext);
 

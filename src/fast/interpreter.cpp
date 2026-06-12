@@ -4636,14 +4636,24 @@ void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::Set
         }
         if (!known) {
             entry.decls.push_back(decl);
-            entry.values[decl.var] = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
-                ShaderSettingCVarKey(entry.path, decl.var).c_str(), decl.def);
+            auto cvars = Ship::Context::GetInstance()->GetConsoleVariables();
+            const std::string key = ShaderSettingCVarKey(entry.path, decl.var);
+            std::array<float, 4> v = { 0.0f, 0.0f, 0.0f, 0.0f };
+            if (decl.type == "color") {
+                static const char* sSuffix[3] = { ".R", ".G", ".B" };
+                for (int i = 0; i < 3; i++) {
+                    v[i] = cvars->GetFloat((key + sSuffix[i]).c_str(), decl.defColor[i]);
+                }
+            } else {
+                v[0] = cvars->GetFloat(key.c_str(), decl.def);
+            }
+            entry.values[decl.var] = v;
         }
     }
 }
 
-std::vector<ShaderSettingValue> gfx_get_shader_setting_values(int16_t shaderId) {
-    std::vector<ShaderSettingValue> out;
+std::vector<std::pair<std::string, prism::ContextTypes>> gfx_get_shader_setting_values(int16_t shaderId) {
+    std::vector<std::pair<std::string, prism::ContextTypes>> out;
     if ((uint16_t)shaderId == 0xFFFF) {
         return out;
     }
@@ -4656,26 +4666,54 @@ std::vector<ShaderSettingValue> gfx_get_shader_setting_values(int16_t shaderId) 
         return out;
     }
     for (const auto& decl : it->second.decls) {
-        out.push_back({ decl.var, decl.type == "toggle", it->second.values.at(decl.var) });
+        const auto& v = it->second.values.at(decl.var);
+        if (decl.type == "toggle") {
+            out.emplace_back(decl.var, prism::ContextTypes{ v[0] != 0.0f ? 1 : 0 });
+        } else if (decl.type == "int" || decl.type == "enum") {
+            out.emplace_back(decl.var, prism::ContextTypes{ (int)v[0] });
+        } else if (decl.type == "color") {
+            out.emplace_back(decl.var,
+                             prism::ContextTypes{ prism::format_float_literal(v[0]) + ", " +
+                                                  prism::format_float_literal(v[1]) + ", " +
+                                                  prism::format_float_literal(v[2]) });
+        } else {
+            out.emplace_back(decl.var, prism::ContextTypes{ prism::format_float_literal(v[0]) });
+        }
     }
     return out;
 }
 
-void Interpreter::UpdateShaderSettingValue(size_t shaderId, const std::string& var, float value) {
+void Interpreter::UpdateShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]) {
     auto it = mShaderSettings.find(shaderId);
     if (it != mShaderSettings.end()) {
-        it->second.values[var] = value;
+        memcpy(it->second.values[var].data(), components, sizeof(float) * 4);
     }
 }
 
-void Interpreter::SetShaderSettingValue(size_t shaderId, const std::string& var, float value) {
+void Interpreter::SetShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]) {
     auto it = mShaderSettings.find(shaderId);
     if (it == mShaderSettings.end()) {
         return;
     }
-    it->second.values[var] = value;
+    memcpy(it->second.values[var].data(), components, sizeof(float) * 4);
+
+    const prism::SettingDecl* decl = nullptr;
+    for (const auto& d : it->second.decls) {
+        if (d.var == var) {
+            decl = &d;
+            break;
+        }
+    }
     auto cvars = Ship::Context::GetInstance()->GetConsoleVariables();
-    cvars->SetFloat(ShaderSettingCVarKey(it->second.path, var).c_str(), value);
+    const std::string key = ShaderSettingCVarKey(it->second.path, var);
+    if (decl != nullptr && decl->type == "color") {
+        static const char* sSuffix[3] = { ".R", ".G", ".B" };
+        for (int i = 0; i < 3; i++) {
+            cvars->SetFloat((key + sSuffix[i]).c_str(), components[i]);
+        }
+    } else {
+        cvars->SetFloat(key.c_str(), components[0]);
+    }
     cvars->Save();
     // Settings are baked into the generated source; recompile everything
     gfx_shader_cache_clear();
