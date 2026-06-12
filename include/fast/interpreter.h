@@ -475,10 +475,12 @@ class Interpreter {
     struct PostPass {
         int id;
         std::string path;
+        std::string pack;
         bool enabled;
     };
     struct ShaderSettings {
         std::string path;
+        std::string pack;
         std::vector<prism::SettingDecl> decls;
         // Current values; scalar types use [0], colors use [0..2]
         std::unordered_map<std::string, std::array<float, 4>> values;
@@ -764,6 +766,7 @@ class Interpreter {
     // manifest): o2r DL path -> shader template path. Scopes are cmd_stack
     // depths at which a mapped shader was pushed; popped on the matching ENDDL.
     std::unordered_map<std::string, std::string> mMaterialShaders;
+    std::unordered_map<std::string, std::string> mShaderPackNames;
     std::vector<size_t> mDlShaderScopes;
     void ApplyMaterialShader(const char* dlistPath);
     void PopMaterialShaderScopes();

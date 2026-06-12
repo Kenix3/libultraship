@@ -4376,7 +4376,7 @@ size_t Interpreter::RegisterShaderPath(const char* path) {
 int Interpreter::RegisterPostPass(const char* o2rShaderPath) {
     std::lock_guard<std::mutex> lock(mPostPassMutex);
     const int id = mPostPassNextId++;
-    mPostPasses.push_back({ id, o2rShaderPath, true });
+    mPostPasses.push_back({ id, o2rShaderPath, "Internal", true });
     return id;
 }
 
@@ -4419,57 +4419,60 @@ void Interpreter::LoadPostPassManifest() {
     mPostManifestChecked = true;
 
     auto resourceManager = Ship::Context::GetInstance()->GetResourceManager();
-    if (resourceManager == nullptr || resourceManager->GetArchiveManager() == nullptr ||
-        !resourceManager->GetArchiveManager()->HasFile("shaders/post/pipeline.json")) {
+    if (resourceManager == nullptr || resourceManager->GetArchiveManager() == nullptr) {
+        return;
+    }
+    auto archives = resourceManager->GetArchiveManager()->GetArchives();
+    if (archives == nullptr) {
         return;
     }
 
-    auto init = std::make_shared<Ship::ResourceInitData>();
-    init->Type = (uint32_t)Ship::ResourceType::Shader; // raw text blob
-    init->ByteOrder = Ship::Endianness::Native;
-    init->Format = RESOURCE_FORMAT_BINARY;
-    auto res =
-        std::static_pointer_cast<Ship::Shader>(resourceManager->LoadResource("shaders/post/pipeline.json", true, init));
-    if (res == nullptr) {
-        return;
-    }
-
-    auto text = static_cast<std::string*>(res->GetRawPointer());
-    if (text == nullptr) {
-        return;
-    }
-
-    nlohmann::json manifest = nlohmann::json::parse(*text, nullptr, false);
-    if (manifest.is_discarded()) {
-        SPDLOG_ERROR("shaders/post/pipeline.json is malformed; ignoring");
-        return;
-    }
-
-    const auto passes =
-        manifest.contains("passes") && manifest["passes"].is_array() ? manifest["passes"] : nlohmann::json::array();
-    for (const auto& entry : passes) {
-        if (!entry.contains("shader") || !entry["shader"].is_string()) {
+    for (const auto& archive : *archives) {
+        if (archive == nullptr) {
             continue;
         }
-        const std::string shader = entry["shader"].get<std::string>();
-        const bool enabled = entry.value("enabled", true);
-        std::lock_guard<std::mutex> lock(mPostPassMutex);
-        mPostPasses.push_back({ mPostPassNextId++, shader, enabled });
-        SPDLOG_INFO("Post pass registered from manifest: {} ({})", shader, enabled ? "enabled" : "disabled");
-    }
 
-    // Per-display-list shader mappings: apply `shader` to the DL at `dlist`
-    // whenever it is executed by o2r path or hash.
-    if (manifest.contains("materials") && manifest["materials"].is_array()) {
-        for (const auto& entry : manifest["materials"]) {
-            if (!entry.contains("dlist") || !entry["dlist"].is_string() || !entry.contains("shader") ||
-                !entry["shader"].is_string() || !entry.value("enabled", true)) {
-                continue;
+        auto file = archive->LoadFile(std::string("manifest.json"));
+        if (file == nullptr || !file->IsLoaded || file->Buffer == nullptr) {
+            continue;
+        }
+
+        nlohmann::json manifest = nlohmann::json::parse(file->Buffer->begin(), file->Buffer->end(), nullptr, false);
+        if (manifest.is_discarded() || !manifest.contains("shaders") || !manifest["shaders"].is_object()) {
+            continue;
+        }
+
+        const auto& shaders = manifest["shaders"];
+        const std::string packName = manifest.value("name", archive->GetPath());
+
+        if (shaders.contains("passes") && shaders["passes"].is_array()) {
+            for (const auto& entry : shaders["passes"]) {
+                if (!entry.contains("shader") || !entry["shader"].is_string()) {
+                    continue;
+                }
+
+                const std::string shader = entry["shader"].get<std::string>();
+                const bool enabled = entry.value("enabled", true);
+                mShaderPackNames[shader] = packName;
+                std::lock_guard<std::mutex> lock(mPostPassMutex);
+                mPostPasses.push_back({ mPostPassNextId++, shader, packName, enabled });
+                SPDLOG_INFO("Post pass registered from {}: {} ({})", packName, shader,
+                            enabled ? "enabled" : "disabled");
             }
-            const std::string dlist = entry["dlist"].get<std::string>();
-            const std::string shader = entry["shader"].get<std::string>();
-            mMaterialShaders[dlist] = shader;
-            SPDLOG_INFO("Material shader registered from manifest: {} -> {}", dlist, shader);
+        }
+
+        if (shaders.contains("materials") && shaders["materials"].is_array()) {
+            for (const auto& entry : shaders["materials"]) {
+                if (!entry.contains("dlist") || !entry["dlist"].is_string() || !entry.contains("shader") ||
+                    !entry["shader"].is_string() || !entry.value("enabled", true)) {
+                    continue;
+                }
+                const std::string dlist = entry["dlist"].get<std::string>();
+                const std::string shader = entry["shader"].get<std::string>();
+                mMaterialShaders[dlist] = shader;
+                mShaderPackNames[shader] = packName;
+                SPDLOG_INFO("Material shader registered from {}: {} -> {}", packName, dlist, shader);
+            }
         }
     }
 }
@@ -4625,6 +4628,10 @@ void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::Set
     if (entry.path.empty()) {
         const char* path = gfx_get_shader(shaderId);
         entry.path = path != nullptr ? path : "";
+        auto packIt = gfx->mShaderPackNames.find(entry.path);
+        if (packIt != gfx->mShaderPackNames.end()) {
+            entry.pack = packIt->second;
+        }
     }
     for (const auto& decl : decls) {
         bool known = false;
@@ -4672,10 +4679,9 @@ std::vector<std::pair<std::string, prism::ContextTypes>> gfx_get_shader_setting_
         } else if (decl.type == "int" || decl.type == "enum") {
             out.emplace_back(decl.var, prism::ContextTypes{ (int)v[0] });
         } else if (decl.type == "color") {
-            out.emplace_back(decl.var,
-                             prism::ContextTypes{ prism::format_float_literal(v[0]) + ", " +
-                                                  prism::format_float_literal(v[1]) + ", " +
-                                                  prism::format_float_literal(v[2]) });
+            out.emplace_back(decl.var, prism::ContextTypes{ prism::format_float_literal(v[0]) + ", " +
+                                                            prism::format_float_literal(v[1]) + ", " +
+                                                            prism::format_float_literal(v[2]) });
         } else {
             out.emplace_back(decl.var, prism::ContextTypes{ prism::format_float_literal(v[0]) });
         }
@@ -6369,18 +6375,22 @@ void Interpreter::StartFrame() {
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1 || HasPostPasses()) {
+    const bool postPassesActive = HasPostPasses();
+    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1 || postPassesActive) {
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
                                                true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
-            // match the window size
+            // match the window size. With post passes active the image is
+            // presented as a texture (ImGui) instead of resolved into fb0, so
+            // GL needs the same pre-flip as the off-resolution path.
             mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
+                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, postPassesActive, true,
+                                               true, true);
         }
-        if (mMsaaLevel > 1 && (!ViewportMatchesRendererResolution() || HasPostPasses())) {
+        if (mMsaaLevel > 1 && (!ViewportMatchesRendererResolution() || postPassesActive)) {
             if (!ViewportMatchesRendererResolution()) {
                 mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
                                                    false, false, false, false);
