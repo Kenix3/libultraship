@@ -9,7 +9,7 @@
 
     // Game-bindable custom uniform registers; [0]-[1] are engine built-ins
     // (frame/time/delta, resolution). See CustomUniforms in gfx_rendering_api.h.
-    uniform vec4 uCustom[16];
+    uniform vec4 uCustom[32];
 
     @for(i in 0..2)
         @if(o_textures[i])

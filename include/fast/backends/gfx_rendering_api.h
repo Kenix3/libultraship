@@ -73,7 +73,7 @@ struct LightingUniforms {
     int32_t padding[3];
 };
 
-constexpr int GFX_NUM_CUSTOM_UNIFORMS = 16;
+constexpr int GFX_NUM_CUSTOM_UNIFORMS = 32;
 
 // Game-bindable uniform register file, exposed to shader templates as
 // `uniform vec4 uCustom[GFX_NUM_CUSTOM_UNIFORMS]` (loose uniform on GL so the

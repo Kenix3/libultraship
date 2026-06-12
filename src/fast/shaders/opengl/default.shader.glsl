@@ -54,7 +54,7 @@
 
     // Game-bindable custom uniform registers; [0]-[1] are engine built-ins
     // (frame/time/delta, resolution). See CustomUniforms in gfx_rendering_api.h.
-    uniform vec4 uCustom[16];
+    uniform vec4 uCustom[32];
 
     @if(o_prim_depth)
     uniform float prim_depth;
