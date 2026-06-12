@@ -36,9 +36,44 @@ void Audio::InitAudioPlayer() {
 
     if (mAudioPlayer && !mAudioPlayer->Init()) {
         // Failed to initialize system audio player.
-        // Fallback to Null if the native system player does not work.
+        // Fallback to Null if the native system player does not work. That path
+        // re-enters InitAudioPlayer (and fires the hook for the Null player), so
+        // return here to avoid also firing it for the failed player.
         SetCurrentAudioBackend(AudioBackend::NUL);
+        return;
     }
+
+    // A fresh AudioPlayer is live. It already inherits the float-pipeline mode
+    // via mAudioSettings; the hook lets the host re-attach instance-bound state
+    // the player cannot carry across a rebuild (e.g. FluidSynth's mix source).
+    if (mOnAudioPlayerInitialized) {
+        mOnAudioPlayerInitialized();
+    }
+}
+
+bool Audio::IsUsingFloatPipeline() const {
+    return mUseFloatPipeline.load(std::memory_order_acquire);
+}
+
+bool Audio::SetUseFloatPipeline(bool enabled) {
+    // Authority first: update the live flag and the template new players inherit,
+    // so anything constructed from here on comes up in the right mode.
+    mAudioSettings.UseFloatPipeline = enabled;
+    mUseFloatPipeline.store(enabled, std::memory_order_release);
+
+    if (mAudioPlayer && !mAudioPlayer->SetUseFloatPipeline(enabled)) {
+        // The player refused the requested mode; reflect what it actually settled
+        // on so producer and consumer stay in agreement.
+        const bool actual = mAudioPlayer->IsUsingFloatPipeline();
+        mAudioSettings.UseFloatPipeline = actual;
+        mUseFloatPipeline.store(actual, std::memory_order_release);
+        return false;
+    }
+    return true;
+}
+
+void Audio::SetOnAudioPlayerInitialized(std::function<void()> callback) {
+    mOnAudioPlayerInitialized = std::move(callback);
 }
 
 void Audio::Init() {
@@ -125,6 +160,10 @@ void Audio::SetCurrentAudioBackend(AudioBackend backend) {
     }
     mConfig->Save();
 
+    // The new player inherits the float-pipeline mode from mAudioSettings (kept
+    // authoritative by SetUseFloatPipeline), so it comes up in the correct mode
+    // by construction. InitAudioPlayer's hook then re-attaches any instance-bound
+    // state (e.g. the FluidSynth mix source).
     InitAudioPlayer();
 }
 

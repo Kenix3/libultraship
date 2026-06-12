@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
 #include <string>
 #include <memory>
 #include <vector>
@@ -68,6 +70,33 @@ class Audio {
      */
     AudioChannelsSetting GetAudioChannels() const;
 
+    /** @brief Returns whether the float (HD) audio pipeline is currently active. */
+    bool IsUsingFloatPipeline() const;
+
+    /**
+     * @brief Single authority for the float-pipeline mode.
+     *
+     * Updates the live flag, the settings new players inherit, and the current
+     * player (reopening its device in the matching format). Everything else --
+     * the producer's PlayF32-vs-Play choice and any newly constructed player --
+     * derives from this, so there is exactly one place the mode is owned.
+     *
+     * @return true if applied; false if the current player refused float mode
+     *         (in which case the authority is reverted to the player's actual mode).
+     */
+    bool SetUseFloatPipeline(bool enabled);
+
+    /**
+     * @brief Registers a callback invoked whenever a new AudioPlayer is
+     * initialised (backend switch, fallback to Null, startup).
+     *
+     * The new player already inherits the float-pipeline mode; this hook exists
+     * so the host can re-attach instance-bound state the player cannot carry
+     * across a rebuild (e.g. a FluidSynth mix source). Pass an empty function to
+     * clear it.
+     */
+    void SetOnAudioPlayerInitialized(std::function<void()> callback);
+
   protected:
     /** @brief (Re)initialises the AudioPlayer for the current backend and channel settings. */
     void InitAudioPlayer();
@@ -95,5 +124,11 @@ class Audio {
     AudioSettings mAudioSettings;
     std::shared_ptr<std::vector<AudioBackend>> mAvailableAudioBackends;
     std::shared_ptr<Config> mConfig;
+
+    // Single source of truth for the float-pipeline mode. Lock-free so the audio
+    // producer can read it cheaply; written only by SetUseFloatPipeline, which
+    // also mirrors it into mAudioSettings (the template new players inherit).
+    std::atomic<bool> mUseFloatPipeline{ false };
+    std::function<void()> mOnAudioPlayerInitialized;
 };
 } // namespace Ship
