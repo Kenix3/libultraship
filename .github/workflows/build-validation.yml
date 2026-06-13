@@ -200,7 +200,7 @@ jobs:
         path: build-cmake-x64/src/**/*.lib
         if-no-files-found: error
   build-windows-arm64:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Install dependencies
         run: |
