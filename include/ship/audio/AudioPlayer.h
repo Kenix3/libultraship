@@ -228,8 +228,19 @@ class AudioPlayer {
     /// the rates already match.
     void RebuildResampler();
 
+    /// Whether a stereo->5.1 matrix decoder is required for the current
+    /// (channel, pipeline) combination. Matrix 5.1 always needs it; Raw 5.1
+    /// needs it only in float mode (there the source is stereo, so the engine's
+    /// native 6-channel output isn't available to pass through). Raw 5.1 on the
+    /// s16 path keeps passing the engine's native 6 channels straight through.
+    bool NeedsMatrixDecoder() const;
+
+    /// (Re)creates or releases mSoundMatrixDecoder to match NeedsMatrixDecoder().
+    /// Call after any channel-setting or pipeline-mode change.
+    void EnsureMatrixDecoder();
+
     std::unique_ptr<SoundMatrixDecoder>
-        mSoundMatrixDecoder; ///< Stereo-to-surround decoder (active in matrix-5.1 mode).
+        mSoundMatrixDecoder; ///< Stereo-to-surround decoder (Matrix 5.1, or Raw 5.1 in float mode).
     std::unique_ptr<AudioResampler> mResampler;
 
     // Fixed-size scratch buffers — no heap allocation on the audio hot path.

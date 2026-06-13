@@ -30,12 +30,28 @@ void AudioPlayer::RebuildResampler() {
     }
 }
 
-bool AudioPlayer::Init() {
+bool AudioPlayer::NeedsMatrixDecoder() const {
     if (mAudioSettings.ChannelSetting == AudioChannelsSetting::audioMatrix51) {
-        SPDLOG_INFO("Initializing sound matrix decoder for surround");
-        mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
+        return true;
     }
+    // Raw 5.1 has no native 6-channel source in float mode (the float producer
+    // is stereo), so the stereo bus must be upmixed instead of passed through.
+    return mAudioSettings.ChannelSetting == AudioChannelsSetting::audioRaw51 && mAudioSettings.UseFloatPipeline;
+}
 
+void AudioPlayer::EnsureMatrixDecoder() {
+    if (NeedsMatrixDecoder()) {
+        if (!mSoundMatrixDecoder) {
+            SPDLOG_INFO("Initializing sound matrix decoder for surround");
+            mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
+        }
+    } else {
+        mSoundMatrixDecoder.reset();
+    }
+}
+
+bool AudioPlayer::Init() {
+    EnsureMatrixDecoder();
     RebuildResampler();
     mInitialized = DoInit();
     return IsInitialized();
@@ -101,15 +117,7 @@ bool AudioPlayer::SetAudioChannels(AudioChannelsSetting channels) {
     // Update channel setting
     mAudioSettings.ChannelSetting = channels;
 
-    // Setup or teardown sound matrix decoder
-    if (channels == AudioChannelsSetting::audioMatrix51) {
-        if (!mSoundMatrixDecoder) {
-            mSoundMatrixDecoder = std::make_unique<SoundMatrixDecoder>(mAudioSettings.SampleRate);
-        }
-    } else {
-        // When switching away from matrix mode, release the decoder
-        mSoundMatrixDecoder.reset();
-    }
+    EnsureMatrixDecoder();
 
     // Channel-count change can affect the s16 legacy resampler (built at
     // GetNumOutputChannels()); rebuild to pick that up.
@@ -138,14 +146,18 @@ bool AudioPlayer::SetUseFloatPipeline(bool enabled) {
     mAudioSettings.UseFloatPipeline = enabled;
     if (!enabled) {
         // Dropping the float path also drops any installed mix source — the
-        // s16 mix happens upstream in OTRGlobals.
+        // s16 mix happens upstream in the consumer.
         mMixSource = nullptr;
     }
+    // Raw 5.1 needs the decoder only in float mode, so the mode switch can
+    // change whether it is required.
+    EnsureMatrixDecoder();
     RebuildResampler();
     mInitialized = DoInit();
     if (!mInitialized) {
         SPDLOG_ERROR("AudioPlayer: reinit failed at new mode, reverting");
         mAudioSettings.UseFloatPipeline = oldMode;
+        EnsureMatrixDecoder();
         RebuildResampler();
         mInitialized = DoInit();
     }
@@ -266,9 +278,12 @@ void AudioPlayer::Play(const float* buf, size_t frames) {
     }
 
     // ── Stage 3: surround decode (stereo → 5.1) ──────────────────────────
-    if (mAudioSettings.ChannelSetting == AudioChannelsSetting::audioMatrix51) {
+    // The float source is always stereo, so any 6-channel output must be upmixed
+    // here — Matrix 5.1 and Raw 5.1 alike. The synth was summed into the stereo
+    // bus above, so it reaches every surround channel through the decoder too.
+    if (GetNumOutputChannels() == 6) {
         if (!mSoundMatrixDecoder) {
-            SPDLOG_ERROR("AudioPlayer: Matrix 5.1 mode enabled but SoundMatrixDecoder is not initialized");
+            SPDLOG_ERROR("AudioPlayer: 5.1 output but SoundMatrixDecoder is not initialized");
             return;
         }
         const auto [surroundOut, surroundFrames] =
