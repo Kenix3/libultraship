@@ -108,6 +108,13 @@ public:
     //   level    : [0..1] reverb wet level.
     void SetReverbParams(double roomsize, double damping, double width, double level);
 
+    // Set FluidSynth's master output gain at runtime (forwards to
+    // fluid_synth_set_gain). Lets the host track a global volume fader without
+    // rebuilding the synth. Takes the synth mutex; safe any time after
+    // construction. Mirrors FluidSynthConfig::gain, which sets the same knob at
+    // construction.
+    void SetMasterGain(float gain) override;
+
     // Pitch bend range in semitones sent to FluidSynth on channel init.
     // Must match what the MidiTranslator uses. Default: 12 semitones.
     static constexpr float kPitchBendRangeSemitones = 12.0f;

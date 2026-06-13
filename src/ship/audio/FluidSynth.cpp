@@ -478,6 +478,12 @@ void FluidSynth::SetReverbParams(double roomsize, double damping, double width, 
                 roomsize, damping, width, level);
 }
 
+void FluidSynth::SetMasterGain(float gain) {
+    std::lock_guard<std::mutex> lock(mSynthMutex);
+    if (!mSynth) return;
+    fluid_synth_set_gain(mSynth, gain);
+}
+
 void FluidSynth::Render(float* out, uint32_t frameCount) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
     if (!mSynth || mSfontIds.empty()) {

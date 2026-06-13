@@ -85,6 +85,13 @@ public:
     // a voice pool may return 0.
     virtual uint32_t GetActiveVoiceCount() const = 0;
     virtual uint32_t GetPolyphonyLimit() const = 0;
+
+    // Set the synth-wide master output gain (linear; 1.0 = unity). The host
+    // uses this to apply a global volume fader to the synth's contribution
+    // without rebuilding it — e.g. tracking a Master Volume slider. Safe to
+    // call from the game thread. Implementations without a controllable master
+    // gain may treat this as a no-op.
+    virtual void SetMasterGain(float gain) {}
 };
 
 } // namespace Ship
