@@ -8,7 +8,7 @@ namespace Ship {
 /*
  * AudioResampler — polyphase sinc resampler for integer ratios.
  *
- * Designed for the specific case of N64 audio upsampling from 32000 Hz
+ * Designed for the specific case of console audio upsampling from 32000 Hz
  * to 48000 Hz (ratio 3/2 exact). Works for any integer ratio P/Q where
  * P = outRate / gcd(outRate, inRate) and Q = inRate / gcd(outRate, inRate).
  *

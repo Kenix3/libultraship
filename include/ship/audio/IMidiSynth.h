@@ -33,18 +33,14 @@ public:
     // loaded soundfont — typically with last-loaded-wins precedence.
     virtual void ProgramChange(uint8_t channel, uint16_t preset) = 0;
 
-    // Like ProgramChange but pins the channel to a SPECIFIC loaded
-    // soundfont via its `sfontId`, bypassing the cross-soundfont
-    // preset lookup. Use this when the caller knows exactly which
-    // SF2 the preset must come from — for example, when the user
-    // picked "[Xadra] Bank 10 prog 5" from the UI and we want to
-    // play *that* even if another loaded SF2 also has (10, 5).
+    // Like ProgramChange but pins the channel to a SPECIFIC loaded soundfont via
+    // its `sfontId`, bypassing the cross-soundfont preset lookup. Use when the
+    // caller knows exactly which SF2 the preset must come from, even if another
+    // loaded SF2 also has that (bank, program).
     //
-    // Returns true when the pin succeeded (the sfontId is valid and
-    // contains the (bank, program) tuple), false otherwise. Failure
-    // is the caller's signal to fall back to native synthesis for
-    // this entry — see the pack-bound resolution model in
-    // docs/FluidSynthBackend.md.
+    // Returns true when the pin succeeds (the sfontId is valid and has the
+    // (bank, program) tuple), false otherwise. Failure signals the caller to fall
+    // back to native synthesis for this entry.
     virtual bool ProgramSelect(uint8_t channel, int sfontId,
                                uint16_t bank, uint16_t program) = 0;
 

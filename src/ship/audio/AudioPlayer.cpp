@@ -218,14 +218,12 @@ void AudioPlayer::Play(const float* buf, size_t frames) {
         return;
     }
 
-    // Stages of the float audio pipeline:
-    //   1. Resample the primary input (always stereo from the game engine)
-    //      to the device's output rate.
-    //   2. Mix in the optional secondary stereo source (FluidSynth) at the
-    //      output rate, with a tanh-style soft-clip. The source therefore
-    //      bypasses the resampler entirely and runs at native device quality.
-    //   3. Surround-decode stereo → 5.1 if in matrix-5.1 mode.
-    //   4. DoPlay the resulting interleaved float buffer.
+    // Float audio pipeline stages:
+    //   1. Resample the primary stereo input to the device's output rate.
+    //   2. Mix in the optional secondary stereo source (FluidSynth) at the output
+    //      rate with a tanh soft-clip, bypassing the resampler.
+    //   3. Surround-decode stereo -> 5.1 if in matrix-5.1 mode.
+    //   4. DoPlay the interleaved float buffer.
 
     // ── Stage 1: resample stereo to output rate ───────────────────────────
     const float* stereoOutRate = buf;
@@ -249,9 +247,8 @@ void AudioPlayer::Play(const float* buf, size_t frames) {
                "Mix output exceeds kResampleBufSamples — increase the buffer size");
         mMixSource(mMixSourceBuf.data(), outFrames);
 
-        // Tanh approximation used to soft-clip the secondary-source mix. Matches the
-        // curve used in SoH's OTRAudio_Thread before the float pipeline landed, so
-        // dynamics behave identically when the synth contributes a peaky signal.
+        // Tanh approximation used to soft-clip the secondary-source mix, so dynamics
+        // stay well-behaved when the synth contributes a peaky signal.
         auto SoftClipTanhApprox = [](float x) -> float {
             const float x2 = x * x;
             return x * (27.0f + x2) / (27.0f + 9.0f * x2);

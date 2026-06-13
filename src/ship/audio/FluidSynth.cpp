@@ -11,18 +11,13 @@ namespace {
 // ----------------------------------------------------------------------
 // Memory-backed SF2 loader.
 //
-// FluidSynth's sound-font loaders are tried in order against the path
-// passed to fluid_synth_sfload(). The default loader handles any
-// filesystem path; we register an additional loader that responds to
-// the fixed sentinel "mem://current" and ignores everything else, so
-// path-based and memory-based loads coexist cleanly.
-//
-// The buffers live in mLoadedBuffers on the FluidSynth instance; the
-// in-flight pointer below carries the address of the relevant buffer
-// through the open callback (which has no user-data slot — only a
-// filename string). AddSoundFontFromMemory runs from the GUI thread
-// only and takes the synth mutex around the sfload call, so a single
-// static slot is safe even with multiple SF2s loaded.
+// FluidSynth tries its sound-font loaders in order against the path passed to
+// fluid_synth_sfload(). The default loader handles filesystem paths; we register
+// one that responds to the sentinel "mem://current" and ignores everything else,
+// so path- and memory-based loads coexist. The open callback has no user-data slot
+// (only a filename), so the in-flight buffer pointer passes through a single static
+// slot; AddSoundFontFromMemory runs only on the GUI thread under the synth mutex,
+// so that slot is safe even with multiple SF2s loaded.
 // ----------------------------------------------------------------------
 
 struct MemoryInflight {
@@ -105,21 +100,18 @@ FluidSynth::FluidSynth(const FluidSynthConfig& config)
     // "file" is an offline render-to-disk mode and must NOT be used here.
     fluid_settings_setstr(mSettings, "audio.driver", "none");
 
-    // Master gain. Stock FluidSynth is 0.2 (conservative against clipping when
-    // many voices sound at once); the integrating game picks a value suited to
-    // its mix -- see FluidSynthConfig::gain. SoH lifts it because the native PCM
-    // it mixes against peaks near 1.0, so 0.2 would leave the synth ~5x too
-    // quiet on the additive path; its soft-clip handles brief over-budget sums.
+    // Master gain. Stock FluidSynth is 0.2 (conservative against clipping when many
+    // voices sound at once); the integrating game picks a value suited to its mix
+    // (see FluidSynthConfig::gain). A game mixing against near-full-scale native PCM
+    // lifts it so the synth isn't left too quiet; its soft-clip handles brief
+    // over-budget sums.
     fluid_settings_setnum(mSettings, "synth.gain", config.gain);
 
-    // Polyphony (max simultaneous voices). Stock FluidSynth is 256; the
-    // integrating game sizes this for its workload -- see
-    // FluidSynthConfig::polyphony. Undersizing surfaces as "Ringbuffer full,
-    // increase synth.polyphony" with dropped notes; FluidSynth frees each voice
-    // when its sample/envelope completes (no leak) and idle voices are cheap, so
-    // a generous ceiling is fine. (SoH needs headroom: it layers a full melodic
-    // mapping plus one-shot percussion -- which holds a voice until the sample
-    // finishes, NoteOff doesn't cut it -- on top of the native engine.)
+    // Polyphony (max simultaneous voices). Stock FluidSynth is 256; the integrating
+    // game sizes this for its workload (see FluidSynthConfig::polyphony). Undersizing
+    // drops notes. FluidSynth frees each voice when its sample/envelope completes (no
+    // leak) and idle voices are cheap, so a generous ceiling is fine -- e.g. when a
+    // game layers a full melodic mapping plus voice-holding one-shot percussion.
     fluid_settings_setint(mSettings, "synth.polyphony", config.polyphony);
 
     mSynth = new_fluid_synth(mSettings);
@@ -155,38 +147,21 @@ FluidSynth::FluidSynth(const FluidSynthConfig& config)
 }
 
 void FluidSynth::InstallLinearVelocityModulators() {
-    // Approach inspired by ANMP (GPL-2, github.com/derselbst/ANMP), specifically
-    // src/InputLibraryWrapper/FluidsynthWrapper.cpp around L300-333. ANMP calls
-    // this the "Graham-Smith volume curve": replace the SF2 spec's default
-    // velocity / CC7 / CC11 → initial-attenuation modulators with versions that
-    // keep the same perceptual concave NEGATIVE shape but halve the amount
-    // (960 cB → 480 cB), pulling the maximum attenuation from −96 dB to −48 dB.
-    // Lifts quiet voices without flattening overall dynamics — the curve still
-    // tapers smoothly toward "no attenuation" near the top of the input range.
+    // Approach adapted from ANMP (GPL-2, github.com/derselbst/ANMP): replace the
+    // SF2 spec's default velocity / CC7 / CC11 -> initial-attenuation modulators
+    // with versions that keep the concave NEGATIVE shape but halve the amount
+    // (960 -> 480 cB), pulling maximum attenuation from -96 dB to -48 dB. This
+    // lifts quiet voices without flattening dynamics. CC11 stays active because
+    // the translator drives loudness dynamics through it.
     //
-    // We do NOT change the curve shape — an earlier version of this code
-    // switched CC11 to LINEAR with the same amount, intending to "let the
-    // translator's sqrt(velocity) curve dominate", but that compressed the
-    // mid-range hard: linear NEGATIVE burns ~50% attenuation at CC11=64 while
-    // concave NEGATIVE only burns ~13% there. Result was a uniform ~10 dB
-    // drop on every voice, which is the opposite of the goal. Keep concave.
-    //
-    // ANMP's own CC11 handling is actually a *removal* of the modulator
-    // (Dinosaur Planet uses CC11 for something else); we keep CC11 active
-    // because the translator drives loudness dynamics through it.
-    //
-    // IMPORTANT: fluid_synth_add_default_mod(... FLUID_SYNTH_OVERWRITE) only
-    // replaces an existing default if every source flag matches exactly.
-    // fluid_synth_remove_default_mod followed by add_default_mod is safer and
-    // documents intent; do it for all three for consistency.
-    //
-    // Must run after new_fluid_synth() but before any LoadSoundFont() — SF2
-    // instrument-level modulators are layered on top of these defaults at load
-    // time.
+    // Use remove_default_mod + add_default_mod rather than add(... OVERWRITE),
+    // which only replaces when every source flag matches exactly. Must run after
+    // new_fluid_synth() but before any LoadSoundFont(): SF2 instrument-level
+    // modulators layer on top of these defaults at load time.
 
     fluid_mod_t* mod = new_fluid_mod();
     if (!mod) {
-        SPDLOG_ERROR("[FluidSynth] new_fluid_mod() failed; Graham-Smith modulators disabled");
+        SPDLOG_ERROR("[FluidSynth] new_fluid_mod() failed; velocity modulators disabled");
         return;
     }
 
@@ -216,7 +191,7 @@ void FluidSynth::InstallLinearVelocityModulators() {
 
     delete_fluid_mod(mod);
 
-    SPDLOG_INFO("[FluidSynth] Graham-Smith modulators installed (vel/CC7/CC11 concave × 0.5)");
+    SPDLOG_INFO("[FluidSynth] velocity modulators installed (vel/CC7/CC11 concave x 0.5)");
 }
 
 FluidSynth::~FluidSynth() {
@@ -334,21 +309,16 @@ void FluidSynth::InitChannel(uint8_t channel) {
 
     int ch = static_cast<int>(channel);
 
-    // Set pitch-bend range via the dedicated API. The MIDI-spec equivalent
-    // (CC 101/100/6/38 RPN dance) has had subtle behavior differences
-    // across FluidSynth versions; the direct setter takes a semitone count
-    // and eliminates the ambiguity.
+    // Set pitch-bend range via the dedicated API. The MIDI-spec equivalent (CC
+    // 101/100/6/38 RPN sequence) has subtle behavior differences across FluidSynth
+    // versions; the direct semitone setter avoids the ambiguity.
     fluid_synth_pitch_wheel_sens(mSynth, ch, static_cast<int>(kPitchBendRangeSemitones));
 
-    // NOTE: fluid_synth_set_gen() applies an NRPN-style ADDITIVE offset on
-    // top of whatever the SF2's instrument zone authored — it does not
-    // override. So set_gen(GEN_VIBLFOTOPITCH, 0.0f) is a no-op against a
-    // preset that set a non-zero LFO depth at zone level. The absolute
-    // override sibling, fluid_synth_set_gen2(), is not in the 2.5.2 public
-    // API, so we cannot generically silence baked LFO from the channel
-    // side. A non-zero authored GEN_VIBLFOTOPITCH has to be patched out at
-    // SF2 load time (walk the modulators) -- per-voice patching on NoteOn
-    // covers the common case; see NoteOn().
+    // fluid_synth_set_gen() applies an additive (NRPN-style) offset on top of the
+    // SF2 zone value rather than overriding it, and the absolute sibling set_gen2()
+    // isn't in the 2.5.2 public API. So baked LFO-to-pitch can't be silenced
+    // channel-wide; it's patched per-voice on NoteOn (common case) or at SF2 load
+    // time. See NoteOn().
 }
 
 void FluidSynth::NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) {
@@ -360,16 +330,10 @@ void FluidSynth::NoteOn(uint8_t channel, uint8_t note, uint8_t velocity) {
                  channel, note, velocity, mSfontIds.size(), result);
 
     // Suppress SF2-author-baked LFO-to-pitch on the voices we just started.
-    // fluid_voice_gen_set() writes the generator's `val` field directly
-    // (the SF2 instrument-zone value), replacing it. Final voice generator
-    // = val + mod + nrpn, so zeroing val drops the SF2's contribution; mod
-    // and nrpn are typically zero for these gens unless something custom
-    // wired pitch wheel into them.
-    //
-    // The set_gen channel-wide setter is additive (NRPN-style) — would not
-    // override a zone-level authored value — and the absolute sibling
-    // (set_gen2) is not in the 2.5.2 public API, so per-voice patching is
-    // the only public path that works.
+    // fluid_voice_gen_set() writes the generator's `val` field directly (the SF2
+    // zone value), and final = val + mod + nrpn, so zeroing val drops the SF2's
+    // contribution. Per-voice patching is the only public path that works, since
+    // the channel-wide set_gen is additive and set_gen2 isn't in the public API.
     fluid_voice_t* voices[256];
     fluid_synth_get_voicelist(mSynth, voices, 256, -1);
     for (int i = 0; i < 256 && voices[i] != nullptr; ++i) {

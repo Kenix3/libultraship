@@ -115,18 +115,14 @@ int32_t AudioResampler::MaxOutputFrames(int32_t inFrames) const {
 }
 
 // ---------------------------------------------------------------------------
-// Process — the core resampling loop
+// Process: the core resampling loop.
 //
-// Algorithm:
-//   We conceptually upsample by P (insert P-1 zeros between each input sample)
-//   then lowpass filter and downsample by Q.
-//   The polyphase decomposition lets us do this efficiently without computing
-//   the zero-padded samples: we advance through phases and only advance the
-//   input pointer when we complete Q phases.
-//
-//   For each output sample:
-//     1. Apply polyphase filter bank[mPhase] to the last kTapsPerPhase input frames.
-//     2. Advance mPhase by Q. If mPhase >= P, subtract P and advance input by 1.
+// Conceptually upsample by P (insert P-1 zeros between input samples), lowpass
+// filter, then downsample by Q. The polyphase decomposition does this without the
+// zero-padded samples: advance through phases, advancing the input pointer only
+// after completing Q phases. Per output sample: apply filter bank[mPhase] to the
+// last kTapsPerPhase input frames, then mPhase += Q; if mPhase >= P, subtract P
+// and advance input by 1.
 // ---------------------------------------------------------------------------
 
 int32_t AudioResampler::Process(const float* inBuf, int32_t inFrames, float* outBuf, int32_t maxOutFrames) {
@@ -202,9 +198,7 @@ int32_t AudioResampler::Process(const float* inBuf, int32_t inFrames, float* out
 }
 
 // ---------------------------------------------------------------------------
-// Legacy s16 overload — wraps the float core with conversions at the
-// boundaries. Preserves the byte-exact behaviour libultraship consumers had
-// before the float pipeline landed.
+// s16 overload: wraps the float core with conversions at the boundaries.
 // ---------------------------------------------------------------------------
 
 int32_t AudioResampler::Process(const int16_t* inBuf, int32_t inFrames, int16_t* outBuf, int32_t maxOutFrames) {

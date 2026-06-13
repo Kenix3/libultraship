@@ -19,21 +19,16 @@ struct FluidSynthConfig {
     // Set before new_fluid_synth — the synth reads it once at construction.
     double sampleRate = 44100.0;
 
-    // When true, install the Graham-Smith volume curve (per ANMP,
-    // github.com/derselbst/ANMP). Replaces the SF2 default vel / CC7 / CC11 →
-    // initial-attenuation modulators with versions that keep the perceptual
-    // concave NEGATIVE shape but halve the amount (960 → 480 cB). Maximum
-    // attenuation drops from −96 dB to −48 dB, lifting quiet voices while
+    // When true, install a softened volume curve: replaces the SF2 default
+    // vel / CC7 / CC11 -> initial-attenuation modulators with versions that keep
+    // the concave NEGATIVE shape but halve the amount (960 -> 480 cB). Maximum
+    // attenuation drops from -96 dB to -48 dB, lifting quiet voices while
     // preserving dynamics shape. False preserves standard SF2 behavior.
-    // (The name is historical — an earlier prototype actually switched CC11 to
-    // linear, but that over-compressed the mid-range.)
     bool linearVelocity = false;
 
-    // Maximum simultaneous voices. FluidSynth's stock default is 256; a game
-    // that layers many SF2 voices (e.g. additive on top of a native engine, or
-    // one-shot percussion that holds a voice until the sample finishes) can
-    // exhaust that and see "Ringbuffer full, increase synth.polyphony" with
-    // dropped notes. Idle voices cost almost nothing, so sizing up is cheap.
+    // Maximum simultaneous voices. FluidSynth's stock default is 256; a game that
+    // layers many SF2 voices or holds one-shot percussion voices can exhaust that
+    // and drop notes. Idle voices cost almost nothing, so sizing up is cheap.
     int polyphony = 256;
 
     // Master output gain. FluidSynth's stock default is 0.2 — conservative to
@@ -122,13 +117,10 @@ public:
 private:
     void InitChannel(uint8_t channel);
 
-    // Installs the Graham-Smith volume curve on the freshly-created
-    // fluid_synth_t (per ANMP). Replaces the SF2 default vel/CC7/CC11 →
-    // attenuation modulators with versions at halved amount (480 cB).
-    // Must be called after new_fluid_synth() but before any LoadSoundFont()
-    // so that SF2 instrument-level modulators layer correctly on top of
-    // the modified defaults. Name retained for historical reasons; see
-    // the implementation in FluidSynth.cpp for the design rationale.
+    // Installs the softened volume curve on the freshly-created fluid_synth_t:
+    // replaces the SF2 default vel/CC7/CC11 -> attenuation modulators with versions
+    // at halved amount (480 cB). Must run after new_fluid_synth() but before any
+    // LoadSoundFont() so SF2 instrument-level modulators layer correctly on top.
     void InstallLinearVelocityModulators();
 
     fluid_settings_t*  mSettings        = nullptr;
