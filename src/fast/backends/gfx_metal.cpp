@@ -246,8 +246,7 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     pipeline_descriptor->setFragmentFunction(fragmentFunc);
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
-    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB
-                                                                                 : MTL::PixelFormatBGRA8Unorm);
+    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
     pipeline_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
@@ -897,7 +896,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         tex_descriptor->setHeight(height);
         tex_descriptor->setSampleCount(1);
         tex_descriptor->setMipmapLevelCount(1);
-        tex_descriptor->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
+        tex_descriptor->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
         tex_descriptor->setUsage((render_target ? MTL::TextureUsageRenderTarget : 0) | MTL::TextureUsageShaderRead);
 
         if (tex.texture != nullptr)
@@ -1395,9 +1394,6 @@ ImTextureID GfxRenderingAPIMetal::GetTextureById(int fb_id) {
     return (void*)mTextures[fb_id].texture;
 }
 
-void GfxRenderingAPIMetal::SetSrgbMode() {
-    mSrgbMode = true;
-}
 } // namespace Fast
 
 bool Metal_IsSupported() {

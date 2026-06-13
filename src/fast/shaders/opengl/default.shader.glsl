@@ -260,10 +260,6 @@
             @{vOutColor} = vec4(texel, 1.0);
         @end
 
-        @if(srgb_mode)
-            @{vOutColor} = fromLinear(@{vOutColor});
-        @end
-
         @if(o_prim_depth)
             gl_FragDepth = prim_depth;
         @end

@@ -132,6 +132,7 @@ class Fast3dWindow : public Ship::Window {
     std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
     mutable std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
+    bool mSrgbPassRegistered = false;
 
     /** @brief Returns the cached ConsoleVariable component after validating it is ready for use. */
     std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariables() const;

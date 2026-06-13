@@ -411,7 +411,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     size_t len, numFloats;
 
     auto shader = gfx_direct3d_common_build_shader(numFloats, cc_features, false,
-                                                   mCurrentFilterMode == FILTER_THREE_POINT, mSrgbMode);
+                                                   mCurrentFilterMode == FILTER_THREE_POINT);
 
     buf = shader.data();
     len = shader.size();
@@ -1331,9 +1331,6 @@ ImTextureID GfxRenderingAPIDX11::GetTextureById(int id) {
     return mTextures[id].resource_view.Get();
 }
 
-void GfxRenderingAPIDX11::SetSrgbMode() {
-    mSrgbMode = true;
-}
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
@@ -1504,7 +1501,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
 }
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
-                                             bool include_root_signature, bool three_point_filtering, bool use_srgb) {
+                                             bool include_root_signature, bool three_point_filtering) {
     raw_numFloats = 4;
 
     prism::Processor processor;
@@ -1561,7 +1558,6 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_color_alpha_same", M_ARRAY(cc_features.color_alpha_same, bool, 2) },
         { "o_root_signature", include_root_signature },
         { "o_three_point_filtering", three_point_filtering },
-        { "srgb_mode", use_srgb },
         { "append_formula", (InvokeFunc)prism_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
@@ -1582,10 +1578,10 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
-        sDX11ResourceManager->LoadResource("shaders/directx/default.shader.hlsl", true, init));
+        sDX11ResourceManager->LoadResource(path, false, init));
 
     if (res == nullptr) {
-        SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");
+        SPDLOG_ERROR("Failed to load directx shader '{}', missing f3d.o2r?", path);
         abort();
     }
 

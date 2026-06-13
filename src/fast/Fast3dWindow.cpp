@@ -202,7 +202,29 @@ void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
 }
 
 void Fast3dWindow::EnableSRGBMode() {
-    mInterpreter->mRapi->SetSrgbMode();
+    if (mSrgbPassRegistered) {
+        return;
+    }
+    const char* dir = nullptr;
+    switch (GetWindowBackend()) {
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            dir = "vulkan";
+            break;
+        case WindowBackend::FAST3D_SDL_OPENGL:
+            dir = "opengl";
+            break;
+        case WindowBackend::FAST3D_SDL_METAL:
+            dir = "metal";
+            break;
+        case WindowBackend::FAST3D_DXGI_DX11:
+            dir = "directx";
+            break;
+        default:
+            return;
+    }
+    const std::string path = std::string("shaders/") + dir + "/srgb.shader";
+    mInterpreter->RegisterPostPass(path.c_str());
+    mSrgbPassRegistered = true;
 }
 
 void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {

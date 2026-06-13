@@ -156,7 +156,6 @@ class GfxRenderingAPI {
     virtual void DeleteTexture(uint32_t texId) = 0;
     virtual void SetTextureFilter(FilteringMode mode) = 0;
     virtual FilteringMode GetTextureFilter() = 0;
-    virtual void SetSrgbMode() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
     virtual void SetCurrentPrimDepth(float depth) = 0;
     // Highest mip/LOD level (as float) usable by the current draw's LOD computation.
@@ -210,7 +209,6 @@ class GfxRenderingAPI {
     int8_t mLastDepthMask = -1;
     int8_t mLastZmodeDecal = -1;
     int8_t mLastStrictDecal = -1;
-    bool mSrgbMode = false;
     float mCurrentPrimDepth = 0.0f;
     bool mPrimDepthDirty = true;
     float mCurrentMaxLod = 0.0f;
