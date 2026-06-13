@@ -6381,24 +6381,19 @@ void Interpreter::StartFrame() {
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
                                                true, true, true);
+        } else if (postPassesActive) {
+            mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
+                                               true, true, true);
         } else {
             // MSAA framebuffer needs to be resolved to an equally sized target when complete, which must therefore
-            // match the window size. With post passes active the image is
-            // presented as a texture (ImGui) instead of resolved into fb0, so
-            // GL needs the same pre-flip as the off-resolution path.
+            // match the window size.
             mRapi->UpdateFramebufferParameters(mGameFb, mGfxCurrentWindowDimensions.width,
-                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, postPassesActive, true,
-                                               true, true);
+                                               mGfxCurrentWindowDimensions.height, mMsaaLevel, false, true, true, true);
         }
         if (mMsaaLevel > 1 && (!ViewportMatchesRendererResolution() || postPassesActive)) {
-            if (!ViewportMatchesRendererResolution()) {
-                mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
-                                                   false, false, false, false);
-            } else {
-                // Post chain needs a single-sample input matching the game fb
-                mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mGfxCurrentWindowDimensions.width,
-                                                   mGfxCurrentWindowDimensions.height, 1, false, false, false, false);
-            }
+            // Single-sample resolve target for the post chain; matches the game fb.
+            mRapi->UpdateFramebufferParameters(mGameFbMsaaResolved, mCurDimensions.width, mCurDimensions.height, 1,
+                                               false, false, false, false);
         }
     } else {
         mRendersToFb = false;
