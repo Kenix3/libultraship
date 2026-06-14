@@ -224,6 +224,15 @@ class ResourceManager {
     size_t UnloadResource(const std::string& filePath);
 
     /**
+     * @brief Inserts a runtime-built resource into the cache so LoadResource[Process] returns it by
+     *        path, without any backing archive file. Used for textures synthesized at runtime.
+     *        Evict with UnloadResource(filePath).
+     * @param filePath Virtual path the resource will be retrievable under.
+     * @param resource The resource to cache.
+     */
+    void CacheExternalResource(const std::string& filePath, std::shared_ptr<IResource> resource);
+
+    /**
      * @brief Writes raw data into an archive and optionally evicts the stale cache entry.
      * @param identifier Identifier of the resource to write.
      * @param data       Raw bytes to write.
