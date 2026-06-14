@@ -38,6 +38,8 @@
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "fast/backends/gfx_dxgi.h"
 
+using namespace Microsoft::WRL; // For ComPtr
+
 #define WINCLASS_NAME L"N64GAME"
 #define GFX_BACKEND_NAME "DXGI"
 
