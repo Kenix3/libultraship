@@ -142,13 +142,15 @@ endif()
 
 if(ENABLE_FLUIDSYNTH)
     # Try to find FluidSynth cmake files, fallback to pkg-config if not available.
+    # Linked PUBLIC because the public header ship/audio/FluidSynth.h includes
+    # <fluidsynth.h>: consumers need its include dir, which only propagates publicly.
     find_package(FluidSynth CONFIG QUIET)
     if(TARGET FluidSynth::libfluidsynth)
-        target_link_libraries(libultraship PRIVATE FluidSynth::libfluidsynth)
+        target_link_libraries(libultraship PUBLIC FluidSynth::libfluidsynth)
     else()
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(FLUIDSYNTH REQUIRED IMPORTED_TARGET fluidsynth)
-        target_link_libraries(libultraship PRIVATE PkgConfig::FLUIDSYNTH)
+        target_link_libraries(libultraship PUBLIC PkgConfig::FLUIDSYNTH)
     endif()
     target_compile_definitions(libultraship PUBLIC ENABLE_FLUIDSYNTH=1)
 else()
