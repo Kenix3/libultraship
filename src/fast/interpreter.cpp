@@ -1153,7 +1153,10 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    // Describe the buffer by what was actually packed (the loaded HD stride)
+    uint32_t uploadWidth = safeLineSizeBytes / 4;
+    uint32_t uploadHeight = safeLineSizeBytes > 0 ? safeLoadedBytes / safeLineSizeBytes : 0;
+    mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
