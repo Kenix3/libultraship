@@ -434,10 +434,10 @@ void FluidSynth::ControlChange(uint8_t channel, uint8_t cc, uint16_t value) {
 void FluidSynth::SetReverbParams(double roomsize, double damping, double width, double level) {
     std::lock_guard<std::mutex> lock(mSynthMutex);
     if (!mSynth) return;
-    fluid_synth_set_reverb_roomsize(mSynth, roomsize);
-    fluid_synth_set_reverb_damp(mSynth, damping);
-    fluid_synth_set_reverb_width(mSynth, width);
-    fluid_synth_set_reverb_level(mSynth, level);
+    fluid_synth_set_reverb_group_roomsize(mSynth, -1, roomsize);
+    fluid_synth_set_reverb_group_damp(mSynth, -1, damping);
+    fluid_synth_set_reverb_group_width(mSynth, -1, width);
+    fluid_synth_set_reverb_group_level(mSynth, -1, level);
     SPDLOG_INFO("[FluidSynth] Reverb set: roomsize={} damping={} width={} level={}",
                 roomsize, damping, width, level);
 }
