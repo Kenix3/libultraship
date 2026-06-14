@@ -1,6 +1,9 @@
 #pragma once
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
+#include <windows.h>
+#include <wrl/client.h>
+
 #include "gfx_rendering_api.h"
 #include "ship/utils/HResultException.h"
 
