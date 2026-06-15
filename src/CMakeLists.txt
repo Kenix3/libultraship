@@ -173,6 +173,8 @@ if (LUS_ENABLE_VULKAN)
     target_link_libraries(libultraship PUBLIC Vulkan::Vulkan)
     if(TARGET Vulkan::shaderc_shared)
         target_link_libraries(libultraship PUBLIC Vulkan::shaderc_shared)
+    elseif(TARGET Vulkan::shaderc_combined)
+        target_link_libraries(libultraship PUBLIC Vulkan::shaderc_combined)
     endif()
 endif()
 
