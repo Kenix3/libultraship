@@ -3586,6 +3586,14 @@ bool gfx_dl_handler_common(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     F3DGfx* subGFX = (F3DGfx*)gfx->SegAddr(cmd->words.w1);
+
+    // Check for display-list substitution (e.g. interpolated snow particle DL).
+    if (gfx->mCurDlReplacements && !gfx->mCurDlReplacements->empty()) {
+        if (auto it = gfx->mCurDlReplacements->find((Gfx*)subGFX); it != gfx->mCurDlReplacements->end()) {
+            subGFX = (F3DGfx*)it->second;
+        }
+    }
+
     if (C0(16, 1) == 0) {
         // Push return address
         if (subGFX != nullptr) {
@@ -4975,13 +4983,15 @@ void Interpreter::RunGuiOnly() {
     }
 }
 
-void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements,
+                      const std::unordered_map<Gfx*, Gfx*>& dl_replacements) {
     SpReset();
 
     mGetPixelDepthPending.clear();
     mGetPixelDepthCached.clear();
 
     mCurMtxReplacements = &mtx_replacements;
+    mCurDlReplacements = &dl_replacements;
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
                                        false, true, true, !mRendersToFb);

@@ -157,13 +157,13 @@ if(ENABLE_SCRIPTING)
 
 FetchContent_Declare(
     tinycc
-    GIT_REPOSITORY https://github.com/TinyCC/tinycc.git
+    GIT_REPOSITORY https://github.com/Net64DD/tinycc.git
     GIT_TAG        mob
 )
 
 FetchContent_MakeAvailable(tinycc)
 if(NOT TARGET libtcc)
-    if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h")
+    if(NOT EXISTS "${tinycc_SOURCE_DIR}/config.h" AND NOT EXISTS "${tinycc_SOURCE_DIR}/win32/config.h")
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
             execute_process(
@@ -187,6 +187,35 @@ if(NOT TARGET libtcc)
             message(STATUS "iOS target detected: Disabling CONFIG_CODESIGN...")
             file(APPEND "${tinycc_SOURCE_DIR}/config.h" "\n/* Force disable code signing for iOS cross-compilation */\n#undef CONFIG_CODESIGN\n")
         endif()
+    endif()
+    if(UNIX AND NOT ANDROID AND NOT APPLE)
+        set(_tcc_crt_dir "")
+        foreach(_dir ${CMAKE_C_IMPLICIT_LINK_DIRECTORIES})
+            if(EXISTS "${_dir}/crti.o")
+                set(_tcc_crt_dir "${_dir}")
+                break()
+            endif()
+        endforeach()
+
+        if(NOT _tcc_crt_dir)
+            message(WARNING "TinyCC: crti.o not found in compiler implicit dirs — TCC mod compilation may fail at runtime")
+        endif()
+
+        file(READ "${tinycc_SOURCE_DIR}/config.h" _tcc_config_h)
+        if(NOT _tcc_config_h MATCHES "\\{B\\}/lib")
+            string(REGEX REPLACE "#define CONFIG_TCC_CRTPREFIX[^\n]*\n?" "" _tcc_config_h "${_tcc_config_h}")
+            set(_tcc_crt_prefix "{B}/lib")
+            if(_tcc_crt_dir)
+                string(APPEND _tcc_crt_prefix ":${_tcc_crt_dir}")
+            endif()
+            string(APPEND _tcc_config_h "\n/* Bundled .tcc/lib/ tried first; system dir as fallback */\n")
+            string(APPEND _tcc_config_h "#define CONFIG_TCC_CRTPREFIX \"${_tcc_crt_prefix}\"\n")
+            file(WRITE "${tinycc_SOURCE_DIR}/config.h" "${_tcc_config_h}")
+            message(STATUS "TinyCC: CONFIG_TCC_CRTPREFIX set to \"${_tcc_crt_prefix}\"")
+        endif()
+        unset(_tcc_config_h)
+        unset(_tcc_crt_dir)
+        unset(_tcc_crt_prefix)
     endif()
 
     if(CMAKE_CROSSCOMPILING)
@@ -218,7 +247,7 @@ if(NOT TARGET libtcc)
         )
     else()
         add_executable(tcc_c2str "${tinycc_SOURCE_DIR}/conftest.c")
-        target_compile_definitions(tcc_c2str PRIVATE C2STR)
+        target_compile_definitions(tcc_c2str PRIVATE C2STR $<$<BOOL:${MSVC}>:_CRT_SECURE_NO_WARNINGS>)
         target_include_directories(tcc_c2str PRIVATE "${tinycc_SOURCE_DIR}")
 
         if(APPLE)
@@ -240,35 +269,73 @@ if(NOT TARGET libtcc)
         )
     endif()
 
-    # libtcc is LGPL; keep it as a shared library so consumers link against it
-    # dynamically rather than incorporating it into their binary.
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    # libtcc is LGPL — keep it as a shared library so users can replace it
+    # without relinking the application (LGPL §6).
     add_library(libtcc SHARED
         "${tinycc_SOURCE_DIR}/libtcc.c"
         "${tinycc_BINARY_DIR}/tccdefs_.h"
     )
 
-    add_library(libtcc1 STATIC
-        "${tinycc_SOURCE_DIR}/lib/libtcc1.c"
-    )
-    
-    target_include_directories(libtcc1 PRIVATE 
-        "${tinycc_SOURCE_DIR}"
-        "${tinycc_BINARY_DIR}"
-    )
-
-    if(MSVC)
-        if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
-            target_compile_definitions(libtcc1 PRIVATE __aarch64__ _WIN64)
-            target_compile_definitions(libtcc  PRIVATE __aarch64__ TCC_TARGET_ARM64 _WIN64)
-        else()
-            target_compile_definitions(libtcc1 PRIVATE __x86_64__ _WIN64)
-            target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 _WIN64)
+    if(UNIX AND NOT ANDROID AND NOT APPLE)
+        add_executable(tcc_native_bin "${tinycc_SOURCE_DIR}/tcc.c")
+        target_compile_definitions(tcc_native_bin PRIVATE ONE_SOURCE=0)
+        target_include_directories(tcc_native_bin PRIVATE
+            "${tinycc_SOURCE_DIR}"
+            "${tinycc_BINARY_DIR}"
+        )
+        target_link_libraries(tcc_native_bin PRIVATE libtcc)
+        if(NOT APPLE)
+            target_link_libraries(tcc_native_bin PRIVATE dl m pthread)
         endif()
-        target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
-        # MSVC's <assert.h> defines `__assert`, which collides with TCC's internal
-        # `__assert` symbol. Rename TCC's use the same way `__faststorefence` is above.
-        target_compile_definitions(libtcc PRIVATE "__assert=__assert_tcc_unused")
+        set_target_properties(tcc_native_bin PROPERTIES
+            OUTPUT_NAME "tcc"
+            RUNTIME_OUTPUT_DIRECTORY "${tinycc_SOURCE_DIR}"
+            BUILD_RPATH "$<TARGET_FILE_DIR:libtcc>"
+        )
+
+        find_program(GNU_MAKE_PROGRAM NAMES make gmake REQUIRED)
+        add_custom_command(
+            OUTPUT "${tinycc_SOURCE_DIR}/libtcc1.a"
+            COMMAND ${GNU_MAKE_PROGRAM} -C "${tinycc_SOURCE_DIR}/lib"
+            DEPENDS
+                tcc_native_bin
+                libtcc
+                "${tinycc_BINARY_DIR}/tccdefs_.h"
+            COMMENT "Building libtcc1.a via TinyCC Makefile..."
+            VERBATIM
+        )
+        add_custom_target(libtcc1_make_build
+            DEPENDS "${tinycc_SOURCE_DIR}/libtcc1.a"
+        )
+
+        add_library(libtcc1 STATIC IMPORTED GLOBAL)
+        set_target_properties(libtcc1 PROPERTIES
+            IMPORTED_LOCATION "${tinycc_SOURCE_DIR}/libtcc1.a"
+        )
+        add_dependencies(libtcc1 libtcc1_make_build)
+    else()
+        add_library(libtcc1 STATIC
+            "${tinycc_SOURCE_DIR}/lib/libtcc1.c"
+        )
+        target_include_directories(libtcc1 PRIVATE
+            "${tinycc_SOURCE_DIR}"
+            "${tinycc_BINARY_DIR}"
+            $<$<BOOL:${WIN32}>:${tinycc_SOURCE_DIR}/win32>
+        )
+        if(MSVC)
+            if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
+                target_compile_definitions(libtcc1 PRIVATE __aarch64__ _WIN64)
+                target_compile_definitions(libtcc  PRIVATE __aarch64__ TCC_TARGET_ARM64 TCC_TARGET_PE _WIN64)
+            else()
+                target_compile_definitions(libtcc1 PRIVATE __x86_64__ _WIN64)
+                target_compile_definitions(libtcc  PRIVATE __x86_64__ TCC_TARGET_X86_64 TCC_TARGET_PE _WIN64)
+            endif()
+            target_compile_definitions(libtcc1 PRIVATE "__faststorefence=__faststorefence_tcc_unused")
+            # MSVC's <assert.h> defines `__assert`, which collides with TCC's internal
+            # `__assert` symbol. Rename TCC's use the same way `__faststorefence` is above.
+            target_compile_definitions(libtcc PRIVATE "__assert=__assert_tcc_unused")
+        endif()
+        set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
     endif()
 
     set(TCC_SAFE_INCLUDE_DIR "${tinycc_BINARY_DIR}/safe_include")
@@ -281,10 +348,38 @@ if(NOT TARGET libtcc)
     target_include_directories(libtcc PRIVATE
         "${tinycc_SOURCE_DIR}"
         "${tinycc_BINARY_DIR}"
+        $<$<BOOL:${WIN32}>:${tinycc_SOURCE_DIR}/win32>
     )
     target_include_directories(libtcc PUBLIC
         $<BUILD_INTERFACE:${TCC_SAFE_INCLUDE_DIR}>
     )
+
+    if(WIN32)
+        set_target_properties(libtcc PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+        # The GitHub TinyCC mirror omits the pre-built win32/tcc.exe that the
+        # official repo ships. Build it from source using the official batch
+        # script so SetupTccRuntime.cmake can use it for .def generation.
+        # cl.exe is guaranteed in PATH at build time (VS environment is active).
+        if(MSVC AND (NOT EXISTS "${tinycc_SOURCE_DIR}/win32/tcc.exe" OR NOT EXISTS "${tinycc_SOURCE_DIR}/win32/lib/libtcc1.a"))
+            add_custom_command(
+                OUTPUT
+                    "${tinycc_SOURCE_DIR}/win32/tcc.exe"
+                    "${tinycc_SOURCE_DIR}/win32/lib/libtcc1.a"
+                COMMAND cmd /c build-tcc.bat -c cl
+                WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
+                DEPENDS
+                    "${tinycc_SOURCE_DIR}/tcc.c"
+                    "${tinycc_SOURCE_DIR}/libtcc.c"
+                COMMENT "Building tcc.exe and libtcc1.a via build-tcc.bat..."
+            )
+            add_custom_target(tcc_win32_exe
+                DEPENDS
+                    "${tinycc_SOURCE_DIR}/win32/tcc.exe"
+                    "${tinycc_SOURCE_DIR}/win32/lib/libtcc1.a"
+            )
+        endif()
+    endif()
 
     if(ANDROID)
         target_link_libraries(libtcc PRIVATE dl m)
@@ -292,8 +387,7 @@ if(NOT TARGET libtcc)
         target_link_libraries(libtcc PRIVATE dl m pthread)
     endif()
     
-    set_target_properties(libtcc  PROPERTIES OUTPUT_NAME "tcc")
-    set_target_properties(libtcc1 PROPERTIES OUTPUT_NAME "tcc1")
+    set_target_properties(libtcc PROPERTIES OUTPUT_NAME "tcc")
 
     if(APPLE)
         set_target_properties(libtcc libtcc1 PROPERTIES

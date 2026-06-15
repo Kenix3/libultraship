@@ -191,7 +191,8 @@ bool Fast3dWindow::IsFrameReady() {
     return mWindowManagerApi->IsFrameReady();
 }
 
-bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
+bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
+                                              const std::unordered_map<Gfx*, Gfx*>& dlReplacements) {
     std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
 
     // Skip dropped frames
@@ -207,7 +208,7 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
     // Setup game framebuffers to match available window space
     mInterpreter->StartFrame();
     // Execute the games gfx commands
-    mInterpreter->Run(commands, mtxReplacements);
+    mInterpreter->Run(commands, mtxReplacements, dlReplacements);
     // Renders the game frame buffer to the final window and finishes the GUI
     gui->EndDraw();
     // Finalize swap buffers

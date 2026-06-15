@@ -9,6 +9,7 @@
 #include "time.h"
 #include "pi.h"
 #include "vi.h"
+#include "ship/Api.h"
 
 #ifndef _HW_VERSION_1
 #define MAXCONTROLLERS 4
@@ -98,55 +99,47 @@
 #define EEP16K_MAXBLOCKS 256
 #define EEPROM_BLOCK_SIZE 8
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+API_EXPORT int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status);
+API_EXPORT int32_t osContStartReadData(OSMesgQueue* mesg);
+API_EXPORT void osContGetReadData(OSContPad* pad);
+API_EXPORT uint8_t osContGetStatus(uint8_t controller);
 
-int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* status);
-int32_t osContStartReadData(OSMesgQueue* mesg);
-void osContGetReadData(OSContPad* pad);
-uint8_t osContGetStatus(uint8_t controller);
+API_EXPORT void osWritebackDCacheAll();
+API_EXPORT void osInvalDCache(void* p, int32_t l);
+API_EXPORT void osInvalICache(void* p, int32_t x);
+API_EXPORT void osWritebackDCache(void* p, int32_t x);
 
-void osWritebackDCacheAll();
-void osInvalDCache(void* p, int32_t l);
-void osInvalICache(void* p, int32_t x);
-void osWritebackDCache(void* p, int32_t x);
-
-s32 osPiStartDma(OSIoMesg* mb, s32 priority, s32 direction, uintptr_t devAddr, void* vAddr, size_t nbytes,
+API_EXPORT s32 osPiStartDma(OSIoMesg* mb, s32 priority, s32 direction, uintptr_t devAddr, void* vAddr, size_t nbytes,
                  OSMesgQueue* mq);
-void osViSwapBuffer(void*);
-void osViBlack(uint8_t active);
-void osViFade(u8, u16);
-void osViRepeatLine(u8);
-void osViSetXScale(f32);
-void osViSetYScale(f32);
-void osViSetSpecialFeatures(u32);
-void osViSetMode(OSViMode*);
-void osViSetEvent(OSMesgQueue*, OSMesg, u32);
-void osCreateViManager(OSPri);
-void osCreatePiManager(OSPri pri, OSMesgQueue* cmdQ, OSMesg* cmdBuf, s32 cmdMsgCnt);
+API_EXPORT void osViSwapBuffer(void*);
+API_EXPORT void osViBlack(uint8_t active);
+API_EXPORT void osViFade(u8, u16);
+API_EXPORT void osViRepeatLine(u8);
+API_EXPORT void osViSetXScale(f32);
+API_EXPORT void osViSetYScale(f32);
+API_EXPORT void osViSetSpecialFeatures(u32);
+API_EXPORT void osViSetMode(OSViMode*);
+API_EXPORT void osViSetEvent(OSMesgQueue*, OSMesg, u32);
+API_EXPORT void osCreateViManager(OSPri);
+API_EXPORT void osCreatePiManager(OSPri pri, OSMesgQueue* cmdQ, OSMesg* cmdBuf, s32 cmdMsgCnt);
 
-void osSetTime(OSTime time);
-uint64_t osGetTime(void);
-uint32_t osGetCount(void);
-s32 osEepromProbe(OSMesgQueue*);
-s32 osEepromRead(OSMesgQueue*, u8, u8*);
-s32 osEepromWrite(OSMesgQueue*, u8, u8*);
-s32 osEepromLongRead(OSMesgQueue*, u8, u8*, int);
-s32 osEepromLongWrite(OSMesgQueue*, u8, u8*, int);
+API_EXPORT void osSetTime(OSTime time);
+API_EXPORT uint64_t osGetTime(void);
+API_EXPORT uint32_t osGetCount(void);
+API_EXPORT s32 osEepromProbe(OSMesgQueue*);
+API_EXPORT s32 osEepromRead(OSMesgQueue*, u8, u8*);
+API_EXPORT s32 osEepromWrite(OSMesgQueue*, u8, u8*);
+API_EXPORT s32 osEepromLongRead(OSMesgQueue*, u8, u8*, int);
+API_EXPORT s32 osEepromLongWrite(OSMesgQueue*, u8, u8*, int);
 
-int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg);
+API_EXPORT int osSetTimer(OSTimer* t, OSTime countdown, OSTime interval, OSMesgQueue* mq, OSMesg msg);
 
-s32 osAiSetFrequency(u32 freq);
-OSPiHandle* osCartRomInit(void);
-s32 osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction);
+API_EXPORT s32 osAiSetFrequency(u32 freq);
+API_EXPORT OSPiHandle* osCartRomInit(void);
+API_EXPORT s32 osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction);
 
-s32 osAiSetFrequency(u32);
-s32 osAiSetNextBuffer(void*, size_t);
-u32 osAiGetLength(void);
-
-#ifdef __cplusplus
-};
-#endif
+API_EXPORT s32 osAiSetFrequency(u32);
+API_EXPORT s32 osAiSetNextBuffer(void*, size_t);
+API_EXPORT u32 osAiGetLength(void);
 
 #endif

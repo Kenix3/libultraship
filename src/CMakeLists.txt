@@ -7,8 +7,6 @@ set_property(TARGET libultraship PROPERTY CXX_STANDARD 20)
 set_property(TARGET libultraship PROPERTY C_STANDARD 11)
 set_target_properties(libultraship PROPERTIES ENABLE_EXPORTS TRUE)
 set_target_properties(libultraship PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
 option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
@@ -24,20 +22,56 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ship/install_config.h.in ${CMAKE_CUR
 if(ENABLE_SCRIPTING)
     file(GLOB SCRIPT_PUB_KEYS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../keys/script/*.pem")
     set(EMBEDDED_KEYS_HEADER ${CMAKE_CURRENT_BINARY_DIR}/ship/DefaultKeys.h)
-    set(GENERATE_KEYS_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.py)
+    set(GEN_KEYS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate_keys_header.cpp")
     get_filename_component(EMBEDDED_KEYS_DIR ${EMBEDDED_KEYS_HEADER} DIRECTORY)
 
-    add_custom_command(
-        OUTPUT ${EMBEDDED_KEYS_HEADER}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
-        COMMAND Python3::Interpreter ${GENERATE_KEYS_SCRIPT}
-                ${EMBEDDED_KEYS_HEADER}
-                ${SCRIPT_PUB_KEYS}
-        DEPENDS ${GENERATE_KEYS_SCRIPT}
-                ${SCRIPT_PUB_KEYS}
-        COMMENT "Generating DefaultKeys.h from all keys in /keys/script/"
-        VERBATIM
-    )
+    if(CMAKE_CROSSCOMPILING)
+        # Cross-compiling: build the tool with the host C++ compiler so it can run on the build machine.
+        find_program(HOST_CXX_COMPILER NAMES c++ clang++ g++ REQUIRED)
+        set(GEN_KEYS_HOST_EXE "${CMAKE_CURRENT_BINARY_DIR}/generate_keys_header_host")
+        if(CMAKE_HOST_WIN32)
+            set(GEN_KEYS_HOST_EXE "${GEN_KEYS_HOST_EXE}.exe")
+        endif()
+
+        add_custom_command(
+            OUTPUT "${GEN_KEYS_HOST_EXE}"
+            COMMAND ${HOST_CXX_COMPILER} -std=c++17 -o "${GEN_KEYS_HOST_EXE}" "${GEN_KEYS_SRC}"
+            DEPENDS "${GEN_KEYS_SRC}"
+            COMMENT "Compiling generate_keys_header for host..."
+        )
+
+        add_custom_command(
+            OUTPUT ${EMBEDDED_KEYS_HEADER}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
+            COMMAND "${GEN_KEYS_HOST_EXE}" ${EMBEDDED_KEYS_HEADER} ${SCRIPT_PUB_KEYS}
+            DEPENDS "${GEN_KEYS_HOST_EXE}" ${SCRIPT_PUB_KEYS}
+            COMMENT "Generating DefaultKeys.h from keys in /keys/script/"
+            VERBATIM
+        )
+    else()
+        add_executable(generate_keys_header "${GEN_KEYS_SRC}")
+        set_target_properties(generate_keys_header PROPERTIES CXX_STANDARD 17)
+
+        if(APPLE)
+            set_target_properties(generate_keys_header PROPERTIES
+                CODE_SIGNING_ALLOWED NO
+                CODE_SIGNING_REQUIRED NO
+                XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+                XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+                XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+            )
+        endif()
+
+        add_custom_command(
+            OUTPUT ${EMBEDDED_KEYS_HEADER}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_KEYS_DIR}
+            COMMAND generate_keys_header ${EMBEDDED_KEYS_HEADER} ${SCRIPT_PUB_KEYS}
+            DEPENDS generate_keys_header ${SCRIPT_PUB_KEYS}
+            COMMENT "Generating DefaultKeys.h from keys in /keys/script/"
+            VERBATIM
+        )
+    endif()
 
     add_custom_target(GenerateScriptKeys DEPENDS ${EMBEDDED_KEYS_HEADER})
     add_dependencies(libultraship GenerateScriptKeys)
