@@ -190,6 +190,9 @@ prism::ContextTypes* update_raw_floats(prism::ContextTypes* _, prism::ContextTyp
         case 1:
             format = MTL::VertexFormatFloat;
             break;
+        default:
+            SPDLOG_ERROR("Invalid vertex attribute size: {}", size);
+            abort();
     }
     vertex_descriptor->attributes()->object(vertex_index)->setFormat(format);
     vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);

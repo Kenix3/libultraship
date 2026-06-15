@@ -4411,6 +4411,9 @@ int Interpreter::RunPostPasses() {
         mActiveFrameBuffer = mFrameBuffers.find(dst);
         mFbActive = true;
 
+        mRenderingState.viewport = {};
+        mRenderingState.scissor = {};
+
         // Previous image on tile 0
         mRapi->SelectTextureFb(cur);
         mRdp->textures_changed[0] = false;
