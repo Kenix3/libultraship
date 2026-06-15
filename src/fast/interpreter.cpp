@@ -1463,7 +1463,9 @@ static uint32_t TileHeightPx(const RDP* rdp, uint32_t tile) {
 // Detect a usable mip pyramid starting at baseTile. Returns the number of extra
 // levels beyond the base that can be decoded and uploaded (0 = no mipmapping).
 uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
-    if ((mRdp->other_mode_l & G_TL_LOD) == 0) {
+    // G_TL_LOD lives in the HIGH othermode word (G_MDSFT_TEXTLOD == 16, set via
+    // G_SETOTHERMODE_H). Reading other_mode_l here would test a blender mux bit.
+    if ((mRdp->other_mode_h & G_TL_LOD) == 0) {
         return 0;
     }
     if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) != G_CYC_2CYCLE) {
@@ -2323,7 +2325,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     // as a GPU mip chain (MIP_LOD); LOD_FRACTION is then computed per-pixel in the
     // fragment shader from UV derivatives (TEX_LOD).
     uint8_t mipExtraLevels = DetectMipChain(mRdp->first_tile_index);
-    if (mRdp->other_mode_l & G_TL_LOD) {
+    if (mRdp->other_mode_h & G_TL_LOD) {
         cc_options |= SHADER_OPT(TEX_LOD);
     }
     if (mipExtraLevels > 0) {
@@ -2410,7 +2412,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         // TMEM data belongs to the same load as tile 0 (one pyramid), the
         // tmem-index heuristic would bind an unrelated texture for it — sample
         // tile 0 instead (the LOD fraction then blends identical texels).
-        if (i == 1 && tile != mRdp->first_tile_index && (mRdp->other_mode_l & G_TL_LOD) && mipExtraLevels == 0 &&
+        if (i == 1 && tile != mRdp->first_tile_index && (mRdp->other_mode_h & G_TL_LOD) && mipExtraLevels == 0 &&
             (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE) {
             const uint16_t baseTmem = mRdp->texture_tile[mRdp->first_tile_index].tmem;
             const uint16_t lodTmem = mRdp->texture_tile[tile].tmem;

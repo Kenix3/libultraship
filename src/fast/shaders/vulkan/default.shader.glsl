@@ -117,6 +117,14 @@
                         }
                         float lodTile0 = clamp(lodTileBase, 0.0, drawU.misc.y);
                         float lodTile1 = clamp(lodTileBase + 1.0, 0.0, drawU.misc.y);
+                        // No real LOD level beyond the base (max level 0): the N64
+                        // never blends a second tile. Small EXTRA_TILE_MIPMAPS
+                        // textures degenerate to one level yet still emit
+                        // G_TL_LOD+TRILERP; without this the combiner blends a stale
+                        // TEXEL1 by distance.
+                        if (drawU.misc.y < 0.5) {
+                            lodFrac = 0.0;
+                        }
                     @end
                 @end
 
