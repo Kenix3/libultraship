@@ -234,13 +234,25 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     MTL::Library* library =
         mDevice->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
 
-    if (error != nullptr)
+    if (library == nullptr || error != nullptr) {
         SPDLOG_ERROR("Failed to compile shader library, error {}",
-                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
+                     error ? error->localizedDescription()->cString(NS::UTF8StringEncoding) : "(null library, no error)");
+        autorelease_pool->release();
+        return nullptr;
+    }
 
     MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
     MTL::Function* vertexFunc = library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding));
     MTL::Function* fragmentFunc = library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding));
+
+    if (vertexFunc == nullptr || fragmentFunc == nullptr) {
+        SPDLOG_ERROR("Failed to find shader functions in compiled library (vertexShader={}, fragmentShader={})",
+                     vertexFunc != nullptr, fragmentFunc != nullptr);
+        pipeline_descriptor->release();
+        library->release();
+        autorelease_pool->release();
+        return nullptr;
+    }
 
     pipeline_descriptor->setVertexFunction(vertexFunc);
     pipeline_descriptor->setFragmentFunction(fragmentFunc);

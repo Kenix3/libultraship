@@ -77,7 +77,7 @@ float4 fromLinear(float4 linearRGB) {
     bool3 cutoff = linearRGB.rgb < float3(0.0031308);
     float3 higher = float3(1.055) * pow(linearRGB.rgb, float3(1.0 / 2.4)) - float3(0.055);
     float3 lower = linearRGB.rgb * float3(12.92);
-    return float4(mix(higher, lower, cutoff), linearRGB.a);
+    return float4(mix(higher, lower, float3(cutoff)), linearRGB.a);
 }
 
 fragment FragOut fragmentShader(
