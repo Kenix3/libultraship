@@ -81,30 +81,54 @@ int MemoryClose(void* handle) {
     delete static_cast<MemoryHandle*>(handle);
     return FLUID_OK;
 }
+
+// ----------------------------------------------------------------------
+// Route FluidSynth's own log output into the Ship logger.
+//
+// FluidSynth otherwise writes straight to stderr, bypassing our log sinks
+// and level filtering. We forward each message at the matching spdlog level.
+// ----------------------------------------------------------------------
+void FluidLogToShip(int level, const char* message, void* /*data*/) {
+    switch (level) {
+        case FLUID_PANIC: SPDLOG_CRITICAL("[FluidSynth] {}", message); break;
+        case FLUID_ERR:   SPDLOG_ERROR("[FluidSynth] {}", message); break;
+        case FLUID_WARN:  SPDLOG_WARN("[FluidSynth] {}", message); break;
+        case FLUID_INFO:  SPDLOG_INFO("[FluidSynth] {}", message); break;
+        case FLUID_DBG:   SPDLOG_DEBUG("[FluidSynth] {}", message); break;
+        default:          SPDLOG_INFO("[FluidSynth] {}", message); break;
+    }
+}
 } // namespace
 
 FluidSynth::FluidSynth(const FluidSynthConfig& config)
     : mSampleRate(config.sampleRate), mLinearVelocity(config.linearVelocity) {
 
+    static std::once_flag once;
+    std::call_once(once, [] {
+        // Not using any audio driver for fluidsynth, we pull samples via 
+        // Render() ourselves. "file" is not used, but registering only it to
+        // avoid a warning when trying to load unavailable drivers such as SDL3.
+        const char* allowed_drivers[] = { "file", nullptr };
+        fluid_audio_driver_register(allowed_drivers);
+        for (int level : { FLUID_PANIC, FLUID_ERR, FLUID_WARN, FLUID_INFO, FLUID_DBG }) {
+            fluid_set_log_function(level, FluidLogToShip, nullptr);
+        }
+    });
+
     mSettings = new_fluid_settings();
     // Sample rate MUST be set before new_fluid_synth — the synth reads it
-    // once at construction. fluid_synth_set_sample_rate() is deprecated and
-    // silently ignored in FluidSynth 2.x, causing silence if used instead.
+    // once at construction.
     fluid_settings_setnum(mSettings, "synth.sample-rate", config.sampleRate);
     // 64 channels = enough headroom for the per-pair channel allocator in
     // MidiTranslator to give each (fontId, instOrWave) pair its own MIDI
     // channel, so per-pair effect CCs (CC91/93/74/71) don't stomp each
-    // other. Must be a multiple of 16; matches FluidSynth::kNumChannels.
+    // other. Must be a multiple of 16.
     fluid_settings_setint(mSettings, "synth.midi-channels", kNumChannels);
     // "none" = no internal audio driver; we pull samples via Render() ourselves.
     // "file" is an offline render-to-disk mode and must NOT be used here.
     fluid_settings_setstr(mSettings, "audio.driver", "none");
 
-    // Master gain. Stock FluidSynth is 0.2 (conservative against clipping when many
-    // voices sound at once); the integrating game picks a value suited to its mix
-    // (see FluidSynthConfig::gain). A game mixing against near-full-scale native PCM
-    // lifts it so the synth isn't left too quiet; its soft-clip handles brief
-    // over-budget sums.
+    // Master gain. Stock FluidSynth is 0.2.
     fluid_settings_setnum(mSettings, "synth.gain", config.gain);
 
     // Polyphony (max simultaneous voices). Stock FluidSynth is 256; the integrating
