@@ -580,10 +580,12 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13; // < 1.625x
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -648,10 +650,12 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -958,10 +962,12 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1051,10 +1057,12 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1157,7 +1165,10 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    // Describe the buffer by what was actually packed (the loaded HD stride)
+    uint32_t uploadWidth = safeLineSizeBytes / 4;
+    uint32_t uploadHeight = safeLineSizeBytes > 0 ? safeLoadedBytes / safeLineSizeBytes : 0;
+    mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
@@ -1930,10 +1941,13 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             uint32_t loadedPx = tex_width[i] * tex_height[i];
             uint32_t renderedPx = tex_width2[i] * tex_height2[i];
             bool pyrLike = renderedPx > 0 && loadedPx > renderedPx && loadedPx * 8 < renderedPx * 13;
-            if ((pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            // HD replacements must clamp to the tile region
+            bool isHd = mRdp->loaded_texture[i].raw_tex_metadata.h_byte_scale != 1 ||
+                        mRdp->loaded_texture[i].raw_tex_metadata.v_pixel_scale != 1;
+            if ((isHd || pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if ((pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((isHd || pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 
@@ -2485,7 +2499,13 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     // The standard gDPLoadTextureBlock macro sets width=1, but manually-built DL
     // commands may set the real pixel width.
     uint32_t actual_line_bytes = size_bytes;
-    if (mRdp->texture_to_load.width > 1) {
+    const RawTexMetadata& blkMeta = mRdp->texture_to_load.raw_tex_metadata;
+    bool blkHd = blkMeta.h_byte_scale != 1 || blkMeta.v_pixel_scale != 1;
+    if (mRdp->texture_to_load.width > 1 && blkHd && blkMeta.height > 0 && size_bytes % blkMeta.height == 0) {
+        // HD-upscaled textures report a sentinel SetTextureImage width, so the per-line stride
+        // derived from it is bogus. The resource's stored height is authoritative.
+        actual_line_bytes = size_bytes / blkMeta.height;
+    } else if (mRdp->texture_to_load.width > 1) {
         uint32_t candidate;
         switch (mRdp->texture_to_load.siz) {
             case G_IM_SIZ_4b:
