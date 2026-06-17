@@ -59,6 +59,8 @@ void EventSystem::CallEvent(const EventID id, IEvent* event, const char* file, c
         listener.Function(event);
     }
 
+#ifdef _DEBUG
+    // Event Debugger is a dev tool and shouldn't be compiled into Releases
     auto& info = registry.Callers[key];
 
     if (info.Path == nullptr) {
@@ -67,6 +69,7 @@ void EventSystem::CallEvent(const EventID id, IEvent* event, const char* file, c
     }
 
     info.Count++;
+#endif
 }
 
 } // namespace Ship
