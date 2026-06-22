@@ -2883,6 +2883,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             lodParams[0] = resScale;
             lodParams[1] = mRdp->prim_lod_min / 256.0f;
             lodParams[2] = (float)((mRdp->other_mode_h >> G_MDSFT_TEXTDETAIL) & 3);
+            // RGB framebuffer dither mode for the fragment shader, taken from the RDP's
+            // per-primitive G_CD_* setting: 0=magic square, 1=bayer, 2=noise, 3=disable
+            // (truncate only). 4 = feature off (no 5-bit quantization at all).
+            lodParams[3] = mRgbDitherEnabled ? (float)((mRdp->other_mode_h >> G_MDSFT_RGBDITHER) & 3) : 4.0f;
         }
 
         // Palette bank offset + post-lookup filter mode for CI index textures
@@ -6516,6 +6520,11 @@ void Interpreter::RunGuiOnly() {
 void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements,
                       const std::unordered_map<Gfx*, Gfx*>& dl_replacements) {
     SpReset();
+
+    // Cache the RGB-dither toggle once per frame; the per-draw uniform block reads
+    // mRgbDitherEnabled (hot path, so no CVar lookup there).
+    mRgbDitherEnabled =
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.DitherNoise", 1) != 0;
 
     // Engine built-in custom uniform registers (see CustomUniforms):
     // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions

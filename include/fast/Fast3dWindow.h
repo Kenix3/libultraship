@@ -106,7 +106,6 @@ class Fast3dWindow : public Ship::Window {
     uint16_t GetPixelDepth(float x, float y);
     void SetTextureFilter(FilteringMode filteringMode);
     void SetRendererUCode(UcodeHandlers ucode);
-    void EnableSRGBMode();
     bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
                                     const std::unordered_map<Gfx*, Gfx*>& dlReplacements);
 
@@ -132,7 +131,6 @@ class Fast3dWindow : public Ship::Window {
     std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
     mutable std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
-    bool mSrgbPassRegistered = false;
 
     /** @brief Returns the cached ConsoleVariable component after validating it is ready for use. */
     std::shared_ptr<Ship::ConsoleVariable> GetConsoleVariables() const;

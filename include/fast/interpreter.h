@@ -788,6 +788,9 @@ class Interpreter {
     float mInterpolationT = 1.0f;
     int mInterpolationTotal;
     float mInterpolationFrac;
+    // N64 RGB framebuffer dither (G_CD_*), applied per-draw in the fragment shader.
+    // Cached once per frame from the gEnhancements.Graphics.DitherNoise CVar.
+    bool mRgbDitherEnabled = true;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
