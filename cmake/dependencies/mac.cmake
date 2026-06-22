@@ -1,5 +1,25 @@
 include(FetchContent)
 
+#=================== macOS dependency discovery ===================
+# A stale or partial /Library/Frameworks/SDL2.framework can shadow a working
+# Homebrew/MacPorts SDL2 and break find_package(SDL2): its bundled CMake config
+# points SDL2_INCLUDE_DIR at a non-existent /Library/Headers, so configuration
+# fails even when a working package-manager SDL2 is installed. Search frameworks
+# last so package-manager installs win, and add the Homebrew prefix to the search
+# path so SDL2's CMake config is found without a manual -DSDL2_DIR.
+set(CMAKE_FIND_FRAMEWORK LAST)
+find_program(BREW_EXECUTABLE brew)
+if (BREW_EXECUTABLE)
+    execute_process(
+        COMMAND ${BREW_EXECUTABLE} --prefix
+        OUTPUT_VARIABLE BREW_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (BREW_PREFIX)
+        list(APPEND CMAKE_PREFIX_PATH "${BREW_PREFIX}")
+    endif()
+endif()
+
 #=================== spdlog ===================
 # macports has issues with this because of fmt
 # brew doesn't support building multiarch
