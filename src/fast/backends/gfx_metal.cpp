@@ -1094,6 +1094,16 @@ void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
     framebuffer.mLastDepthMask = -1;
     framebuffer.mLastZmodeDecal = -1;
     framebuffer.mLastStrictDecal = -1;
+
+    // setFragmentBytes is per-encoder state, just like setVertexBytes (which is
+    // sent unconditionally every draw). The dirty flags are cleared by DrawTriangles,
+    // so a new encoder created mid-frame would never receive fragment uniforms
+    // (UV transforms, fog, etc.) — causing texture stutter. Force a re-send on the
+    // first draw into this new encoder.
+    mCombinerUniformsDirty = true;
+    mPrimDepthDirty = true;
+    mLodMaxDirty = true;
+    mCustomUniformsDirty = true;
 }
 
 void GfxRenderingAPIMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
@@ -1230,8 +1240,60 @@ void* GfxRenderingAPIMetal::GetFramebufferTextureId(int fb_id) {
 }
 
 void GfxRenderingAPIMetal::SelectTextureFb(int fb_id) {
+    // If the source framebuffer's render encoder is still open, Metal does not
+    // automatically synchronize the texture for reading in another encoder —
+    // sampling it yields garbage (undefined) data.  End the encoder to finalise
+    // the texture content, then immediately reopen with LoadActionLoad so any
+    // subsequent rendering to this framebuffer preserves what was drawn.
+    FramebufferMetal& src = mFramebuffers[fb_id];
+    if (src.mCommandEncoder != nullptr && !src.mHasEndedEncoding) {
+        src.mCommandEncoder->endEncoding();
+
+        MTL::RenderPassColorAttachmentDescriptor* colorAttachment =
+            src.mRenderPassDescriptor->colorAttachments()->object(0);
+        MTL::LoadAction origColorLoad = colorAttachment->loadAction();
+        colorAttachment->setLoadAction(MTL::LoadActionLoad);
+
+        MTL::RenderPassDepthAttachmentDescriptor* depthAttachment = src.mRenderPassDescriptor->depthAttachment();
+        MTL::LoadAction origDepthLoad = MTL::LoadActionDontCare;
+        if (src.mHasDepthBuffer) {
+            origDepthLoad = depthAttachment->loadAction();
+            depthAttachment->setLoadAction(MTL::LoadActionLoad);
+        }
+
+        src.mCommandEncoder = src.mCommandBuffer->renderCommandEncoder(src.mRenderPassDescriptor);
+        std::string label = fmt::format("FrameBuffer {} Command Encoder After SelectTextureFb", fb_id);
+        src.mCommandEncoder->setLabel(NS::String::string(label.c_str(), NS::UTF8StringEncoding));
+        src.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
+        src.mCommandEncoder->setViewport(*src.mViewport);
+        src.mCommandEncoder->setScissorRect(*src.mScissorRect);
+
+        colorAttachment->setLoadAction(origColorLoad);
+        if (src.mHasDepthBuffer) {
+            depthAttachment->setLoadAction(origDepthLoad);
+        }
+
+        src.mHasBoundVertexShader = false;
+        src.mHasBoundFragShader = false;
+        src.mLastShaderProgram = nullptr;
+        for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
+            src.mLastBoundTextures[i] = nullptr;
+            src.mLastBoundSamplers[i] = nullptr;
+        }
+        src.mLastDepthTest = -1;
+        src.mLastDepthMask = -1;
+        src.mLastZmodeDecal = -1;
+        src.mLastStrictDecal = -1;
+
+        // New encoder — force fragment uniform re-send (see comment in ClearFramebuffer).
+        mCombinerUniformsDirty = true;
+        mPrimDepthDirty = true;
+        mLodMaxDirty = true;
+        mCustomUniformsDirty = true;
+    }
+
     int tile = 0;
-    SelectTexture(tile, mFramebuffers[fb_id].mTextureId);
+    SelectTexture(tile, src.mTextureId);
 }
 
 void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -1306,6 +1368,12 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mLastDepthMask = -1;
     source_framebuffer.mLastZmodeDecal = -1;
     source_framebuffer.mLastStrictDecal = -1;
+
+    // New encoder — force fragment uniform re-send (see comment in ClearFramebuffer).
+    mCombinerUniformsDirty = true;
+    mPrimDepthDirty = true;
+    mLodMaxDirty = true;
+    mCustomUniformsDirty = true;
 }
 
 void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
