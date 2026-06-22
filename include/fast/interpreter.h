@@ -786,6 +786,8 @@ class Interpreter {
     // 0 = previous tick, 1 = current tick. Set by the port before each
     // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
     float mInterpolationT = 1.0f;
+    int mInterpolationTotal;
+    float mInterpolationFrac;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

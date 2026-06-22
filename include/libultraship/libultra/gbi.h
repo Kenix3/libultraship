@@ -201,6 +201,7 @@
 #define G_INVAL_TEX_BY_PAL 0x4C
 #define G_SET_STRICT_DECAL 0x4B
 #define G_SETUNIFORM 0x4C
+#define G_SETTILESCROLL_INTERP 0x4D
 
 /*
  * The following commands are the "generated" RDP commands; the user
