@@ -1986,6 +1986,7 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
     float matrix[4][4];
 
     if (auto it = mCurMtxReplacements->find((Mtx*)addr); it != mCurMtxReplacements->end()) {
+#ifndef GBI_FLOATS
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 float v = it->second.mf[i][j];
@@ -1993,6 +1994,9 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
                 matrix[i][j] = as_int * (1.0f / 65536.0f);
             }
         }
+#else
+        memcpy(matrix, it->second.mf, sizeof(matrix));
+#endif
     } else {
 #ifndef GBI_FLOATS
         // Original GBI where fixed point matrices are used
@@ -5465,6 +5469,46 @@ bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_set_tile_scroll_interp_handler_rdp(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    Interpreter* gfx = mInstance.lock().get();
+
+    int tile = (int)((cmd->words.w1 >> 24) & 0x7);
+    // Use the exact fraction the matrix interpolation applied for this sub-frame so UVs
+    // stay in lockstep with the vertices. Fall back to even spacing if unset.
+    float step = gfx->mInterpolationFrac;
+    if (step <= 0.0f) {
+        int total = gfx->mInterpolationTotal > 0 ? gfx->mInterpolationTotal : 1;
+        step = (float)(gfx->mInterpolationIndex + 1) / (float)total;
+    }
+
+    float uls, ult, span_s, span_t, delta_uls, delta_ult;
+
+    ++(*cmd0); cmd = *cmd0;
+    memcpy(&uls, &cmd->words.w0, sizeof(float));
+    memcpy(&ult, &cmd->words.w1, sizeof(float));
+
+    ++(*cmd0); cmd = *cmd0;
+    memcpy(&span_s, &cmd->words.w0, sizeof(float));
+    memcpy(&span_t, &cmd->words.w1, sizeof(float));
+
+    ++(*cmd0); cmd = *cmd0;
+    memcpy(&delta_uls, &cmd->words.w0, sizeof(float));
+    memcpy(&delta_ult, &cmd->words.w1, sizeof(float));
+
+    float iuls = uls + delta_uls * (step - 1.0f);
+    float iult = ult + delta_ult * (step - 1.0f);
+
+    gfx->mRdp->texture_tile[tile].uls = iuls;
+    gfx->mRdp->texture_tile[tile].ult = iult;
+    gfx->mRdp->texture_tile[tile].lrs = iuls + span_s;
+    gfx->mRdp->texture_tile[tile].lrt = iult + span_t;
+    gfx->mRdp->textures_changed[0] = true;
+    gfx->mRdp->textures_changed[1] = true;
+
+    return false;
+}
+
 bool gfx_load_tlut_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
@@ -5786,6 +5830,8 @@ static constexpr UcodeHandler rdpHandlers = {
       { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
     { RDP_G_SETTILESIZE_INTERP,
       { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },            // G_SETTILESIZE_INTERP
+    { RDP_G_SETTILESCROLL_INTERP,
+      { "G_SETTILESCROLL_INTERP", gfx_set_tile_scroll_interp_handler_rdp } },        // G_SETTILESCROLL_INTERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },           // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },   // G_TEXRECTFLIP (-27)
     { RDP_G_RDPLOADSYNC, { "mRdpLOADSYNC", gfx_stubbed_command_handler } },          // mRdpLOADSYNC (-26)
