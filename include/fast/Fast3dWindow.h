@@ -81,7 +81,6 @@ class Fast3dWindow : public Ship::Window {
     uint16_t GetPixelDepth(float x, float y);
     void SetTextureFilter(FilteringMode filteringMode);
     void SetRendererUCode(UcodeHandlers ucode);
-    void EnableSRGBMode();
     bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
                                     const std::unordered_map<Gfx*, Gfx*>& dlReplacements);
 
@@ -103,6 +102,5 @@ class Fast3dWindow : public Ship::Window {
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
-    bool mSrgbPassRegistered = false;
 };
 } // namespace Fast
