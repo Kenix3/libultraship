@@ -6524,7 +6524,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     // Cache the RGB-dither toggle once per frame; the per-draw uniform block reads
     // mRgbDitherEnabled (hot path, so no CVar lookup there).
     mRgbDitherEnabled =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.DitherNoise", 1) != 0;
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.DitherNoise", 0) != 0;
 
     // Engine built-in custom uniform registers (see CustomUniforms):
     // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
