@@ -724,6 +724,11 @@ void Interpreter::TextureCacheClear() {
     for (const auto& entry : mTextureCache.map) {
         mTextureCache.free_texture_ids.push_back(entry.second.texture_id);
     }
+    // Reclaim ids that were pending deferred recycle so a full reset doesn't lose them.
+    mTextureCache.free_texture_ids.insert(mTextureCache.free_texture_ids.end(),
+                                          mTextureCache.deferred_free_texture_ids.begin(),
+                                          mTextureCache.deferred_free_texture_ids.end());
+    mTextureCache.deferred_free_texture_ids.clear();
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
     mResolvedResourceCache.clear();
@@ -801,7 +806,10 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
                         mRenderingState.mTextures[j] = nullptr;
                 }
                 mTextureCache.lru.erase(it->second.lru_location);
-                mTextureCache.free_texture_ids.push_back(it->second.texture_id);
+                // Defer recycling to the next frame: this delete can happen mid-frame
+                // (gSPInvalidateTexCache) after the texture was already drawn, so reusing
+                // the id now would corrupt the earlier draw on deferred backends.
+                mTextureCache.deferred_free_texture_ids.push_back(it->second.texture_id);
                 mTextureCache.map.erase(it->first);
                 again = true;
                 break;
@@ -814,9 +822,9 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
 }
 
 // Invalidate cache entries whose key references the given palette DRAM addr.
-// Note: skips the free_texture_ids recycle by design — Metal's deferred
-// command encoder would otherwise let earlier draws sample the later draw's
-// replaceRegion'd content when a texture_id is reused.
+// The freed texture ids are recycled on the *next* frame (deferred_free_texture_ids):
+// reusing them in this frame would let a deferred backend's command encoder
+// (Metal/Vulkan/D3D) sample the later draw's re-uploaded content from an earlier draw.
 void Interpreter::TextureCacheDeleteByPalette(const uint8_t* palAddr) {
     for (auto it = mTextureCache.map.begin(); it != mTextureCache.map.end();) {
         if (it->first.palette_addrs[0] == palAddr || it->first.palette_addrs[1] == palAddr) {
@@ -825,6 +833,7 @@ void Interpreter::TextureCacheDeleteByPalette(const uint8_t* palAddr) {
                     mRenderingState.mTextures[j] = nullptr;
             }
             mTextureCache.lru.erase(it->second.lru_location);
+            mTextureCache.deferred_free_texture_ids.push_back(it->second.texture_id);
             it = mTextureCache.map.erase(it);
         } else {
             ++it;
@@ -6488,6 +6497,14 @@ void Interpreter::RunGuiOnly() {
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
                                        false, true, true, !mRendersToFb);
     mRapi->StartFrame();
+    // Previous frame's GPU work is submitted; ids freed by mid-frame invalidation
+    // last frame are now safe to reuse.
+    if (!mTextureCache.deferred_free_texture_ids.empty()) {
+        mTextureCache.free_texture_ids.insert(mTextureCache.free_texture_ids.end(),
+                                              mTextureCache.deferred_free_texture_ids.begin(),
+                                              mTextureCache.deferred_free_texture_ids.end());
+        mTextureCache.deferred_free_texture_ids.clear();
+    }
     mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(true, true);
     mRdp->viewport_or_scissor_changed = true;
@@ -6554,6 +6571,14 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
                                        false, true, true, !mRendersToFb);
     mRapi->StartFrame();
+    // Previous frame's GPU work is submitted; ids freed by mid-frame invalidation
+    // last frame are now safe to reuse.
+    if (!mTextureCache.deferred_free_texture_ids.empty()) {
+        mTextureCache.free_texture_ids.insert(mTextureCache.free_texture_ids.end(),
+                                              mTextureCache.deferred_free_texture_ids.begin(),
+                                              mTextureCache.deferred_free_texture_ids.end());
+        mTextureCache.deferred_free_texture_ids.clear();
+    }
     mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
     mRapi->ClearFramebuffer(false, true);
     mRdp->viewport_or_scissor_changed = true;
