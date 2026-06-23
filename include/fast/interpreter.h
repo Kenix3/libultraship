@@ -397,6 +397,7 @@ struct GfxTextureCache {
     TextureCacheMap map;
     std::list<TextureCacheMapIter> lru;
     std::vector<uint32_t> free_texture_ids;
+    std::vector<uint32_t> deferred_free_texture_ids;
 };
 
 struct ColorCombiner {
