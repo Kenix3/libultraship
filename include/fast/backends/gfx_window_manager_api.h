@@ -29,6 +29,12 @@ class GfxWindowBackend {
     virtual Ship::WindowRect GetPrimaryMonitorRect() = 0;
     virtual void HandleEvents() = 0;
     virtual bool IsFrameReady() = 0;
+    // Whether the window is currently being displayed. When false (minimized/occluded)
+    // the caller should skip rendering: on some backends (Metal) acquiring a drawable
+    // for a non-visible window stalls. Defaults to true for backends that don't track it.
+    virtual bool IsWindowVisible() {
+        return true;
+    }
     virtual void SwapBuffersBegin() = 0;
     virtual void SwapBuffersEnd() = 0;
     virtual double GetTime() = 0;

@@ -326,6 +326,12 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     mWindowWidth = width;
     mWindowHeight = height;
 
+#ifdef __APPLE__
+    // Keep running at full speed (and audio playing) while unfocused/hidden by opting
+    // out of App Nap, which otherwise throttles the whole process in the background.
+    disableMacOSAppNap();
+#endif
+
 #if SDL_VERSION_ATLEAST(2, 24, 0)
     /* fix DPI scaling issues on Windows */
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
@@ -702,6 +708,21 @@ void GfxWindowBackendSDL2::HandleEvents() {
 }
 
 bool GfxWindowBackendSDL2::IsFrameReady() {
+    return true;
+}
+
+bool GfxWindowBackendSDL2::IsWindowVisible() {
+    const uint32_t flags = SDL_GetWindowFlags(mWnd);
+    if (flags & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN)) {
+        return false;
+    }
+#ifdef __APPLE__
+    // SDL2 has no occlusion flag; query Cocoa directly. A fully-covered window stops
+    // being composited, which stalls Metal's drawable acquisition (see isWindowOccluded).
+    if (isWindowOccluded(mWnd)) {
+        return false;
+    }
+#endif
     return true;
 }
 
