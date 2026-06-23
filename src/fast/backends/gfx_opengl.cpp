@@ -91,6 +91,9 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     if (mCurrentShaderProgram->lod_params_location >= 0) {
         glUniform4fv(mCurrentShaderProgram->lod_params_location, 1, mCombinerUniforms.lod_params);
     }
+    if (mCurrentShaderProgram->debug_tint_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->debug_tint_location, 1, mCombinerUniforms.debug_tint);
+    }
     if (mCurrentShaderProgram->custom_location >= 0) {
         glUniform4fv(mCurrentShaderProgram->custom_location, GFX_NUM_CUSTOM_UNIFORMS, &mCustomUniforms.regs[0][0]);
     }
@@ -629,6 +632,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->mv_cols_location = glGetUniformLocation(shader_program, "uMvCols");
     prg->palette_params_location = glGetUniformLocation(shader_program, "uPaletteParams");
     prg->lod_params_location = glGetUniformLocation(shader_program, "uLodParams");
+    prg->debug_tint_location = glGetUniformLocation(shader_program, "uDebugTint");
     prg->custom_location = glGetUniformLocation(shader_program, "uCustom");
 
     LoadShader(prg);

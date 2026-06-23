@@ -60,6 +60,8 @@ struct VulkanDrawUniforms {
     // Game-bindable register file; must stay in lockstep with the DrawUniforms
     // block in port/shaders/vulkan/default.shader.glsl
     float custom[GFX_NUM_CUSTOM_UNIFORMS][4];
+    // HD-replacement debug tint (rgb + mix amount); lockstep with the shader block.
+    float debug_tint[4];
 };
 
 struct ShaderProgramVK {
@@ -244,6 +246,9 @@ class GfxRenderingAPIVK final : public GfxRenderingAPI {
     VkSampler GetSampler(bool linear, uint32_t cms, uint32_t cmt);
     void EnsureUploadCmd();
     void FlushUploads();
+    // Grow a frame slot's staging buffer to fit an oversized upload (e.g. a 4K HD
+    // replacement = 64 MB > the 32 MB default). Caller must ensure the queue is idle.
+    void GrowStaging(FrameSlot& slot, size_t needed);
     void CreateSwapchain(uint32_t width, uint32_t height);
     void DestroySwapchainViews();
     void RebuildScreenFramebuffer();

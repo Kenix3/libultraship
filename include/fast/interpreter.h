@@ -764,6 +764,23 @@ class Interpreter {
     // N64 RGB framebuffer dither (G_CD_*), applied per-draw in the fragment shader.
     // Cached once per frame from the gEnhancements.Graphics.DitherNoise CVar.
     bool mRgbDitherEnabled = true;
+
+    // Budgeted HD-replacement uploads. Big (e.g. 4K) replacement textures are expensive
+    // to upload; uploading several the same frame they first appear causes a hitch.
+    // We cap how many *new* replacement textures upload per frame and render the base
+    // texture in the meantime (the blend reproduces the base), retrying on later frames.
+    int mReplacementUploadBudget = 1; // max new replacement uploads per frame (0 = unlimited)
+    int mFrameReplacementUploads = 0; // count uploaded so far this frame
+    bool mAllowReplacementDefer = false; // set by the draw path only for non-indexed bases
+    bool mDeferredReplacementUpload = false; // set by ImportTexture when it deferred an upload
+    bool mReplacementUploadedThisCall = false; // set by ImportTexture when it uploaded an HD this call
+
+    // Debug visualization of HD replacement state, tinting each draw in the fragment
+    // shader (gEnhancements.Graphics.TextureReplacementDebug). State per draw:
+    // 1 = HD active (blue, subtle), 2 = just uploaded this frame (green), 3 = base
+    // shown because the HD upload was deferred (red). 0 = no replacement / no tint.
+    bool mTextureReplacementDebug = false;
+    int mDebugTintState = 0;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

@@ -585,6 +585,17 @@ void GfxRenderingAPIVK::FlushUploads() {
     mStagingOffset = 0;
 }
 
+void GfxRenderingAPIVK::GrowStaging(FrameSlot& slot, size_t needed) {
+    size_t newCap = needed + (needed >> 2); // +25%
+    vkDestroyBuffer(mDevice, slot.stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, slot.stagingMemory, nullptr);
+    slot.stagingCapacity = newCap;
+    CreateBuffer(newCap, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, slot.stagingBuffer,
+                 slot.stagingMemory, &slot.stagingMapped);
+    SPDLOG_INFO("Vulkan: grew staging buffer to {} MB to fit a large texture", newCap / (1024 * 1024));
+}
+
 // MARK: - Swapchain
 
 void GfxRenderingAPIVK::DestroySwapchainViews() {
@@ -1312,23 +1323,23 @@ void GfxRenderingAPIVK::UploadTextureMip(const uint8_t* rgba32Buf, uint32_t widt
     if (oneShot) {
         // Mid-init upload: stage through the slot's buffer from offset 0
         if (dataSize > slot.stagingCapacity) {
-            SPDLOG_ERROR("Vulkan: texture too large for staging ({} bytes)", dataSize);
-            if (oneShot) {
-                EndOneShot(cmd);
-            }
-            return;
+            // Grow to fit (e.g. a 4K HD replacement = 64 MB > the 32 MB default). The
+            // image transition recorded so far is submitted first; EndOneShot waits idle.
+            EndOneShot(cmd);
+            GrowStaging(slot, dataSize);
+            cmd = BeginOneShot();
         }
         memcpy(slot.stagingMapped, rgba32Buf, dataSize);
     } else {
         if (mStagingOffset + dataSize > slot.stagingCapacity) {
             // Staging full: flush pending uploads synchronously and restart
             FlushUploads();
+            // A single texture larger than the whole buffer: grow it (queue is now idle).
+            if (dataSize > slot.stagingCapacity) {
+                GrowStaging(slot, dataSize);
+            }
             EnsureUploadCmd();
             cmd = mUploadCmd;
-            if (dataSize > slot.stagingCapacity) {
-                SPDLOG_ERROR("Vulkan: texture too large for staging ({} bytes)", dataSize);
-                return;
-            }
         }
         memcpy(slot.stagingMapped + mStagingOffset, rgba32Buf, dataSize);
     }
@@ -1577,6 +1588,7 @@ void GfxRenderingAPIVK::WriteDrawUniformsIfDirty() {
         memcpy(mDrawUniforms.fog_params, mCombinerUniforms.fog_params, sizeof(mDrawUniforms.fog_params));
         memcpy(mDrawUniforms.palette_params, mCombinerUniforms.palette_params, sizeof(mDrawUniforms.palette_params));
         memcpy(mDrawUniforms.lod_params, mCombinerUniforms.lod_params, sizeof(mDrawUniforms.lod_params));
+        memcpy(mDrawUniforms.debug_tint, mCombinerUniforms.debug_tint, sizeof(mDrawUniforms.debug_tint));
         memcpy(mDrawUniforms.custom, mCustomUniforms.regs, sizeof(mDrawUniforms.custom));
         mDrawUniformOffset = pushBlock(&mDrawUniforms, sizeof(mDrawUniforms));
         mPrimDepthDirty = false;

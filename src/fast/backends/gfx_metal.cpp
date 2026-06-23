@@ -634,6 +634,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
         mDrawUniforms.lod_params = simd::float4{ mCombinerUniforms.lod_params[0], mCombinerUniforms.lod_params[1],
                                                  mCombinerUniforms.lod_params[2], mCombinerUniforms.lod_params[3] };
+        mDrawUniforms.debug_tint = simd::float4{ mCombinerUniforms.debug_tint[0], mCombinerUniforms.debug_tint[1],
+                                                 mCombinerUniforms.debug_tint[2], mCombinerUniforms.debug_tint[3] };
         for (int i = 0; i < GFX_NUM_CUSTOM_UNIFORMS; i++) {
             mDrawUniforms.uCustom[i] = simd::float4{ mCustomUniforms.regs[i][0], mCustomUniforms.regs[i][1],
                                                      mCustomUniforms.regs[i][2], mCustomUniforms.regs[i][3] };

@@ -136,6 +136,7 @@ struct DrawUniforms {
     simd::float4 lod_params;
     // Game-bindable register file; lockstep with the metal template's DrawUniforms
     simd::float4 uCustom[GFX_NUM_CUSTOM_UNIFORMS];
+    simd::float4 debug_tint; // HD-replacement debug tint: rgb = color, a = mix amount
 };
 
 struct CoordUniforms {

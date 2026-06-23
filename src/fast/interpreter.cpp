@@ -285,6 +285,26 @@ void Interpreter::LatchCombinerUniforms() {
         }
     }
 
+    // HD-replacement debug tint (rgb + mix amount). a=0 makes the shader mix a no-op.
+    u.debug_tint[0] = u.debug_tint[1] = u.debug_tint[2] = u.debug_tint[3] = 0.0f;
+    if (mTextureReplacementDebug) {
+        switch (mDebugTintState) {
+            case 1: // HD active — subtle blue
+                u.debug_tint[2] = 1.0f;
+                u.debug_tint[1] = 0.4f;
+                u.debug_tint[3] = 0.18f;
+                break;
+            case 2: // just uploaded this frame — green flash
+                u.debug_tint[1] = 1.0f;
+                u.debug_tint[3] = 0.50f;
+                break;
+            case 3: // base shown because HD upload was deferred — red
+                u.debug_tint[0] = 1.0f;
+                u.debug_tint[3] = 0.40f;
+                break;
+        }
+    }
+
     mRapi->SetCombinerUniforms(u);
 }
 
@@ -1816,8 +1836,22 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         key.indexed = 1;
     }
 
+    if (importReplacement && mAllowReplacementDefer && mReplacementUploadBudget > 0 &&
+        mFrameReplacementUploads >= mReplacementUploadBudget &&
+        mTextureCache.map.find(key) == mTextureCache.map.end()) {
+        mDeferredReplacementUpload = true;
+        return;
+    }
+
     if (TextureCacheLookup(i, key)) {
         return;
+    }
+
+    // Past the lookup on a miss means this replacement will upload now — count it
+    // against this frame's budget so further first-time replacements are deferred.
+    if (importReplacement) {
+        mFrameReplacementUploads++;
+        mReplacementUploadedThisCall = true;
     }
 
     // Guard against zero-sized textures that would cause divide-by-zero
@@ -2367,6 +2401,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     // (plus post-lookup bilinear/3-point filtering) runs in the fragment shader.
     // The same index texture is reused across TLUT swaps. Mip chains, masked or
     // blended textures, and HD/raw replacements fall back to CPU decoding.
+    // Reset per draw; the blended-texture path below raises it by replacement state.
+    mDebugTintState = 0;
+
     bool palettized[2] = { false, false };
     for (int i = 0; i < 2; i++) {
         uint32_t pal_tile = mRdp->first_tile_index + i;
@@ -2458,7 +2495,29 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
                 if (mRdp->loaded_texture[i].blended) {
+                    // Allow deferring the HD upload only for non-indexed bases — those can
+                    // be bound into the replacement slot as a safe RGBA fallback. Indexed
+                    // bases would sample wrong, so always upload them immediately.
+                    mAllowReplacementDefer = !palettized[i];
+                    mDeferredReplacementUpload = false;
+                    mReplacementUploadedThisCall = false;
                     ImportTexture(SHADER_FIRST_REPLACEMENT_TEXTURE + i, tile, true);
+                    mAllowReplacementDefer = false;
+                    if (mDeferredReplacementUpload && mRenderingState.mTextures[i] != nullptr) {
+                        // HD not uploaded this frame: bind the base into the replacement
+                        // slot so the blend reproduces the base (no pop-in / no garbage).
+                        mRapi->SelectTexture(SHADER_FIRST_REPLACEMENT_TEXTURE + i,
+                                             mRenderingState.mTextures[i]->second.texture_id);
+                        mRenderingState.mTextures[SHADER_FIRST_REPLACEMENT_TEXTURE + i] =
+                            mRenderingState.mTextures[i];
+                    }
+                    if (mTextureReplacementDebug) {
+                        // Highest-priority state wins across the two tiles (red > green > blue).
+                        int state = mDeferredReplacementUpload ? 3 : (mReplacementUploadedThisCall ? 2 : 1);
+                        if (state > mDebugTintState) {
+                            mDebugTintState = state;
+                        }
+                    }
                 }
                 mRdp->textures_changed[i] = false;
             }
@@ -6361,6 +6420,17 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     // mRgbDitherEnabled (hot path, so no CVar lookup there).
     mRgbDitherEnabled =
         Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.DitherNoise", 0) != 0;
+
+    // Per-frame budget for new HD-replacement texture uploads (0 = unlimited / original
+    // behavior). Spreads big 4K uploads across frames; the base renders until ready.
+    mReplacementUploadBudget =
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.TextureUploadBudget", 1);
+    mFrameReplacementUploads = 0;
+
+    // Debug visualization of HD-replacement state (per-draw fragment tint).
+    mTextureReplacementDebug =
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.TextureReplacementDebug",
+                                                                        0) != 0;
 
     // Engine built-in custom uniform registers (see CustomUniforms):
     // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
