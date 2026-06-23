@@ -39,6 +39,9 @@ struct CombinerUniforms {
     // N64 LOD parameters: x = resolution scale applied to the UV derivatives,
     // y = prim_lod_min (0..1), z = G_TD mode (0 clamp, 1 sharpen, 2 detail)
     float lod_params[4];
+    // Debug tint for HD-replacement visualization: rgb = color, a = mix amount
+    // (0 = no tint, the normal case). Applied in the fragment shader after clamp.
+    float debug_tint[4];
 };
 
 constexpr int GFX_MAX_GPU_LIGHTS = 32;

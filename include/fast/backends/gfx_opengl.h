@@ -71,6 +71,7 @@ struct ShaderProgram {
     GLint mv_cols_location;
     GLint palette_params_location;
     GLint lod_params_location;
+    GLint debug_tint_location;
     GLint custom_location;
 };
 
