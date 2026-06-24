@@ -1912,8 +1912,20 @@ void Interpreter::BoxDownsampleRgba32(const uint8_t* src, uint32_t srcW, uint32_
             const uint8_t* p10 = src + (sy1 * srcW + sx0) * 4;
             const uint8_t* p11 = src + (sy1 * srcW + sx1) * 4;
             uint8_t* d = dst + (y * dstW + x) * 4;
-            for (int c = 0; c < 4; c++) {
-                d[c] = (uint8_t)((p00[c] + p01[c] + p10[c] + p11[c] + 2) >> 2);
+
+            uint32_t aSum = (uint32_t)p00[3] + p01[3] + p10[3] + p11[3];
+            d[3] = (uint8_t)((aSum + 2) >> 2);
+            if (aSum == 0) {
+                // Fully transparent block: color is invisible, keep a plain average.
+                for (int c = 0; c < 3; c++) {
+                    d[c] = (uint8_t)((p00[c] + p01[c] + p10[c] + p11[c] + 2) >> 2);
+                }
+            } else {
+                for (int c = 0; c < 3; c++) {
+                    uint32_t w = (uint32_t)p00[c] * p00[3] + (uint32_t)p01[c] * p01[3] +
+                                 (uint32_t)p10[c] * p10[3] + (uint32_t)p11[c] * p11[3];
+                    d[c] = (uint8_t)((w + aSum / 2) / aSum);
+                }
             }
         }
     }
