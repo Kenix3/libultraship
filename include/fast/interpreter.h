@@ -694,9 +694,11 @@ class Interpreter {
     // uploaded: backends queue draw commands (Metal executes at end of frame),
     // so rewriting a bound palette would retroactively recolor earlier draws.
     // A content-hash ring caches one immutable 256-entry texture per TLUT.
-    static constexpr size_t PALETTE_RING_SIZE = 128;
+    static constexpr size_t PALETTE_RING_SIZE = 1024;
     uint32_t mPaletteRingTexture[PALETTE_RING_SIZE];
     uint64_t mPaletteRingHash[PALETTE_RING_SIZE]{};
+    // Last frame each slot was used; a slot used this frame must not be recycled.
+    uint32_t mPaletteRingFrameUsed[PALETTE_RING_SIZE]{};
     size_t mPaletteRingNext = 0;
     std::unordered_map<uint64_t, size_t> mPaletteSlotByHash;
     uint64_t mCurrentPaletteHash = 0;
