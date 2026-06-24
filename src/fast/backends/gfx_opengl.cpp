@@ -724,6 +724,7 @@ void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     }
     info.mip_levels = 1;
+    info.auto_mipmaps = false;
 }
 
 void GfxRenderingAPIOGL::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t width, uint32_t height, uint32_t level,
@@ -737,10 +738,12 @@ void GfxRenderingAPIOGL::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t wi
         info.width = width;
         info.height = height;
         info.mip_levels = totalLevels;
+        info.auto_mipmaps = mNextTextureAutoMipmap;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (GLint)totalLevels - 1);
         // Make the min filter mip-aware immediately; SetSamplerParameters may not
         // run again when the wrap/filter state happens to match its defaults.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                        info.auto_mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_NEAREST);
     }
 }
 
@@ -768,14 +771,32 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
         glActiveTexture(GL_TEXTURE0 + tile);
     }
     const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
-    // Mip chains are sampled with explicit integer LODs (textureLod) in the shader;
-    // MIPMAP_NEAREST picks the exact level while still filtering within it.
-    const bool hasMips = textures[mCurrentTextureIds[tile]].mip_levels > 1;
-    const GLint minFilter = hasMips ? (linear_filter && mCurrentFilterMode != FILTER_NONE ? GL_LINEAR_MIPMAP_NEAREST
-                                                                                          : GL_NEAREST_MIPMAP_NEAREST)
-                                    : filter;
+    const TextureInfo& tex = textures[mCurrentTextureIds[tile]];
+    const bool hasMips = tex.mip_levels > 1;
+    // Auto-generated pyramids use hardware derivative LOD: trilinear between levels
+    // (smooth, no per-pixel level stipple) and anisotropy for grazing-angle surfaces.
+    // Native N64 mip chains are sampled with explicit integer LODs (textureLod) in
+    // the shader; MIPMAP_NEAREST picks the exact level while still filtering within it.
+    GLint minFilter;
+    if (hasMips && tex.auto_mipmaps) {
+        minFilter = (filter == GL_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_LINEAR;
+    } else if (hasMips) {
+        minFilter = (linear_filter && mCurrentFilterMode != FILTER_NONE) ? GL_LINEAR_MIPMAP_NEAREST
+                                                                         : GL_NEAREST_MIPMAP_NEAREST;
+    } else {
+        minFilter = filter;
+    }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+#ifdef GL_TEXTURE_MAX_ANISOTROPY
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, tex.auto_mipmaps ? 8.0f : 1.0f);
+#elif defined(GL_TEXTURE_MAX_ANISOTROPY_EXT)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, tex.auto_mipmaps ? 8.0f : 1.0f);
+#endif
+#ifndef USE_OPENGLES
+    // Bias toward sharper levels so small N64 textures keep detail up close.
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, tex.auto_mipmaps ? -0.5f : 0.0f);
+#endif
     textures[mCurrentTextureIds[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
