@@ -647,7 +647,7 @@ void GfxRenderingAPIDX11::SetSamplerParameters(int tile, bool linear_filter, uin
     if (texture_data->auto_mipmaps) {
         sampler_desc.Filter = D3D11_FILTER_ANISOTROPIC;
         sampler_desc.MaxAnisotropy = 8;
-        sampler_desc.MipLODBias = -0.25f;
+        sampler_desc.MipLODBias = -0.5f;
     } else {
         sampler_desc.Filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
                                                                                    : D3D11_FILTER_MIN_MAG_MIP_POINT;
