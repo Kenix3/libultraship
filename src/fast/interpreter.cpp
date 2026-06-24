@@ -1452,7 +1452,7 @@ void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
-    mRapi->UploadTexture(addr, width, height);
+    UploadBaseTexture(addr, width, height);
 }
 
 void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
@@ -1499,7 +1499,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
 
     if (resultNewLineSize == 4 * width && resultNewHeight == height) {
         // Can use the texture directly since it has the correct dimensions
-        mRapi->UploadTexture(addr, width, height);
+        UploadBaseTexture(addr, width, height);
         return;
     }
 
@@ -1532,7 +1532,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    UploadBaseTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
 }
 
 const RDP::TmemLoadEntry* Interpreter::FindTmemLoad(uint16_t tmemWord) const {
