@@ -550,7 +550,7 @@ VkSampler GfxRenderingAPIVK::GetSampler(bool linear, uint32_t cms, uint32_t cmt,
     si.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     si.minLod = 0.0f;
     si.maxLod = VK_LOD_CLAMP_NONE;
-    si.mipLodBias = autoMipmap ? -0.5f : 0.0f;
+    si.mipLodBias = autoMipmap ? -1.0f : 0.0f;
     if (autoMipmap && mHasAnisotropy) {
         si.anisotropyEnable = VK_TRUE;
         si.maxAnisotropy = std::min(8.0f, mDeviceProps.limits.maxSamplerAnisotropy);

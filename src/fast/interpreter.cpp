@@ -1783,6 +1783,42 @@ static bool DecodeTileToRgba32(uint8_t fmt, uint8_t siz, const uint8_t* src, uin
     return false;
 }
 
+// Rescale a level's alpha so the fraction of texels passing a 0.5 alpha test
+// matches the base image's coverage. N64 cutout textures use 1-bit alpha;
+// box-averaging turns that into a gradient, so the alpha-tested silhouette would
+// otherwise shrink to a translucent halo that shows the background through the
+// edge (the color band on sprites). Scaling alpha so the same coverage is kept
+// holds the silhouette crisp across levels.
+static void ScaleAlphaToCoverage(uint8_t* buf, size_t count, float targetCoverage) {
+    uint32_t hist[256] = { 0 };
+    for (size_t i = 0; i < count; i++) {
+        hist[buf[i * 4 + 3]]++;
+    }
+    size_t target = (size_t)(targetCoverage * (float)count + 0.5f);
+    if (target == 0) {
+        return;
+    }
+    // Highest alpha threshold at which at least `target` texels still pass.
+    size_t acc = 0;
+    int at = 0;
+    for (int a = 255; a >= 1; a--) {
+        acc += hist[a];
+        if (acc >= target) {
+            at = a;
+            break;
+        }
+    }
+    if (at <= 0) {
+        return;
+    }
+    // Map that threshold to 0.5 (128) so coverage is preserved after the test.
+    float scale = 128.0f / (float)at;
+    for (size_t i = 0; i < count; i++) {
+        int v = (int)((float)buf[i * 4 + 3] * scale + 0.5f);
+        buf[i * 4 + 3] = (uint8_t)(v > 255 ? 255 : v);
+    }
+}
+
 // Box-filter downsample an RGBA32 image to half size (min 1px per axis). Edge
 // rows/cols are clamped when a dimension is odd so every output texel averages a
 // real 2x2 footprint.
@@ -1852,6 +1888,19 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
         { 255, 0, 255 }, { 0, 255, 255 }, { 255, 255, 255 },
     };
 
+    // Measure the base image's alpha-test coverage. Only textures with a real
+    // alpha edge (some opaque, some transparent texels) need coverage
+    // preservation; fully opaque/transparent ones are left untouched.
+    const size_t baseTexels = (size_t)width * height;
+    size_t baseOpaque = 0;
+    for (size_t p = 0; p < baseTexels; p++) {
+        if (rgba32Buf[p * 4 + 3] >= 128) {
+            baseOpaque++;
+        }
+    }
+    const bool preserveCoverage = baseOpaque > 0 && baseOpaque < baseTexels;
+    const float baseCoverage = (float)baseOpaque / (float)baseTexels;
+
     // Ping-pong between the two scratch buffers so each level's source (the
     // previous level) stays valid while the next is written.
     const uint8_t* srcBuf = rgba32Buf;
@@ -1863,6 +1912,9 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
         std::vector<uint8_t>& dst = mMipScratch[level & 1];
         dst.resize((size_t)dstW * dstH * 4);
         BoxDownsampleRgba32(srcBuf, srcW, srcH, dst.data());
+        if (preserveCoverage) {
+            ScaleAlphaToCoverage(dst.data(), (size_t)dstW * dstH, baseCoverage);
+        }
         if (mipDebug) {
             // Tint RGB to this level's color, keep the box-filtered alpha so
             // cutout shapes stay intact.
