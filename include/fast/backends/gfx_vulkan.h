@@ -98,6 +98,7 @@ struct TextureDataVK {
     uint32_t filtering = 0;
     bool linear_filtering = false;
     bool isSwapchainAlias = false; // fb 0: view belongs to the swapchain
+    bool auto_mipmaps = false;
 };
 
 struct FramebufferVK {
@@ -243,7 +244,7 @@ class GfxRenderingAPIVK final : public GfxRenderingAPI {
     VkCommandBuffer BeginOneShot();
     void EndOneShot(VkCommandBuffer cmd);
     VkRenderPass GetRenderPass(uint32_t msaaLevel, bool hasDepth);
-    VkSampler GetSampler(bool linear, uint32_t cms, uint32_t cmt);
+    VkSampler GetSampler(bool linear, uint32_t cms, uint32_t cmt, bool autoMipmap = false);
     void EnsureUploadCmd();
     void FlushUploads();
     // Grow a frame slot's staging buffer to fit an oversized upload (e.g. a 4K HD
@@ -271,6 +272,7 @@ class GfxRenderingAPIVK final : public GfxRenderingAPI {
     VkPhysicalDeviceProperties mDeviceProps = {};
     bool mHasMirrorClampToEdge = false;
     bool mHasDepthClamp = false;
+    bool mHasAnisotropy = false;
 
     VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;
     VkFormat mSwapchainFormat = VK_FORMAT_B8G8R8A8_UNORM;

@@ -1826,7 +1826,19 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
         totalLevels++;
     }
 
+    // Tell the backend these levels are auto-generated, so its sampler uses
+    // trilinear + anisotropic filtering (native N64 mips keep nearest LOD).
+    mRapi->SetNextTextureAutoMipmap(true);
     mRapi->UploadTextureMip(rgba32Buf, width, height, 0, totalLevels);
+    mRapi->SetNextTextureAutoMipmap(false);
+
+    // Debug: tint each generated level a distinct color so mip selection is
+    // visible in-game (distant surfaces change color as lower levels are picked).
+    const bool mipDebug = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gMipDebug", 0) != 0;
+    static const uint8_t kMipDebugColors[][3] = {
+        { 255, 0, 0 },   { 0, 255, 0 },   { 0, 128, 255 }, { 255, 255, 0 },
+        { 255, 0, 255 }, { 0, 255, 255 }, { 255, 255, 255 },
+    };
 
     // Ping-pong between the two scratch buffers so each level's source (the
     // previous level) stays valid while the next is written.
@@ -1839,6 +1851,16 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
         std::vector<uint8_t>& dst = mMipScratch[level & 1];
         dst.resize((size_t)dstW * dstH * 4);
         BoxDownsampleRgba32(srcBuf, srcW, srcH, dst.data());
+        if (mipDebug) {
+            // Tint RGB to this level's color, keep the box-filtered alpha so
+            // cutout shapes stay intact.
+            const uint8_t* color = kMipDebugColors[(level - 1) % 7];
+            for (size_t p = 0; p < (size_t)dstW * dstH; p++) {
+                dst[p * 4 + 0] = color[0];
+                dst[p * 4 + 1] = color[1];
+                dst[p * 4 + 2] = color[2];
+            }
+        }
         mRapi->UploadTextureMip(dst.data(), dstW, dstH, level, totalLevels);
         srcBuf = dst.data();
         srcW = dstW;

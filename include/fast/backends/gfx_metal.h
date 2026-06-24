@@ -82,6 +82,7 @@ struct TextureDataMetal {
     // Total mip levels uploaded (0/1 = base level only)
     uint32_t mip_levels;
     bool linear_filtering;
+    bool auto_mipmaps;
 };
 
 struct FramebufferMetal {

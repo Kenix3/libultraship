@@ -161,6 +161,14 @@ class GfxRenderingAPI {
     virtual FilteringMode GetTextureFilter() = 0;
     virtual ImTextureID GetTextureById(int id) = 0;
     virtual void SetCurrentPrimDepth(float depth) = 0;
+    // Set by the interpreter immediately before a CPU-generated mip pyramid is
+    // uploaded. Backends record it per-texture (the next UploadTextureMip at level
+    // 0) so SetSamplerParameters can use trilinear + anisotropic filtering and a
+    // negative LOD bias for these textures. Native N64 mip chains keep their
+    // explicit integer-LOD nearest filtering and leave this false.
+    void SetNextTextureAutoMipmap(bool on) {
+        mNextTextureAutoMipmap = on;
+    }
     // Highest mip/LOD level (as float) usable by the current draw's LOD computation.
     // 0 means only the base level exists.
     virtual void SetCurrentMaxLod(float maxLod) {
@@ -225,5 +233,6 @@ class GfxRenderingAPI {
     bool mCustomUniformsDirty = true;
     int8_t mCurrentCullKeepSign = 0;
     int8_t mLastCullKeepSign = -128; // forces initial apply
+    bool mNextTextureAutoMipmap = false;
 };
 } // namespace Fast

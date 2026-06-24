@@ -383,6 +383,7 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
     texture->replaceRegion(region, 0, rgba32_buf, bytes_per_row);
     texture_data->texture = texture;
     texture_data->mip_levels = 1;
+    texture_data->auto_mipmaps = false;
 
     autorelease_pool->release();
 }
@@ -412,6 +413,7 @@ void GfxRenderingAPIMetal::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t 
             texture_data->texture = mDevice->newTexture(texture_descriptor);
         }
         texture_data->mip_levels = totalLevels;
+        texture_data->auto_mipmaps = mNextTextureAutoMipmap;
     }
 
     if (texture_data->texture != nullptr && level < texture_data->texture->mipmapLevelCount()) {
@@ -440,9 +442,15 @@ void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, ui
                                           : MTL::SamplerMinMagFilterNearest;
     sampler_descriptor->setMinFilter(filter);
     sampler_descriptor->setMagFilter(filter);
-    // Mip chains are sampled with explicit integer LODs (level()) in the shader;
-    // Nearest picks the exact level. Harmless for single-level textures.
-    sampler_descriptor->setMipFilter(MTL::SamplerMipFilterNearest);
+    // Native N64 mip chains are sampled with explicit integer LODs (level()) in the
+    // shader; Nearest picks the exact level. CPU auto-generated pyramids use hardware
+    // derivative LOD with trilinear blending (no per-pixel stipple) + anisotropy.
+    if (texture_data->auto_mipmaps) {
+        sampler_descriptor->setMipFilter(MTL::SamplerMipFilterLinear);
+        sampler_descriptor->setMaxAnisotropy(8);
+    } else {
+        sampler_descriptor->setMipFilter(MTL::SamplerMipFilterNearest);
+    }
     sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
     sampler_descriptor->setTAddressMode(gfx_cm_to_metal(cmt));
     sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);

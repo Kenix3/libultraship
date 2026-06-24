@@ -529,8 +529,8 @@ VkRenderPass GfxRenderingAPIVK::GetRenderPass(uint32_t msaaLevel, bool hasDepth)
     return pass;
 }
 
-VkSampler GfxRenderingAPIVK::GetSampler(bool linear, uint32_t cms, uint32_t cmt) {
-    uint32_t key = (linear ? 1u : 0) | (cms << 1) | (cmt << 9);
+VkSampler GfxRenderingAPIVK::GetSampler(bool linear, uint32_t cms, uint32_t cmt, bool autoMipmap) {
+    uint32_t key = (linear ? 1u : 0) | (cms << 1) | (cmt << 9) | (autoMipmap ? (1u << 17) : 0);
     auto it = mSamplerCache.find(key);
     if (it != mSamplerCache.end()) {
         return it->second;
@@ -540,14 +540,21 @@ VkSampler GfxRenderingAPIVK::GetSampler(bool linear, uint32_t cms, uint32_t cmt)
     VkFilter filter = linear && mCurrentFilterMode == FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     si.magFilter = filter;
     si.minFilter = filter;
-    // Mip chains are sampled with explicit integer LODs (textureLod) in the
-    // shader; NEAREST picks the exact level.
-    si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    // Native N64 mip chains are sampled with explicit integer LODs (textureLod) in
+    // the shader; NEAREST picks the exact level. CPU auto-generated pyramids instead
+    // use hardware derivative LOD with trilinear blending (no per-pixel level stipple)
+    // plus a negative bias and anisotropy for grazing-angle surfaces.
+    si.mipmapMode = autoMipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
     si.addressModeU = gfx_cm_to_vk(cms, mHasMirrorClampToEdge);
     si.addressModeV = gfx_cm_to_vk(cmt, mHasMirrorClampToEdge);
     si.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     si.minLod = 0.0f;
     si.maxLod = VK_LOD_CLAMP_NONE;
+    si.mipLodBias = autoMipmap ? -0.5f : 0.0f;
+    if (autoMipmap && mHasAnisotropy) {
+        si.anisotropyEnable = VK_TRUE;
+        si.maxAnisotropy = std::min(8.0f, mDeviceProps.limits.maxSamplerAnisotropy);
+    }
 
     VkSampler sampler = VK_NULL_HANDLE;
     VK_CHECK(vkCreateSampler(mDevice, &si, nullptr, &sampler));
@@ -848,7 +855,9 @@ bool GfxRenderingAPIVK::VulkanInit(SDL_Window* window) {
     VkPhysicalDeviceFeatures features = {};
     features.sampleRateShading = supported.sampleRateShading;
     features.depthClamp = supported.depthClamp;
+    features.samplerAnisotropy = supported.samplerAnisotropy;
     mHasDepthClamp = supported.depthClamp;
+    mHasAnisotropy = supported.samplerAnisotropy;
 
     VkDeviceCreateInfo dci = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
     dci.queueCreateInfoCount = 1;
@@ -1320,6 +1329,7 @@ void GfxRenderingAPIVK::UploadTextureMip(const uint8_t* rgba32Buf, uint32_t widt
             tex.mip_levels = totalLevels;
             TransitionToGeneral(cmd, tex.image, VK_IMAGE_ASPECT_COLOR_BIT, totalLevels);
         }
+        tex.auto_mipmaps = mNextTextureAutoMipmap;
     }
 
     size_t dataSize = (size_t)width * height * 4;
@@ -1367,7 +1377,7 @@ void GfxRenderingAPIVK::SetSamplerParameters(int tile, bool linear_filter, uint3
     TextureDataVK& tex = mTextures[mCurrentTextureIds[tile]];
     tex.linear_filtering = linear_filter;
     tex.filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
-    tex.sampler = GetSampler(linear_filter, cms, cmt);
+    tex.sampler = GetSampler(linear_filter, cms, cmt, tex.auto_mipmaps);
 }
 
 void GfxRenderingAPIVK::SetCurrentPrimDepth(float depth) {

@@ -78,6 +78,9 @@ struct TextureInfo {
     uint16_t filtering;
     // Total mip levels uploaded (0/1 = base level only)
     uint8_t mip_levels;
+    // True when mip_levels came from CPU auto-generation (trilinear + anisotropic);
+    // false for game-authored N64 mip chains (explicit integer-LOD nearest).
+    bool auto_mipmaps;
 };
 
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
