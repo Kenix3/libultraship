@@ -1895,13 +1895,66 @@ static bool DecodeTileToRgba32(uint8_t fmt, uint8_t siz, const uint8_t* src, uin
     return false;
 }
 
-// Routes base-level uploads: when a mip chain is being imported, the base level
-// must announce the total level count so backends can allocate the full chain.
+// Box-filter downsample an RGBA32 image to half size (min 1px per axis). Edge
+// rows/cols are clamped when a dimension is odd so every output texel averages a
+// real 2x2 footprint.
+void Interpreter::BoxDownsampleRgba32(const uint8_t* src, uint32_t srcW, uint32_t srcH, uint8_t* dst) {
+    uint32_t dstW = std::max(1u, srcW >> 1);
+    uint32_t dstH = std::max(1u, srcH >> 1);
+    for (uint32_t y = 0; y < dstH; y++) {
+        uint32_t sy0 = y * 2;
+        uint32_t sy1 = std::min(sy0 + 1, srcH - 1);
+        for (uint32_t x = 0; x < dstW; x++) {
+            uint32_t sx0 = x * 2;
+            uint32_t sx1 = std::min(sx0 + 1, srcW - 1);
+            const uint8_t* p00 = src + (sy0 * srcW + sx0) * 4;
+            const uint8_t* p01 = src + (sy0 * srcW + sx1) * 4;
+            const uint8_t* p10 = src + (sy1 * srcW + sx0) * 4;
+            const uint8_t* p11 = src + (sy1 * srcW + sx1) * 4;
+            uint8_t* d = dst + (y * dstW + x) * 4;
+            for (int c = 0; c < 4; c++) {
+                d[c] = (uint8_t)((p00[c] + p01[c] + p10[c] + p11[c] + 2) >> 2);
+            }
+        }
+    }
+}
+
 void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) {
     if (mCurrentMipExtraLevels > 0) {
         mRapi->UploadTextureMip(rgba32Buf, width, height, 0, mCurrentMipExtraLevels + 1u);
-    } else {
+        return;
+    }
+
+    // Palette-indexed textures store raw palette indices (not color) in the red
+    // channel; averaging indices is meaningless, so they stay single-level.
+    if (mImportIndexed || width <= 1 || height <= 1) {
         mRapi->UploadTexture(rgba32Buf, width, height);
+        return;
+    }
+
+    uint32_t maxDim = std::max(width, height);
+    uint32_t totalLevels = 1;
+    while ((maxDim >> (totalLevels - 1)) > 1u) {
+        totalLevels++;
+    }
+
+    mRapi->UploadTextureMip(rgba32Buf, width, height, 0, totalLevels);
+
+    // Ping-pong between the two scratch buffers so each level's source (the
+    // previous level) stays valid while the next is written.
+    const uint8_t* srcBuf = rgba32Buf;
+    uint32_t srcW = width;
+    uint32_t srcH = height;
+    for (uint32_t level = 1; level < totalLevels; level++) {
+        uint32_t dstW = std::max(1u, srcW >> 1);
+        uint32_t dstH = std::max(1u, srcH >> 1);
+        std::vector<uint8_t>& dst = mMipScratch[level & 1];
+        dst.resize((size_t)dstW * dstH * 4);
+        BoxDownsampleRgba32(srcBuf, srcW, srcH, dst.data());
+        mRapi->UploadTextureMip(dst.data(), dstW, dstH, level, totalLevels);
+        srcBuf = dst.data();
+        srcW = dstW;
+        srcH = dstH;
     }
 }
 

@@ -569,6 +569,8 @@ class Interpreter {
     uint8_t DetectMipChain(uint32_t baseTile) const;
     void UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
     void UploadMipChain(uint32_t baseTile);
+    // Box-filter downsample one RGBA32 level into the next (halved, min 1px).
+    static void BoxDownsampleRgba32(const uint8_t* src, uint32_t srcW, uint32_t srcH, uint8_t* dst);
     const RDP::TmemLoadEntry* FindTmemLoad(uint16_t tmemWord) const;
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
 
@@ -704,6 +706,8 @@ class Interpreter {
     // Per-draw palette parameters: x = palette bank entry offset, y = filter mode
     float mPaletteParams[2][4]{};
     uint8_t* mTexUploadBuffer = nullptr;
+    // Ping-pong scratch buffers for CPU-generated mip levels (auto mipmapping)
+    std::vector<uint8_t> mMipScratch[2];
 
     GfxDimensions mGfxCurrentWindowDimensions{}; // gfx_current_window_dimensions;
     int32_t mCurWindowPosX{};
