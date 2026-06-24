@@ -667,6 +667,7 @@ uint32_t Interpreter::AcquirePaletteTexture() {
 
     auto it = mPaletteSlotByHash.find(mCurrentPaletteHash);
     if (it != mPaletteSlotByHash.end()) {
+        mPaletteRingFrameUsed[it->second] = mCustomFrameCount;
         return mPaletteRingTexture[it->second];
     }
 
@@ -674,9 +675,17 @@ uint32_t Interpreter::AcquirePaletteTexture() {
     // queued triangles first (they were packed against the previous palette).
     Flush();
 
-    // Take the next ring slot (recycled slots are many rebuilds old, so no
-    // queued draw still references their content)
-    const size_t slot = mPaletteRingNext++ % PALETTE_RING_SIZE;
+    // Reuse a slot not touched this frame; recycling one still referenced by a queued
+    // draw would recolor it on deferred backends. All slots used (>ring size) reuses the cursor.
+    size_t slot = mPaletteRingNext % PALETTE_RING_SIZE;
+    for (size_t scanned = 0; scanned < PALETTE_RING_SIZE; scanned++) {
+        size_t cand = (mPaletteRingNext + scanned) % PALETTE_RING_SIZE;
+        if (mPaletteRingTexture[cand] == 0xFFFFFFFF || mPaletteRingFrameUsed[cand] != mCustomFrameCount) {
+            slot = cand;
+            break;
+        }
+    }
+    mPaletteRingNext = slot + 1;
     if (mPaletteRingTexture[slot] == 0xFFFFFFFF) {
         mPaletteRingTexture[slot] = mRapi->NewTexture();
     } else {
@@ -684,6 +693,7 @@ uint32_t Interpreter::AcquirePaletteTexture() {
     }
     mPaletteRingHash[slot] = mCurrentPaletteHash;
     mPaletteSlotByHash[mCurrentPaletteHash] = slot;
+    mPaletteRingFrameUsed[slot] = mCustomFrameCount;
 
     uint8_t palBuf[256 * 4];
     for (int e = 0; e < 256; e++) {
@@ -1783,12 +1793,8 @@ static bool DecodeTileToRgba32(uint8_t fmt, uint8_t siz, const uint8_t* src, uin
     return false;
 }
 
-// Rescale a level's alpha so the fraction of texels passing a 0.5 alpha test
-// matches the base image's coverage. N64 cutout textures use 1-bit alpha;
-// box-averaging turns that into a gradient, so the alpha-tested silhouette would
-// otherwise shrink to a translucent halo that shows the background through the
-// edge (the color band on sprites). Scaling alpha so the same coverage is kept
-// holds the silhouette crisp across levels.
+// Rescale a level's alpha so the same fraction of texels passes a 0.5 alpha test as
+// the base. Keeps box-averaged 1-bit cutouts from fading to a translucent edge halo.
 static void ScaleAlphaToCoverage(uint8_t* buf, size_t count, float targetCoverage) {
     uint32_t hist[256] = { 0 };
     for (size_t i = 0; i < count; i++) {
@@ -1819,9 +1825,8 @@ static void ScaleAlphaToCoverage(uint8_t* buf, size_t count, float targetCoverag
     }
 }
 
-// Box-filter downsample an RGBA32 image to half size (min 1px per axis). Edge
-// rows/cols are clamped when a dimension is odd so every output texel averages a
-// real 2x2 footprint.
+// Box-filter downsample an RGBA32 image to half size (min 1px). RGB is weighted by
+// alpha so transparent texels don't bleed color into the edge; edges clamp on odd sizes.
 void Interpreter::BoxDownsampleRgba32(const uint8_t* src, uint32_t srcW, uint32_t srcH, uint8_t* dst) {
     uint32_t dstW = std::max(1u, srcW >> 1);
     uint32_t dstH = std::max(1u, srcH >> 1);
