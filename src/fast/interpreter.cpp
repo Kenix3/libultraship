@@ -4968,7 +4968,8 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
         F3DVtx* vtx = (F3DVtx*)sResourceManager->GetResourceRawPointer(hash);
 
         if (vtx != NULL) {
-            vtx = (F3DVtx*)((char*)vtx + offset);
+            constexpr size_t kN64VtxSize = 16;
+            vtx += offset / kN64VtxSize;
 
             (*cmd0)--;
             F3DGfx* cmd = *cmd0;
