@@ -808,7 +808,7 @@ bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
     if (mTextureCache.map.size() >= TEXTURE_CACHE_MAX_SIZE) {
         // Remove the texture that was least recently used
         it = mTextureCache.lru.front().it;
-        mTextureCache.free_texture_ids.push_back(it->second.texture_id);
+        mTextureCache.deferred_free_texture_ids.push_back(it->second.texture_id);
         for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
             if (mRenderingState.mTextures[j] == &*it)
                 mRenderingState.mTextures[j] = nullptr;
