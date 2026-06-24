@@ -586,14 +586,18 @@ void GfxRenderingAPIVK::FlushUploads() {
 }
 
 void GfxRenderingAPIVK::GrowStaging(FrameSlot& slot, size_t needed) {
-    size_t newCap = needed + (needed >> 2); // +25%
-    vkDestroyBuffer(mDevice, slot.stagingBuffer, nullptr);
-    vkFreeMemory(mDevice, slot.stagingMemory, nullptr);
+    // Defer-destroy the old buffer: copies already recorded this frame still reference it,
+    // and it's freed in CollectGarbage after this slot's fence — so we can swap in a bigger
+    // buffer WITHOUT a vkQueueWaitIdle stall. New copies use the new buffer; bytes already
+    // staged in [0, mStagingOffset) stay valid in the (deferred) old one.
+    size_t newCap = needed + (needed >> 2); // +25% headroom so we don't re-grow next texture
+    slot.garbageBuffers.push_back(slot.stagingBuffer);
+    slot.garbageMemory.push_back(slot.stagingMemory);
     slot.stagingCapacity = newCap;
     CreateBuffer(newCap, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, slot.stagingBuffer,
                  slot.stagingMemory, &slot.stagingMapped);
-    SPDLOG_INFO("Vulkan: grew staging buffer to {} MB to fit a large texture", newCap / (1024 * 1024));
+    SPDLOG_INFO("Vulkan: grew staging buffer to {} MB", newCap / (1024 * 1024));
 }
 
 // MARK: - Swapchain
@@ -1332,13 +1336,10 @@ void GfxRenderingAPIVK::UploadTextureMip(const uint8_t* rgba32Buf, uint32_t widt
         memcpy(slot.stagingMapped, rgba32Buf, dataSize);
     } else {
         if (mStagingOffset + dataSize > slot.stagingCapacity) {
-            // Staging full: flush pending uploads synchronously and restart
-            FlushUploads();
-            // A single texture larger than the whole buffer: grow it (queue is now idle).
-            if (dataSize > slot.stagingCapacity) {
-                GrowStaging(slot, dataSize);
-            }
-            EnsureUploadCmd();
+            // Out of staging space this frame. Grow the buffer (deferred-destroy keeps the
+            // already-recorded copies valid) instead of a synchronous FlushUploads, whose
+            // vkQueueWaitIdle stalls the whole frame — the source of the upload hitch.
+            GrowStaging(slot, mStagingOffset + dataSize);
             cmd = mUploadCmd;
         }
         memcpy(slot.stagingMapped + mStagingOffset, rgba32Buf, dataSize);

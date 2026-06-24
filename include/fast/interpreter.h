@@ -13,6 +13,8 @@
 #include <string>
 #include <string_view>
 #include <memory>
+#include <future>
+#include <unordered_set>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
@@ -781,6 +783,20 @@ class Interpreter {
     // shown because the HD upload was deferred (red). 0 = no replacement / no tint.
     bool mTextureReplacementDebug = false;
     int mDebugTintState = 0;
+
+    // Async texture loading (gEnhancements.Graphics.AsyncTextureLoad). When on (and alt
+    // assets enabled), a texture's HD/replacement resource is decoded on the resource
+    // thread pool while the cheap vanilla version renders; the HD swaps in once its load
+    // finishes ("replaced between frames"), so the render thread never blocks on the decode.
+    bool mAsyncTextureLoad = false;
+    std::unordered_map<std::string, std::shared_future<std::shared_ptr<Ship::IResource>>> mTexFutures;
+    // Textures whose HD version has already been swapped in (uploaded once, now cache-resident);
+    // they bypass the per-frame swap budget so they never flicker back to vanilla.
+    std::unordered_set<std::string> mTexSwappedIn;
+    // Returns the texture resource to draw with: the resolved HD if its async load is ready,
+    // otherwise the vanilla fallback (kicking the async load on first reference). Falls back
+    // to a plain cached load when async is disabled or alt assets are off.
+    std::shared_ptr<Ship::IResource> AcquireDrawTexture(const char* name);
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

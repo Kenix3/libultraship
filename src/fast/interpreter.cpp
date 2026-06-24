@@ -289,18 +289,18 @@ void Interpreter::LatchCombinerUniforms() {
     u.debug_tint[0] = u.debug_tint[1] = u.debug_tint[2] = u.debug_tint[3] = 0.0f;
     if (mTextureReplacementDebug) {
         switch (mDebugTintState) {
-            case 1: // HD active — subtle blue
+            case 1: // HD active — blue
                 u.debug_tint[2] = 1.0f;
                 u.debug_tint[1] = 0.4f;
-                u.debug_tint[3] = 0.18f;
+                u.debug_tint[3] = 0.40f;
                 break;
             case 2: // just uploaded this frame — green flash
                 u.debug_tint[1] = 1.0f;
-                u.debug_tint[3] = 0.50f;
+                u.debug_tint[3] = 0.65f;
                 break;
             case 3: // base shown because HD upload was deferred — red
                 u.debug_tint[0] = 1.0f;
-                u.debug_tint[3] = 0.40f;
+                u.debug_tint[3] = 0.65f;
                 break;
         }
     }
@@ -715,6 +715,10 @@ void Interpreter::TextureCacheClear() {
     mTextureCache.deferred_free_texture_ids.clear();
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
+    // Drop async texture futures too — they hold shared_ptrs to resources that an
+    // alt-asset toggle (which calls gfx_texture_cache_clear) has just invalidated.
+    mTexFutures.clear();
+    mTexSwappedIn.clear();
     // Pre-allocate buckets so the map never rehashes during normal operation.
     // Rehashing invalidates all iterators, including those stored in LRU entries.
     mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
@@ -724,6 +728,69 @@ void Interpreter::TextureCacheClear() {
 
 void Interpreter::ShaderCacheClear() {
     mRapi->ClearShaderCache();
+}
+
+std::shared_ptr<Ship::IResource> Interpreter::AcquireDrawTexture(const char* name) {
+    auto rm = Ship::Context::GetInstance()->GetResourceManager();
+
+    // Resolve vanilla vs HD by EXPLICIT path (loadExact) rather than the ResourceManager's
+    // internal alt resolution. This means vanilla ("name") and HD ("alt/name") live under
+    // distinct cache keys, so toggling alt assets at runtime needs no cache purge — which is
+    // what previously forced UnloadResources("*") and crashed audio (raw pointers into freed
+    // sequences/soundfonts). The "alt/" prefix matches what the ResourceManager uses itself.
+    const std::string nameStr = name;
+    const bool alreadyAlt = nameStr.rfind(Ship::IResource::gAltAssetPrefix, 0) == 0;
+
+    // Vanilla: load the exact base path, no HD.
+    if (!rm->IsAltAssetsEnabled() || alreadyAlt) {
+        return rm->LoadResource(name, /*loadExact=*/true);
+    }
+
+    const std::string altName = Ship::IResource::gAltAssetPrefix + nameStr;
+
+    // Synchronous (async loading off): try the HD path, fall back to vanilla when absent.
+    if (!mAsyncTextureLoad) {
+        if (auto hd = rm->LoadResource(altName, /*loadExact=*/true)) {
+            return hd;
+        }
+        return rm->LoadResource(name, /*loadExact=*/true);
+    }
+
+    // Already resolved on an earlier frame: keep using that result (HD if it exists, else
+    // vanilla) unconditionally, so it never flickers back under budget pressure.
+    if (mTexSwappedIn.count(name)) {
+        auto& f = mTexFutures[name];
+        if (f.valid() && f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            if (auto r = f.get()) {
+                return r;
+            }
+        }
+        return rm->LoadResource(name, /*loadExact=*/true);
+    }
+
+    // Async path: decode the HD ("alt/name") on the thread pool while vanilla renders.
+    auto& fut = mTexFutures[name];
+    if (!fut.valid()) {
+        fut = rm->LoadResourceAsync(altName, /*loadExact=*/true);
+    }
+    if (fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        if (auto res = fut.get()) {
+            // HD decoded. Its first draw triggers the (large) GPU upload — budget that swap-in
+            // so a whole level's HD textures don't all upload the same frame. Over budget →
+            // keep showing vanilla and try again next frame.
+            if (mReplacementUploadBudget > 0 && mFrameReplacementUploads >= mReplacementUploadBudget) {
+                return rm->LoadResource(name, /*loadExact=*/true);
+            }
+            mFrameReplacementUploads++;
+            mTexSwappedIn.insert(name);
+            return res;
+        }
+        // No HD for this texture — settle on vanilla and stop re-checking.
+        mTexSwappedIn.insert(name);
+        return rm->LoadResource(name, /*loadExact=*/true);
+    }
+    // Still decoding — render the cheap vanilla version this frame.
+    return rm->LoadResource(name, /*loadExact=*/true);
 }
 
 bool Interpreter::TextureCacheLookup(int i, const TextureCacheKey& key) {
@@ -3839,7 +3906,7 @@ void Interpreter::Gfxs2dexBgCopy(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetResourceManager()->LoadResource((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -3876,7 +3943,7 @@ void Interpreter::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetInstance()->GetResourceManager()->LoadResource((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -5117,7 +5184,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-                Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                Ship::Context::GetInstance()->GetResourceManager()->LoadResource(imgData));
 
             if (tex == nullptr) {
                 (*cmd0)++;
@@ -5172,9 +5239,12 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         return false;
     }
 
+    // AcquireDrawTexture caches (no per-frame re-decode — the main level-load/render stall) and,
+    // when async loading is enabled, decodes HD textures off-thread while vanilla renders. The GPU
+    // texture cache keys on the (stable) ImageData pointer + fmt/siz/palette, so cached archive
+    // textures don't collide; only CPU-animated textures mutate in place and skip this path.
     std::shared_ptr<Fast::Texture> texture =
-        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-            Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash)));
+        std::static_pointer_cast<Fast::Texture>(mInstance.lock().get()->AcquireDrawTexture(fileName));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -5183,10 +5253,6 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         rawTexMetadata.v_pixel_scale = texture->VPixelScale;
         rawTexMetadata.type = texture->Type;
         rawTexMetadata.resource = texture;
-
-        // OTRTODO: We have disabled caching for now to fix a texture corruption issue with HD texture
-        // support. In doing so, there is a potential performance hit since we are not caching lookups. We
-        // need to do proper profiling to see whether or not it is worth it to keep the caching system.
 
         char* tex = reinterpret_cast<char*>(texture->ImageData);
 
@@ -5228,8 +5294,9 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
-    std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+    // Cached + async-aware load (see the hash handler above).
+    std::shared_ptr<Fast::Texture> texture =
+        std::static_pointer_cast<Fast::Texture>(mInstance.lock().get()->AcquireDrawTexture(fileName));
     if (texture != nullptr) {
         Interpreter* gfx = mInstance.lock().get();
         texFlags = texture->Flags;
@@ -6431,6 +6498,11 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mTextureReplacementDebug =
         Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.TextureReplacementDebug",
                                                                         0) != 0;
+
+    // Async texture loading: decode HD/replacement textures off-thread, render vanilla until ready.
+    mAsyncTextureLoad =
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.AsyncTextureLoad", 0) !=
+        0;
 
     // Engine built-in custom uniform registers (see CustomUniforms):
     // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
