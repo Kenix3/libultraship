@@ -1868,10 +1868,16 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
         return;
     }
 
+    constexpr uint32_t MIN_MIP_SIZE = 16;
     uint32_t maxDim = std::max(width, height);
     uint32_t totalLevels = 1;
-    while ((maxDim >> (totalLevels - 1)) > 1u) {
+    while ((maxDim >> totalLevels) >= MIN_MIP_SIZE) {
         totalLevels++;
+    }
+
+    if (totalLevels <= 1) {
+        mRapi->UploadTexture(rgba32Buf, width, height);
+        return;
     }
 
     // Tell the backend these levels are auto-generated, so its sampler uses

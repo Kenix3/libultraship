@@ -787,10 +787,6 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
 #elif defined(GL_TEXTURE_MAX_ANISOTROPY_EXT)
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, tex.auto_mipmaps ? 8.0f : 1.0f);
 #endif
-#ifndef USE_OPENGLES
-    // Bias toward sharper levels so small N64 textures keep detail up close.
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, tex.auto_mipmaps ? -1.0f : 0.0f);
-#endif
     textures[mCurrentTextureIds[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gfx_cm_to_opengl(cmt));
