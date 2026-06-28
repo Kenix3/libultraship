@@ -1980,7 +1980,9 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
 
     // Palette-indexed textures store raw palette indices (not color) in the red
     // channel; averaging indices is meaningless, so they stay single-level.
-    if (mImportIndexed || width <= 1 || height <= 1) {
+    // Non-HD (original low-res N64) textures also stay single-level: auto mips are
+    // only worthwhile for upscaled HD replacements.
+    if (!mImportIsHd || mImportIndexed || width <= 1 || height <= 1) {
         mRapi->UploadTexture(rgba32Buf, width, height);
         return;
     }
@@ -2106,6 +2108,10 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Identifier.GetPath()))
                   ->second.replacementData
             : mRdp->loaded_texture[tmemIdex].addr;
+
+    // Only HD (upscaled) textures get auto-generated mipmaps; original low-res
+    // N64 textures upload single-level. UploadBaseTexture reads this flag.
+    mImportIsHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
 
     // Check if this texture address is a registered GPU framebuffer mirror.
     // If so, bind the GPU FB directly — full resolution, no CPU readback needed.
@@ -2821,6 +2827,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 ImportTexture(i, tile, false);
                 mImportIndexed = false;
                 mCurrentMipExtraLevels = 0;
+                // Masks are binary coverage, not color — they must never carry an
+                // auto-generated mip chain (would blur the cutout edges).
+                mImportIsHd = false;
                 if (mRdp->loaded_texture[i].masked) {
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
