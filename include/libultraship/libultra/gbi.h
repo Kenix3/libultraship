@@ -191,11 +191,16 @@
 #define G_IMAGERECT 0x3c
 #define G_DL_INDEX 0x3d
 #define G_READFB 0x3e
+#define G_SETTIMG_PAL 0x41
 #define G_SETINTENSITY 0x40
 #define G_PUSH_SHADER 0x43
 #define G_POP_SHADER 0x44
 #define G_SETTILESIZE_INTERP 0x45
 #define G_SETTARGETINTERPINDEX 0x46
+#define G_INVAL_TEX_BY_PAL 0x4A
+#define G_SET_STRICT_DECAL 0x4B
+#define G_SETUNIFORM 0x4C
+#define G_SETTILESCROLL_INTERP 0x4D
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -2806,6 +2811,40 @@ typedef union Gfx {
         _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                      \
     }
 
+#define gDPReadFBToI8(pkt, src, buf, ulx, uly, width, height, bswap)                                             \
+    {                                                                                                            \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                                                              \
+                                                                                                                 \
+        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(1, 9, 1) | _SHIFTL(bswap, 8, 1) | _SHIFTL(src, 0, 8); \
+        _g0->words.w1 = (uintptr_t)(buf);                                                                        \
+        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);                                              \
+        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                                         \
+    }
+
+#define gDPSetTextureImagePal(pkt, tile, palSlot)                                                    \
+    {                                                                                                \
+        Gfx* _g = (Gfx*)(pkt);                                                                       \
+                                                                                                     \
+        _g->words.w0 = _SHIFTL(G_SETTIMG_PAL, 24, 8) | _SHIFTL(tile, 8, 8) | _SHIFTL(palSlot, 0, 8); \
+        _g->words.w1 = 0;                                                                            \
+    }
+
+#define gDPInvalTexByPalette(pkt, palAddr)                 \
+    {                                                      \
+        Gfx* _g = (Gfx*)(pkt);                             \
+        _g->words.w0 = _SHIFTL(G_INVAL_TEX_BY_PAL, 24, 8); \
+        _g->words.w1 = (uintptr_t)(palAddr);               \
+    }
+
+// Toggles strict (depth-equal) decal compare for subsequent ZMODE_DEC draws,
+// restoring N64 coverage semantics. Reset to 0 after the affected draws.
+#define gSPSetStrictDecal(pkt, on)                         \
+    {                                                      \
+        Gfx* _g = (Gfx*)(pkt);                             \
+        _g->words.w0 = _SHIFTL(G_SET_STRICT_DECAL, 24, 8); \
+        _g->words.w1 = (uintptr_t)(on);                    \
+    }
+
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
     {                                                                        \
         Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt), *_g2 = (Gfx*)(pkt);      \
@@ -2832,6 +2871,20 @@ typedef union Gfx {
 #define gsSPPushShader(shader)                                  \
     { (_SHIFTL(G_PUSH_SHADER, 24, 8)), (uintptr_t)(shader) }, { \
         0, 0                                                    \
+    }
+
+/* Writes custom uniform register `idx` (2..15; 0-1 are engine built-ins) from
+   four floats at `values`. The pointer is dereferenced at display-list
+   execution time, every time the DL runs. */
+#define gsSPSetUniform(idx, values) \
+    { (_SHIFTL(G_SETUNIFORM, 24, 8) | _SHIFTL((idx), 0, 8)), (uintptr_t)(values) }
+
+#define gSPSetUniform(pkt, idx, values)                                      \
+    {                                                                        \
+        Gfx* _g0 = (Gfx*)(pkt);                                              \
+                                                                             \
+        _g0->words.w0 = _SHIFTL(G_SETUNIFORM, 24, 8) | _SHIFTL((idx), 0, 8); \
+        _g0->words.w1 = (uintptr_t)(values);                                 \
     }
 
 #define gSPPushShader(pkt, shader)                     \

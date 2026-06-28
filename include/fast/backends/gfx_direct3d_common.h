@@ -25,11 +25,24 @@ struct PerDrawCB {
         uint32_t linear_filtering;
         uint32_t padding;
     } mTextures[SHADER_MAX_TEXTURES];
+    // Combiner constants (must mirror the cbuffer layout in the HLSL template)
+    float combiner_inputs[6][4];
+    float fog_color[4];
+    float grayscale_color[4];
+    float uv_transform[2][4];
+    float texture_clamp[2][4];
+    float fog_params[4];
+    float palette_params[2][4];
+    float lod_params[4];
+    // Game-bindable register file; lockstep with the HLSL template's PerDrawCB
+    float uCustom[16][4];
+    float debug_tint[4]; // HD-replacement debug tint: rgb = color, a = mix amount
 };
 
 struct PerPrimDepthCB {
     float prim_depth;
-    float _pad[3]; // 16-byte CB alignment
+    float lod_max;
+    float _pad[2]; // 16-byte CB alignment
 };
 
 struct Coord {
@@ -42,7 +55,10 @@ struct TextureData {
     Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler_state;
     uint32_t width;
     uint32_t height;
+    // Total mip levels uploaded (0/1 = base level only)
+    uint32_t mip_levels;
     bool linear_filtering;
+    bool auto_mipmaps;
 };
 
 struct FramebufferDX11 {
@@ -86,10 +102,14 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void UploadTextureMip(const uint8_t* rgba32Buf, uint32_t width, uint32_t height, uint32_t level,
+                          uint32_t totalLevels) override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetCurrentPrimDepth(float depth) override;
+    void SetCurrentMaxLod(float maxLod) override;
     void SetZmodeDecal(bool decal) override;
+    void SetStrictDecal(bool on) override;
     void SetViewport(int x, int y, int width, int height) override;
     void SetScissor(int x, int y, int width, int height) override;
     void SetUseAlpha(bool useAlpha) override;
@@ -116,7 +136,6 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     void DeleteTexture(uint32_t texId) override;
     void SetTextureFilter(FilteringMode mode) override;
     FilteringMode GetTextureFilter() override;
-    void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
 
     PFN_D3D11_CREATE_DEVICE mDX11CreateDevice;
@@ -142,6 +161,8 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mPerPrimDepthCb;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> mLightCb;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> mTransformCb;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mCoordBuffer;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mCoordBufferSrv;
     Microsoft::WRL::ComPtr<ID3D11Buffer> mDepthValueOutputBuffer;
@@ -160,7 +181,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     PerDrawCB mPerDrawCbData;
     PerPrimDepthCB mPerPrimDepthCbData;
 
-    std::map<std::pair<uint64_t, uint32_t>, struct ShaderProgramD3D11> mShaderProgramPool;
+    std::map<std::pair<uint64_t, uint64_t>, struct ShaderProgramD3D11> mShaderProgramPool;
 
     std::vector<struct TextureData> mTextures;
     int mCurrentTile;
@@ -175,6 +196,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     int32_t mRenderTargetHeight;
     int mCurrentFramebuffer;
     FilteringMode mCurrentFilterMode = FILTER_NONE;
+    bool mLodMaxDirty = true;
 
     // Previous states (to prevent setting states needlessly)
 
@@ -193,7 +215,7 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
 };
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
-                                             bool include_root_signature, bool three_point_filtering, bool use_srgb);
+                                             bool include_root_signature, bool three_point_filtering);
 } // namespace Fast
 #endif
 #endif

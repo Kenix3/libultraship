@@ -9,6 +9,7 @@
 #include <string>
 #include <optional>
 #include <functional>
+#include <filesystem>
 
 namespace Ship {
 
@@ -87,6 +88,20 @@ class ScriptLoader {
     std::vector<std::string> GetLoadersInDependencyOrder() const;
 
     /**
+     * @brief Sets the directory used to cache compiled script binaries.
+     *
+     * When set, ScriptLoader will store compiled .so/.dll files in this
+     * directory keyed by a hash of the archive checksum, code version, and
+     * build options. On subsequent runs the cached binary is loaded directly,
+     * skipping recompilation when the mod has not changed.
+     *
+     * Defaults to empty (caching disabled).
+     *
+     * @param dir Filesystem path to the cache directory (created automatically).
+     */
+    void SetCacheDir(const std::filesystem::path& dir);
+
+    /**
      * @brief Sets the security level for script loading.
      * @param level The SafeLevel policy to enforce.
      */
@@ -102,6 +117,19 @@ class ScriptLoader {
     std::unordered_map<std::string, std::string> mCompileDefines;
     std::unordered_map<std::string, Scripting::LibraryLoader> mLoadedScripts;
     std::vector<std::shared_ptr<Archive>> mLoadedArchives;
+    std::filesystem::path mCacheDir; ///< Empty = caching disabled.
+
+    /**
+     * @brief Returns the cache file path for an archive, or empty if caching is disabled
+     *        or the archive has no checksum.
+     */
+    std::filesystem::path GetCachePath(const ArchiveManifest& manifest) const;
+
+    /**
+     * @brief Copies @p srcPath into the cache directory using the manifest's cache key.
+     *        Does nothing if caching is disabled or the checksum is empty.
+     */
+    void StoreInCache(const ArchiveManifest& manifest, const std::string& srcPath) const;
 };
 
 } // namespace Ship

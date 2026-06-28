@@ -227,20 +227,31 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     MTL::Library* library =
         mDevice->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
 
-    if (error != nullptr)
+    if (library == nullptr || error != nullptr) {
         SPDLOG_ERROR("Failed to compile shader library, error {}",
-                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
+                     error ? error->localizedDescription()->cString(NS::UTF8StringEncoding) : "(null library, no error)");
+        autorelease_pool->release();
+        return nullptr;
+    }
 
     MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
     MTL::Function* vertexFunc = library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding));
     MTL::Function* fragmentFunc = library->newFunction(NS::String::string("fragmentShader", NS::UTF8StringEncoding));
 
+    if (vertexFunc == nullptr || fragmentFunc == nullptr) {
+        SPDLOG_ERROR("Failed to find shader functions in compiled library (vertexShader={}, fragmentShader={})",
+                     vertexFunc != nullptr, fragmentFunc != nullptr);
+        pipeline_descriptor->release();
+        library->release();
+        autorelease_pool->release();
+        return nullptr;
+    }
+
     pipeline_descriptor->setVertexFunction(vertexFunc);
     pipeline_descriptor->setFragmentFunction(fragmentFunc);
     pipeline_descriptor->setVertexDescriptor(vertex_descriptor);
 
-    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB
-                                                                                 : MTL::PixelFormatBGRA8Unorm);
+    pipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
     pipeline_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
     if (cc_features.opt_alpha) {
         pipeline_descriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
@@ -266,8 +277,10 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
     prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->numInputs = cc_features.numInputs;
     prg->numFloats = numFloats;
+    prg->usedLighting = cc_features.opt_lighting || cc_features.opt_texgen;
 
     // Prepoluate pipeline state cache with program and available msaa levels
     for (int i = 0; i < ARRAY_COUNT(mMsaaNumQualityLevels); i++) {
@@ -358,7 +371,7 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
 
     MTL::Texture* texture = texture_data->texture;
     if (texture_data->texture == nullptr || texture_data->texture->width() != width ||
-        texture_data->texture->height() != height) {
+        texture_data->texture->height() != height || texture_data->texture->mipmapLevelCount() != 1) {
         if (texture_data->texture != nullptr)
             texture_data->texture->release();
 
@@ -369,6 +382,44 @@ void GfxRenderingAPIMetal::UploadTexture(const uint8_t* rgba32_buf, uint32_t wid
     NS::UInteger bytes_per_row = bytes_per_pixel * width;
     texture->replaceRegion(region, 0, rgba32_buf, bytes_per_row);
     texture_data->texture = texture;
+    texture_data->mip_levels = 1;
+    texture_data->auto_mipmaps = false;
+
+    autorelease_pool->release();
+}
+
+void GfxRenderingAPIMetal::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t width, uint32_t height, uint32_t level,
+                                            uint32_t totalLevels) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
+    TextureDataMetal* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
+
+    NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+
+    if (level == 0) {
+        if (texture_data->texture == nullptr || texture_data->texture->width() != width ||
+            texture_data->texture->height() != height || texture_data->texture->mipmapLevelCount() != totalLevels) {
+            if (texture_data->texture != nullptr)
+                texture_data->texture->release();
+
+            MTL::TextureDescriptor* texture_descriptor =
+                MTL::TextureDescriptor::texture2DDescriptor(MTL::PixelFormatRGBA8Unorm, width, height, true);
+            texture_descriptor->setArrayLength(1);
+            texture_descriptor->setMipmapLevelCount(totalLevels);
+            texture_descriptor->setSampleCount(1);
+            texture_descriptor->setStorageMode(MTL::StorageModeShared);
+            texture_data->texture = mDevice->newTexture(texture_descriptor);
+        }
+        texture_data->mip_levels = totalLevels;
+        texture_data->auto_mipmaps = mNextTextureAutoMipmap;
+    }
+
+    if (texture_data->texture != nullptr && level < texture_data->texture->mipmapLevelCount()) {
+        MTL::Region region = MTL::Region::Make2D(0, 0, width, height);
+        texture_data->texture->replaceRegion(region, level, rgba32_buf, 4 * width);
+    }
 
     autorelease_pool->release();
 }
@@ -391,6 +442,15 @@ void GfxRenderingAPIMetal::SetSamplerParameters(int tile, bool linear_filter, ui
                                           : MTL::SamplerMinMagFilterNearest;
     sampler_descriptor->setMinFilter(filter);
     sampler_descriptor->setMagFilter(filter);
+    // Native N64 mip chains are sampled with explicit integer LODs (level()) in the
+    // shader; Nearest picks the exact level. CPU auto-generated pyramids use hardware
+    // derivative LOD with trilinear blending (no per-pixel stipple) + anisotropy.
+    if (texture_data->auto_mipmaps) {
+        sampler_descriptor->setMipFilter(MTL::SamplerMipFilterLinear);
+        sampler_descriptor->setMaxAnisotropy(8);
+    } else {
+        sampler_descriptor->setMipFilter(MTL::SamplerMipFilterNearest);
+    }
     sampler_descriptor->setSAddressMode(gfx_cm_to_metal(cms));
     sampler_descriptor->setTAddressMode(gfx_cm_to_metal(cmt));
     sampler_descriptor->setRAddressMode(MTL::SamplerAddressModeRepeat);
@@ -411,8 +471,19 @@ void GfxRenderingAPIMetal::SetCurrentPrimDepth(float depth) {
     }
 }
 
+void GfxRenderingAPIMetal::SetCurrentMaxLod(float maxLod) {
+    if (maxLod != mCurrentMaxLod) {
+        mCurrentMaxLod = maxLod;
+        mLodMaxDirty = true;
+    }
+}
+
 void GfxRenderingAPIMetal::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
+}
+
+void GfxRenderingAPIMetal::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
 }
 
 void GfxRenderingAPIMetal::SetViewport(int x, int y, int width, int height) {
@@ -452,14 +523,19 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
     auto& current_framebuffer = mFramebuffers[mCurrentFramebuffer];
 
     if (current_framebuffer.mLastDepthTest != mCurrentDepthTest ||
-        current_framebuffer.mLastDepthMask != mCurrentDepthMask) {
+        current_framebuffer.mLastDepthMask != mCurrentDepthMask ||
+        current_framebuffer.mLastStrictDecal != mCurrentStrictDecal ||
+        current_framebuffer.mLastZmodeDecal != mCurrentZmodeDecal) {
         current_framebuffer.mLastDepthTest = mCurrentDepthTest;
         current_framebuffer.mLastDepthMask = mCurrentDepthMask;
+        current_framebuffer.mLastStrictDecal = mCurrentStrictDecal;
 
         MTL::DepthStencilDescriptor* depth_descriptor = MTL::DepthStencilDescriptor::alloc()->init();
         depth_descriptor->setDepthWriteEnabled(mCurrentDepthMask);
         depth_descriptor->setDepthCompareFunction(
-            mCurrentDepthTest ? (mCurrentZmodeDecal ? MTL::CompareFunctionLessEqual : MTL::CompareFunctionLess)
+            mCurrentDepthTest ? (mCurrentZmodeDecal
+                                     ? (mCurrentStrictDecal ? MTL::CompareFunctionEqual : MTL::CompareFunctionLessEqual)
+                                     : MTL::CompareFunctionLess)
                               : MTL::CompareFunctionAlways);
 
         MTL::DepthStencilState* depth_stencil_state = mDevice->newDepthStencilState(depth_descriptor);
@@ -472,7 +548,6 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         current_framebuffer.mLastZmodeDecal = mCurrentZmodeDecal;
 
         current_framebuffer.mCommandEncoder->setTriangleFillMode(MTL::TriangleFillModeFill);
-        current_framebuffer.mCommandEncoder->setCullMode(MTL::CullModeNone);
         current_framebuffer.mCommandEncoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
 
         // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
@@ -491,7 +566,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
             default:
                 SSDB = -2;
         }
-        current_framebuffer.mCommandEncoder->setDepthBias(0, mCurrentZmodeDecal ? SSDB : 0, 0);
+        current_framebuffer.mCommandEncoder->setDepthBias(0, (mCurrentZmodeDecal && !mCurrentStrictDecal) ? SSDB : 0,
+                                                          0);
     }
 
     MTL::Buffer* vertex_buffer = mVertexBufferPool[mCurrentVertexBufferPoolIndex];
@@ -507,6 +583,13 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
     if (!current_framebuffer.mHasBoundFragShader) {
         current_framebuffer.mCommandEncoder->setFragmentBuffer(mFrameUniformBuffer, 0, 0);
         current_framebuffer.mHasBoundFragShader = true;
+    }
+
+    // Lighting/texgen uniforms for the vertex shader. setVertexBytes is per-encoder
+    // state, so re-send for every lit draw (encoders are recreated per frame).
+    if (mShaderProgram->usedLighting) {
+        current_framebuffer.mCommandEncoder->setVertexBytes(&mLightingUniforms, sizeof(LightingUniforms), 1);
+        mLightingUniformsDirty = false;
     }
 
     for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
@@ -530,11 +613,61 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         }
     }
 
-    if (textures_changed || mPrimDepthDirty) {
+    if (textures_changed || mPrimDepthDirty || mLodMaxDirty || mCombinerUniformsDirty || mCustomUniformsDirty) {
         mDrawUniforms.prim_depth = mCurrentPrimDepth;
+        mDrawUniforms.lod_max = mCurrentMaxLod;
+        for (int i = 0; i < 6; i++) {
+            mDrawUniforms.inputs[i] = simd::float4{ mCombinerUniforms.inputs[i][0], mCombinerUniforms.inputs[i][1],
+                                                    mCombinerUniforms.inputs[i][2], mCombinerUniforms.inputs[i][3] };
+        }
+        mDrawUniforms.fog_color = simd::float4{ mCombinerUniforms.fog_color[0], mCombinerUniforms.fog_color[1],
+                                                mCombinerUniforms.fog_color[2], mCombinerUniforms.fog_color[3] };
+        mDrawUniforms.grayscale_color =
+            simd::float4{ mCombinerUniforms.grayscale_color[0], mCombinerUniforms.grayscale_color[1],
+                          mCombinerUniforms.grayscale_color[2], mCombinerUniforms.grayscale_color[3] };
+        for (int i = 0; i < 2; i++) {
+            mDrawUniforms.uv_transform[i] =
+                simd::float4{ mCombinerUniforms.uv_transform[i][0], mCombinerUniforms.uv_transform[i][1],
+                              mCombinerUniforms.uv_transform[i][2], mCombinerUniforms.uv_transform[i][3] };
+            mDrawUniforms.texture_clamp[i] =
+                simd::float4{ mCombinerUniforms.texture_clamp[i][0], mCombinerUniforms.texture_clamp[i][1],
+                              mCombinerUniforms.texture_clamp[i][2], mCombinerUniforms.texture_clamp[i][3] };
+        }
+        mDrawUniforms.fog_params = simd::float4{ mCombinerUniforms.fog_params[0], mCombinerUniforms.fog_params[1],
+                                                 mCombinerUniforms.fog_params[2], mCombinerUniforms.fog_params[3] };
+        for (int i = 0; i < 2; i++) {
+            mDrawUniforms.palette_params[i] =
+                simd::float4{ mCombinerUniforms.palette_params[i][0], mCombinerUniforms.palette_params[i][1],
+                              mCombinerUniforms.palette_params[i][2], mCombinerUniforms.palette_params[i][3] };
+        }
+        mDrawUniforms.lod_params = simd::float4{ mCombinerUniforms.lod_params[0], mCombinerUniforms.lod_params[1],
+                                                 mCombinerUniforms.lod_params[2], mCombinerUniforms.lod_params[3] };
+        mDrawUniforms.debug_tint = simd::float4{ mCombinerUniforms.debug_tint[0], mCombinerUniforms.debug_tint[1],
+                                                 mCombinerUniforms.debug_tint[2], mCombinerUniforms.debug_tint[3] };
+        for (int i = 0; i < GFX_NUM_CUSTOM_UNIFORMS; i++) {
+            mDrawUniforms.uCustom[i] = simd::float4{ mCustomUniforms.regs[i][0], mCustomUniforms.regs[i][1],
+                                                     mCustomUniforms.regs[i][2], mCustomUniforms.regs[i][3] };
+        }
         current_framebuffer.mCommandEncoder->setFragmentBytes(&mDrawUniforms, sizeof(DrawUniforms), 1);
         mPrimDepthDirty = false;
+        mLodMaxDirty = false;
+        mCombinerUniformsDirty = false;
+        mCustomUniformsDirty = false;
     }
+
+    // The vertex shader reads the same DrawUniforms (UV transform, fog params);
+    // setVertexBytes is per-encoder state, so re-send every draw.
+    current_framebuffer.mCommandEncoder->setVertexBytes(&mDrawUniforms, sizeof(DrawUniforms), 2);
+    // Matrix palette + y flip for the vertex shader
+    current_framebuffer.mCommandEncoder->setVertexBytes(&mTransformUniforms, sizeof(TransformUniforms), 3);
+    mTransformUniformsDirty = false;
+
+    // N64 backface culling: Metal NDC keeps y up and the front face is CCW; with
+    // no VS y flip the signed area A = -C, so keeping C > 0 keeps clockwise
+    // triangles, i.e. cull the front (CCW) faces.
+    MTL::CullMode cull = mCurrentCullKeepSign > 0 ? MTL::CullModeFront
+                                                  : (mCurrentCullKeepSign < 0 ? MTL::CullModeBack : MTL::CullModeNone);
+    current_framebuffer.mCommandEncoder->setCullMode(cull);
 
     if (current_framebuffer.mLastShaderProgram != mShaderProgram) {
         current_framebuffer.mLastShaderProgram = mShaderProgram;
@@ -618,7 +751,9 @@ void GfxRenderingAPIMetal::EndFrame() {
         mScreenReadbackRequested = false;
     }
 
-    screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+    if (mCurrentDrawable != nullptr) {
+        screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+    }
     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
     screen_framebuffer.mCommandBuffer->commit();
 
@@ -658,6 +793,7 @@ void GfxRenderingAPIMetal::EndFrame() {
         fb.mLastDepthTest = -1;
         fb.mLastDepthMask = -1;
         fb.mLastZmodeDecal = -1;
+        fb.mLastStrictDecal = -1;
     }
 
     mFrameAutoreleasePool->release();
@@ -696,6 +832,15 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
     TextureDataMetal& tex = mTextures[fb.mTextureId];
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+
+    // Safety net: the visibility gate in Fast3dWindow normally prevents us from
+    // reaching here while occluded, but if the window is occluded mid-frame
+    // nextDrawable can still return null. Don't dereference it (would crash);
+    // keep the previous texture for this frame.
+    if (mCurrentDrawable == nullptr) {
+        autorelease_pool->release();
+        return;
+    }
 
     tex.texture = mCurrentDrawable->texture();
 
@@ -777,7 +922,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
         tex_descriptor->setHeight(height);
         tex_descriptor->setSampleCount(1);
         tex_descriptor->setMipmapLevelCount(1);
-        tex_descriptor->setPixelFormat(mSrgbMode ? MTL::PixelFormatBGRA8Unorm_sRGB : MTL::PixelFormatBGRA8Unorm);
+        tex_descriptor->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
         tex_descriptor->setUsage((render_target ? MTL::TextureUsageRenderTarget : 0) | MTL::TextureUsageShaderRead);
 
         if (tex.texture != nullptr)
@@ -963,6 +1108,17 @@ void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
     framebuffer.mLastDepthTest = -1;
     framebuffer.mLastDepthMask = -1;
     framebuffer.mLastZmodeDecal = -1;
+    framebuffer.mLastStrictDecal = -1;
+
+    // setFragmentBytes is per-encoder state, just like setVertexBytes (which is
+    // sent unconditionally every draw). The dirty flags are cleared by DrawTriangles,
+    // so a new encoder created mid-frame would never receive fragment uniforms
+    // (UV transforms, fog, etc.) — causing texture stutter. Force a re-send on the
+    // first draw into this new encoder.
+    mCombinerUniformsDirty = true;
+    mPrimDepthDirty = true;
+    mLodMaxDirty = true;
+    mCustomUniformsDirty = true;
 }
 
 void GfxRenderingAPIMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
@@ -1099,8 +1255,60 @@ void* GfxRenderingAPIMetal::GetFramebufferTextureId(int fb_id) {
 }
 
 void GfxRenderingAPIMetal::SelectTextureFb(int fb_id) {
+    // If the source framebuffer's render encoder is still open, Metal does not
+    // automatically synchronize the texture for reading in another encoder —
+    // sampling it yields garbage (undefined) data.  End the encoder to finalise
+    // the texture content, then immediately reopen with LoadActionLoad so any
+    // subsequent rendering to this framebuffer preserves what was drawn.
+    FramebufferMetal& src = mFramebuffers[fb_id];
+    if (src.mCommandEncoder != nullptr && !src.mHasEndedEncoding) {
+        src.mCommandEncoder->endEncoding();
+
+        MTL::RenderPassColorAttachmentDescriptor* colorAttachment =
+            src.mRenderPassDescriptor->colorAttachments()->object(0);
+        MTL::LoadAction origColorLoad = colorAttachment->loadAction();
+        colorAttachment->setLoadAction(MTL::LoadActionLoad);
+
+        MTL::RenderPassDepthAttachmentDescriptor* depthAttachment = src.mRenderPassDescriptor->depthAttachment();
+        MTL::LoadAction origDepthLoad = MTL::LoadActionDontCare;
+        if (src.mHasDepthBuffer) {
+            origDepthLoad = depthAttachment->loadAction();
+            depthAttachment->setLoadAction(MTL::LoadActionLoad);
+        }
+
+        src.mCommandEncoder = src.mCommandBuffer->renderCommandEncoder(src.mRenderPassDescriptor);
+        std::string label = fmt::format("FrameBuffer {} Command Encoder After SelectTextureFb", fb_id);
+        src.mCommandEncoder->setLabel(NS::String::string(label.c_str(), NS::UTF8StringEncoding));
+        src.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
+        src.mCommandEncoder->setViewport(*src.mViewport);
+        src.mCommandEncoder->setScissorRect(*src.mScissorRect);
+
+        colorAttachment->setLoadAction(origColorLoad);
+        if (src.mHasDepthBuffer) {
+            depthAttachment->setLoadAction(origDepthLoad);
+        }
+
+        src.mHasBoundVertexShader = false;
+        src.mHasBoundFragShader = false;
+        src.mLastShaderProgram = nullptr;
+        for (int i = 0; i < SHADER_MAX_TEXTURES; i++) {
+            src.mLastBoundTextures[i] = nullptr;
+            src.mLastBoundSamplers[i] = nullptr;
+        }
+        src.mLastDepthTest = -1;
+        src.mLastDepthMask = -1;
+        src.mLastZmodeDecal = -1;
+        src.mLastStrictDecal = -1;
+
+        // New encoder — force fragment uniform re-send (see comment in ClearFramebuffer).
+        mCombinerUniformsDirty = true;
+        mPrimDepthDirty = true;
+        mLodMaxDirty = true;
+        mCustomUniformsDirty = true;
+    }
+
     int tile = 0;
-    SelectTexture(tile, mFramebuffers[fb_id].mTextureId);
+    SelectTexture(tile, src.mTextureId);
 }
 
 void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0, int srcY0, int srcX1, int srcY1,
@@ -1174,6 +1382,13 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mLastDepthTest = -1;
     source_framebuffer.mLastDepthMask = -1;
     source_framebuffer.mLastZmodeDecal = -1;
+    source_framebuffer.mLastStrictDecal = -1;
+
+    // New encoder — force fragment uniform re-send (see comment in ClearFramebuffer).
+    mCombinerUniformsDirty = true;
+    mPrimDepthDirty = true;
+    mLodMaxDirty = true;
+    mCustomUniformsDirty = true;
 }
 
 void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint32_t height, uint16_t* rgba16_buf) {
@@ -1274,9 +1489,6 @@ ImTextureID GfxRenderingAPIMetal::GetTextureById(int fb_id) {
     return (void*)mTextures[fb_id].texture;
 }
 
-void GfxRenderingAPIMetal::SetSrgbMode() {
-    mSrgbMode = true;
-}
 } // namespace Fast
 
 bool Metal_IsSupported() {

@@ -29,6 +29,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     Ship::WindowRect GetPrimaryMonitorRect() override;
     void HandleEvents() override;
     bool IsFrameReady() override;
+    bool IsWindowVisible() override;
     void SwapBuffersBegin() override;
     void SwapBuffersEnd() override;
     double GetTime() override;

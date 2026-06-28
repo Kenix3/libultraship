@@ -36,13 +36,20 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
             case SHADER_1:
                 return with_alpha ? "float4(1.0, 1.0, 1.0, 1.0)" : "float3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
-                return with_alpha || !inputs_have_alpha ? "in.input1" : "in.input1.xyz";
+                return with_alpha ? "drawUniforms.inputs[0]" : "drawUniforms.inputs[0].xyz";
             case SHADER_INPUT_2:
-                return with_alpha || !inputs_have_alpha ? "in.input2" : "in.input2.xyz";
+                return with_alpha ? "drawUniforms.inputs[1]" : "drawUniforms.inputs[1].xyz";
             case SHADER_INPUT_3:
-                return with_alpha || !inputs_have_alpha ? "in.input3" : "in.input3.xyz";
+                return with_alpha ? "drawUniforms.inputs[2]" : "drawUniforms.inputs[2].xyz";
             case SHADER_INPUT_4:
-                return with_alpha || !inputs_have_alpha ? "in.input4" : "in.input4.xyz";
+                return with_alpha ? "drawUniforms.inputs[3]" : "drawUniforms.inputs[3].xyz";
+            case SHADER_INPUT_5:
+                return with_alpha ? "drawUniforms.inputs[4]" : "drawUniforms.inputs[4].xyz";
+            case SHADER_INPUT_6:
+                return with_alpha ? "drawUniforms.inputs[5]" : "drawUniforms.inputs[5].xyz";
+            case SHADER_INPUT_7:
+                // Per-vertex shade color
+                return with_alpha || !inputs_have_alpha ? "in.shade" : "in.shade.xyz";
             case SHADER_TEXEL0:
                 return first_cycle ? (with_alpha ? "texVal0" : "texVal0.xyz")
                                    : (with_alpha ? "texVal1" : "texVal1.xyz");
@@ -70,6 +77,10 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
             case SHADER_NOISE:
                 return with_alpha ? "float4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
                                   : "float3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
+            case SHADER_LOD_FRAC:
+                return hint_single_element ? "lodFrac"
+                                           : (with_alpha ? "float4(lodFrac, lodFrac, lodFrac, lodFrac)"
+                                                         : "float3(lodFrac, lodFrac, lodFrac)");
         }
     } else {
         switch (item) {
@@ -78,13 +89,19 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
             case SHADER_1:
                 return "1.0";
             case SHADER_INPUT_1:
-                return "in.input1.w";
+                return "drawUniforms.inputs[0].w";
             case SHADER_INPUT_2:
-                return "in.input2.w";
+                return "drawUniforms.inputs[1].w";
             case SHADER_INPUT_3:
-                return "in.input3.w";
+                return "drawUniforms.inputs[2].w";
             case SHADER_INPUT_4:
-                return "in.input4.w";
+                return "drawUniforms.inputs[3].w";
+            case SHADER_INPUT_5:
+                return "drawUniforms.inputs[4].w";
+            case SHADER_INPUT_6:
+                return "drawUniforms.inputs[5].w";
+            case SHADER_INPUT_7:
+                return "in.shade.w";
             case SHADER_TEXEL0:
                 return first_cycle ? "texVal0.w" : "texVal1.w";
             case SHADER_TEXEL0A:
@@ -97,6 +114,8 @@ static const char* p_shader_item_to_str(uint32_t item, bool with_alpha, bool onl
                 return "texel.w";
             case SHADER_NOISE:
                 return RAND_NOISE;
+            case SHADER_LOD_FRAC:
+                return "lodFrac";
         }
     }
     return "";
@@ -171,6 +190,9 @@ prism::ContextTypes* update_raw_floats(prism::ContextTypes* _, prism::ContextTyp
         case 1:
             format = MTL::VertexFormatFloat;
             break;
+        default:
+            SPDLOG_ERROR("Invalid vertex attribute size: {}", size);
+            abort();
     }
     vertex_descriptor->attributes()->object(vertex_index)->setFormat(format);
     vertex_descriptor->attributes()->object(vertex_index)->setBufferIndex(0);
@@ -190,7 +212,7 @@ std::optional<std::string> metal_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, false, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -209,6 +231,11 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
 
     prism::Processor processor;
     prism::ContextItems context = {
+        { "BACKEND", "metal" },
+        { "BACKEND_OPENGL", false },
+        { "BACKEND_VULKAN", false },
+        { "BACKEND_METAL", true },
+        { "BACKEND_DIRECTX", false },
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },
@@ -235,7 +262,18 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
+        { "o_mip_lod", cc_features.opt_mip_lod },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac ||
+                            (cc_features.opt_tex_lod && cc_features.usedTextures[0] && cc_features.usedTextures[1]) },
+        { "o_two_tile_lod", cc_features.opt_tex_lod && !cc_features.opt_mip_lod && cc_features.usedTextures[0] &&
+                                cc_features.usedTextures[1] },
+        { "o_shade", cc_features.opt_shade },
+        { "o_lighting", cc_features.opt_lighting },
+        { "o_point_lighting", cc_features.opt_point_lighting },
+        { "o_texgen", cc_features.opt_texgen },
+        { "o_texgen_linear", cc_features.opt_texgen_linear },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
@@ -249,6 +287,10 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
         { "append_formula", (InvokeFunc)p_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        context[var] = value;
+    }
     processor.populate(context);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -262,7 +304,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     }
 
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, false, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default metal shader, missing f3d.o2r?");
@@ -273,6 +315,7 @@ MTL::VertexDescriptor* gfx_metal_build_shader(std::string& result, size_t& numFl
     processor.load(*shader);
     processor.bind_include_loader(metal_include_fs);
     result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== METAL SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("====================================");

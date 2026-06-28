@@ -297,6 +297,18 @@ void GfxRenderingAPIDX11::Init() {
     ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mPerPrimDepthCb.GetAddressOf()),
                   mWindowBackend->GetWindowHandle(), "Failed to create per-prim-depth constant buffer.");
 
+    // Create lighting/texgen constant buffer (vertex shader)
+
+    constant_buffer_desc.ByteWidth = sizeof(LightingUniforms);
+    ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mLightCb.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to create lighting constant buffer.");
+
+    // Create transform constant buffer (vertex shader matrix palette)
+
+    constant_buffer_desc.ByteWidth = sizeof(TransformUniforms);
+    ThrowIfFailed(mDevice->CreateBuffer(&constant_buffer_desc, nullptr, mTransformCb.GetAddressOf()),
+                  mWindowBackend->GetWindowHandle(), "Failed to create transform constant buffer.");
+
     // Create compute shader that can be used to retrieve depth buffer values
 
     const char* shader_source = R"(
@@ -391,7 +403,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     size_t len, numFloats;
 
     auto shader = gfx_direct3d_common_build_shader(numFloats, cc_features, false,
-                                                   mCurrentFilterMode == FILTER_THREE_POINT, mSrgbMode);
+                                                   mCurrentFilterMode == FILTER_THREE_POINT);
 
     buf = shader.data();
     len = shader.size();
@@ -437,49 +449,24 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     ied[ied_index++] = {
         "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
     };
+    ied[ied_index++] = {
+        "MTXSLOT", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
+    };
     for (UINT i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             ied[ied_index++] = {
                 "TEXCOORD", i, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
             };
-            if (cc_features.clamp[i][0]) {
-                ied[ied_index++] = { "TEXCLAMPS",
-                                     i,
-                                     DXGI_FORMAT_R32_FLOAT,
-                                     0,
-                                     D3D11_APPEND_ALIGNED_ELEMENT,
-                                     D3D11_INPUT_PER_VERTEX_DATA,
-                                     0 };
-            }
-            if (cc_features.clamp[i][1]) {
-                ied[ied_index++] = { "TEXCLAMPT",
-                                     i,
-                                     DXGI_FORMAT_R32_FLOAT,
-                                     0,
-                                     D3D11_APPEND_ALIGNED_ELEMENT,
-                                     D3D11_INPUT_PER_VERTEX_DATA,
-                                     0 };
-            }
         }
     }
-    if (cc_features.opt_fog) {
-        ied[ied_index++] = {
-            "FOG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
-        };
-    }
-    if (cc_features.opt_grayscale) {
-        ied[ied_index++] = { "GRAYSCALE",
-                             0,
-                             DXGI_FORMAT_R32G32B32A32_FLOAT,
-                             0,
-                             D3D11_APPEND_ALIGNED_ELEMENT,
-                             D3D11_INPUT_PER_VERTEX_DATA,
-                             0 };
-    }
-    for (unsigned int i = 0; i < cc_features.numInputs; i++) {
+    // Clamp bounds are per-draw constants and the fog factor is computed in the
+    // vertex shader, so neither is a vertex attribute anymore.
+    if (cc_features.opt_shade || cc_features.opt_lighting) {
         DXGI_FORMAT format = cc_features.opt_alpha ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
-        ied[ied_index++] = { "INPUT", i, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+        ied[ied_index++] = { "SHADE", 0, format, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
     }
+    // (world position for point lighting is derived in the VS from the
+    // object-space position and the modelview columns — no extra attribute)
 
     ThrowIfFailed(mDevice->CreateInputLayout(ied, ied_index, vs->GetBufferPointer(), vs->GetBufferSize(),
                                              prg->input_layout.GetAddressOf()));
@@ -517,6 +504,7 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     prg->usedTextures[2] = cc_features.used_masks[0];
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->usedTextures[5] = cc_features.used_blend[1];
 
     return (struct ShaderProgram*)(mShaderProgram = prg);
@@ -590,6 +578,8 @@ void GfxRenderingAPIDX11::UploadTexture(const uint8_t* rgba32_buf, uint32_t widt
 
     ThrowIfFailed(
         mDevice->CreateTexture2D(&texture_desc, &resource_data, texture_data->texture.ReleaseAndGetAddressOf()));
+    texture_data->mip_levels = 1;
+    texture_data->auto_mipmaps = false;
 
     // Create shader resource view from texture
 
@@ -597,12 +587,62 @@ void GfxRenderingAPIDX11::UploadTexture(const uint8_t* rgba32_buf, uint32_t widt
                                                     texture_data->resource_view.ReleaseAndGetAddressOf()));
 }
 
+void GfxRenderingAPIDX11::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t width, uint32_t height, uint32_t level,
+                                           uint32_t totalLevels) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+
+    TextureData* texture_data = &mTextures[mCurrentTextureIds[mCurrentTile]];
+
+    if (level == 0) {
+        texture_data->width = width;
+        texture_data->height = height;
+        texture_data->mip_levels = totalLevels;
+        texture_data->auto_mipmaps = mNextTextureAutoMipmap;
+
+        // Mip levels arrive one at a time, so the texture must be DEFAULT
+        // (updatable) rather than IMMUTABLE.
+        D3D11_TEXTURE2D_DESC texture_desc;
+        ZeroMemory(&texture_desc, sizeof(D3D11_TEXTURE2D_DESC));
+        texture_desc.Width = width;
+        texture_desc.Height = height;
+        texture_desc.Usage = D3D11_USAGE_DEFAULT;
+        texture_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        texture_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        texture_desc.CPUAccessFlags = 0;
+        texture_desc.MiscFlags = 0;
+        texture_desc.ArraySize = 1;
+        texture_desc.MipLevels = totalLevels;
+        texture_desc.SampleDesc.Count = 1;
+        texture_desc.SampleDesc.Quality = 0;
+
+        ThrowIfFailed(mDevice->CreateTexture2D(&texture_desc, nullptr, texture_data->texture.ReleaseAndGetAddressOf()));
+        ThrowIfFailed(mDevice->CreateShaderResourceView(texture_data->texture.Get(), nullptr,
+                                                        texture_data->resource_view.ReleaseAndGetAddressOf()));
+    }
+
+    if (texture_data->texture != nullptr && level < texture_data->mip_levels) {
+        mContext->UpdateSubresource(texture_data->texture.Get(), level, nullptr, rgba32_buf, width * 4, 0);
+    }
+}
+
 void GfxRenderingAPIDX11::SetSamplerParameters(int tile, bool linear_filter, uint32_t cms, uint32_t cmt) {
+    TextureData* texture_data = &mTextures[mCurrentTextureIds[tile]];
+
     D3D11_SAMPLER_DESC sampler_desc;
     ZeroMemory(&sampler_desc, sizeof(D3D11_SAMPLER_DESC));
 
-    sampler_desc.Filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
-                                                                               : D3D11_FILTER_MIN_MAG_MIP_POINT;
+    // CPU auto-generated pyramids use anisotropic filtering (trilinear + grazing-angle
+    // sharpness) with a negative LOD bias; native N64 mips keep point/linear mip-point
+    // sampling driven by the shader's explicit integer LOD.
+    if (texture_data->auto_mipmaps) {
+        sampler_desc.Filter = D3D11_FILTER_ANISOTROPIC;
+        sampler_desc.MaxAnisotropy = 8;
+    } else {
+        sampler_desc.Filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR
+                                                                                   : D3D11_FILTER_MIN_MAG_MIP_POINT;
+    }
 
     sampler_desc.AddressU = gfx_cm_to_d3d11(cms);
     sampler_desc.AddressV = gfx_cm_to_d3d11(cmt);
@@ -610,7 +650,6 @@ void GfxRenderingAPIDX11::SetSamplerParameters(int tile, bool linear_filter, uin
     sampler_desc.MinLOD = 0;
     sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
 
-    TextureData* texture_data = &mTextures[mCurrentTextureIds[tile]];
     texture_data->linear_filtering = linear_filter;
 
     // This function is called twice per texture, the first one only to set default values.
@@ -633,8 +672,19 @@ void GfxRenderingAPIDX11::SetCurrentPrimDepth(float depth) {
     }
 }
 
+void GfxRenderingAPIDX11::SetCurrentMaxLod(float maxLod) {
+    if (maxLod != mCurrentMaxLod) {
+        mCurrentMaxLod = maxLod;
+        mLodMaxDirty = true;
+    }
+}
+
 void GfxRenderingAPIDX11::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
+}
+
+void GfxRenderingAPIDX11::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
 }
 
 void GfxRenderingAPIDX11::SetViewport(int x, int y, int width, int height) {
@@ -665,9 +715,11 @@ void GfxRenderingAPIDX11::SetUseAlpha(bool use_alpha) {
 
 void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
 
-    if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask) {
+    if (mLastDepthTest != mCurrentDepthTest || mLastDepthMask != mCurrentDepthMask ||
+        mLastStrictDecal != mCurrentStrictDecal || mLastZmodeDecal != mCurrentZmodeDecal) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;
+        mLastStrictDecal = mCurrentStrictDecal;
 
         mDepthStencilState.Reset();
 
@@ -677,17 +729,20 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         depth_stencil_desc.DepthEnable = mCurrentDepthTest || mCurrentDepthMask;
         depth_stencil_desc.DepthWriteMask =
             mCurrentDepthMask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth_stencil_desc.DepthFunc = mCurrentDepthTest
-                                           ? (mCurrentZmodeDecal ? D3D11_COMPARISON_LESS_EQUAL : D3D11_COMPARISON_LESS)
-                                           : D3D11_COMPARISON_ALWAYS;
+        depth_stencil_desc.DepthFunc =
+            mCurrentDepthTest
+                ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? D3D11_COMPARISON_EQUAL : D3D11_COMPARISON_LESS_EQUAL)
+                                      : D3D11_COMPARISON_LESS)
+                : D3D11_COMPARISON_ALWAYS;
         depth_stencil_desc.StencilEnable = false;
 
         ThrowIfFailed(mDevice->CreateDepthStencilState(&depth_stencil_desc, mDepthStencilState.GetAddressOf()));
         mContext->OMSetDepthStencilState(mDepthStencilState.Get(), 0);
     }
 
-    if (mLastZmodeDecal != mCurrentZmodeDecal) {
+    if (mLastZmodeDecal != mCurrentZmodeDecal || mLastCullKeepSign != mCurrentCullKeepSign) {
         mLastZmodeDecal = mCurrentZmodeDecal;
+        mLastCullKeepSign = mCurrentCullKeepSign;
 
         mRasterizerState.Reset();
 
@@ -695,7 +750,12 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         ZeroMemory(&rasterizer_desc, sizeof(D3D11_RASTERIZER_DESC));
 
         rasterizer_desc.FillMode = D3D11_FILL_SOLID;
-        rasterizer_desc.CullMode = D3D11_CULL_NONE;
+        // N64 backface culling: D3D NDC keeps y up and FrontCounterClockwise is
+        // set; with no VS y flip the signed area A = -C, so keeping C > 0 keeps
+        // clockwise triangles, i.e. cull the front (CCW) faces.
+        rasterizer_desc.CullMode = mCurrentCullKeepSign > 0
+                                       ? D3D11_CULL_FRONT
+                                       : (mCurrentCullKeepSign < 0 ? D3D11_CULL_BACK : D3D11_CULL_NONE);
         rasterizer_desc.FrontCounterClockwise = true;
         rasterizer_desc.DepthBias = 0;
         // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
@@ -715,7 +775,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
             default:
                 SSDB = -2;
         }
-        rasterizer_desc.SlopeScaledDepthBias = mCurrentZmodeDecal ? SSDB : 0.0f;
+        rasterizer_desc.SlopeScaledDepthBias = (mCurrentZmodeDecal && !mCurrentStrictDecal) ? SSDB : 0.0f;
         rasterizer_desc.DepthBiasClamp = 0.0f;
         rasterizer_desc.DepthClipEnable = false;
         rasterizer_desc.ScissorEnable = true;
@@ -755,24 +815,59 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         }
     }
 
-    // Set per-draw constant buffer
-    if (textures_changed) {
+    // Set per-draw constant buffer (texture metadata + combiner constants)
+    if (textures_changed || mCombinerUniformsDirty || mCustomUniformsDirty) {
+        memcpy(mPerDrawCbData.combiner_inputs, mCombinerUniforms.inputs, sizeof(mPerDrawCbData.combiner_inputs));
+        memcpy(mPerDrawCbData.fog_color, mCombinerUniforms.fog_color, sizeof(mPerDrawCbData.fog_color));
+        memcpy(mPerDrawCbData.grayscale_color, mCombinerUniforms.grayscale_color,
+               sizeof(mPerDrawCbData.grayscale_color));
+        memcpy(mPerDrawCbData.uv_transform, mCombinerUniforms.uv_transform, sizeof(mPerDrawCbData.uv_transform));
+        memcpy(mPerDrawCbData.texture_clamp, mCombinerUniforms.texture_clamp, sizeof(mPerDrawCbData.texture_clamp));
+        memcpy(mPerDrawCbData.fog_params, mCombinerUniforms.fog_params, sizeof(mPerDrawCbData.fog_params));
+        memcpy(mPerDrawCbData.palette_params, mCombinerUniforms.palette_params, sizeof(mPerDrawCbData.palette_params));
+        memcpy(mPerDrawCbData.lod_params, mCombinerUniforms.lod_params, sizeof(mPerDrawCbData.lod_params));
+        memcpy(mPerDrawCbData.debug_tint, mCombinerUniforms.debug_tint, sizeof(mPerDrawCbData.debug_tint));
+        memcpy(mPerDrawCbData.uCustom, mCustomUniforms.regs, sizeof(mPerDrawCbData.uCustom));
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
         memcpy(ms.pData, &mPerDrawCbData, sizeof(PerDrawCB));
         mContext->Unmap(mPerDrawCb.Get(), 0);
+        mCombinerUniformsDirty = false;
+        mCustomUniformsDirty = false;
     }
 
-    // G_ZS_PRIM: upload prim_depth cbuffer when it changed
-    if (mPrimDepthDirty) {
+    // Lighting/texgen uniforms for the vertex shader
+    if (mLightingUniformsDirty) {
+        D3D11_MAPPED_SUBRESOURCE light_ms;
+        ZeroMemory(&light_ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        mContext->Map(mLightCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &light_ms);
+        memcpy(light_ms.pData, &mLightingUniforms, sizeof(LightingUniforms));
+        mContext->Unmap(mLightCb.Get(), 0);
+        mLightingUniformsDirty = false;
+    }
+
+    // Matrix palette + y flip for the vertex shader
+    if (mTransformUniformsDirty) {
+        D3D11_MAPPED_SUBRESOURCE transform_ms;
+        ZeroMemory(&transform_ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
+        mContext->Map(mTransformCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &transform_ms);
+        memcpy(transform_ms.pData, &mTransformUniforms, sizeof(TransformUniforms));
+        mContext->Unmap(mTransformCb.Get(), 0);
+        mTransformUniformsDirty = false;
+    }
+
+    // G_ZS_PRIM / texture LOD: upload prim_depth+lod_max cbuffer when either changed
+    if (mPrimDepthDirty || mLodMaxDirty) {
         mPerPrimDepthCbData.prim_depth = mCurrentPrimDepth;
+        mPerPrimDepthCbData.lod_max = mCurrentMaxLod;
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));
         mContext->Map(mPerPrimDepthCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
         memcpy(ms.pData, &mPerPrimDepthCbData, sizeof(PerPrimDepthCB));
         mContext->Unmap(mPerPrimDepthCb.Get(), 0);
         mPrimDepthDirty = false;
+        mLodMaxDirty = false;
     }
 
     // Set vertex buffer data
@@ -819,6 +914,15 @@ void GfxRenderingAPIDX11::StartFrame() {
     // Set per-frame constant buffer
     ID3D11Buffer* buffers[3] = { mPerFrameCb.Get(), mPerDrawCb.Get(), mPerPrimDepthCb.Get() };
     mContext->PSSetConstantBuffers(0, 3, buffers);
+
+    // Vertex shader constant buffers: PerDrawCB (b1: UV transform, fog params),
+    // the lighting/texgen buffer (b3), and the matrix palette (b4)
+    ID3D11Buffer* vs_draw_buffers[1] = { mPerDrawCb.Get() };
+    mContext->VSSetConstantBuffers(1, 1, vs_draw_buffers);
+    ID3D11Buffer* vs_buffers[1] = { mLightCb.Get() };
+    mContext->VSSetConstantBuffers(3, 1, vs_buffers);
+    ID3D11Buffer* vs_transform_buffers[1] = { mTransformCb.Get() };
+    mContext->VSSetConstantBuffers(4, 1, vs_transform_buffers);
 
     mPerFrameCbData.noise_frame++;
     if (mPerFrameCbData.noise_frame > 150) {
@@ -1231,9 +1335,6 @@ ImTextureID GfxRenderingAPIDX11::GetTextureById(int id) {
     return mTextures[id].resource_view.Get();
 }
 
-void GfxRenderingAPIDX11::SetSrgbMode() {
-    mSrgbMode = true;
-}
 
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
@@ -1247,13 +1348,20 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
             case SHADER_1:
                 return with_alpha ? "float4(1.0, 1.0, 1.0, 1.0)" : "float3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
-                return with_alpha || !inputs_have_alpha ? "input.input1" : "input.input1.rgb";
+                return with_alpha ? "combiner_inputs[0]" : "combiner_inputs[0].rgb";
             case SHADER_INPUT_2:
-                return with_alpha || !inputs_have_alpha ? "input.input2" : "input.input2.rgb";
+                return with_alpha ? "combiner_inputs[1]" : "combiner_inputs[1].rgb";
             case SHADER_INPUT_3:
-                return with_alpha || !inputs_have_alpha ? "input.input3" : "input.input3.rgb";
+                return with_alpha ? "combiner_inputs[2]" : "combiner_inputs[2].rgb";
             case SHADER_INPUT_4:
-                return with_alpha || !inputs_have_alpha ? "input.input4" : "input.input4.rgb";
+                return with_alpha ? "combiner_inputs[3]" : "combiner_inputs[3].rgb";
+            case SHADER_INPUT_5:
+                return with_alpha ? "combiner_inputs[4]" : "combiner_inputs[4].rgb";
+            case SHADER_INPUT_6:
+                return with_alpha ? "combiner_inputs[5]" : "combiner_inputs[5].rgb";
+            case SHADER_INPUT_7:
+                // Per-vertex shade color
+                return with_alpha || !inputs_have_alpha ? "input.shade" : "input.shade.rgb";
             case SHADER_TEXEL0:
                 return first_cycle ? (with_alpha ? "texVal0" : "texVal0.rgb")
                                    : (with_alpha ? "texVal1" : "texVal1.rgb");
@@ -1281,6 +1389,10 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
             case SHADER_NOISE:
                 return with_alpha ? "float4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
                                   : "float3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
+            case SHADER_LOD_FRAC:
+                return hint_single_element ? "lodFrac"
+                                           : (with_alpha ? "float4(lodFrac, lodFrac, lodFrac, lodFrac)"
+                                                         : "float3(lodFrac, lodFrac, lodFrac)");
         }
     } else {
         switch (item) {
@@ -1290,13 +1402,19 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
             case SHADER_1:
                 return "1.0";
             case SHADER_INPUT_1:
-                return "input.input1.a";
+                return "combiner_inputs[0].a";
             case SHADER_INPUT_2:
-                return "input.input2.a";
+                return "combiner_inputs[1].a";
             case SHADER_INPUT_3:
-                return "input.input3.a";
+                return "combiner_inputs[2].a";
             case SHADER_INPUT_4:
-                return "input.input4.a";
+                return "combiner_inputs[3].a";
+            case SHADER_INPUT_5:
+                return "combiner_inputs[4].a";
+            case SHADER_INPUT_6:
+                return "combiner_inputs[5].a";
+            case SHADER_INPUT_7:
+                return "input.shade.a";
             case SHADER_TEXEL0:
                 return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL0A:
@@ -1309,6 +1427,8 @@ static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool
                 return "texel.a";
             case SHADER_NOISE:
                 return RAND_NOISE;
+            case SHADER_LOD_FRAC:
+                return "lodFrac";
         }
     }
 }
@@ -1376,7 +1496,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, false, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -1386,11 +1506,16 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
 }
 
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
-                                             bool include_root_signature, bool three_point_filtering, bool use_srgb) {
+                                             bool include_root_signature, bool three_point_filtering) {
     raw_numFloats = 4;
 
     prism::Processor processor;
     prism::ContextItems mContext = {
+        { "BACKEND", "directx" },
+        { "BACKEND_OPENGL", false },
+        { "BACKEND_VULKAN", false },
+        { "BACKEND_METAL", false },
+        { "BACKEND_DIRECTX", true },
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },
@@ -1416,7 +1541,18 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
+        { "o_mip_lod", cc_features.opt_mip_lod },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac ||
+                            (cc_features.opt_tex_lod && cc_features.usedTextures[0] && cc_features.usedTextures[1]) },
+        { "o_two_tile_lod", cc_features.opt_tex_lod && !cc_features.opt_mip_lod && cc_features.usedTextures[0] &&
+                                cc_features.usedTextures[1] },
+        { "o_shade", cc_features.opt_shade },
+        { "o_lighting", cc_features.opt_lighting },
+        { "o_point_lighting", cc_features.opt_point_lighting },
+        { "o_texgen", cc_features.opt_texgen },
+        { "o_texgen_linear", cc_features.opt_texgen_linear },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
@@ -1427,10 +1563,13 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         { "o_color_alpha_same", M_ARRAY(cc_features.color_alpha_same, bool, 2) },
         { "o_root_signature", include_root_signature },
         { "o_three_point_filtering", three_point_filtering },
-        { "srgb_mode", use_srgb },
         { "append_formula", (InvokeFunc)prism_append_formula },
         { "update_floats", (InvokeFunc)update_raw_floats },
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
+    }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -1443,11 +1582,11 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         path = std::string(shaderName) + ".hlsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
-        "shaders/directx/default.shader.hlsl", true, init));
+    auto res = static_pointer_cast<Ship::Shader>(
+        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, false, init));
 
     if (res == nullptr) {
-        SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");
+        SPDLOG_ERROR("Failed to load directx shader '{}', missing f3d.o2r?", path);
         abort();
     }
 
@@ -1455,6 +1594,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
     processor.load(*shader);
     processor.bind_include_loader(dx_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     numFloats = raw_numFloats;
     // SPDLOG_INFO("=========== DX11 SHADER ============");
     // SPDLOG_INFO(result);
