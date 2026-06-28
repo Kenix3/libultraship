@@ -669,6 +669,9 @@ class Interpreter {
     // GPU palettization: the import in progress uploads raw CI indices instead of
     // decoded colors (palette lookup happens in the fragment shader).
     bool mImportIndexed = false;
+    // The import in progress is an HD (upscaled) texture. Auto-generated mipmaps
+    // are only built for these; original low-res N64 textures upload single-level.
+    bool mImportIsHd = false;
     // Palette textures are versioned by TLUT content and never mutated once
     // uploaded: backends queue draw commands (Metal executes at end of frame),
     // so rewriting a bound palette would retroactively recolor earlier draws.
