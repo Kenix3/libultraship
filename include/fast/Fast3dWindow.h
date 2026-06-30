@@ -4,6 +4,7 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include "FastMouseStateManager.h"
 #include "fast/debug/GfxDebugger.h"
+#include "fast/InterpolationPacer.h"
 
 union Gfx;
 #include "interpreter.h"
@@ -88,6 +89,9 @@ class Fast3dWindow : public Ship::Window {
     /** @brief Returns the graphics debugger for this Fast3D window. */
     std::shared_ptr<GfxDebugger> GetGfxDebugger() const;
 
+    /** @brief Returns the frame-interpolation pacer for this Fast3D window. */
+    std::shared_ptr<InterpolationPacer> GetInterpolationPacer() const;
+
   protected:
     static bool KeyDown(int32_t scancode);
     static bool KeyUp(int32_t scancode);
@@ -101,5 +105,6 @@ class Fast3dWindow : public Ship::Window {
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
+    std::shared_ptr<InterpolationPacer> mInterpolationPacer;
 };
 } // namespace Fast

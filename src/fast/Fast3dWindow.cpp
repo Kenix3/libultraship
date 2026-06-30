@@ -103,6 +103,7 @@ void Fast3dWindow::Init() {
     InitWindowManager();
     mGfxDebugger = std::make_shared<GfxDebugger>();
     mInterpreter->SetGfxDebugger(mGfxDebugger);
+    mInterpolationPacer = std::make_shared<InterpolationPacer>();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetRawInstance()->GetName().c_str(),
                        isFullscreen, width, height, posX, posY);
     mWindowManagerApi->SetFullscreenChangedCallback(OnFullscreenChanged);
@@ -442,6 +443,10 @@ Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
 
 std::shared_ptr<GfxDebugger> Fast3dWindow::GetGfxDebugger() const {
     return mGfxDebugger;
+}
+
+std::shared_ptr<InterpolationPacer> Fast3dWindow::GetInterpolationPacer() const {
+    return mInterpolationPacer;
 }
 
 } // namespace Fast
