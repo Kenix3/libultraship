@@ -42,6 +42,8 @@
 #include "spdlog/spdlog.h"
 #include "nlohmann/json.hpp"
 
+#include "fast/Fast3dWindow.h"
+
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr
@@ -357,7 +359,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     Fast::GuiWindowInitData window_impl;
     window_impl.Dx11 = { mWindowBackend->GetWindowHandle(), mContext.Get(), mDevice.Get() };
-    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetInstance()->GetWindow()->GetGui())->Init(window_impl);
+    window_impl.Backend = WindowBackend::FAST3D_DXGI_DX11;
+    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+        ->Init(window_impl);
 }
 
 int GfxRenderingAPIDX11::GetMaxTextureSize() {
@@ -704,7 +708,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         const int noVanishFactor = 100;
         float SSDB = -2;
 
-        switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+        switch (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mRenderTargetHeight / n64modeFactor;
                 break;
@@ -1376,7 +1380,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
     auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true, init));
+        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -1443,7 +1447,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         path = std::string(shaderName) + ".hlsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(
+    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(
         "shaders/directx/default.shader.hlsl", true, init));
 
     if (res == nullptr) {

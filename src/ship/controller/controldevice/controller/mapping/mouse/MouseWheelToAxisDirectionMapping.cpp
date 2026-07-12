@@ -16,7 +16,7 @@ MouseWheelToAxisDirectionMapping::MouseWheelToAxisDirectionMapping(uint8_t portI
 }
 
 float MouseWheelToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (Context::GetInstance()->GetControlDeck()->MouseGameInputBlocked()) {
+    if (Context::GetRawInstance()->GetControlDeck()->MouseGameInputBlocked()) {
         return 0.0f;
     }
 
@@ -33,29 +33,29 @@ std::string MouseWheelToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void MouseWheelToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetString(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
         "MouseWheelToAxisDirectionMapping");
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
         StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str(), static_cast<int>(mWheelDirection));
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
 }
 
 void MouseWheelToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
         StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
         StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
         StringHelper::Sprintf("%s.WheelDirection", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
 }
 
 int8_t MouseWheelToAxisDirectionMapping::GetMappingType() {

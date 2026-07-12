@@ -1,10 +1,10 @@
 #pragma once
 
 #include "stdint.h"
+#include "stddef.h"
 #include "ship/Api.h"
 
 #ifdef __cplusplus
-#include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
 #include <memory>
 

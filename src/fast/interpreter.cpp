@@ -578,10 +578,12 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13; // < 1.625x
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -645,10 +647,12 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -949,10 +953,12 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1041,10 +1047,12 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     bool pyramidLike = renderedPixels > 0 && loadedPixels > renderedPixels && loadedPixels * 8 < renderedPixels * 13;
     bool clampS = (mRdp->texture_tile[tile].cms & G_TX_CLAMP) != 0;
     bool clampT = (mRdp->texture_tile[tile].cmt & G_TX_CLAMP) != 0;
-    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    // HD replacement textures must still clamp to the rendered tile region
+    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
+    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1145,7 +1153,10 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    // Describe the buffer by what was actually packed (the loaded HD stride)
+    uint32_t uploadWidth = safeLineSizeBytes / 4;
+    uint32_t uploadHeight = safeLineSizeBytes > 0 ? safeLoadedBytes / safeLineSizeBytes : 0;
+    mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
@@ -1917,10 +1928,13 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             uint32_t loadedPx = tex_width[i] * tex_height[i];
             uint32_t renderedPx = tex_width2[i] * tex_height2[i];
             bool pyrLike = renderedPx > 0 && loadedPx > renderedPx && loadedPx * 8 < renderedPx * 13;
-            if ((pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            // HD replacements must clamp to the tile region
+            bool isHd = mRdp->loaded_texture[i].raw_tex_metadata.h_byte_scale != 1 ||
+                        mRdp->loaded_texture[i].raw_tex_metadata.v_pixel_scale != 1;
+            if ((isHd || pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if ((pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((isHd || pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 
@@ -2471,7 +2485,13 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     // The standard gDPLoadTextureBlock macro sets width=1, but manually-built DL
     // commands may set the real pixel width.
     uint32_t actual_line_bytes = size_bytes;
-    if (mRdp->texture_to_load.width > 1) {
+    const RawTexMetadata& blkMeta = mRdp->texture_to_load.raw_tex_metadata;
+    bool blkHd = blkMeta.h_byte_scale != 1 || blkMeta.v_pixel_scale != 1;
+    if (mRdp->texture_to_load.width > 1 && blkHd && blkMeta.height > 0 && size_bytes % blkMeta.height == 0) {
+        // HD-upscaled textures report a sentinel SetTextureImage width, so the per-line stride
+        // derived from it is bogus. The resource's stored height is authoritative.
+        actual_line_bytes = size_bytes / blkMeta.height;
+    } else if (mRdp->texture_to_load.width > 1) {
         uint32_t candidate;
         switch (mRdp->texture_to_load.siz) {
             case G_IM_SIZ_4b:
@@ -2995,7 +3015,7 @@ void Interpreter::Gfxs2dexBgCopy(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -3032,7 +3052,7 @@ void Interpreter::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
 
     if ((bool)gfx_check_image_signature((char*)data)) {
         std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-            Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
+            Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess((char*)data));
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
@@ -3250,7 +3270,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3dex2(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(
         (const char*)fileName);
 
     if (mtx != NULL) {
@@ -3264,7 +3284,7 @@ bool gfx_mtx_otr_filepath_handler_custom_f3d(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     const char* fileName = (const char*)cmd->words.w1;
-    const int32_t* mtx = (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(
+    const int32_t* mtx = (const int32_t*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(
         (const char*)fileName);
 
     if (mtx != NULL) {
@@ -3288,7 +3308,7 @@ bool gfx_mtx_otr_handler_custom_f3dex2(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
     const int32_t* mtx =
-        (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        (const int32_t*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
     if (mtx != NULL) {
         Interpreter* gfx = mInstance.lock().get();
@@ -3307,7 +3327,7 @@ bool gfx_mtx_otr_handler_custom_f3d(F3DGfx** cmd0) {
 
     const uint64_t hash = ((uint64_t)cmd->words.w0 << 32) + cmd->words.w1;
     const int32_t* mtx =
-        (const int32_t*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        (const int32_t*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
     if (mtx != nullptr) {
         cmd--;
         gfx->GfxSpMatrix(C0(16, 8), mtx);
@@ -3374,9 +3394,10 @@ bool gfx_movemem_handler_otr(F3DGfx** cmd0) {
 
     if (ucode_handler_index == ucode_f3dex2) {
         gfx->GfxSpMovememF3dex2(index, offset,
-                                Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash));
+                                Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash));
     } else {
-        auto light = (Fast::LightEntry*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        auto light =
+            (Fast::LightEntry*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
         uintptr_t data = (uintptr_t)&light->Ambient;
         gfx->GfxSpMovememF3d(index, offset, (void*)(data + (hasOffset == 1 ? 0x8 : 0)));
     }
@@ -3515,7 +3536,7 @@ bool gfx_vtx_hash_handler_custom(F3DGfx** cmd0) {
         gfx->GfxSpVertex(C0(12, 8), C0(1, 7) - C0(12, 8), (F3DVtx*)offset);
         (*cmd0)++;
     } else {
-        F3DVtx* vtx = (F3DVtx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        F3DVtx* vtx = (F3DVtx*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (vtx != NULL) {
             vtx = (F3DVtx*)((char*)vtx + offset);
@@ -3543,7 +3564,7 @@ bool gfx_vtx_otr_filepath_handler_custom(F3DGfx** cmd0) {
     size_t vtxIdxOff = cmd->words.w1 >> 16;
     size_t vtxDataOff = cmd->words.w1 & 0xFFFF;
     F3DVtx* vtx =
-        (F3DVtx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
+        (F3DVtx*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
     vtx += vtxDataOff;
 
     gfx->GfxSpVertex(vtxCnt, vtxIdxOff, vtx);
@@ -3554,7 +3575,7 @@ bool gfx_dl_otr_filepath_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     char* fileName = (char*)cmd->words.w1;
     F3DGfx* nDL =
-        (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
+        (F3DGfx*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer((const char*)fileName);
 
     if (C0(16, 1) == 0 && nDL != nullptr) {
         g_exec_stack.call(*cmd0, nDL);
@@ -3607,7 +3628,7 @@ bool gfx_dl_otr_hash_handler_custom(F3DGfx** cmd0) {
 
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             g_exec_stack.call(cmd, gfx);
@@ -3665,7 +3686,7 @@ bool gfx_branch_z_otr_handler_f3dex2(F3DGfx** cmd0) {
         (gfx->mRsp->extra_geometry_mode & G_EX_ALWAYS_EXECUTE_BRANCH) != 0) {
         uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (*cmd0)->words.w1;
 
-        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetInstance()->GetResourceManager()->GetResourceRawPointer(hash);
+        F3DGfx* gfx = (F3DGfx*)Ship::Context::GetRawInstance()->GetResourceManager()->GetResourceRawPointer(hash);
 
         if (gfx != 0) {
             (*cmd0) = gfx;
@@ -3855,7 +3876,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<Fast::Texture> tex = std::static_pointer_cast<Fast::Texture>(
-                Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(imgData));
+                Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(imgData));
 
             if (tex == nullptr) {
                 (*cmd0)++;
@@ -3901,7 +3922,8 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
     (*cmd0)++;
     uint64_t hash = ((uint64_t)(*cmd0)->words.w0 << 32) + (uint64_t)(*cmd0)->words.w1;
 
-    const char* fileName = Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
+    const char* fileName =
+        Ship::Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash);
     uint32_t texFlags = 0;
     RawTexMetadata rawTexMetadata = {};
 
@@ -3910,9 +3932,9 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         return false;
     }
 
-    std::shared_ptr<Fast::Texture> texture =
-        std::static_pointer_cast<Fast::Texture>(Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
-            Ship::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash)));
+    std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
+        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(
+            Ship::Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->HashToCString(hash)));
     if (texture != nullptr) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
@@ -3967,7 +3989,7 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     RawTexMetadata rawTexMetadata = {};
 
     std::shared_ptr<Fast::Texture> texture = std::static_pointer_cast<Fast::Texture>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(fileName));
+        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(fileName));
     if (texture != nullptr) {
         Interpreter* gfx = mInstance.lock().get();
         texFlags = texture->Flags;
@@ -4714,7 +4736,7 @@ static void gfx_step() {
 
 #ifdef USE_GBI_TRACE
     if (cmd->words.trace.valid &&
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnableGFXTrace", 0)) {
+        Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gEnableGFXTrace", 0)) {
 #define TRACE                                  \
     "\n====================================\n" \
     " - CMD: {:02X}\n"                         \
@@ -4809,8 +4831,8 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mRapi->Init();
     mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
     mCurDimensions.internal_mul =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-    mMsaaLevel = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
+        Ship::Context::GetRawInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
+    mMsaaLevel = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
 
     mCurDimensions.width = width;
     mCurDimensions.height = height;
@@ -5190,7 +5212,7 @@ int32_t gfx_check_image_signature(const char* imgData) {
     }
 #endif
 
-    return Ship::Context::GetInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
+    return Ship::Context::GetRawInstance()->GetResourceManager()->OtrSignatureCheck(imgData);
 }
 
 void Interpreter::RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_t* replacement) {
@@ -5200,7 +5222,7 @@ void Interpreter::RegisterBlendedTexture(const char* name, uint8_t* mask, uint8_
 
     if (gfx_check_image_signature(reinterpret_cast<char*>(replacement))) {
         Fast::Texture* tex = std::static_pointer_cast<Fast::Texture>(
-                                 Ship::Context::GetInstance()->GetResourceManager()->LoadResourceProcess(
+                                 Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(
                                      reinterpret_cast<char*>(replacement)))
                                  .get();
 

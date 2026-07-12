@@ -5,30 +5,30 @@
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return Ship::Context::GetInstance()->GetWindow()->GetWidth();
+    return Ship::Context::GetRawInstance()->GetWindow()->GetWidth();
 }
 
 uint32_t WindowGetHeight() {
-    return Ship::Context::GetInstance()->GetWindow()->GetHeight();
+    return Ship::Context::GetRawInstance()->GetWindow()->GetHeight();
 }
 
 float WindowGetAspectRatio() {
-    return Ship::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
+    return Ship::Context::GetRawInstance()->GetWindow()->GetCurrentAspectRatio();
 }
 
 bool WindowIsRunning() {
-    return Ship::Context::GetInstance()->GetWindow()->IsRunning();
+    return Ship::Context::GetRawInstance()->GetWindow()->IsRunning();
 }
 
 int32_t WindowGetPosX() {
-    return Ship::Context::GetInstance()->GetWindow()->GetPosX();
+    return Ship::Context::GetRawInstance()->GetWindow()->GetPosX();
 }
 
 int32_t WindowGetPosY() {
-    return Ship::Context::GetInstance()->GetWindow()->GetPosY();
+    return Ship::Context::GetRawInstance()->GetWindow()->GetPosY();
 }
 
 bool WindowIsFullscreen() {
-    return Ship::Context::GetInstance()->GetWindow()->IsFullscreen();
+    return Ship::Context::GetRawInstance()->GetWindow()->IsFullscreen();
 }
 }

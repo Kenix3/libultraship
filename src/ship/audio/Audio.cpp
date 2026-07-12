@@ -42,7 +42,7 @@ void Audio::InitAudioPlayer() {
 }
 
 void Audio::Init() {
-    mConfig = Context::GetInstance()->GetConfig();
+    mConfig = Context::GetRawInstance()->GetConfig();
 
     mAvailableAudioBackends = std::make_shared<std::vector<AudioBackend>>();
 #ifdef _WIN32
