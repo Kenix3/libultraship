@@ -2,8 +2,6 @@
 #include <SDL2/SDL.h>
 #include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/window/Window.h"
-#include "ship/window/gui/Gui.h"
 
 namespace Ship {
 
@@ -19,13 +17,11 @@ void SDLAddRemoveDeviceEventHandler::DrawElement() {
 void SDLAddRemoveDeviceEventHandler::UpdateElement() {
     SDL_PumpEvents();
     SDL_Event event;
-    bool changed = false;
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
         // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
         // the SDL_CONTROLLERDEVICEADDED event
         Context::GetRawInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceConnect(
             event.cdevice.which);
-        changed = true;
     }
 
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
