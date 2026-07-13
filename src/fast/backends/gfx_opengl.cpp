@@ -394,7 +394,11 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
 #elif defined(USE_OPENGLES)
+#ifdef __EMSCRIPTEN__
+        { "GLSL_VERSION", "#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;" },
+#else
         { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
+#endif
         { "attr", "in" },
         { "opengles", true },
         { "core_opengl", false },
@@ -916,7 +920,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 }
 
 void GfxRenderingAPIOGL::Init() {
-#ifdef FAST_GFX_OPENGL_USE_GLEW
+#if defined(FAST_GFX_OPENGL_USE_GLEW) && !defined(USE_OPENGLES)
     glewInit();
 #endif
 
