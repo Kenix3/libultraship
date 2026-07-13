@@ -694,6 +694,12 @@ int GfxRenderingAPIMetal::CreateFramebuffer() {
 }
 
 void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
+#ifdef __IOS__
+    // Keep the layer's drawable size pinned to the pixel viewport.
+    if (mLayer->drawableSize().width != width || mLayer->drawableSize().height != height) {
+        mLayer->setDrawableSize({ CGFloat(width), CGFloat(height) });
+    }
+#endif
     mCurrentDrawable = nullptr;
     mCurrentDrawable = mLayer->nextDrawable();
 
