@@ -5473,7 +5473,11 @@ static bool IsValidResolvedAddress(uintptr_t addr) {
     }
 
     // Still in the N64 segmented range, but might be a false positive (a real low pointer).
-#ifdef _WIN32
+#if defined(__EMSCRIPTEN__)
+    // On Emscripten the heap starts near address 0, so real pointers routinely
+    // live below 0x0FFFFFFF and the range heuristic would drop valid textures.
+    return true;
+#elif defined(_WIN32)
     // For Windows, check whether the address belongs to a dll.
     HMODULE module = nullptr;
     return GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
