@@ -183,6 +183,10 @@ if(ENABLE_SCRIPTING)
     target_compile_definitions(libultraship PUBLIC ENABLE_SCRIPTING)
 endif()
 
+if(DISABLE_DLL_LOADER)
+    target_compile_definitions(libultraship PUBLIC DISABLE_DLL_LOADER)
+endif()
+
 #=================== Compile Options & Defs ===================
 
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})

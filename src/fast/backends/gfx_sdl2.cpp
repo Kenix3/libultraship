@@ -239,7 +239,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
         }
     }
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__IOS__)
     // Implement fullscreening with native macOS APIs
     if (on != isNativeMacOSFullscreenActive(mWnd)) {
         toggleNativeMacOSFullscreen(mWnd);
@@ -326,7 +326,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     mWindowWidth = width;
     mWindowHeight = height;
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(__IOS__)
     // Keep running at full speed (and audio playing) while unfocused/hidden by opting
     // out of App Nap, which otherwise throttles the whole process in the background.
     disableMacOSAppNap();
@@ -389,7 +389,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
-    Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
+    Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 #else
     Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
@@ -548,7 +548,12 @@ void GfxWindowBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn),
 
 void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
 #ifdef __APPLE__
-    SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    if (mRenderer != nullptr) {
+        // Metal: drawable pixels, not window points.
+        SDL_GetRendererOutputSize(mRenderer, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    } else {
+        SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    }
 #else
     SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #endif
@@ -662,7 +667,12 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
             switch (event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
 #ifdef __APPLE__
-                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
+                    if (mRenderer != nullptr) {
+                        // Metal: drawable pixels, not window points.
+                        SDL_GetRendererOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
+                    } else {
+                        SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
+                    }
 #else
                     SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
@@ -696,7 +706,7 @@ void GfxWindowBackendSDL2::HandleEvents() {
     }
 
     // resync fullscreen state
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(__IOS__)
     auto nextFullscreenState = isNativeMacOSFullscreenActive(mWnd);
     if (mFullScreen != nextFullscreenState) {
         mFullScreen = nextFullscreenState;
@@ -716,7 +726,7 @@ bool GfxWindowBackendSDL2::IsWindowVisible() {
     if (flags & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN)) {
         return false;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(__IOS__)
     // SDL2 has no occlusion flag; query Cocoa directly. A fully-covered window stops
     // being composited, which stalls Metal's drawable acquisition (see isWindowOccluded).
     if (isWindowOccluded(mWnd)) {
