@@ -40,6 +40,11 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
+
 #include "ship/window/gui/Gui.h"
 #include "fast/Fast3dGui.h"
 
@@ -402,7 +407,28 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         flags = flags | SDL_WINDOW_METAL;
     }
 
+#ifdef __EMSCRIPTEN__
+    double canvasW = 0.0, canvasH = 0.0;
+    emscripten_get_element_css_size("#canvas", &canvasW, &canvasH);
+    if (canvasW > 0 && canvasH > 0) {
+        mWindowWidth = (int)canvasW;
+        mWindowHeight = (int)canvasH;
+    }
+#endif
     mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
+#ifdef __EMSCRIPTEN__
+    em_ui_callback_func onCanvasResize = [](int, const EmscriptenUiEvent*, void* userData) -> EM_BOOL {
+        auto backend = static_cast<GfxWindowBackendSDL2*>(userData);
+        double w = 0.0;
+        double h = 0.0;
+        emscripten_get_element_css_size("#canvas", &w, &h);
+        if (w > 0 && h > 0 && backend->mWnd != nullptr) {
+            SDL_SetWindowSize(backend->mWnd, (int)w, (int)h);
+        }
+        return EM_TRUE;
+    };
+    emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, EM_FALSE, onCanvasResize);
+#endif
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
