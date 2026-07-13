@@ -5367,15 +5367,17 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     // invalid memory.
     // For Windows, also check if the address is not from a dll because this validation returns a false positive caused
     // by how the virtual memory is allocated.
-#ifdef _WIN32
+    // On Emscripten the heap starts near address 0, so real pointers routinely
+    // live below 0x0FFFFFFF and this range heuristic would drop valid textures.
+#if defined(_WIN32)
     HMODULE module = nullptr;
-    if (i <= 0x0FFFFFFF &&
+    if (rawTexMetdata.resource == nullptr && i <= 0x0FFFFFFF &&
         !(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                              reinterpret_cast<LPCSTR>(i), &module))) {
         return false;
     }
-#else
-    if (i <= 0x0FFFFFFF) {
+#elif !defined(__EMSCRIPTEN__)
+    if (rawTexMetdata.resource == nullptr && i <= 0x0FFFFFFF) {
         return false;
     }
 #endif
