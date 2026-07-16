@@ -160,7 +160,9 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
 void GameOverlay::OnInit(const nlohmann::json& /*initArgs*/) {
     mResourceManager = RequireDependency(mResourceManager, "ResourceManager");
     mConsoleVariables = RequireDependency(mConsoleVariables, "ConsoleVariable");
-    mWindow = RequireDependency(mWindow, "Window");
+    if (mWindow == nullptr) {
+        throw std::runtime_error("Component 'GameOverlay' requires dependency 'Window' to exist before use");
+    }
 
     mResourceManager->GetResourceLoader()->RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryFontV0>(),
                                                                    RESOURCE_FORMAT_BINARY, "Font",

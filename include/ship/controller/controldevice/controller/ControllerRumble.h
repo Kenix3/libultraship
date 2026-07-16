@@ -22,6 +22,10 @@ class ControlDeck;
  */
 class ControllerRumble {
   public:
+    /** @brief Injects the owning ControlDeck. */
+    void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    }
     /**
      * @brief Constructs a ControllerRumble for the given port.
      * @param portIndex Zero-based port index.

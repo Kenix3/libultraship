@@ -50,8 +50,25 @@ Gui::~Gui() {
 void Gui::OnInit(const nlohmann::json& initArgs) {
     auto context = GetContext();
 
+    if (context != nullptr) {
+        if (mConsoleVariable == nullptr) {
+            mConsoleVariable = context->GetChildren().GetFirst<ConsoleVariable>();
+        }
+        if (mWindow == nullptr) {
+            mWindow = context->GetChildren().GetFirst<Window>();
+        }
+        if (mConfig == nullptr) {
+            mConfig = context->GetChildren().GetFirst<Config>();
+        }
+        if (mResourceManager == nullptr) {
+            mResourceManager = context->GetChildren().GetFirst<ResourceManager>();
+        }
+    }
+
     mConsoleVariable = RequireDependency(mConsoleVariable, "ConsoleVariable");
-    mWindow = RequireDependency(mWindow, "Window");
+    if (mWindow == nullptr) {
+        throw std::runtime_error("Component 'Gui' requires dependency 'Window' to exist before use");
+    }
     mConfig = RequireDependency(mConfig, "Config");
     mResourceManager = RequireDependency(mResourceManager, "ResourceManager");
 
@@ -115,6 +132,9 @@ void Gui::OnInit(const nlohmann::json& initArgs) {
 
     // Add GameOverlay as a child component so it participates in the hierarchy
     // and receives the correct Context. Then initialise it.
+    if (mGameOverlay == nullptr || !mGameOverlay->IsInitialized()) {
+        mGameOverlay = std::make_shared<GameOverlay>(GetContext(), mResourceManager, mConsoleVariable, mWindow);
+    }
     mGameOverlay->SetContext(GetContext());
     GetChildren().Add(mGameOverlay);
     mGameOverlay->Init({});
@@ -339,6 +359,9 @@ void Gui::AddGuiWindow(std::shared_ptr<GuiWindow> guiWindow) {
     }
 
     mGuiWindows[guiWindow->GetName()] = guiWindow;
+    if (guiWindow->GetContext() == nullptr) {
+        guiWindow->SetContext(GetContext());
+    }
     guiWindow->Init();
 }
 

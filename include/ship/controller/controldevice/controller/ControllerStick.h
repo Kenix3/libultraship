@@ -31,6 +31,10 @@ class Window;
  */
 class ControllerStick {
   public:
+    /** @brief Injects the owning ControlDeck. */
+    void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    }
     /**
      * @brief Constructs a ControllerStick for a given port and stick index.
      * @param portIndex  Zero-based port index.

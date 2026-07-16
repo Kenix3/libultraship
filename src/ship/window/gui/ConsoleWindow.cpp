@@ -272,6 +272,14 @@ ConsoleWindow::~ConsoleWindow() {
 
 void ConsoleWindow::OnInit(const nlohmann::json& initArgs) {
     GuiWindow::OnInit(initArgs);
+    if (auto context = GetContext()) {
+        if (mConsoleVariables == nullptr) {
+            mConsoleVariables = context->GetChildren().GetFirst<ConsoleVariable>();
+        }
+        if (mConsole == nullptr) {
+            mConsole = context->GetChildren().GetFirst<Console>();
+        }
+    }
     mInputBuffer = new char[gMaxBufferSize];
     strcpy(mInputBuffer, "");
     mFilterBuffer = new char[gMaxBufferSize];

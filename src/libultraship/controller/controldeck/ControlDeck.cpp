@@ -10,19 +10,23 @@
 namespace LUS {
 ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                          std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings,
-                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames)
-    : Ship::ControlDeck(additionalBitmasks, controllerDefaultMappings, buttonNames), mPads(nullptr) {
+                         std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
+                         std::shared_ptr<Ship::Window> window, std::shared_ptr<Ship::ConsoleVariable> consoleVariable)
+    : Ship::ControlDeck(additionalBitmasks, controllerDefaultMappings, buttonNames, window, consoleVariable),
+      mPads(nullptr) {
     std::vector<CONTROLLERBUTTONS_T> bitmasks;
     for (auto [bitmask, name] : buttonNames) {
         bitmasks.push_back(bitmask);
     }
     bitmasks.insert(bitmasks.end(), additionalBitmasks.begin(), additionalBitmasks.end());
     for (int32_t i = 0; i < MAXCONTROLLERS; i++) {
-        mPorts.push_back(std::make_shared<Ship::ControlPort>(i, std::make_shared<Controller>(i, bitmasks)));
+        mPorts.push_back(std::make_shared<Ship::ControlPort>(
+            i, std::make_shared<Controller>(i, bitmasks, consoleVariable, nullptr, window)));
     }
 }
 
-ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
+ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::shared_ptr<Ship::Window> window,
+                         std::shared_ptr<Ship::ConsoleVariable> consoleVariable)
     : ControlDeck(additionalBitmasks, std::make_shared<LUS::ControllerDefaultMappings>(),
                   std::unordered_map<CONTROLLERBUTTONS_T, std::string>({
                       { BTN_A, "A" },
@@ -39,10 +43,12 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
                       { BTN_DRIGHT, "DRight" },
                       { BTN_DUP, "DUp" },
                       { BTN_DDOWN, "DDown" },
-                  })) {
+                  }),
+                  std::move(window), std::move(consoleVariable)) {
 }
 
-ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
+ControlDeck::ControlDeck(std::shared_ptr<Ship::Window> window, std::shared_ptr<Ship::ConsoleVariable> consoleVariable)
+    : ControlDeck(std::vector<CONTROLLERBUTTONS_T>(), std::move(window), std::move(consoleVariable)) {
 }
 
 OSContPad* ControlDeck::GetPads() {

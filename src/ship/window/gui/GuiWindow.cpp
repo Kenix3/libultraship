@@ -1,4 +1,5 @@
 #include "ship/window/gui/GuiWindow.h"
+#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
@@ -39,6 +40,14 @@ GuiWindow::GuiWindow(const std::string& consoleVariable, const std::string& name
 
 void GuiWindow::OnInit(const nlohmann::json& initArgs) {
     GuiElement::OnInit(initArgs);
+    if (auto context = GetContext()) {
+        if (mConsoleVariable == nullptr) {
+            mConsoleVariable = context->GetChildren().GetFirst<ConsoleVariable>();
+        }
+        if (mWindow == nullptr) {
+            mWindow = context->GetChildren().GetFirst<Window>();
+        }
+    }
     if (mConsoleVariable && !mVisibilityConsoleVariable.empty()) {
         mIsVisible = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
         SyncVisibilityConsoleVariable();

@@ -33,7 +33,10 @@ class Controller : public Ship::Controller {
      * @param portIndex Zero-based port index (0 = port 1).
      * @param bitmasks  All button bitmasks this controller should track.
      */
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+               std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+               std::shared_ptr<Ship::ControlDeck> controlDeck = nullptr,
+               std::shared_ptr<Ship::Window> window = nullptr);
 
     /**
      * @brief Reads the current Ship::Controller state and writes it to the game's pad structure.
