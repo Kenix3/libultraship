@@ -32,6 +32,13 @@ void ControlDeck::Init(uint8_t* controllerBits) {
 
     mWheelHandler = std::make_shared<WheelHandler>(GetWindow());
 
+    auto self = std::dynamic_pointer_cast<ControlDeck>(GetSharedComponent());
+    for (auto port : mPorts) {
+        if (port->GetConnectedController() != nullptr) {
+            port->GetConnectedController()->SetControlDeck(self);
+        }
+    }
+
     for (auto port : mPorts) {
         if (port->GetConnectedController()->HasConfig()) {
             port->GetConnectedController()->ReloadAllMappingsFromConfig();
@@ -44,6 +51,8 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
+
+    MarkInitialized();
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {

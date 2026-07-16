@@ -350,8 +350,13 @@ void ScriptLoader::UnloadAll() {
 
 void* ScriptLoader::GetFunction(const std::string& name, const std::string& function) {
     if (mLoadedScripts.contains(name)) {
-        return mLoadedScripts.at(name).GetFunction(function);
+        void* fn = mLoadedScripts.at(name).GetFunction(function);
+        if (fn == nullptr) {
+            SPDLOG_WARN("ScriptLoader::GetFunction: symbol '{}' not found in module '{}'", function, name);
+        }
+        return fn;
     }
+    SPDLOG_WARN("ScriptLoader::GetFunction: module '{}' not loaded (looking for '{}')", name, function);
     return nullptr;
 };
 

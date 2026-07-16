@@ -51,7 +51,10 @@ Fast3dGui::Fast3dGui(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows) :
 void Fast3dGui::Init(GuiWindowInitData windowImpl) {
     mImpl = windowImpl;
     auto context = RequireDependency(GetContext(), "Context");
-    mWindow = RequireDependency(context->GetChildren().GetFirst<Ship::Window>(), "Window");
+    mWindow = context->GetChildren().GetFirst<Ship::Window>();
+    if (mWindow == nullptr) {
+        throw std::runtime_error("Component 'Fast3dGui' requires dependency 'Window' to exist before use");
+    }
     mConsoleVariables = RequireDependency(context->GetChildren().GetFirst<Ship::ConsoleVariable>(), "ConsoleVariable");
     mResourceManager = RequireDependency(context->GetChildren().GetFirst<Ship::ResourceManager>(), "ResourceManager");
     Gui::OnInit({});

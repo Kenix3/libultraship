@@ -25,6 +25,10 @@ class Window;
  */
 class ControllerButton {
   public:
+    /** @brief Injects the owning ControlDeck. */
+    void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    }
     /**
      * @brief Constructs a ControllerButton for a specific port and bitmask.
      * @param portIndex       Zero-based port index.

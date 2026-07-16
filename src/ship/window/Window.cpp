@@ -20,7 +20,6 @@ Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mous
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
-    GetChildren().Add(gui);
 }
 
 Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config)
@@ -41,6 +40,9 @@ Window::~Window() {
 
 void Window::OnInit(const nlohmann::json& initArgs) {
     Component::OnInit(initArgs);
+    if (mGui != nullptr && !GetChildren().Has(mGui)) {
+        GetChildren().Add(mGui);
+    }
     mMouseStateManager->SetWindow(std::dynamic_pointer_cast<Window>(shared_from_this()));
 }
 

@@ -71,6 +71,28 @@ uint8_t Controller::GetPortIndex() {
     return mPortIndex;
 }
 
+void Controller::SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
+    mControlDeck = controlDeck;
+    for (auto& [bitmask, button] : mButtons) {
+        button->SetControlDeck(controlDeck);
+    }
+    if (mLeftStick != nullptr) {
+        mLeftStick->SetControlDeck(controlDeck);
+    }
+    if (mRightStick != nullptr) {
+        mRightStick->SetControlDeck(controlDeck);
+    }
+    if (mGyro != nullptr) {
+        mGyro->SetControlDeck(controlDeck);
+    }
+    if (mRumble != nullptr) {
+        mRumble->SetControlDeck(controlDeck);
+    }
+    if (mLED != nullptr) {
+        mLED->SetControlDeck(controlDeck);
+    }
+}
+
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);

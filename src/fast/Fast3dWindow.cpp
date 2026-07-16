@@ -500,7 +500,15 @@ std::shared_ptr<Ship::ConsoleVariable> Fast3dWindow::GetConsoleVariables() const
 }
 
 std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
-    return RequireDependency(mControlDeck, "ControlDeck");
+    if (mControlDeck == nullptr) {
+        if (auto context = GetContext()) {
+            mControlDeck = context->GetChildren().GetFirst<Ship::ControlDeck>();
+        }
+    }
+    if (mControlDeck == nullptr) {
+        throw std::runtime_error("Component 'Window' requires dependency 'ControlDeck' to exist before use");
+    }
+    return mControlDeck;
 }
 
 } // namespace Fast
