@@ -38,8 +38,7 @@ class ControlDeck final : public Ship::ControlDeck {
      * @brief Constructs a ControlDeck with the standard N64 buttons plus extra bitmasks.
      * @param additionalBitmasks Extra button bitmasks beyond the standard N64 set.
      */
-    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
-                std::shared_ptr<Ship::Window> window = nullptr,
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::shared_ptr<Ship::Window> window = nullptr,
                 std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr);
 
     /**

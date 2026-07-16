@@ -94,8 +94,7 @@ class TempDirectoryArchive {
   public:
     explicit TempDirectoryArchive(const std::unordered_map<std::string, std::string>& files = {}) {
         static size_t sCounter = 0;
-        mPath = std::filesystem::temp_directory_path() /
-                ("lus_resource_manager_test_" + std::to_string(sCounter++));
+        mPath = std::filesystem::temp_directory_path() / ("lus_resource_manager_test_" + std::to_string(sCounter++));
         std::filesystem::create_directories(mPath);
         WriteTextFile("manifest.json", R"({"name":"TempArchive","code_version":1})");
         for (const auto& [path, content] : files) {

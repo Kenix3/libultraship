@@ -215,4 +215,8 @@ void GuiWindow::EndGroupPanel(float minHeight) {
 
     ImGui::EndGroup();
 }
+
+std::shared_ptr<Window> GuiWindow::GetWindow() const {
+    return mWindow;
+}
 } // namespace Ship

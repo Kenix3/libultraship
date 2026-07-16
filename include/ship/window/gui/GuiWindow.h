@@ -128,6 +128,9 @@ class GuiWindow : public GuiElement {
 
     void OnInit(const nlohmann::json& initArgs = {}) override;
 
+    /** @brief Returns the Window this GuiWindow belongs to. */
+    std::shared_ptr<Window> GetWindow() const;
+
   private:
     std::string mVisibilityConsoleVariable;
     ImVector<ImRect> mGroupPanelLabelStack;

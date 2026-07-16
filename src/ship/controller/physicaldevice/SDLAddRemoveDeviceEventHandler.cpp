@@ -47,8 +47,9 @@ void SDLAddRemoveDeviceEventHandler::UpdateElement() {
     // The connected controller set changed, so re-point the ImGui gamepad
     // backend at it (keeps menu navigation working across hotplug).
     if (changed) {
-        if (mWindow != nullptr && mWindow->GetGui() != nullptr) {
-            mWindow->GetGui()->RefreshImGuiGamepads();
+        auto window = GetWindow();
+        if (window != nullptr && window->GetGui() != nullptr) {
+            window->GetGui()->RefreshImGuiGamepads();
         }
     }
 }

@@ -257,7 +257,7 @@ void Fast3dGui::ImGuiWMNewFrame() {
 // Bind ImGui's SDL2 gamepad backend to the controller(s) the
 // ControlDeck has already opened
 void Fast3dGui::RefreshImGuiGamepads() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     auto backend = window->GetWindowBackend();
     if (backend != WindowBackend::FAST3D_SDL_OPENGL && backend != WindowBackend::FAST3D_SDL_METAL) {
         return;
@@ -584,30 +584,30 @@ void Fast3dGui::LoadTextureFromResource(const std::string& name, std::shared_ptr
     mGuiTextures[name] = texture->Metadata;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint) {
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
-    texBuffer.reserve(res.Width * res.Height * 4);
+    texBuffer.reserve(tex.Width * tex.Height * 4);
 
     // For HD textures we need to load the buffer raw (similar to inside gfx_pp)
-    if ((res.Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
+    if ((tex.Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
         // Raw loading doesn't support TLUT textures
-        if (res.Type == Fast::TextureType::Palette4bpp || res.Type == Fast::TextureType::Palette8bpp) {
+        if (tex.Type == Fast::TextureType::Palette4bpp || tex.Type == Fast::TextureType::Palette8bpp) {
             // TODO convert other image types
             SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupported image type");
             return;
         }
 
-        texBuffer.assign(res.ImageData, res.ImageData + (res.Width * res.Height * 4));
+        texBuffer.assign(tex.ImageData, tex.ImageData + (tex.Width * tex.Height * 4));
     } else {
-        switch (res.Type) {
+        switch (tex.Type) {
             case Fast::TextureType::RGBA32bpp:
-                texBuffer.assign(res.ImageData, res.ImageData + (res.Width * res.Height * 4));
+                texBuffer.assign(tex.ImageData, tex.ImageData + (tex.Width * tex.Height * 4));
                 break;
             case Fast::TextureType::RGBA16bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t b1 = res.ImageData[i * 2 + 0];
-                    uint8_t b2 = res.ImageData[i * 2 + 1];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t b1 = tex.ImageData[i * 2 + 0];
+                    uint8_t b2 = tex.ImageData[i * 2 + 1];
                     uint8_t r = (b1 >> 3) * 0xFF / 0x1F;
                     uint8_t g = (((b1 & 7) << 2) | (b2 >> 6)) * 0xFF / 0x1F;
                     uint8_t b = ((b2 >> 1) & 0x1F) * 0xFF / 0x1F;
@@ -620,9 +620,9 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha16bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t color = res.ImageData[i * 2 + 0];
-                    uint8_t alpha = res.ImageData[i * 2 + 1];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t color = tex.ImageData[i * 2 + 0];
+                    uint8_t alpha = tex.ImageData[i * 2 + 1];
                     texBuffer.push_back(color);
                     texBuffer.push_back(color);
                     texBuffer.push_back(color);
@@ -631,8 +631,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha8bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t ia = res.ImageData[i];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t ia = tex.ImageData[i];
                     uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
                     uint8_t alpha = (ia & 0xF) * 255 / 15;
                     texBuffer.push_back(color);
@@ -643,8 +643,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha4bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
-                    uint8_t b = res.ImageData[i / 2];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i += 2) {
+                    uint8_t b = tex.ImageData[i / 2];
 
                     uint8_t ia4 = b >> 4;
                     uint8_t color = ((ia4 >> 1) & 0xF) * 255 / 0b111;
@@ -665,8 +665,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::Grayscale8bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t ia = res.ImageData[i];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t ia = tex.ImageData[i];
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
@@ -675,8 +675,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::Grayscale4bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
-                    uint8_t b = res.ImageData[i / 2];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i += 2) {
+                    uint8_t b = tex.ImageData[i / 2];
 
                     uint8_t ia4 = ((b >> 4) * 0xFF) / 0b1111;
                     texBuffer.push_back(ia4);
@@ -708,12 +708,12 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
 
     Ship::GuiTextureMetadata asset;
     asset.RendererTextureId = api->NewTexture();
-    asset.Width = res.Width;
-    asset.Height = res.Height;
+    asset.Width = tex.Width;
+    asset.Height = tex.Height;
 
     api->SelectTexture(0, asset.RendererTextureId);
     api->SetSamplerParameters(0, false, 0, 0);
-    api->UploadTexture(texBuffer.data(), res.Width, res.Height);
+    api->UploadTexture(texBuffer.data(), tex.Width, tex.Height);
 
     mGuiTextures[name] = asset;
 }

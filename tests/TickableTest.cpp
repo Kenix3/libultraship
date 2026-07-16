@@ -17,8 +17,7 @@ static constexpr EventID kDrawDebugMenuEvent = 12;
 // A concrete Action for testing Tickable interaction.
 class CountingAction : public Action {
   public:
-    CountingAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : Action(eventId, tickable), mRunCount(0) {
+    CountingAction(EventID eventId, std::shared_ptr<Tickable> tickable) : Action(eventId, tickable), mRunCount(0) {
     }
     int mRunCount;
 
@@ -32,8 +31,7 @@ class CountingAction : public Action {
 // Derived action type for template filtering.
 class SpecialAction : public CountingAction {
   public:
-    SpecialAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : CountingAction(eventId, tickable) {
+    SpecialAction(EventID eventId, std::shared_ptr<Tickable> tickable) : CountingAction(eventId, tickable) {
     }
 };
 

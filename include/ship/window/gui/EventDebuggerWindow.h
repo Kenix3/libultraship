@@ -35,7 +35,7 @@ class EventDebuggerWindow final : public GuiWindow {
     void DrawElement() override;
 
     /** @brief No-op update; event data is read directly during draw. */
-    void UpdateElement() override{};
+    void UpdateElement() override {};
 
   private:
     std::shared_ptr<Events> mEvents;
