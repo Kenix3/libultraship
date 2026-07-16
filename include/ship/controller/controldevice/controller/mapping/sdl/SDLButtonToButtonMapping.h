@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerButtonMapping.h"
 #include "ship/controller/controldevice/controller/mapping/sdl/SDLButtonToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad button to a virtual controller button.
@@ -17,7 +20,9 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
      * @param bitmask             The button bitmask to set when the gamepad button is held.
      * @param sdlControllerButton The SDL controller button index.
      */
-    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton);
+    SDLButtonToButtonMapping(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask, int32_t sdlControllerButton,
+                             std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                             std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Updates the pad button state based on the current gamepad button state.
@@ -42,5 +47,9 @@ class SDLButtonToButtonMapping final : public SDLButtonToAnyMapping, public Cont
 
     /** @brief Returns the human-readable name of the bound button. */
     std::string GetPhysicalInputName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

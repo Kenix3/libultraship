@@ -6,6 +6,8 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerGyroMapping.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 /**
  * @brief Manages the single gyroscope (motion sensor) mapping for a controller port.
  *
@@ -15,11 +17,16 @@ namespace Ship {
  */
 class ControllerGyro {
   public:
+    /** @brief Injects the owning ControlDeck. */
+    void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
+        mControlDeck = std::move(controlDeck);
+    }
     /**
      * @brief Constructs a ControllerGyro for the given port.
      * @param portIndex Zero-based port index.
      */
-    ControllerGyro(uint8_t portIndex);
+    ControllerGyro(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+                   std::shared_ptr<ControlDeck> controlDeck = nullptr);
     ~ControllerGyro();
 
     /** @brief Clears any in-memory mapping and reloads it from Config. */
@@ -64,5 +71,7 @@ class ControllerGyro {
   private:
     uint8_t mPortIndex;
     std::shared_ptr<ControllerGyroMapping> mGyroMapping;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

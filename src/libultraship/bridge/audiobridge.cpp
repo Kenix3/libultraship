@@ -1,11 +1,26 @@
 #include "libultraship/bridge/audiobridge.h"
-#include "ship/Context.h"
 #include "ship/audio/Audio.h"
+
+static std::shared_ptr<Ship::Audio> sAudio;
+
+void AudioSetAudioComponent(std::shared_ptr<Ship::Audio> audio) {
+    sAudio = std::move(audio);
+}
+
+std::shared_ptr<Ship::Audio> AudioGetAudioComponent() {
+    return sAudio;
+}
+
+static Ship::Audio* GetAudio() {
+    return sAudio.get();
+}
+
+// Audio bridge functions require a Ship::Audio component as a direct child of the Context.
 
 extern "C" {
 
 int32_t AudioPlayerBuffered() {
-    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    auto audio = GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -18,7 +33,7 @@ int32_t AudioPlayerBuffered() {
 }
 
 int32_t AudioPlayerGetDesiredBuffered() {
-    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    auto audio = GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return 0;
     }
@@ -31,7 +46,7 @@ int32_t AudioPlayerGetDesiredBuffered() {
 }
 
 AudioChannelsSetting GetAudioChannels() {
-    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    auto audio = GetAudio()->GetAudioPlayer();
 
     if (audio == nullptr) {
         return audioStereo;
@@ -41,7 +56,7 @@ AudioChannelsSetting GetAudioChannels() {
 }
 
 int32_t GetNumAudioChannels() {
-    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    auto audio = GetAudio()->GetAudioPlayer();
 
     if (audio == nullptr) {
         return 2;
@@ -51,7 +66,7 @@ int32_t GetNumAudioChannels() {
 }
 
 void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
-    auto audio = Ship::Context::GetInstance()->GetAudio()->GetAudioPlayer();
+    auto audio = GetAudio()->GetAudioPlayer();
     if (audio == nullptr) {
         return;
     }
@@ -64,7 +79,7 @@ void AudioPlayerPlayFrame(const uint8_t* buf, size_t len) {
 }
 
 void SetAudioChannels(AudioChannelsSetting channels) {
-    auto audio = Ship::Context::GetInstance()->GetAudio();
+    auto audio = GetAudio();
     if (audio == nullptr) {
         return;
     }

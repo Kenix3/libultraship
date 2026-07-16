@@ -2,6 +2,7 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/Context.h"
+#include "ship/log/Logger.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -14,6 +15,15 @@
 #endif
 
 namespace Ship {
+static std::weak_ptr<CrashHandler> sCrashHandler;
+static std::string GetCrashAppName() {
+    if (auto handler = sCrashHandler.lock()) {
+        if (auto ctx = handler->GetContext()) {
+            return ctx->GetName();
+        }
+    }
+    return "Application";
+}
 
 #define WRITE_VAR_LINE(handler, varName, varValue) \
     handler->AppendStr(varName);                   \
@@ -138,7 +148,10 @@ void CrashHandler::PrintRegisters(ucontext_t* ctx) {
 }
 
 static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = sCrashHandler.lock();
+    if (!crashHandler) {
+        exit(1);
+    }
     char intToCharBuffer[16];
 
     std::array<void*, 4096> arr;
@@ -190,14 +203,15 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
         WRITE_VAR_LINE(crashHandler, intToCharBuffer, functionName.c_str());
     }
     SDL_ShowSimpleMessageBox(
-        SDL_MESSAGEBOX_ERROR, (Context::GetInstance()->GetName() + " has crashed").c_str(),
-        (Context::GetInstance()->GetName() + " has crashed. Please upload the logs to the support channel in discord.")
-            .c_str(),
+        SDL_MESSAGEBOX_ERROR, (GetCrashAppName() + " has crashed").c_str(),
+        (GetCrashAppName() + " has crashed. Please upload the logs to the support channel in discord.").c_str(),
         nullptr);
     free(symbols);
     crashHandler->PrintCommon();
 
-    Context::GetInstance()->GetLogger()->flush();
+    if (auto logger = spdlog::default_logger()) {
+        logger->flush();
+    }
     spdlog::shutdown();
     exit(1);
 }
@@ -390,31 +404,34 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
         }
     }
     PrintCommon();
-    Context::GetInstance()->GetLogger()->flush();
+    if (auto logger = spdlog::default_logger()) {
+        logger->flush();
+    }
     spdlog::shutdown();
 #endif
 }
 
 extern "C" LONG WINAPI seh_filter(PEXCEPTION_POINTERS ex) {
     char exceptionString[20];
-    std::shared_ptr<CrashHandler> crashHandler = Context::GetInstance()->GetCrashHandler();
+    std::shared_ptr<CrashHandler> crashHandler = sCrashHandler.lock();
+    if (!crashHandler) {
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
 
     snprintf(exceptionString, std::size(exceptionString), "0x%x", ex->ExceptionRecord->ExceptionCode);
 
     WRITE_VAR_LINE(crashHandler, "Exception: ", exceptionString);
     crashHandler->PrintStack(ex->ContextRecord);
-    MessageBoxA(
-        nullptr,
-        (Context::GetInstance()->GetName() + " has crashed. Please upload the logs to the support channel in discord.")
-            .c_str(),
-        "Crash", MB_OK | MB_ICONERROR);
+    MessageBoxA(nullptr,
+                (GetCrashAppName() + " has crashed. Please upload the logs to the support channel in discord.").c_str(),
+                "Crash", MB_OK | MB_ICONERROR);
 
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
 #endif
 
-CrashHandler::CrashHandler() : mOutBuffer(std::make_unique<char[]>(gMaxBufferSize)) {
+CrashHandler::CrashHandler() : Component("CrashHandler"), mOutBuffer(std::make_unique<char[]>(gMaxBufferSize)) {
 #if defined(__linux__) && !defined(__ANDROID__)
     struct sigaction action = { 0 };
     struct sigaction shutdownAction = { 0 };
@@ -436,6 +453,7 @@ CrashHandler::CrashHandler() : mOutBuffer(std::make_unique<char[]>(gMaxBufferSiz
 #elif defined(_WIN32)
     SetUnhandledExceptionFilter(seh_filter);
 #endif
+    MarkInitialized();
 }
 
 CrashHandler::CrashHandler(CrashHandlerCallback callback) : CrashHandler() {
@@ -444,6 +462,11 @@ CrashHandler::CrashHandler(CrashHandlerCallback callback) : CrashHandler() {
 
 CrashHandler::~CrashHandler() {
     SPDLOG_TRACE("destruct crash handler");
+}
+
+void CrashHandler::OnAdded(bool forced) {
+    Component::OnAdded(forced);
+    sCrashHandler = std::dynamic_pointer_cast<CrashHandler>(GetSharedComponent());
 }
 
 void CrashHandler::RegisterCallback(CrashHandlerCallback callback) {

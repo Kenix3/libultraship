@@ -15,8 +15,10 @@
 #define MINIMUM_RADIUS_TO_MAP_NOTCH 0.9
 
 namespace LUS {
-Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks)
-    : Ship::Controller(portIndex, bitmasks) {
+Controller::Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+                       std::shared_ptr<Ship::ConsoleVariable> consoleVariable,
+                       std::shared_ptr<Ship::ControlDeck> controlDeck, std::shared_ptr<Ship::Window> window)
+    : Ship::Controller(portIndex, bitmasks, std::move(consoleVariable), std::move(controlDeck), std::move(window)) {
 }
 
 void Controller::ReadToPad(void* pad) {
@@ -40,9 +42,8 @@ void Controller::ReadToOSContPad(OSContPad* pad) {
 
     mPadBuffer.push_front(padToBuffer);
     if (pad != nullptr) {
-        auto& padFromBuffer = mPadBuffer[std::min(
-            mPadBuffer.size() - 1,
-            (size_t)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
+        auto& padFromBuffer = mPadBuffer[std::min(mPadBuffer.size() - 1,
+                                                  (size_t)mConsoleVariable->GetInteger(CVAR_SIMULATED_INPUT_LAG, 0))];
 
         pad->button |= padFromBuffer.button;
 

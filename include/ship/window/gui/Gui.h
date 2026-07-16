@@ -2,6 +2,7 @@
 
 #ifdef __cplusplus
 
+#include "ship/Component.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <memory>
@@ -18,7 +19,11 @@
 #include "ship/window/gui/GuiMenuBar.h"
 
 namespace Ship {
+class Context;
 class Window;
+class ConsoleVariable;
+class Config;
+class ResourceManager;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -28,9 +33,11 @@ class Window;
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
+ * GuiWindow children are accessible via `GetChildren().GetFirst<T>()`.
+ *
  * Obtain the instance from Window::GetGui().
  */
-class Gui {
+class Gui : public Component {
   public:
     /** @brief Constructs a Gui with no pre-registered windows. */
     Gui();
@@ -39,13 +46,16 @@ class Gui {
      * @brief Constructs a Gui and pre-registers a list of GuiWindows.
      * @param guiWindows Windows to add before Init() is called.
      */
-    Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
+    Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Context> context = nullptr,
+        std::shared_ptr<ConsoleVariable> consoleVariable = nullptr, std::shared_ptr<Window> window = nullptr,
+        std::shared_ptr<Config> config = nullptr, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+        std::shared_ptr<GameOverlay> gameOverlay = nullptr);
     virtual ~Gui();
 
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
      */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs) override;
 
     /**
      * @brief Begins a new ImGui frame.
@@ -234,6 +244,10 @@ class Gui {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<Config> mConfig;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship
 

@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 #include <memory>
 #include "ship/config/ConsoleVariable.h"
+void CVarSetConsoleVariable(std::shared_ptr<Ship::ConsoleVariable> consoleVariable);
+std::shared_ptr<Ship::ConsoleVariable> CVarGetConsoleVariable();
 
 /**
  * @brief Returns a shared pointer to the CVar with the given name, or nullptr if it does not exist.

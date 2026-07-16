@@ -2,12 +2,14 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 #include "ControllerInputMapping.h"
 
 #define MAX_AXIS_RANGE 85.0f
 
 namespace Ship {
+class ControlDeck;
 
 /** @brief Identifies which analog stick an axis mapping applies to. */
 enum StickIndex { LEFT_STICK, RIGHT_STICK };
@@ -32,7 +34,7 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
      * @param direction          The direction on the stick this mapping represents.
      */
     ControllerAxisDirectionMapping(PhysicalDeviceType physicalDeviceType, uint8_t portIndex, StickIndex stickIndex,
-                                   Direction direction);
+                                   Direction direction, std::shared_ptr<ControlDeck> controlDeck = nullptr);
     virtual ~ControllerAxisDirectionMapping();
 
     /**
@@ -71,9 +73,12 @@ class ControllerAxisDirectionMapping : virtual public ControllerInputMapping {
      */
     void SetPortIndex(uint8_t portIndex);
 
+    std::shared_ptr<ControlDeck> GetControlDeck() const;
+
   protected:
     uint8_t mPortIndex;
     StickIndex mStickIndex;
     Direction mDirection;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

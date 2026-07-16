@@ -6,11 +6,13 @@
 #include <vector>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
-#include "ship/window/gui/Gui.h"
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "ship/Component.h"
 
 namespace Ship {
+class Gui;
+class GuiWindow;
 
 /** @brief Identifies the graphics/windowing backend in use.
  *
@@ -49,34 +51,38 @@ class Config;
  * ImGui/GUI layer. Concrete subclasses (e.g. an SDL+OpenGL window) implement the
  * pure virtual methods to integrate with specific graphics APIs.
  *
- * The window is created by Context::InitWindow() and is accessible via
- * Context::GetWindow().
+ * **Required dependencies (constructor-injected):**
+ * - **Config** — cached on the class and used to read and persist window
+ *   settings (size, backend, fullscreen state). Any code path that uses the
+ *   cached Config validates that it exists and is initialized before use.
+ *
+ * The window is added to Context as a child Component and is accessible via
+ * `Context::GetChildren().GetFirst<Window>()`.
  */
-class Window {
+class Window : public Component {
     friend class Context;
 
   public:
-    Window();
+    explicit Window(std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window and pre-registers a list of GUI windows.
      * @param guiWindows GUI overlay windows to register with the Gui layer.
      */
-    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
+    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window backed by a pre-constructed Gui instance.
      * @param gui Gui layer to use.
      */
-    Window(std::shared_ptr<Gui> gui);
+    Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window with both a Gui and a MouseStateManager.
      * @param gui                Gui layer to use.
      * @param mouseStateManager  Mouse state tracker to use.
      */
-    Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager);
+    Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager,
+           std::shared_ptr<Config> config = nullptr);
     virtual ~Window();
 
-    /** @brief Opens the window and initializes the graphics backend. */
-    virtual void Init() = 0;
     /** @brief Requests that the window and application close. */
     virtual void Close() = 0;
     /** @brief Runs a single GUI-only tick without executing game logic. */
@@ -265,6 +271,8 @@ class Window {
     std::shared_ptr<MouseStateManager> GetMouseStateManager();
 
   protected:
+    /** @brief Caches this Window on the MouseStateManager. */
+    void OnInit(const nlohmann::json& initArgs) override;
     /**
      * @brief Records the active graphics backend. Called by subclass constructors.
      * @param backend The backend ID in use.
@@ -282,6 +290,9 @@ class Window {
      * the first registered backend if the saved value is not available.
      */
     int32_t GetSavedWindowBackend();
+
+    /** @brief Returns the cached Config component after validating it is ready for use. */
+    std::shared_ptr<Config> GetConfig() const;
 
   private:
     std::shared_ptr<Gui> mGui;

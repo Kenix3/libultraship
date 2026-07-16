@@ -1,8 +1,14 @@
 #ifdef ENABLE_OPENGL
 #pragma once
 
+#include <memory>
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
+
+namespace Ship {
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
 
 #ifdef _MSC_VER
 #include <SDL2/SDL.h>
@@ -58,6 +64,8 @@ struct TextureInfo {
 
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   public:
+    GfxRenderingAPIOGL(std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                       std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
     ~GfxRenderingAPIOGL() override = default;
     const char* GetName() override;
     int GetMaxTextureSize() override;
@@ -109,6 +117,9 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     void SetUniforms(ShaderProgram* prg) const;
     std::string BuildFsShader(const CCFeatures& cc_features);
     void SetPerDrawUniforms();
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager;
 
     std::vector<TextureInfo> textures;
     GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};

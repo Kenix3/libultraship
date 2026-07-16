@@ -6,12 +6,15 @@
 #include "ship/window/gui/resource/FontFactory.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/ResourceManager.h"
-#include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
 
 namespace Ship {
-GameOverlay::GameOverlay() {
+GameOverlay::GameOverlay(std::shared_ptr<Context> context, std::shared_ptr<ResourceManager> resourceManager,
+                         std::shared_ptr<ConsoleVariable> consoleVariables, std::shared_ptr<Window> window)
+    : Component("GameOverlay", std::move(context)), mResourceManager(std::move(resourceManager)),
+      mConsoleVariables(std::move(consoleVariables)), mWindow(std::move(window)) {
 }
 
 GameOverlay::~GameOverlay() {
@@ -25,8 +28,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
     initData->Path = identifier.Path;
-    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        Context::GetInstance()->GetResourceManager()->LoadResource(identifier, false, initData));
+    auto font = mResourceManager->LoadResource<Font>(identifier, false, initData);
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -44,8 +46,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
     initData->Path = path;
-    std::shared_ptr<Font> font = std::static_pointer_cast<Font>(
-        Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
+    auto font = mResourceManager->LoadResource<Font>(path, false, initData);
 
     if (font == nullptr) {
         SPDLOG_ERROR("Failed to load font: {}", name);
@@ -156,10 +157,16 @@ ImVec2 GameOverlay::CalculateTextSize(const char* text, const char* textEnd, boo
     return textSize;
 }
 
-void GameOverlay::Init() {
-    Context::GetInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        std::make_shared<ResourceFactoryBinaryFontV0>(), RESOURCE_FORMAT_BINARY, "Font",
-        static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
+void GameOverlay::OnInit(const nlohmann::json& /*initArgs*/) {
+    mResourceManager = RequireDependency(mResourceManager, "ResourceManager");
+    mConsoleVariables = RequireDependency(mConsoleVariables, "ConsoleVariable");
+    if (mWindow == nullptr) {
+        throw std::runtime_error("Component 'GameOverlay' requires dependency 'Window' to exist before use");
+    }
+
+    mResourceManager->GetResourceLoader()->RegisterResourceFactory(std::make_shared<ResourceFactoryBinaryFontV0>(),
+                                                                   RESOURCE_FORMAT_BINARY, "Font",
+                                                                   static_cast<uint32_t>(RESOURCE_TYPE_FONT), 0);
 }
 
 void GameOverlay::SetCurrentFont(const std::string& name) {
@@ -169,8 +176,8 @@ void GameOverlay::SetCurrentFont(const std::string& name) {
     }
 
     mCurrentFont = name;
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
-    Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+    mConsoleVariables->SetString(CVAR_GAME_OVERLAY_FONT, name.c_str());
+    mWindow->GetGui()->SaveConsoleVariablesNextFrame();
 }
 
 void GameOverlay::DrawSettings() {
@@ -204,7 +211,7 @@ void GameOverlay::Draw() {
 
         if (overlay.Type == OverlayType::TEXT) {
             const char* text = overlay.Value.c_str();
-            const auto var = Ship::Context::GetInstance()->GetConsoleVariables()->Get(text);
+            const auto var = mConsoleVariables->Get(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             switch (var->Type) {

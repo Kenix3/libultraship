@@ -3,12 +3,16 @@
 #include <vector>
 #include <memory>
 
-#include "ship/debug/Console.h"
+#include "ship/Component.h"
+#include "ship/resource/ResourceManager.h"
 #include <imgui.h>
 #include <unordered_map>
-#include "ship/resource/ResourceManager.h"
 
 namespace Ship {
+
+class ConsoleVariable;
+class Window;
+class ResourceManager;
 
 /** @brief Identifies the type of an overlay item rendered by GameOverlay. */
 enum class OverlayType {
@@ -30,21 +34,22 @@ struct Overlay {
 /**
  * @brief Renders on-screen timed notification messages.
  *
- * GameOverlay draws directly into the "game" ImGui viewport using a custom font
- * loaded from the archive. It is owned by Gui and is accessible via
- * Gui::GetGameOverlay().
+ * GameOverlay is a Component owned by Gui and draws directly into the "game"
+ * ImGui viewport using a custom font loaded from the archive. It is accessible
+ * via Gui::GetGameOverlay().
  *
  * Fonts are loaded with LoadFont() and selected with SetCurrentFont(). Text can be
  * drawn at an arbitrary screen position with TextDraw(), or posted as a timed
  * notification with TextDrawNotification().
  */
-class GameOverlay {
+class GameOverlay : public Component {
   public:
-    GameOverlay();
+    GameOverlay(std::shared_ptr<Context> context = nullptr, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+                std::shared_ptr<ConsoleVariable> consoleVariables = nullptr, std::shared_ptr<Window> window = nullptr);
     virtual ~GameOverlay();
 
     /** @brief Initialises the overlay and loads the default font. */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs = {}) override;
 
     /**
      * @brief Loads a font from an archive resource and registers it under @p name.
@@ -130,6 +135,10 @@ class GameOverlay {
     std::unordered_map<std::string, Overlay> mRegisteredOverlays;
     std::string mCurrentFont = "Default";
     bool mNeedsCleanup = false;
+
+    std::shared_ptr<ResourceManager> mResourceManager;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
+    std::shared_ptr<Window> mWindow;
 
     /** @brief Removes expired notification overlays from mRegisteredOverlays. */
     void CleanupNotifications();

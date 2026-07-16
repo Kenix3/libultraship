@@ -6,6 +6,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class ScriptLoader;
+}
+void ScriptSetLoader(std::shared_ptr<Ship::ScriptLoader> scriptLoader);
+std::shared_ptr<Ship::ScriptLoader> ScriptGetLoader();
 extern "C" {
 #endif
 

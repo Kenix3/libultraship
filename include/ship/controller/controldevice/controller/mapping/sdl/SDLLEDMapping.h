@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerLEDMapping.h"
 #include "SDLMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad's LED to a controller LED output.
@@ -17,7 +20,9 @@ class SDLLEDMapping final : public ControllerLEDMapping {
      * @param colorSource Identifier for the colour source strategy.
      * @param savedColor  The saved RGB colour used when the source is fixed.
      */
-    SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor);
+    SDLLEDMapping(uint8_t portIndex, uint8_t colorSource, Color_RGB8 savedColor,
+                  std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                  std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Sends an RGB colour to the gamepad LED.
@@ -36,5 +41,9 @@ class SDLLEDMapping final : public ControllerLEDMapping {
 
     /** @brief Returns the human-readable name of the SDL gamepad device. */
     std::string GetPhysicalDeviceName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

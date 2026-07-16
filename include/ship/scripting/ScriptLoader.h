@@ -4,13 +4,16 @@
 
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/LibraryLoader.h"
+#include "ship/Component.h"
 
 #include <unordered_map>
 #include <string>
 #include <optional>
 #include <functional>
+#include <memory>
 
 namespace Ship {
+class ResourceManager;
 
 /**
  * @brief Security level controlling which scripts are allowed to load and execute.
@@ -28,8 +31,13 @@ enum class SafeLevel {
  * ScriptLoader compiles C/C++ source files found in mounted archives using TCC
  * (Tiny C Compiler), then loads the resulting shared objects at runtime so their
  * exported functions can be called by the engine via GetFunction().
+ *
+ * **Required Context children (looked up at runtime):**
+ * - **ResourceManager** — queried during script loading to access the ArchiveManager
+ *   for enumerating script source files. ResourceManager must be added to the Context
+ *   before any ScriptLoader load methods are called.
  */
-class ScriptLoader {
+class ScriptLoader : public Component {
   public:
     /**
      * @brief Constructs a ScriptLoader with the given compiler configuration.
@@ -39,12 +47,15 @@ class ScriptLoader {
      * @param includePaths   Additional include search directories.
      * @param libraryPaths   Additional library search directories.
      * @param libraries      Libraries to link against compiled scripts.
+     * @param resourceManager ResourceManager for archive lookups during compilation.
      */
     ScriptLoader(const std::unordered_map<std::string, std::string>& compileDefines, const uint32_t codeVersion,
                  const std::string& buildOptions, const std::vector<std::string>& includePaths,
-                 const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries)
-        : mCodeVersion(codeVersion), mBuildOptions(buildOptions), mIncludePaths(includePaths),
-          mLibraryPaths(libraryPaths), mLibraries(libraries), mCompileDefines(compileDefines) {
+                 const std::vector<std::string>& libraryPaths, const std::vector<std::string>& libraries,
+                 std::shared_ptr<ResourceManager> resourceManager = nullptr)
+        : Component("ScriptLoader"), mCodeVersion(codeVersion), mBuildOptions(buildOptions),
+          mIncludePaths(includePaths), mLibraryPaths(libraryPaths), mLibraries(libraries),
+          mCompileDefines(compileDefines), mResourceManager(std::move(resourceManager)) {
     }
 
     /**
@@ -102,6 +113,7 @@ class ScriptLoader {
     std::unordered_map<std::string, std::string> mCompileDefines;
     std::unordered_map<std::string, Scripting::LibraryLoader> mLoadedScripts;
     std::vector<std::shared_ptr<Archive>> mLoadedArchives;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 
 } // namespace Ship

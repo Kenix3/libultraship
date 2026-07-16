@@ -5,6 +5,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class Events;
+}
+void EventSystemSetEvents(std::shared_ptr<Ship::Events> events);
+std::shared_ptr<Ship::Events> EventSystemGetEvents();
 extern "C" {
 #endif
 

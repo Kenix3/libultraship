@@ -1,23 +1,17 @@
 #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
-#include "ship/Context.h"
 #include <cmath>
+#include <stdexcept>
 
 namespace Ship {
-WheelHandler::WheelHandler() {
+WheelHandler::WheelHandler(std::shared_ptr<Window> window) : mWindow(std::move(window)) {
+    if (!mWindow) {
+        throw std::runtime_error("WheelHandler requires Window dependency");
+    }
     mDirections = { LUS_WHEEL_NONE, LUS_WHEEL_NONE };
     mBufferedCoords = { 0.0f, 0.0f };
 }
 
 WheelHandler::~WheelHandler() {
-}
-
-std::shared_ptr<WheelHandler> WheelHandler::mInstance;
-
-std::shared_ptr<WheelHandler> WheelHandler::GetInstance() {
-    if (mInstance == nullptr) {
-        mInstance = std::make_shared<WheelHandler>();
-    }
-    return mInstance;
 }
 
 void WheelHandler::UpdateAxisBuffer(float* buf, float input) {
@@ -42,7 +36,7 @@ void WheelHandler::UpdateAxisBuffer(float* buf, float input) {
 }
 
 void WheelHandler::Update() {
-    mCoords = Context::GetInstance()->GetWindow()->GetMouseWheel();
+    mCoords = mWindow->GetMouseWheel();
 
     UpdateAxisBuffer(&mBufferedCoords.x, mCoords.x);
     UpdateAxisBuffer(&mBufferedCoords.y, mCoords.y);

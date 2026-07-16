@@ -10,21 +10,26 @@
 #include <sstream>
 #include <algorithm>
 
-#include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
-ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask)
+ControllerButton::ControllerButton(uint8_t portIndex, CONTROLLERBUTTONS_T bitmask,
+                                   std::shared_ptr<ConsoleVariable> consoleVariable,
+                                   std::shared_ptr<ControlDeck> controlDeck, std::shared_ptr<Window> window)
     : mPortIndex(portIndex), mBitmask(bitmask), mUseEventInputToCreateNewMapping(false),
       mKeyboardScancodeForNewMapping(LUS_KB_UNKNOWN), mMouseButtonForNewMapping(LUS_MOUSE_BTN_UNKNOWN) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
+    mWindow = std::move(window);
 }
 
 ControllerButton::~ControllerButton() {
 }
 
 std::string ControllerButton::GetConfigNameFromBitmask(CONTROLLERBUTTONS_T bitmask) {
-    return Ship::Context::GetInstance()->GetControlDeck()->GetButtonNameForBitmask(bitmask);
+    return mControlDeck->GetButtonNameForBitmask(bitmask);
 }
 
 std::unordered_map<std::string, std::shared_ptr<ControllerButtonMapping>> ControllerButton::GetAllButtonMappings() {
@@ -59,7 +64,8 @@ void ControllerButton::ClearButtonMapping(std::shared_ptr<ControllerButtonMappin
 }
 
 void ControllerButton::LoadButtonMappingFromConfig(std::string id) {
-    auto mapping = ButtonMappingFactory::CreateButtonMappingFromConfig(mPortIndex, id);
+    auto mapping =
+        ButtonMappingFactory::CreateButtonMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck, mWindow);
 
     if (mapping == nullptr) {
         return;
@@ -80,13 +86,12 @@ void ControllerButton::SaveButtonMappingIdsToConfig() {
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
     if (buttonMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(buttonMappingIdsCvarKey.c_str());
+        mConsoleVariable->ClearVariable(buttonMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(buttonMappingIdsCvarKey.c_str(),
-                                                                       buttonMappingIdListString.c_str());
+        mConsoleVariable->SetString(buttonMappingIdsCvarKey.c_str(), buttonMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->Save();
 }
 
 void ControllerButton::ReloadAllMappingsFromConfig() {
@@ -100,8 +105,7 @@ void ControllerButton::ReloadAllMappingsFromConfig() {
     const std::string buttonMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.Buttons.%sButtonMappingIds", mPortIndex + 1,
                               GetConfigNameFromBitmask(mBitmask).c_str());
-    std::stringstream buttonMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(buttonMappingIdsCvarKey.c_str(), ""));
+    std::stringstream buttonMappingIdsStringStream(mConsoleVariable->GetString(buttonMappingIdsCvarKey.c_str(), ""));
     std::string buttonMappingIdString;
     while (getline(buttonMappingIdsStringStream, buttonMappingIdString, ',')) {
         LoadButtonMappingFromConfig(buttonMappingIdString);
@@ -151,20 +155,24 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
 
     mUseEventInputToCreateNewMapping = true;
     if (mKeyboardScancodeForNewMapping != LUS_KB_UNKNOWN) {
-        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping);
-    }
-
-    else if (!Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverAnyGuiItem() &&
-             Context::GetInstance()->GetWindow()->GetGui()->IsMouseOverActivePopup()) {
-        if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
-            mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping);
-        } else {
-            mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask);
+        mapping = std::make_shared<KeyboardKeyToButtonMapping>(mPortIndex, bitmask, mKeyboardScancodeForNewMapping,
+                                                               mControlDeck, mWindow, mConsoleVariable);
+    } else {
+        auto gui = mWindow->GetGui();
+        if (!gui->IsMouseOverAnyGuiItem() && gui->IsMouseOverActivePopup()) {
+            if (mMouseButtonForNewMapping != LUS_MOUSE_BTN_UNKNOWN) {
+                mapping = std::make_shared<MouseButtonToButtonMapping>(mPortIndex, bitmask, mMouseButtonForNewMapping,
+                                                                       mControlDeck, mConsoleVariable);
+            } else {
+                mapping = ButtonMappingFactory::CreateButtonMappingFromMouseWheelInput(mPortIndex, bitmask,
+                                                                                       mConsoleVariable, mControlDeck);
+            }
         }
     }
 
     if (mapping == nullptr) {
-        mapping = ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask);
+        mapping =
+            ButtonMappingFactory::CreateButtonMappingFromSDLInput(mPortIndex, bitmask, mConsoleVariable, mControlDeck);
     }
 
     if (mapping == nullptr) {
@@ -184,8 +192,8 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     SaveButtonMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
     return true;
 }
 
@@ -237,13 +245,15 @@ bool ControllerButton::ProcessMouseButtonEvent(bool isPressed, MouseBtn button) 
 
 void ControllerButton::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
     if (physicalDeviceType == PhysicalDeviceType::SDLGamepad) {
-        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask)) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultSDLButtonMappings(mPortIndex, mBitmask, mConsoleVariable,
+                                                                                 mControlDeck)) {
             AddButtonMapping(mapping);
         }
     }
 
     if (physicalDeviceType == PhysicalDeviceType::Keyboard) {
-        for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(mPortIndex, mBitmask)) {
+        for (auto mapping : ButtonMappingFactory::CreateDefaultKeyboardButtonMappings(
+                 mPortIndex, mBitmask, mConsoleVariable, mControlDeck, mWindow)) {
             AddButtonMapping(mapping);
         }
     }

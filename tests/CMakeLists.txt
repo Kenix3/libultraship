@@ -8,6 +8,37 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_executable(libultraship_tests
+    PartTest.cpp
+    ComponentTest.cpp
+    ActionTest.cpp
+    TickableTest.cpp
+    TickableComponentTest.cpp
+)
+
+target_link_libraries(libultraship_tests
+    PRIVATE
+    GTest::gtest_main
+    libultraship
+)
+
+target_include_directories(libultraship_tests
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${ADDITIONAL_LIB_INCLUDES}
+)
+
+# Propagate compile definitions from the main library
+target_compile_definitions(libultraship_tests PRIVATE
+    $<TARGET_PROPERTY:libultraship,COMPILE_DEFINITIONS>
+)
+
+set_property(TARGET libultraship_tests PROPERTY CXX_STANDARD 20)
+
+include(GoogleTest)
+gtest_discover_tests(libultraship_tests)
+
 add_executable(lus_tests
     binary_io_tests.cpp
     string_helper_tests.cpp

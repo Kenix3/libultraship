@@ -1,6 +1,5 @@
 #include "ship/controller/controldevice/controller/ControllerLED.h"
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
@@ -9,7 +8,11 @@
 #include "ship/controller/controldevice/controller/mapping/factories/LEDMappingFactory.h"
 
 namespace Ship {
-ControllerLED::ControllerLED(uint8_t portIndex) : mPortIndex(portIndex) {
+ControllerLED::ControllerLED(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                             std::shared_ptr<ControlDeck> controlDeck)
+    : mPortIndex(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 ControllerLED::~ControllerLED() {
@@ -32,13 +35,12 @@ void ControllerLED::SaveLEDMappingIdsToConfig() {
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
     if (ledMappingIdsCvarKey == "") {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(ledMappingIdsCvarKey.c_str());
+        mConsoleVariable->ClearVariable(ledMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(ledMappingIdsCvarKey.c_str(),
-                                                                       ledMappingIdListString.c_str());
+        mConsoleVariable->SetString(ledMappingIdsCvarKey.c_str(), ledMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->Save();
 }
 
 void ControllerLED::AddLEDMapping(std::shared_ptr<ControllerLEDMapping> mapping) {
@@ -83,7 +85,7 @@ void ControllerLED::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDev
 }
 
 void ControllerLED::LoadLEDMappingFromConfig(std::string id) {
-    auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id);
+    auto mapping = LEDMappingFactory::CreateLEDMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return;
@@ -102,8 +104,7 @@ void ControllerLED::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string ledMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.LEDMappingIds", mPortIndex + 1);
-    std::stringstream ledMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(ledMappingIdsCvarKey.c_str(), ""));
+    std::stringstream ledMappingIdsStringStream(mConsoleVariable->GetString(ledMappingIdsCvarKey.c_str(), ""));
     std::string ledMappingIdString;
     while (getline(ledMappingIdsStringStream, ledMappingIdString, ',')) {
         LoadLEDMappingFromConfig(ledMappingIdString);
@@ -117,7 +118,7 @@ std::unordered_map<std::string, std::shared_ptr<ControllerLEDMapping>> Controlle
 bool ControllerLED::AddLEDMappingFromRawPress() {
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
-    mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex);
+    mapping = LEDMappingFactory::CreateLEDMappingFromSDLInput(mPortIndex, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return false;
@@ -128,8 +129,8 @@ bool ControllerLED::AddLEDMappingFromRawPress() {
     SaveLEDMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
     return true;
 }
 
