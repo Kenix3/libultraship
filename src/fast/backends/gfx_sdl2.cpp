@@ -370,6 +370,10 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#elif defined(USE_OPENGLES)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
 #ifdef _WIN32
@@ -393,7 +397,7 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     char title[512];
     int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
-#ifdef __IOS__
+#if defined(__IOS__) || defined(__ANDROID__)
     Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 #else
     Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;

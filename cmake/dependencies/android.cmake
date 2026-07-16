@@ -7,6 +7,7 @@ if (NOT ${SDL2_FOUND})
         SDL2
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-2.32.10
+        GIT_SHALLOW TRUE
     )
     message("SDL2 not found. Downloading now...")
     FetchContent_MakeAvailable(SDL2)
@@ -20,6 +21,7 @@ if (NOT ${nlohmann_json_FOUND})
         nlohmann_json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
         GIT_TAG v3.12.0
+        GIT_SHALLOW TRUE
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(nlohmann_json)
@@ -33,6 +35,7 @@ if (NOT ${tinyxml2_FOUND})
         tinyxml2
         GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
         GIT_TAG 11.0.0
+        GIT_SHALLOW TRUE
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(tinyxml2)
@@ -45,6 +48,7 @@ if (NOT ${spdlog_FOUND})
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG v1.16.0
+        GIT_SHALLOW TRUE
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(spdlog)
@@ -60,10 +64,18 @@ if (NOT ${libzip_FOUND})
     set(BUILD_DOC OFF)
     set(BUILD_OSSFUZZ OFF)
     set(BUILD_SHARED_LIBS OFF)
+    set(ENABLE_BZIP2 OFF)
+    set(ENABLE_LZMA OFF)
+    set(ENABLE_ZSTD OFF)
+    set(ENABLE_COMMONCRYPTO OFF)
+    set(ENABLE_GNUTLS OFF)
+    set(ENABLE_MBEDTLS OFF)
+    set(ENABLE_OPENSSL OFF)
     FetchContent_Declare(
         libzip
         GIT_REPOSITORY https://github.com/nih-at/libzip.git
         GIT_TAG v1.11.4
+        GIT_SHALLOW TRUE
         OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(libzip)
