@@ -187,7 +187,7 @@ typedef struct {
 } uObjTxtrTile_t; /* 24 bytes */
 
 #define GS_PAL_HEAD(head) ((head) + 256)
-#define GS_PAL_NUM(num) ((num) - 1)
+#define GS_PAL_NUM(num) ((num)-1)
 
 typedef struct {
     u32 type;     /* G_OBJLT_TLUT divided into types */
@@ -294,22 +294,22 @@ typedef struct {
  *---------------------------------------------------------------------------*/
 #define gSPSelectDL(pkt, mptr, sid, flag, mask)                           \
     {                                                                     \
-        gDma1p((pkt), G_RDPHALF_0, (flag), (u32)(mptr) & 0xffff, (sid));  \
+        gDma1p((pkt), G_RDPHALF_0, (flag), (u32)(mptr)&0xffff, (sid));    \
         gDma1p((pkt), G_SELECT_DL, (mask), (u32)(mptr) >> 16, G_DL_PUSH); \
     }
 #define gsSPSelectDL(mptr, sid, flag, mask)                         \
     {                                                               \
-        gsDma1p(G_RDPHALF_0, (flag), (u32)(mptr) & 0xffff, (sid));  \
+        gsDma1p(G_RDPHALF_0, (flag), (u32)(mptr)&0xffff, (sid));    \
         gsDma1p(G_SELECT_DL, (mask), (u32)(mptr) >> 16, G_DL_PUSH); \
     }
 #define gSPSelectBranchDL(pkt, mptr, sid, flag, mask)                       \
     {                                                                       \
-        gDma1p((pkt), G_RDPHALF_0, (flag), (u32)(mptr) & 0xffff, (sid));    \
+        gDma1p((pkt), G_RDPHALF_0, (flag), (u32)(mptr)&0xffff, (sid));      \
         gDma1p((pkt), G_SELECT_DL, (mask), (u32)(mptr) >> 16, G_DL_NOPUSH); \
     }
 #define gsSPSelectBranchDL(mptr, sid, flag, mask)                     \
     {                                                                 \
-        gsDma1p(G_RDPHALF_0, (flag), (u32)(mptr) & 0xffff, (sid));    \
+        gsDma1p(G_RDPHALF_0, (flag), (u32)(mptr)&0xffff, (sid));      \
         gsDma1p(G_SELECT_DL, (mask), (u32)(mptr) >> 16, G_DL_NOPUSH); \
     }
 
