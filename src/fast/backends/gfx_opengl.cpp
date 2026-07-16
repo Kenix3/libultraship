@@ -752,7 +752,8 @@ void GfxRenderingAPIOGL::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t wi
 }
 
 #ifdef USE_OPENGLES
-#define GL_MIRROR_CLAMP_TO_EDGE 0x8743
+// 0x8743 is INVALID_ENUM on ES3/WebGL2; mirrored repeat is the closest valid mode
+#define GL_MIRROR_CLAMP_TO_EDGE GL_MIRRORED_REPEAT
 #endif
 
 static uint32_t gfx_cm_to_opengl(uint32_t val) {
