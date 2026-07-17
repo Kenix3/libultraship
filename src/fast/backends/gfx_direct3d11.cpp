@@ -740,7 +740,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         depth_stencil_desc.DepthFunc =
             mCurrentDepthTest
                 ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? D3D11_COMPARISON_EQUAL : D3D11_COMPARISON_LESS_EQUAL)
-                                      : D3D11_COMPARISON_LESS)
+                                      : D3D11_COMPARISON_LESS_EQUAL)
                 : D3D11_COMPARISON_ALWAYS;
         depth_stencil_desc.StencilEnable = false;
 

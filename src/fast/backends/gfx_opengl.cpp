@@ -865,7 +865,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
             glEnable(GL_DEPTH_TEST);
             glDepthMask(mLastDepthMask ? GL_TRUE : GL_FALSE);
             glDepthFunc(mCurrentDepthTest
-                            ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? GL_EQUAL : GL_LEQUAL) : GL_LESS)
+                            ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? GL_EQUAL : GL_LEQUAL) : GL_LEQUAL)
                             : GL_ALWAYS);
         } else {
             glDisable(GL_DEPTH_TEST);

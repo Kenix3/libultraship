@@ -21,6 +21,7 @@ class ResourceManager;
 
 /** @brief Number of rotating vertex buffers kept to reduce CPU/GPU sync stalls. */
 static constexpr size_t kMaxVertexBufferPoolSize = 3;
+static constexpr size_t kVertexBufferBaseSize = 256 * 32 * 3 * sizeof(float) * 50;
 /** @brief Maximum multisample count supported by this Metal backend implementation. */
 static constexpr size_t METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
 /** @brief Maximum number of pixel-depth coordinates queried in a single pass. */
@@ -247,6 +248,9 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
 
     int mCurrentVertexBufferPoolIndex = 0;
     MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize];
+    size_t mVertexBufferCapacity[kMaxVertexBufferPoolSize];
+    size_t mVertexBufferPeakThisFrame = 0;
+    size_t mVertexBufferPeakLastFrame = 0;
     std::unordered_map<std::pair<uint64_t, uint64_t>, struct ShaderProgramMetal, hash_pair_shader_ids>
         mShaderProgramPool;
 
