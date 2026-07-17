@@ -490,16 +490,21 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
 
-            char* str = (char*)malloc(fName.size() + 1);
-            dl->Strings.push_back(str);
-            strcpy((char*)str, fName.data());
+            if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
+                uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
+                g = {gsSPVertex(seg | 1, child->IntAttribute("Count"), child->IntAttribute("VertexOffset"))};
+            } else {
+                char* str = (char*)malloc(fName.size() + 1);
+                dl->Strings.push_back(str);
+                strcpy((char*)str, fName.data());
 
-            g = GsSpVertexOtR2P1(str);
+                g = GsSpVertexOtR2P1(str);
 
-            dl->Instructions.push_back(g);
+                dl->Instructions.push_back(g);
 
-            g = GsSpVertexOtR2P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
-                                 child->IntAttribute("VertexOffset"));
+                g = GsSpVertexOtR2P2(child->IntAttribute("Count"), child->IntAttribute("VertexBufferIndex"),
+                                     child->IntAttribute("VertexOffset"));
+            }
         } else if (childName == "SetTextureImage") {
             std::string fName = child->Attribute("Path");
             // fName = ">" + fName;
