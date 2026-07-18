@@ -229,6 +229,7 @@ struct LoadedVertex {
 
 struct RawTexMetadata {
     uint16_t width, height;
+    uint16_t orig_width = 0, orig_height = 0; // replaced texture's dims (hi-res packs); 0 = n/a
     float h_byte_scale = 1, v_pixel_scale = 1;
     std::shared_ptr<Fast::Texture> resource;
     Fast::TextureType type;
@@ -304,6 +305,11 @@ struct RDP {
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
     } texture_tile[8];
     bool textures_changed[2];
+    // True while a framebuffer (SelectTextureFb) is the active texture source.
+    // FB binds bypass the settimg/load metadata path, so loaded_texture[] still
+    // describes the previously loaded texture — consumers of that metadata
+    // (e.g. hi-res replacement UV normalization) must not apply it to FB draws.
+    bool fb_texture_selected = false;
 
     uint8_t first_tile_index;
 

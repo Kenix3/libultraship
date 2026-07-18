@@ -32,6 +32,11 @@ class Texture final : public Ship::Resource<uint8_t> {
 
     TextureType Type;
     uint16_t Width, Height;
+    // Dimensions of the texture this one replaces (hi-res texture packs):
+    // 0 = not a replacement / same as Width/Height. Used to normalize UVs in
+    // the original texture's texel space so tile clamp-overhang doesn't crop
+    // the replacement art.
+    uint16_t OrigWidth = 0, OrigHeight = 0;
     uint32_t Flags = 0;
     float HByteScale = 1.0;
     float VPixelScale = 1.0;
