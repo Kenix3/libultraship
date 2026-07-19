@@ -740,7 +740,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
     mGuiTextures[name] = asset;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, std::string& palettePath, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath, const ImVec4& tint) {
     const auto res = static_cast<Fast::Texture*>(
         Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true).get());
 
