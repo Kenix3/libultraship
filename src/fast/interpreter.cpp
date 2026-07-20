@@ -115,6 +115,12 @@ constexpr size_t MAX_TRI_BUFFER = 256;
 Interpreter::Interpreter() {
     mRsp = new RSP();
     mRdp = new RDP();
+    // TMEM's palette area always exists: an un-loaded half is stale data, not
+    // an error. Point both halves at the (zeroed) staging arrays permanently
+    // so partial TLUT loads - normal N64 practice - decode with transparent
+    // black for never-loaded entries instead of aborting the entire upload.
+    mRdp->palettes[0] = mRdp->palette_staging[0];
+    mRdp->palettes[1] = mRdp->palette_staging[1];
     mBufVbo = new float[MAX_TRI_BUFFER * (32 * 3)];
 }
 
@@ -999,10 +1005,6 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
 
     const uint8_t* palette;
 
-    if (mRdp->palettes[palIdx / 8] == nullptr) {
-        SPDLOG_WARN("CI4: null palette slot {} for palIdx={}", palIdx / 8, palIdx);
-        return;
-    }
     palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
     uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
@@ -1089,12 +1091,6 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
-
-    if (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr) {
-        SPDLOG_WARN("CI8: null palette (pal0={}, pal1={})", static_cast<const void*>(mRdp->palettes[0]),
-                    static_cast<const void*>(mRdp->palettes[1]));
-        return;
-    }
 
     for (uint32_t i = 0, j = 0; i < sizeBytes; j += fullImageLineSizeBytes - lineSizeBytes) {
         for (uint32_t k = 0; k < lineSizeBytes; i++, k++, j++) {
