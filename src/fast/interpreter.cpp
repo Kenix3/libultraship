@@ -540,6 +540,25 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
     }
 }
 
+// Remove the cache entry currently bound to shader slot i. Used when an import
+// bails after TextureCacheLookup already inserted the entry and bound its id:
+// leaving it in the map would make every later lookup of that key bind a
+// texture that never received pixel data.
+void Interpreter::TextureCacheEraseCurrent(int i) {
+    TextureCacheNode* node = mRenderingState.mTextures[i];
+    if (node == nullptr) {
+        return;
+    }
+    mTextureCache.lru.erase(node->second.lru_location);
+    mTextureCache.free_texture_ids.push_back(node->second.texture_id);
+    for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+        if (mRenderingState.mTextures[j] == node) {
+            mRenderingState.mTextures[j] = nullptr;
+        }
+    }
+    mTextureCache.map.erase(node->first);
+}
+
 // Pick the per-line byte width for texture decode. Prefer the DRAM stride from
 // loaded_texture when it looks like real per-line info (differs from total size).
 // Fall back to the TMEM tile stride when loaded sizes match total (LoadBlock with
@@ -552,7 +571,7 @@ static uint32_t GetEffectiveLineSize(uint32_t lineSizeBytes, uint32_t fullImageL
     return tileLineSizeBytes;
 }
 
-void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -562,7 +581,7 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureRgba16: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -619,9 +638,10 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -631,7 +651,7 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureRgba32: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -679,9 +699,10 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
         }
     }
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -691,7 +712,7 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureIA4: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -725,9 +746,10 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -737,7 +759,7 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureIA8: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -768,9 +790,10 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -780,7 +803,7 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureIA16: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t size_bytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -819,9 +842,10 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureI4(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -831,7 +855,7 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureI4: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -872,9 +896,10 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureI8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -884,7 +909,7 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureI8: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -913,9 +938,10 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t fullImageLineSizeBytes =
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
@@ -927,7 +953,7 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureCi4: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -991,9 +1017,10 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -1003,7 +1030,7 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureCi8: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint32_t sizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].size_bytes;
@@ -1055,9 +1082,10 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureImg(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -1067,15 +1095,16 @@ void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureImg: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint16_t width = metadata->width;
     uint16_t height = metadata->height;
     mRapi->UploadTexture(addr, width, height);
+    return true;
 }
 
-void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
+bool Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
         importReplacement && (metadata->resource != nullptr)
@@ -1085,7 +1114,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
 
     if (addr == nullptr) {
         SPDLOG_ERROR("ImportTextureRaw: null texture address for tile {}", tile);
-        return;
+        return false;
     }
 
     uint16_t width = metadata->width;
@@ -1096,11 +1125,9 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     // if texture type is CI4 or CI8 we need to apply tlut to it
     switch (type) {
         case Fast::TextureType::Palette4bpp:
-            ImportTextureCi4(tile, importReplacement);
-            return;
+            return ImportTextureCi4(tile, importReplacement);
         case Fast::TextureType::Palette8bpp:
-            ImportTextureCi8(tile, importReplacement);
-            return;
+            return ImportTextureCi8(tile, importReplacement);
         default:
             break;
     }
@@ -1121,7 +1148,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     if (resultNewLineSize == 4 * width && resultNewHeight == height) {
         // Can use the texture directly since it has the correct dimensions
         mRapi->UploadTexture(addr, width, height);
-        return;
+        return true;
     }
 
     uint32_t fullImageLineSizeBytes =
@@ -1154,6 +1181,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     }
 
     mRapi->UploadTexture(mTexUploadBuffer, resultNewLineSize / 4, resultNewHeight);
+    return true;
 }
 
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
@@ -1225,78 +1253,81 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         return;
     }
 
+    // From here on a cache entry for this key exists and is bound to slot i.
+    // Any path that fails to upload pixel data must erase that entry again,
+    // or every later lookup of this key will bind a texture that was never
+    // filled: black at best, a stale foreign image once the id is recycled.
+    bool uploaded = false;
+
     // Guard against zero-sized textures that would cause divide-by-zero
     // or GPU API errors in UploadTexture.
-    if (mRdp->texture_tile[tile].line_size_bytes == 0 || mRdp->loaded_texture[tmemIdex].size_bytes == 0 ||
-        origAddr == nullptr) {
-        return;
+    if (mRdp->texture_tile[tile].line_size_bytes != 0 && mRdp->loaded_texture[tmemIdex].size_bytes != 0 &&
+        origAddr != nullptr) {
+        if ((texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
+            uploaded = ImportTextureImg(tile, importReplacement);
+        } else if ((texFlags & TEX_FLAG_LOAD_AS_RAW) != 0) {
+            // if load as raw is set then we load_raw();
+            uploaded = ImportTextureRaw(tile, importReplacement);
+        } else {
+            switch (fmt) {
+                case G_IM_FMT_RGBA:
+                    if (siz == G_IM_SIZ_16b) {
+                        uploaded = ImportTextureRgba16(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_32b) {
+                        uploaded = ImportTextureRgba32(tile, importReplacement);
+                    } else {
+                        SPDLOG_ERROR("RGBA Texture that isn't 16 or 32 bit. Size = {}", siz);
+                        // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be
+                        // something F3D does not have supported. Further investigation is needed.
+                    }
+                    break;
+                case G_IM_FMT_IA:
+                    if (siz == G_IM_SIZ_4b) {
+                        uploaded = ImportTextureIA4(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_8b) {
+                        uploaded = ImportTextureIA8(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_16b) {
+                        uploaded = ImportTextureIA16(tile, importReplacement);
+                    } else {
+                        SPDLOG_ERROR("IA Texture that isn't 4, 8, or 16 bit. Size = {}", siz);
+                    }
+                    break;
+                case G_IM_FMT_CI:
+                    if (siz == G_IM_SIZ_4b) {
+                        uploaded = ImportTextureCi4(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_8b) {
+                        uploaded = ImportTextureCi8(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_16b) {
+                        // CI+16b is hardware-invalid on N64. The tile's fmt is likely
+                        // stale from a prior draw. Decode as RGBA16 instead.
+                        uploaded = ImportTextureRgba16(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_32b) {
+                        uploaded = ImportTextureRgba32(tile, importReplacement);
+                    } else {
+                        SPDLOG_ERROR("CI Texture with unexpected size = {}", siz);
+                    }
+                    break;
+                case G_IM_FMT_I:
+                    if (siz == G_IM_SIZ_4b) {
+                        uploaded = ImportTextureI4(tile, importReplacement);
+                    } else if (siz == G_IM_SIZ_8b) {
+                        uploaded = ImportTextureI8(tile, importReplacement);
+                    } else {
+                        SPDLOG_ERROR("I Texture that isn't 4 or 8 bit. Size = {}", siz);
+                    }
+                    break;
+                case G_IM_FMT_YUV:
+                    SPDLOG_ERROR("YUV Textures not supported");
+                    break;
+                default:
+                    SPDLOG_ERROR("Invalid texture format. Fmt = {}", fmt);
+                    break;
+            }
+        }
     }
 
-    if ((texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
-        ImportTextureImg(tile, importReplacement);
-        return;
-    }
-
-    // if load as raw is set then we load_raw();
-    if ((texFlags & TEX_FLAG_LOAD_AS_RAW) != 0) {
-        ImportTextureRaw(tile, importReplacement);
-        return;
-    }
-
-    switch (fmt) {
-        case G_IM_FMT_RGBA:
-            if (siz == G_IM_SIZ_16b) {
-                ImportTextureRgba16(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_32b) {
-                ImportTextureRgba32(tile, importReplacement);
-            } else {
-                SPDLOG_ERROR("RGBA Texture that isn't 16 or 32 bit. Size = {}", siz);
-                // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be
-                // something F3D does not have supported. Further investigation is needed.
-            }
-            break;
-        case G_IM_FMT_IA:
-            if (siz == G_IM_SIZ_4b) {
-                ImportTextureIA4(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_8b) {
-                ImportTextureIA8(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_16b) {
-                ImportTextureIA16(tile, importReplacement);
-            } else {
-                SPDLOG_ERROR("IA Texture that isn't 4, 8, or 16 bit. Size = {}", siz);
-                ;
-            }
-            break;
-        case G_IM_FMT_CI:
-            if (siz == G_IM_SIZ_4b) {
-                ImportTextureCi4(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_8b) {
-                ImportTextureCi8(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_16b) {
-                // CI+16b is hardware-invalid on N64. The tile's fmt is likely
-                // stale from a prior draw. Decode as RGBA16 instead.
-                ImportTextureRgba16(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_32b) {
-                ImportTextureRgba32(tile, importReplacement);
-            } else {
-                SPDLOG_ERROR("CI Texture with unexpected size = {}", siz);
-            }
-            break;
-        case G_IM_FMT_I:
-            if (siz == G_IM_SIZ_4b) {
-                ImportTextureI4(tile, importReplacement);
-            } else if (siz == G_IM_SIZ_8b) {
-                ImportTextureI8(tile, importReplacement);
-            } else {
-                SPDLOG_ERROR("I Texture that isn't 4 or 8 bit. Size = {}", siz);
-            }
-            break;
-        case G_IM_FMT_YUV:
-            SPDLOG_ERROR("YUV Textures not supported");
-            break;
-        default:
-            SPDLOG_ERROR("Invalid texture format. Fmt = {}", fmt);
-            break;
+    if (!uploaded) {
+        TextureCacheEraseCurrent(i);
     }
 }
 
