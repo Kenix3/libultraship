@@ -13,6 +13,7 @@
 #include <dxgi1_3.h>
 #include <dxgi1_4.h>
 #include <dxgi1_5.h>
+#include <shellapi.h>
 #include <versionhelpers.h>
 
 #include <shellscalingapi.h>

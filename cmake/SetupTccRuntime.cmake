@@ -44,6 +44,14 @@ function(lus_setup_tcc_runtime TARGET_NAME)
     #  Windows (MSVC)                                                      #
     # ------------------------------------------------------------------ #
     if(MSVC)
+        # Ensure libtcc is built before POST_BUILD steps that stage/copy tcc.dll.
+        if(TARGET libtcc)
+            add_dependencies(${TARGET_NAME} libtcc)
+        endif()
+        if(TARGET libtcc1)
+            add_dependencies(${TARGET_NAME} libtcc1)
+        endif()
+
         # Bundle all generated .lib files so mods can link against the host.
         add_custom_command(
             TARGET ${TARGET_NAME} POST_BUILD
@@ -58,7 +66,7 @@ function(lus_setup_tcc_runtime TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${_stage}/include/"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${tinycc_SOURCE_DIR}/include/"        "${_stage}/include/"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${tinycc_SOURCE_DIR}/win32/include/"  "${_stage}/include/"
-            COMMAND ${CMAKE_COMMAND} -E copy "${tinycc_SOURCE_DIR}/win32/lib/libtcc1.a" "${_stage}/lib/libtcc1.a"
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libtcc1>" "${_stage}/lib/$<TARGET_FILE_NAME:libtcc1>"
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libtcc>" "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_NAME:libtcc>"
             VERBATIM
         )
@@ -70,14 +78,18 @@ function(lus_setup_tcc_runtime TARGET_NAME)
 
         # Generate a .def so mods can resolve host symbols at TCC link time.
         # Uses the pre-built bootstrapping tcc.exe that ships with TCC source.
-        add_custom_command(
-            TARGET ${TARGET_NAME} POST_BUILD
-            COMMENT "Generating ${TARGET_NAME}.def for mod linking..."
-            COMMAND "${tinycc_SOURCE_DIR}/win32/tcc.exe"
-                    -impdef "$<TARGET_FILE:${TARGET_NAME}>"
-                    -o "${_stage}/lib/${TARGET_NAME}.def"
-            VERBATIM
-        )
+        if(EXISTS "${tinycc_SOURCE_DIR}/win32/tcc.exe")
+            add_custom_command(
+                TARGET ${TARGET_NAME} POST_BUILD
+                COMMENT "Generating ${TARGET_NAME}.def for mod linking..."
+                COMMAND "${tinycc_SOURCE_DIR}/win32/tcc.exe"
+                        -impdef "$<TARGET_FILE:${TARGET_NAME}>"
+                        -o "${_stage}/lib/${TARGET_NAME}.def"
+                VERBATIM
+            )
+        else()
+            message(WARNING "lus_setup_tcc_runtime: ${tinycc_SOURCE_DIR}/win32/tcc.exe not found; skipping ${TARGET_NAME}.def generation")
+        endif()
 
         # Install from source — never depends on staging having run.
         install(DIRECTORY "${tinycc_SOURCE_DIR}/include/"
@@ -88,7 +100,7 @@ function(lus_setup_tcc_runtime TARGET_NAME)
             DESTINATION "${LUS_TCC_RESOURCES_DIR}/include"
             COMPONENT ${TARGET_NAME}
         )
-        install(FILES "${tinycc_SOURCE_DIR}/win32/lib/libtcc1.a"
+        install(FILES "$<TARGET_FILE:libtcc1>"
             DESTINATION "${LUS_TCC_RESOURCES_DIR}/lib"
             COMPONENT ${TARGET_NAME}
         )
