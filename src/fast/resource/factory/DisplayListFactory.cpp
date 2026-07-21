@@ -336,6 +336,18 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 dl->Strings.push_back(str);
                 strcpy((char*)g.words.w1, fName.data());
             }
+        } else if (childName == "PopMatrix") {
+            std::string param = child->Attribute("Param");
+
+            uint8_t paramInt = 0;
+
+            if (param == "G_MTX_MODELVIEW") {
+                paramInt = G_MTX_MODELVIEW;
+            } else if (param == "G_MTX_PROJECTION") {
+                paramInt = G_MTX_PROJECTION;
+            }
+
+            g = gsSPPopMatrix(paramInt);
         } else if (childName == "SetCycleType") {
             uint32_t param = 0;
 
