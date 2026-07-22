@@ -86,7 +86,8 @@ class Fast3dGui : public Ship::Gui {
      * @param path Virtual resource path of the source image.
      * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
      */
-    void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
+    void LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath = "",
+                        const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     /**
      * @brief Returns true if a texture with the given name is already cached.
@@ -100,7 +101,8 @@ class Fast3dGui : public Ship::Gui {
      * @param tex  Source texture data.
      * @param tint RGBA tint.
      */
-    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
+    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const std::string& palettePath = "",
+                        const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     /**
      * @brief Removes the texture with the given name from the cache and frees GPU resources.
