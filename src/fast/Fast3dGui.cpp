@@ -575,7 +575,7 @@ void Fast3dGui::LoadTextureFromResource(const std::string& name, std::shared_ptr
     mGuiTextures[name] = texture->Metadata;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const std::string& palettePath, const ImVec4 & tint) {
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
@@ -583,7 +583,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
     // For HD textures we need to load the buffer raw (similar to inside gfx_pp)
     if ((res.Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
         // Raw loading doesn't support TLUT textures
-        if (res.Type == Fast::TextureType::Palette4bpp || res.Type == Fast::TextureType::Palette8bpp) {
+        if (res.Type == Fast::TextureType::Palette8bpp) {
             // TODO convert other image types
             SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupported image type");
             return;
@@ -607,6 +607,50 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                     texBuffer.push_back(g);
                     texBuffer.push_back(b);
                     texBuffer.push_back(a);
+                }
+                break;
+            }
+            case Fast::TextureType::Palette4bpp: {
+                if (palettePath.empty()) {
+                    SPDLOG_WARN("ImGui::ResourceLoad: Palette4bpp requires a palette path for asset: {}", name);
+                    return;
+                }
+
+                auto paletteRes = std::static_pointer_cast<Fast::Texture>(
+                    Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(palettePath)
+                );
+
+                if (!paletteRes || !paletteRes->ImageData) {
+                    SPDLOG_WARN("ImGui::ResourceLoad: Failed to load palette asset from path: {}", palettePath);
+                    return;
+                }
+
+                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
+                    uint8_t b = res.ImageData[i / 2];
+
+                    uint8_t idx1 = b >> 4;
+                    uint8_t p1_b1 = paletteRes->ImageData[idx1 * 2 + 0];
+                    uint8_t p1_b2 = paletteRes->ImageData[idx1 * 2 + 1];
+                    uint8_t r1 = (p1_b1 >> 3) * 0xFF / 0x1F;
+                    uint8_t g1 = (((p1_b1 & 7) << 2) | (p1_b2 >> 6)) * 0xFF / 0x1F;
+                    uint8_t b1 = ((p1_b2 >> 1) & 0x1F) * 0xFF / 0x1F;
+                    uint8_t a1 = 0xFF * (p1_b2 & 1);
+                    texBuffer.push_back(r1);
+                    texBuffer.push_back(g1);
+                    texBuffer.push_back(b1);
+                    texBuffer.push_back(a1);
+
+                    uint8_t idx2 = b & 0xF;
+                    uint8_t p2_b1 = paletteRes->ImageData[idx2 * 2 + 0];
+                    uint8_t p2_b2 = paletteRes->ImageData[idx2 * 2 + 1];
+                    uint8_t r2 = (p2_b1 >> 3) * 0xFF / 0x1F;
+                    uint8_t g2 = (((p2_b1 & 7) << 2) | (p2_b2 >> 6)) * 0xFF / 0x1F;
+                    uint8_t b2 = ((p2_b2 >> 1) & 0x1F) * 0xFF / 0x1F;
+                    uint8_t a2 = 0xFF * (p2_b2 & 1);
+                    texBuffer.push_back(r2);
+                    texBuffer.push_back(g2);
+                    texBuffer.push_back(b2);
+                    texBuffer.push_back(a2);
                 }
                 break;
             }
@@ -709,11 +753,11 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
     mGuiTextures[name] = asset;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath, const ImVec4& tint) {
     const auto res = static_cast<Fast::Texture*>(
         Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true).get());
 
-    LoadGuiTexture(name, *res, tint);
+    LoadGuiTexture(name, *res, palettePath, tint);
 }
 
 void Fast3dGui::UnloadTexture(const std::string& name) {
