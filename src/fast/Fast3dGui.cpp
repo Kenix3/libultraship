@@ -575,7 +575,8 @@ void Fast3dGui::LoadTextureFromResource(const std::string& name, std::shared_ptr
     mGuiTextures[name] = texture->Metadata;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const std::string& palettePath, const ImVec4 & tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const std::string& palettePath,
+                               const ImVec4& tint) {
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(res.Width * res.Height * 4);
@@ -752,7 +753,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
     mGuiTextures[name] = asset;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath,
+                               const ImVec4& tint) {
     const auto res = static_cast<Fast::Texture*>(
         Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true).get());
 
