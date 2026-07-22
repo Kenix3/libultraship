@@ -617,8 +617,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 }
 
                 auto paletteRes = std::static_pointer_cast<Fast::Texture>(
-                    Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(palettePath)
-                );
+                    Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(palettePath));
 
                 if (!paletteRes || !paletteRes->ImageData) {
                     SPDLOG_WARN("ImGui::ResourceLoad: Failed to load palette asset from path: {}", palettePath);
