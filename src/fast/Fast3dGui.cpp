@@ -76,7 +76,18 @@ bool Fast3dGui::SupportsViewports() {
 }
 
 void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
+    if (!mWindow) {
+        auto context = GetContext();
+        if (context) {
+            mWindow = context->GetChildren().GetFirst<Ship::Window>();
+        }
+    }
+
     auto window = mWindow;
+    if (!window || !window->IsInitialized() || window->GetWindowBackend() <= 0 || ImGui::GetCurrentContext() == nullptr) {
+        return;
+    }
+
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
