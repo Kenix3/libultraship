@@ -84,7 +84,8 @@ void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
     }
 
     auto window = mWindow;
-    if (!window || !window->IsInitialized() || window->GetWindowBackend() <= 0 || ImGui::GetCurrentContext() == nullptr) {
+    if (!window || !window->IsInitialized() || window->GetWindowBackend() <= 0 ||
+        ImGui::GetCurrentContext() == nullptr) {
         return;
     }
 

@@ -42,7 +42,7 @@ void Window::OnInit(const nlohmann::json& initArgs) {
     Component::OnInit(initArgs);
     // Mark the window as initialized before adding GUI to prevent access during GUI initialization
     MarkInitialized();
-    
+
     if (mGui != nullptr && !GetChildren().Has(mGui)) {
         GetChildren().Add(mGui);
     }
