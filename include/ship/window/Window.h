@@ -211,6 +211,15 @@ class Window {
      * override this to return backend-specific names such as "OpenGL", "Metal", or "DirectX 11".
      */
     virtual std::string GetWindowBackendName();
+    /**
+     * @brief Resolves a backend name (as produced by GetWindowBackendName) back to its ID.
+     * Subclasses that override GetWindowBackendName should override this with the reverse
+     * mapping. Used to recover saved configs when backend IDs are renumbered between
+     * versions: the stored name identifies the backend even when the stored ID has gone
+     * stale. Returns -1 when the name is unknown.
+     * @param name Backend name to resolve.
+     */
+    virtual int32_t GetWindowBackendIdByName(const std::string& name);
     /** @brief Returns the list of backends available on this platform. */
     std::shared_ptr<std::vector<int32_t>> GetAvailableWindowBackends();
     /**

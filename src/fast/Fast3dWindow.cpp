@@ -406,6 +406,19 @@ std::string Fast3dWindow::GetWindowBackendName() {
     }
 }
 
+int32_t Fast3dWindow::GetWindowBackendIdByName(const std::string& name) {
+    if (name == "DirectX 11") {
+        return WindowBackend::FAST3D_DXGI_DX11;
+    }
+    if (name == "OpenGL") {
+        return WindowBackend::FAST3D_SDL_OPENGL;
+    }
+    if (name == "Metal") {
+        return WindowBackend::FAST3D_SDL_METAL;
+    }
+    return -1;
+}
+
 void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
     SetCurrentDimensions(width, height, GetPosX(), GetPosY());
 }

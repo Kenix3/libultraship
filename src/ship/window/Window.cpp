@@ -133,6 +133,24 @@ void Window::AddAvailableWindowBackend(int32_t backend) {
 
 int32_t Window::GetSavedWindowBackend() {
     auto backendId = mConfig->GetInt("Window.Backend.Id", -1);
+
+    // The saved name identifies the backend even when saved IDs go stale
+    // (backend IDs were renumbered once already, silently switching existing
+    // configs to a different renderer). When the name resolves to an
+    // available backend, trust it over the ID and heal the config.
+    auto backendName = mConfig->GetString("Window.Backend.Name", "");
+    if (!backendName.empty()) {
+        auto backendIdFromName = GetWindowBackendIdByName(backendName);
+        if (backendIdFromName != -1 && IsAvailableWindowBackend(backendIdFromName)) {
+            if (backendIdFromName != backendId) {
+                SPDLOG_INFO("Saved WindowBackend id ({}) does not match saved name \"{}\"; migrating config to id {}.",
+                            backendId, backendName, backendIdFromName);
+                mConfig->SetInt("Window.Backend.Id", backendIdFromName);
+            }
+            return backendIdFromName;
+        }
+    }
+
     if (IsAvailableWindowBackend(backendId)) {
         return backendId;
     }
@@ -149,5 +167,9 @@ int32_t Window::GetSavedWindowBackend() {
 
 std::string Window::GetWindowBackendName() {
     return "";
+}
+
+int32_t Window::GetWindowBackendIdByName(const std::string& name) {
+    return -1;
 }
 } // namespace Ship
