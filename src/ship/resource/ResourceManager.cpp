@@ -76,7 +76,11 @@ void ResourceManager::OnInit(const nlohmann::json& initArgs) {
 }
 
 ResourceManager::~ResourceManager() {
-    SPDLOG_INFO("destruct ResourceManager");
+    // Guard against logging after the Logger component (and spdlog) has shut down
+    // during Context teardown.
+    if (spdlog::default_logger()) {
+        SPDLOG_INFO("destruct ResourceManager");
+    }
 }
 
 std::shared_ptr<File> ResourceManager::LoadFileProcess(const std::string& filePath) {

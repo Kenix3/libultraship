@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <atomic>
 #include <queue>
 #include <unordered_set>
 #include <nlohmann/json.hpp>
@@ -187,8 +188,16 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     std::shared_ptr<T> RequireDependency(const std::shared_ptr<T>& dependency, const std::string& dependencyName) const;
 
   private:
+    /**
+     * @brief Recursion helper for ToTreeString that guards against cycles.
+     * @param depth   Indentation depth.
+     * @param visited Set of already-visited component ids to avoid infinite
+     *                recursion when the child graph contains a cycle.
+     */
+    std::string ToTreeStringImpl(int depth, std::unordered_set<uint64_t>& visited) const;
+
     std::string mName;
-    bool mIsInitialized = false;
+    std::atomic<bool> mIsInitialized{false};
     ComponentList mParents;
     ComponentList mChildren;
 };
@@ -199,14 +208,28 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 // so the search is not limited to any particular depth.
 
 template <typename T> bool Component::HasInChildren() const {
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    // Seed the queue with this component's direct children. The root itself is
+    // handled here (rather than enqueued) so we never require it to be owned by
+    // a shared_ptr.
+    auto seed = GetChildren().Get();
+    for (const auto& child : *seed) {
+        if (visited.insert(child->GetId()).second) {
+            if (std::dynamic_pointer_cast<T>(child)) {
+                return true;
+            }
+            queue.push(child);
+        }
+    }
 
     // BFS: process every node, enqueue its children so we reach all depths.
+    // The queue owns a shared_ptr to each node, so nodes stay alive even if a
+    // concurrent Remove drops the last owning reference held by a parent list.
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentChildren = current->GetChildren().Get();
@@ -215,7 +238,7 @@ template <typename T> bool Component::HasInChildren() const {
                 if (std::dynamic_pointer_cast<T>(child)) {
                     return true;
                 }
-                queue.push(child.get());
+                queue.push(child);
             }
         }
     }
@@ -241,13 +264,23 @@ std::shared_ptr<T> Component::RequireDependency(const std::shared_ptr<T>& depend
 }
 
 template <typename T> std::shared_ptr<T> Component::GetFirstInChildren() const {
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    auto seed = GetChildren().Get();
+    for (const auto& child : *seed) {
+        if (visited.insert(child->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(child);
+            if (typed) {
+                return typed;
+            }
+            queue.push(child);
+        }
+    }
 
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentChildren = current->GetChildren().Get();
@@ -257,7 +290,7 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInChildren() const {
                 if (typed) {
                     return typed;
                 }
-                queue.push(child.get());
+                queue.push(child);
             }
         }
     }
@@ -266,13 +299,23 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInChildren() const {
 
 template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component::GetInChildren() const {
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    auto seed = GetChildren().Get();
+    for (const auto& child : *seed) {
+        if (visited.insert(child->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(child);
+            if (typed) {
+                result->push_back(typed);
+            }
+            queue.push(child);
+        }
+    }
 
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentChildren = current->GetChildren().Get();
@@ -282,7 +325,7 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
                 if (typed) {
                     result->push_back(typed);
                 }
-                queue.push(child.get());
+                queue.push(child);
             }
         }
     }
@@ -293,13 +336,22 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 // Mirror of the InChildren methods, but traversing upward through parents.
 
 template <typename T> bool Component::HasInParents() const {
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    auto seed = GetParents().Get();
+    for (const auto& parent : *seed) {
+        if (visited.insert(parent->GetId()).second) {
+            if (std::dynamic_pointer_cast<T>(parent)) {
+                return true;
+            }
+            queue.push(parent);
+        }
+    }
 
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentParents = current->GetParents().Get();
@@ -308,7 +360,7 @@ template <typename T> bool Component::HasInParents() const {
                 if (std::dynamic_pointer_cast<T>(parent)) {
                     return true;
                 }
-                queue.push(parent.get());
+                queue.push(parent);
             }
         }
     }
@@ -316,13 +368,23 @@ template <typename T> bool Component::HasInParents() const {
 }
 
 template <typename T> std::shared_ptr<T> Component::GetFirstInParents() const {
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    auto seed = GetParents().Get();
+    for (const auto& parent : *seed) {
+        if (visited.insert(parent->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(parent);
+            if (typed) {
+                return typed;
+            }
+            queue.push(parent);
+        }
+    }
 
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentParents = current->GetParents().Get();
@@ -332,7 +394,7 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInParents() const {
                 if (typed) {
                     return typed;
                 }
-                queue.push(parent.get());
+                queue.push(parent);
             }
         }
     }
@@ -341,13 +403,23 @@ template <typename T> std::shared_ptr<T> Component::GetFirstInParents() const {
 
 template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component::GetInParents() const {
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
-    std::queue<const Component*> queue;
+    std::queue<std::shared_ptr<const Component>> queue;
     std::unordered_set<uint64_t> visited;
     visited.insert(GetId());
-    queue.push(this);
+
+    auto seed = GetParents().Get();
+    for (const auto& parent : *seed) {
+        if (visited.insert(parent->GetId()).second) {
+            auto typed = std::dynamic_pointer_cast<T>(parent);
+            if (typed) {
+                result->push_back(typed);
+            }
+            queue.push(parent);
+        }
+    }
 
     while (!queue.empty()) {
-        const Component* current = queue.front();
+        auto current = queue.front();
         queue.pop();
 
         auto currentParents = current->GetParents().Get();
@@ -357,7 +429,7 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
                 if (typed) {
                     result->push_back(typed);
                 }
-                queue.push(parent.get());
+                queue.push(parent);
             }
         }
     }

@@ -24,6 +24,13 @@ class TickableList : public PartList<TickableComponent> {
      * @return A reference to this for chaining.
      */
     TickableList& Sort();
+
+  protected:
+    /**
+     * @brief Re-sorts the list after a component is added so that TickGroup /
+     *        TickPriority ordering is honored during iteration.
+     */
+    void Added(std::shared_ptr<TickableComponent> part, const bool forced) override;
 };
 
 inline TickableList& TickableList::Sort() {
@@ -36,6 +43,10 @@ inline TickableList& TickableList::Sort() {
                          return a->GetOrder() < b->GetOrder();
                      });
     return *this;
+}
+
+inline void TickableList::Added(std::shared_ptr<TickableComponent> /*part*/, const bool /*forced*/) {
+    Sort();
 }
 
 } // namespace Ship

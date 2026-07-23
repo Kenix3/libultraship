@@ -30,11 +30,20 @@ std::string Component::ToString() const {
 }
 
 std::string Component::ToTreeString(int depth) const {
+    std::unordered_set<uint64_t> visited;
+    return ToTreeStringImpl(depth, visited);
+}
+
+std::string Component::ToTreeStringImpl(int depth, std::unordered_set<uint64_t>& visited) const {
     std::string indent(depth * 2, ' ');
     std::string result = indent + GetName() + "\n";
+    // Guard against cycles in the child graph to avoid unbounded recursion.
+    if (!visited.insert(GetId()).second) {
+        return result;
+    }
     auto children = mChildren.Get();
     for (const auto& child : *children) {
-        result += child->ToTreeString(depth + 1);
+        result += child->ToTreeStringImpl(depth + 1, visited);
     }
     return result;
 }

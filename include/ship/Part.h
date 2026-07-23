@@ -3,6 +3,9 @@
 #include <atomic>
 #include <memory>
 #include <stdint.h>
+#ifdef COMPONENT_THREAD_SAFE
+#include <mutex>
+#endif
 
 namespace Ship {
 
@@ -86,6 +89,11 @@ class Part {
     static std::atomic<uint64_t> sNextPartId;
     uint64_t mId;
     std::weak_ptr<Context> mContext;
+#ifdef COMPONENT_THREAD_SAFE
+    // Guards mContext, which can be written by SetContext (during context
+    // propagation on Add) while other threads read it via GetContext().
+    mutable std::mutex mContextMutex;
+#endif
 };
 
 } // namespace Ship

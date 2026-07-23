@@ -19,10 +19,16 @@ bool Part::operator==(const Part& other) const {
 }
 
 std::shared_ptr<Context> Part::GetContext() const {
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::mutex> lock(mContextMutex);
+#endif
     return mContext.lock();
 }
 
 void Part::SetContext(std::shared_ptr<Context> ctx) {
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::mutex> lock(mContextMutex);
+#endif
     mContext = ctx;
 }
 

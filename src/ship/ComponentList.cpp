@@ -3,15 +3,28 @@
 #include "ship/Context.h"
 #include "ship/TickableComponent.h"
 
+#include <unordered_set>
+
 namespace Ship {
 
 // Helper: recursively set the context on a component and all of its descendants.
-static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx) {
+// A visited set guards against cycles in the child graph so a cyclic hierarchy
+// cannot cause unbounded recursion.
+static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx,
+                                 std::unordered_set<uint64_t>& visited) {
+    if (!visited.insert(comp->GetId()).second) {
+        return;
+    }
     comp->SetContext(ctx);
     auto children = comp->GetChildren().Get();
     for (const auto& child : *children) {
-        PropagateContextDown(child.get(), ctx);
+        PropagateContextDown(child.get(), ctx, visited);
     }
+}
+
+static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx) {
+    std::unordered_set<uint64_t> visited;
+    PropagateContextDown(comp, std::move(ctx), visited);
 }
 
 ComponentList::ComponentList(Component* owner, ComponentListRole role)

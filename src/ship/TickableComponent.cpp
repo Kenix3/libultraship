@@ -59,7 +59,7 @@ void TickableComponent::UnregisterFromContext() {
 }
 
 std::shared_ptr<Context> TickableComponent::GetContext() const {
-    return mContext;
+    return mContext.lock();
 }
 
 TickGroup TickableComponent::GetTickGroup() const {

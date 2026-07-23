@@ -49,7 +49,7 @@
 namespace Ship {
 static void UpdateBridgeCaches(const std::shared_ptr<Context>& context) {
     ResourceSetResourceManager(context->GetChildren().GetFirst<ResourceManager>());
-    CVarSetConsoleVariable(context->GetChildren().GetFirst<ConsoleVariable>());
+    CVarSetConsoleVariableComponent(context->GetChildren().GetFirst<ConsoleVariable>());
     WindowSetWindowComponent(context->GetChildren().GetFirst<Window>());
     ControllerSetControlDeck(context->GetChildren().GetFirst<ControlDeck>());
     EventSystemSetEvents(context->GetChildren().GetFirst<Events>());
@@ -80,12 +80,23 @@ Context::~Context() {
     }
 #endif
 
-    // Remove children in order to allow explicit teardown before logging shuts down.
+    // Tear down all children before logging shuts down. The Logger is (intentionally)
+    // the first child added in CreateDefaultInstance, so a plain Remove(true) would
+    // destroy it first and shut spdlog down while the remaining components' destructors
+    // are still running (several of them log). Hold the Logger aside, remove everything
+    // else, then remove the Logger last so it — and spdlog — outlive the other teardown.
+    auto logger = GetChildren().GetFirst<Logger>();
+    if (logger) {
+        GetChildren().Remove(logger, true);
+    }
     GetChildren().Remove(true);
 
     if (config) {
         config->Save();
     }
+
+    // Finally drop the Logger, which shuts spdlog down, after everything else is gone.
+    logger.reset();
     // spdlog shutdown is now owned by the Logger component which was destroyed above.
 }
 
