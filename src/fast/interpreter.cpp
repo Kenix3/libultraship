@@ -2224,10 +2224,15 @@ void Interpreter::AdjustVIewportOrScissor(XYWidthHeight* area) {
         area->y = mActiveFrameBuffer->second.orig_height - area->y;
 
         if (mActiveFrameBuffer->second.resize) {
-            area->width *= RATIO_X(mActiveFrameBuffer, mCurDimensions);
-            area->height *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
-            area->x *= RATIO_X(mActiveFrameBuffer, mCurDimensions);
-            area->y *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
+            // Same as above.
+            const float rx = RATIO_X(mActiveFrameBuffer, mCurDimensions);
+            const float ry = RATIO_Y(mActiveFrameBuffer, mCurDimensions);
+            const float x2 = (area->x + (float)area->width) * rx;
+            const float y2 = (area->y + (float)area->height) * ry;
+            area->x = (int16_t)floorf(area->x * rx);
+            area->y = (int16_t)floorf(area->y * ry);
+            area->width = (uint32_t)(ceilf(x2) - area->x);
+            area->height = (uint32_t)(ceilf(y2) - area->y);
         }
     }
 }
