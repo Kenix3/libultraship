@@ -549,6 +549,10 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
+    // Interpolation factor for the current rendered frame within a game tick:
+    // 0 = previous tick, 1 = current tick. Set by the port before each
+    // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
+    float mInterpolationT = 1.0f;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
