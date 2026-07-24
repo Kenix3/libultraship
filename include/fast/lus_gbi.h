@@ -945,7 +945,7 @@ typedef struct {
 
 /*
  * The viewport structure elements have 2 bits of fraction, necessary
- * to accomodate the sub-pixel positioning scaling for the hardware.
+ * to accommodate the sub-pixel positioning scaling for the hardware.
  * This can also be exploited to handle odd-sized viewports.
  *
  * Accounting for these fractional bits, using the default projection
