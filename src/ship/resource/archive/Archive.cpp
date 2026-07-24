@@ -167,16 +167,23 @@ void Archive::SetLoaded(bool isLoaded) {
     mIsLoaded = isLoaded;
 }
 
+int32_t Archive::GetPriority() {
+    return mPriority;
+}
+
+void Archive::SetPriority(int32_t priority) {
+    mPriority = priority;
+}
+
 void Archive::SetGameVersion(uint32_t gameVersion) {
     mGameVersion = gameVersion;
 }
 
 void Archive::IndexFile(const std::string& filePath) {
-    if (filePath.length() > 5 && filePath.substr(filePath.length() - 5) == ".meta") {
-        IndexFile(filePath.substr(0, filePath.length() - 5));
-        return;
-    }
-
+    // Index every file under its literal name, including `.meta` sidecars. Keeping `foo`
+    // (a real asset) and `foo.meta` (its alias sidecar) as distinct entries lets resolution
+    // tell "has a real foo" from "has a foo.meta" — the previous suffix-stripping conflated
+    // the two, which is the root of the alias-shadowing bug.
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 

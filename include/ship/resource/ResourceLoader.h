@@ -111,6 +111,16 @@ class ResourceLoader {
     std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
                                                            std::shared_ptr<File> metaFileToLoad);
 
+    /**
+     * @brief Resolves a `.meta` alias at filePath, if one wins over the real asset.
+     * @param filePath   Virtual path being loaded.
+     * @param fileToLoad In/out: the highest-priority real asset at filePath (may be null). On a
+     *                   successful alias, this is replaced with the aliased target's file.
+     * @return The alias target's init data if its archive is equal-or-higher priority than the
+     *         real asset's; otherwise nullptr (fileToLoad left unchanged).
+     */
+    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const std::string& filePath, std::shared_ptr<File>& fileToLoad);
+
     /** @brief Creates a ResourceInitData with default/zeroed fields. */
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
 

@@ -149,9 +149,11 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         }
     }
 
-    // Get the file from the OTR
+    // Get the file from the OTR. It may be null when the resource exists only as a `.meta`
+    // alias (no real file at this path); fall through so the loader can resolve the alias,
+    // but only when a `.meta` for this path actually exists.
     auto file = LoadFileProcess(identifier.Path);
-    if (file == nullptr) {
+    if (file == nullptr && !mArchiveManager->HasFile(identifier.Path + ".meta")) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;

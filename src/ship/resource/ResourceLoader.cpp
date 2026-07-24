@@ -182,24 +182,42 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
     return initData;
 }
 
-std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
-                                                        std::shared_ptr<ResourceInitData> initData) {
-    if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File not loaded");
+std::shared_ptr<ResourceInitData> ResourceLoader::ResolveMetaAlias(const std::string& filePath,
+                                                                   std::shared_ptr<File>& fileToLoad) {
+    auto resourceManager = Context::GetRawInstance()->GetResourceManager();
+    auto metaFileToLoad = resourceManager->LoadFileProcess(filePath + ".meta");
+    if (metaFileToLoad == nullptr) {
         return nullptr;
     }
 
-    if (initData == nullptr) {
-        auto metaFilePath = filePath + ".meta";
-        auto metaFileToLoad = Context::GetRawInstance()->GetResourceManager()->LoadFileProcess(metaFilePath);
+    auto metaInitData = ReadResourceInitData(filePath, metaFileToLoad);
+    auto aliasedFileToLoad = resourceManager->LoadFileProcess(metaInitData->Path);
+    if (aliasedFileToLoad == nullptr) {
+        return nullptr;
+    }
 
-        if (metaFileToLoad != nullptr) {
-            auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-            fileToLoad = Context::GetRawInstance()->GetResourceManager()->LoadFileProcess(initDataFromMetaFile->Path);
-            initData = initDataFromMetaFile;
-        } else {
-            initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-        }
+    // The alias wins only if its target lives in an equal-or-higher priority archive than the
+    // real asset at filePath (ties go to the alias; a missing real asset reports priority -1).
+    auto archiveManager = resourceManager->GetArchiveManager();
+    int32_t realPriority = archiveManager->GetFilePriority(filePath);
+    int32_t aliasPriority = archiveManager->GetFilePriority(metaInitData->Path);
+    if (aliasPriority < realPriority) {
+        return nullptr;
+    }
+
+    fileToLoad = aliasedFileToLoad;
+    return metaInitData;
+}
+
+std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
+                                                        std::shared_ptr<ResourceInitData> initData) {
+    // fileToLoad is the highest-priority real asset at filePath, or null when the resource
+    // exists only as a `.meta` alias. Prefer a winning alias, else read the real asset's header.
+    if (initData == nullptr) {
+        initData = ResolveMetaAlias(filePath, fileToLoad);
+    }
+    if (initData == nullptr && fileToLoad != nullptr) {
+        initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
     }
 
     if (fileToLoad == nullptr) {

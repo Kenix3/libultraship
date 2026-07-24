@@ -144,6 +144,14 @@ class ArchiveManager {
     GetArchiveFromFile(const std::string& filePath); // Retrieves a ptr to the archive that the asset is inside of
 
     /**
+     * @brief Load-order priority of the archive that owns the given file (higher = higher
+     * priority; the last-loaded archive wins). Used to rank a real asset against an alias target.
+     * @param filePath Virtual path of the file.
+     * @return Priority index, or -1 if no loaded archive has the file.
+     */
+    int32_t GetFilePriority(const std::string& filePath);
+
+    /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.
      * @param searchMask Glob pattern (empty = list everything).
      * @return Sorted, deduplicated list of matching paths.
