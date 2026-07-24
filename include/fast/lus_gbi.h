@@ -74,6 +74,7 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x46);
 constexpr int8_t RDP_G_LOADBLOCK_WIDE = OPCODE(0x47);
 constexpr int8_t RDP_G_VTX_WIDE = OPCODE(0x48);
 constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
+constexpr int8_t RDP_G_SETTILESIZE_LERP = OPCODE(0x4a);
 
 /*
  * The following commands are the "generated" RDP commands; the user
