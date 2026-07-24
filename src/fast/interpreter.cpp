@@ -3628,7 +3628,7 @@ bool gfx_dl_otr_hash_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 bool gfx_dl_index_handler(F3DGfx** cmd0) {
-    // Compute seg addr by converting an index value to a offset value
+    // Compute seg addr by converting an index value to an offset value
     // handling 32 vs 64 bit size differences for Gfx
     // adding 1 to trigger the segaddr flow
     Interpreter* gfx = mInstance.lock().get();

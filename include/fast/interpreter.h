@@ -151,7 +151,7 @@ struct GfxExecStack {
     std::stack<F3DGfx*> cmd_stack = {};
     // This is also a dlist stack but a std::vector is used to make it possible
     // to iterate on the elements.
-    // The purpose of this is to identify an instruction at a poin in time
+    // The purpose of this is to identify an instruction at a point in time
     // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
     // what we do instead is store the call path that leads to the instruction (including branches)
     std::vector<const F3DGfx*> gfx_path = {};
