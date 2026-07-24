@@ -556,7 +556,7 @@ std::string Context::GetAppDirectoryPath(const std::string& appName) {
 #endif
 
 #ifdef NON_PORTABLE
-    const std::string& effectiveAppName = appName.empty() ? GetInstance()->mShortName : appName;
+    const std::string& effectiveAppName = appName.empty() ? GetRawInstance()->mShortName : appName;
     char* prefpath = SDL_GetPrefPath(NULL, effectiveAppName.c_str());
     if (prefpath != NULL) {
         std::string ret(prefpath);
