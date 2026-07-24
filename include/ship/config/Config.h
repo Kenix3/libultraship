@@ -13,7 +13,7 @@ namespace Ship {
  * upgrade a Configuration file from one version of a config to another (i.e. removing
  * default values, changing option names, etc.) It can be used by subclassing `ConfigVersionUpdater`,
  * implementing the Update function, and implementing the Constructor passing the version that the
- * Config is being updated to to this class' constructor from the child class' default constructor.
+ * Config is being updated to this class' constructor from the child class' default constructor.
  * For example: \code ConfigVersion1Updater() : ConfigVersionUpdater(1) {} \endcode
  * Finally, give an instance of this subclass to a Config object via
  * RegisterConfigVersionUpdater and call RunVersionUpdates.
