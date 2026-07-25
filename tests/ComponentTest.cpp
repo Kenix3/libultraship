@@ -318,7 +318,174 @@ TEST(ComponentTest, BidirectionalRemoveAllChildren) {
     EXPECT_EQ(c2->GetParents().GetCount(), 0u);
 }
 
+TEST(ComponentLifecycleTest, BidirectionalLinksStayConsistentAfterInterleavedOps) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    for (size_t i = 0; i < 100; ++i) {
+        if ((i % 2) == 0) {
+            parent->GetChildren().Add(child);
+        } else {
+            child->GetParents().Add(parent);
+        }
+
+        EXPECT_TRUE(parent->GetChildren().Has(child));
+        EXPECT_TRUE(child->GetParents().Has(parent));
+        EXPECT_EQ(parent->GetChildren().GetCount(), 1u);
+        EXPECT_EQ(child->GetParents().GetCount(), 1u);
+
+        if ((i % 2) == 0) {
+            child->GetParents().Remove(parent);
+        } else {
+            parent->GetChildren().Remove(child);
+        }
+
+        EXPECT_FALSE(parent->GetChildren().Has(child));
+        EXPECT_FALSE(child->GetParents().Has(parent));
+        EXPECT_EQ(parent->GetChildren().GetCount(), 0u);
+        EXPECT_EQ(child->GetParents().GetCount(), 0u);
+    }
+}
+
+TEST(ComponentLifecycleTest, WeakParentListNoGhostEntriesAfterInterleavedOps) {
+    auto child = std::make_shared<TestComponent>("Child");
+    std::vector<std::shared_ptr<TestComponent>> parents;
+
+    for (size_t i = 0; i < 64; ++i) {
+        auto parent = std::make_shared<TestComponent>("Parent" + std::to_string(i));
+        child->GetParents().Add(parent);
+        parents.push_back(parent);
+    }
+
+    EXPECT_EQ(child->GetParents().GetCount(), 64u);
+
+    // Force destruction of parent objects
+    parents.clear();
+
+    EXPECT_EQ(child->GetParents().GetCount(), 0u);
+    EXPECT_FALSE(child->GetParents().Has());
+    EXPECT_TRUE(child->GetParents().Get()->empty());
+}
+
+TEST(ComponentLifecycleTest, RemoveAllWithMixedLiveAndExpiredWeakParentEntries) {
+    auto child = std::make_shared<TestComponent>("Child");
+    auto liveParent = std::make_shared<TestComponent>("LiveParent");
+    auto expiredParent = std::make_shared<TestComponent>("ExpiredParent");
+
+    child->GetParents().Add(liveParent);
+    child->GetParents().Add(expiredParent);
+
+    expiredParent.reset();
+
+    EXPECT_EQ(child->GetParents().Remove(), ListReturnCode::Success);
+    EXPECT_EQ(child->GetParents().GetCount(), 0u);
+    EXPECT_FALSE(child->GetParents().Has());
+    EXPECT_FALSE(liveParent->GetChildren().Has(child));
+}
+
+TEST(ContextLifecycleTest, CreateInstanceWithExplicitComponentsInitializesAndCanDestruct) {
+    std::weak_ptr<Context> weakContext;
+
+    {
+        auto c1 = std::make_shared<TestComponent>("C1");
+        auto c2 = std::make_shared<TestComponent>("C2");
+
+        auto context = Ship::Context::CreateInstance("TestApp", "test", { c1, c2 });
+        weakContext = context;
+
+        EXPECT_TRUE(c1->IsInitialized());
+        EXPECT_TRUE(c2->IsInitialized());
+        EXPECT_TRUE(context->GetChildren().Has(c1));
+        EXPECT_TRUE(context->GetChildren().Has(c2));
+    }
+
+    EXPECT_TRUE(weakContext.expired());
+}
+
 #ifdef COMPONENT_THREAD_SAFE
+TEST(ComponentThreadSafetyTest, ReciprocalAddRemoveStressCompletes) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    for (size_t i = 0; i < 250; ++i) {
+        std::atomic<bool> start{ false };
+        std::atomic<bool> doneAddA{ false };
+        std::atomic<bool> doneAddB{ false };
+
+        std::thread addA([parent, child, &start, &doneAddA]() {
+            while (!start.load()) {
+                std::this_thread::yield();
+            }
+            parent->GetChildren().Add(child);
+            doneAddA.store(true);
+        });
+
+        std::thread addB([parent, child, &start, &doneAddB]() {
+            while (!start.load()) {
+                std::this_thread::yield();
+            }
+            child->GetParents().Add(parent);
+            doneAddB.store(true);
+        });
+
+        start.store(true);
+        const auto addDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+        while (std::chrono::steady_clock::now() < addDeadline && (!doneAddA.load() || !doneAddB.load())) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        if (!doneAddA.load() || !doneAddB.load()) {
+            addA.detach();
+            addB.detach();
+            FAIL() << "Reciprocal add stress iteration timed out (possible deadlock)";
+            return;
+        }
+
+        addA.join();
+        addB.join();
+
+        EXPECT_TRUE(parent->GetChildren().Has(child));
+        EXPECT_TRUE(child->GetParents().Has(parent));
+
+        start.store(false);
+        std::atomic<bool> doneRemoveA{ false };
+        std::atomic<bool> doneRemoveB{ false };
+
+        std::thread removeA([parent, child, &start, &doneRemoveA]() {
+            while (!start.load()) {
+                std::this_thread::yield();
+            }
+            parent->GetChildren().Remove(child);
+            doneRemoveA.store(true);
+        });
+
+        std::thread removeB([parent, child, &start, &doneRemoveB]() {
+            while (!start.load()) {
+                std::this_thread::yield();
+            }
+            child->GetParents().Remove(parent);
+            doneRemoveB.store(true);
+        });
+
+        start.store(true);
+        const auto removeDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+        while (std::chrono::steady_clock::now() < removeDeadline && (!doneRemoveA.load() || !doneRemoveB.load())) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        if (!doneRemoveA.load() || !doneRemoveB.load()) {
+            removeA.detach();
+            removeB.detach();
+            FAIL() << "Reciprocal remove stress iteration timed out (possible deadlock)";
+            return;
+        }
+
+        removeA.join();
+        removeB.join();
+
+        EXPECT_FALSE(parent->GetChildren().Has(child));
+        EXPECT_FALSE(child->GetParents().Has(parent));
+    }
+}
+
 TEST(ComponentThreadSafetyTest, ReciprocalAddFromOppositeSidesCompletes) {
     auto parent = std::make_shared<TestComponent>("Parent");
     auto child = std::make_shared<TestComponent>("Child");

@@ -4,6 +4,37 @@
 
 using namespace Ship;
 
+namespace {
+class HookCountingPart : public Part {
+  public:
+    int onAddedCount = 0;
+    int onRemovedCount = 0;
+
+    void OnAdded(bool /*forced*/) override {
+        onAddedCount++;
+    }
+
+    void OnRemoved(bool /*forced*/) override {
+        onRemovedCount++;
+    }
+};
+
+class HookCountingPartList : public PartList<HookCountingPart> {
+  public:
+    int addedHookCount = 0;
+    int removedHookCount = 0;
+
+  protected:
+    void Added(std::shared_ptr<HookCountingPart> /*part*/, const bool /*forced*/) override {
+        addedHookCount++;
+    }
+
+    void Removed(std::shared_ptr<HookCountingPart> /*part*/, const bool /*forced*/) override {
+        removedHookCount++;
+    }
+};
+} // namespace
+
 // Part has only GetId() and operator== — no GetName/ToString.
 // Name-based operations are on Component/ComponentList.
 
@@ -348,4 +379,31 @@ TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnTypedQueries) {
     auto typed = list.Get<TypeA>();
     EXPECT_EQ(typed->size(), 1u);
     EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListHookLifecycleTest, AddedAndOnAddedCalledExactlyOnceOnEffectiveAdd) {
+    HookCountingPartList list;
+    auto part = std::make_shared<HookCountingPart>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.addedHookCount, 1);
+    EXPECT_EQ(part->onAddedCount, 1);
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Duplicate);
+    EXPECT_EQ(list.addedHookCount, 1);
+    EXPECT_EQ(part->onAddedCount, 1);
+}
+
+TEST(PartListHookLifecycleTest, RemovedAndOnRemovedCalledExactlyOnceOnEffectiveRemove) {
+    HookCountingPartList list;
+    auto part = std::make_shared<HookCountingPart>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Success);
+    EXPECT_EQ(list.removedHookCount, 1);
+    EXPECT_EQ(part->onRemovedCount, 1);
+
+    EXPECT_EQ(list.Remove(part), ListReturnCode::NotFound);
+    EXPECT_EQ(list.removedHookCount, 1);
+    EXPECT_EQ(part->onRemovedCount, 1);
 }
