@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <atomic>
+#include <chrono>
+#include <thread>
 #include "ship/Component.h"
 #include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
@@ -314,6 +317,99 @@ TEST(ComponentTest, BidirectionalRemoveAllChildren) {
     EXPECT_EQ(c1->GetParents().GetCount(), 0u);
     EXPECT_EQ(c2->GetParents().GetCount(), 0u);
 }
+
+#ifdef COMPONENT_THREAD_SAFE
+TEST(ComponentThreadSafetyTest, ReciprocalAddFromOppositeSidesCompletes) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+
+    std::atomic<bool> start{ false };
+    std::atomic<bool> doneA{ false };
+    std::atomic<bool> doneB{ false };
+
+    std::thread a([parent, child, &start, &doneA]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        parent->GetChildren().Add(child);
+        doneA.store(true);
+    });
+
+    std::thread b([parent, child, &start, &doneB]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        child->GetParents().Add(parent);
+        doneB.store(true);
+    });
+
+    start.store(true);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+    while (std::chrono::steady_clock::now() < deadline && (!doneA.load() || !doneB.load())) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (!doneA.load() || !doneB.load()) {
+        a.detach();
+        b.detach();
+        FAIL() << "Concurrent reciprocal Add did not complete (possible deadlock)";
+        return;
+    }
+
+    a.join();
+    b.join();
+
+    EXPECT_TRUE(parent->GetChildren().Has(child));
+    EXPECT_TRUE(child->GetParents().Has(parent));
+}
+
+TEST(ComponentThreadSafetyTest, ReciprocalRemoveFromOppositeSidesCompletes) {
+    auto parent = std::make_shared<TestComponent>("Parent");
+    auto child = std::make_shared<TestComponent>("Child");
+    parent->GetChildren().Add(child);
+
+    std::atomic<bool> start{ false };
+    std::atomic<bool> doneA{ false };
+    std::atomic<bool> doneB{ false };
+
+    std::thread a([parent, child, &start, &doneA]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        parent->GetChildren().Remove(child);
+        doneA.store(true);
+    });
+
+    std::thread b([parent, child, &start, &doneB]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        child->GetParents().Remove(parent);
+        doneB.store(true);
+    });
+
+    start.store(true);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+    while (std::chrono::steady_clock::now() < deadline && (!doneA.load() || !doneB.load())) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (!doneA.load() || !doneB.load()) {
+        a.detach();
+        b.detach();
+        FAIL() << "Concurrent reciprocal Remove did not complete (possible deadlock)";
+        return;
+    }
+
+    a.join();
+    b.join();
+
+    EXPECT_FALSE(parent->GetChildren().Has(child));
+    EXPECT_FALSE(child->GetParents().Has(parent));
+}
+#endif
 
 TEST(ComponentLifecycleTest, ContextCanBeDestroyedWithParentChildLinks) {
     std::weak_ptr<Context> weakContext;

@@ -491,22 +491,27 @@ ListReturnCode PartList<C, StoredPtr>::Add(std::shared_ptr<C> part, const bool f
     if (!part) {
         return ListReturnCode::Failed;
     }
+
+    bool forced = false;
+    {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-    PruneExpired();
-    if (std::find_if(mList.begin(), mList.end(), [this, &part](const StoredPtr& item) {
-            auto locked = LockPtr(item);
-            return locked && locked->GetId() == part->GetId();
-        }) != mList.end()) {
-        return ListReturnCode::Duplicate;
+        PruneExpired();
+        if (std::find_if(mList.begin(), mList.end(), [this, &part](const StoredPtr& item) {
+                auto locked = LockPtr(item);
+                return locked && locked->GetId() == part->GetId();
+            }) != mList.end()) {
+            return ListReturnCode::Duplicate;
+        }
+        const bool canAdd = CanAdd(part);
+        if (!canAdd && !force) {
+            return ListReturnCode::NotPermitted;
+        }
+        forced = !canAdd && force;
+        mList.push_back(StorePtr(part));
     }
-    const bool canAdd = CanAdd(part);
-    if (!canAdd && !force) {
-        return ListReturnCode::NotPermitted;
-    }
-    const bool forced = !canAdd && force;
-    mList.push_back(StorePtr(part));
+
     Added(part, forced);
     part->OnAdded(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
@@ -517,9 +522,7 @@ ListReturnCode PartList<C, StoredPtr>::Add(const std::vector<std::shared_ptr<C>>
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
+
     ListReturnCode result = ListReturnCode::Duplicate;
     for (const auto& part : parts) {
         const ListReturnCode r = Add(part, force);
@@ -538,33 +541,40 @@ ListReturnCode PartList<C, StoredPtr>::Remove(std::shared_ptr<C> part, const boo
     if (!part) {
         return ListReturnCode::Failed;
     }
+
+    std::shared_ptr<C> existing = nullptr;
+    bool forced = false;
+
+    {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-    PruneExpired();
+        PruneExpired();
 
-    auto it = std::find_if(mList.begin(), mList.end(), [this, &part](const StoredPtr& item) {
-        auto locked = LockPtr(item);
-        return locked && locked->GetId() == part->GetId();
-    });
+        auto it = std::find_if(mList.begin(), mList.end(), [this, &part](const StoredPtr& item) {
+            auto locked = LockPtr(item);
+            return locked && locked->GetId() == part->GetId();
+        });
 
-    if (it == mList.end()) {
-        return ListReturnCode::NotFound;
-    }
+        if (it == mList.end()) {
+            return ListReturnCode::NotFound;
+        }
 
-    auto existing = LockPtr(*it);
-    if (!existing) {
+        existing = LockPtr(*it);
+        if (!existing) {
+            mList.erase(it);
+            return ListReturnCode::NotFound;
+        }
+
+        const bool canRemove = CanRemove(existing);
+        if (!canRemove && !force) {
+            return ListReturnCode::NotPermitted;
+        }
+
+        forced = !canRemove && force;
         mList.erase(it);
-        return ListReturnCode::NotFound;
     }
 
-    const bool canRemove = CanRemove(existing);
-    if (!canRemove && !force) {
-        return ListReturnCode::NotPermitted;
-    }
-
-    const bool forced = !canRemove && force;
-    mList.erase(it);
     Removed(existing, forced);
     existing->OnRemoved(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
@@ -572,50 +582,66 @@ ListReturnCode PartList<C, StoredPtr>::Remove(std::shared_ptr<C> part, const boo
 
 template <typename C, typename StoredPtr>
 ListReturnCode PartList<C, StoredPtr>::Remove(const uint64_t id, const bool force) {
+    std::shared_ptr<C> existing = nullptr;
+    bool forced = false;
+
+    {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-    PruneExpired();
+        PruneExpired();
 
-    auto it = std::find_if(mList.begin(), mList.end(), [this, id](const StoredPtr& item) {
-        auto locked = LockPtr(item);
-        return locked && locked->GetId() == id;
-    });
+        auto it = std::find_if(mList.begin(), mList.end(), [this, id](const StoredPtr& item) {
+            auto locked = LockPtr(item);
+            return locked && locked->GetId() == id;
+        });
 
-    if (it == mList.end()) {
-        return ListReturnCode::NotFound;
-    }
+        if (it == mList.end()) {
+            return ListReturnCode::NotFound;
+        }
 
-    auto existing = LockPtr(*it);
-    if (!existing) {
+        existing = LockPtr(*it);
+        if (!existing) {
+            mList.erase(it);
+            return ListReturnCode::NotFound;
+        }
+
+        const bool canRemove = CanRemove(existing);
+        if (!canRemove && !force) {
+            return ListReturnCode::NotPermitted;
+        }
+
+        forced = !canRemove && force;
         mList.erase(it);
-        return ListReturnCode::NotFound;
     }
 
-    const bool canRemove = CanRemove(existing);
-    if (!canRemove && !force) {
-        return ListReturnCode::NotPermitted;
-    }
-
-    const bool forced = !canRemove && force;
-    mList.erase(it);
     Removed(existing, forced);
     existing->OnRemoved(forced);
     return forced ? ListReturnCode::ForcedSuccess : ListReturnCode::Success;
 }
 
 template <typename C, typename StoredPtr> ListReturnCode PartList<C, StoredPtr>::Remove(const bool force) {
+    std::vector<std::shared_ptr<C>> snapshot;
+    {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-    PruneExpired();
-    if (mList.empty()) {
-        return ListReturnCode::NotFound;
+        PruneExpired();
+        if (mList.empty()) {
+            return ListReturnCode::NotFound;
+        }
+
+        snapshot.reserve(mList.size());
+        for (const auto& item : mList) {
+            auto locked = LockPtr(item);
+            if (locked) {
+                snapshot.push_back(locked);
+            }
+        }
     }
 
-    auto snapshot = Get();
     ListReturnCode result = ListReturnCode::NotFound;
-    for (const auto& part : *snapshot) {
+    for (const auto& part : snapshot) {
         const ListReturnCode r = Remove(part, force);
         if (static_cast<int32_t>(r) > static_cast<int32_t>(result)) {
             result = r;
@@ -632,9 +658,7 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const std::vector<std::shared_ptr<
     if (parts.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
+
     ListReturnCode result = ListReturnCode::NotFound;
     for (const auto& part : parts) {
         const ListReturnCode r = Remove(part, force);
@@ -651,16 +675,19 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const std::vector<std::shared_ptr<
 template <typename C, typename StoredPtr>
 template <typename T>
 ListReturnCode PartList<C, StoredPtr>::Remove(const bool force) {
+    std::vector<std::shared_ptr<C>> snapshot;
+    {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-    PruneExpired();
+        PruneExpired();
 
-    auto snapshot = std::vector<std::shared_ptr<C>>();
-    for (const auto& item : mList) {
-        auto locked = LockPtr(item);
-        if (locked && std::dynamic_pointer_cast<T>(locked) != nullptr) {
-            snapshot.push_back(locked);
+        snapshot.reserve(mList.size());
+        for (const auto& item : mList) {
+            auto locked = LockPtr(item);
+            if (locked && std::dynamic_pointer_cast<T>(locked) != nullptr) {
+                snapshot.push_back(locked);
+            }
         }
     }
 
@@ -686,16 +713,20 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const std::vector<uint64_t>& ids, 
     if (ids.empty()) {
         return ListReturnCode::NoItemsProvided;
     }
-#ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(mMutex);
-#endif
-    PruneExpired();
 
-    auto snapshot = std::vector<std::shared_ptr<C>>();
-    for (const auto& item : mList) {
-        auto locked = LockPtr(item);
-        if (locked && std::find(ids.begin(), ids.end(), locked->GetId()) != ids.end()) {
-            snapshot.push_back(locked);
+    std::vector<std::shared_ptr<C>> snapshot;
+    {
+#ifdef COMPONENT_THREAD_SAFE
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
+#endif
+        PruneExpired();
+
+        snapshot.reserve(mList.size());
+        for (const auto& item : mList) {
+            auto locked = LockPtr(item);
+            if (locked && std::find(ids.begin(), ids.end(), locked->GetId()) != ids.end()) {
+                snapshot.push_back(locked);
+            }
         }
     }
 
