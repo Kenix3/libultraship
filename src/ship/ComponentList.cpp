@@ -10,8 +10,7 @@ namespace Ship {
 // Helper: recursively set the context on a component and all of its descendants.
 // A visited set guards against cycles in the child graph so a cyclic hierarchy
 // cannot cause unbounded recursion.
-static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx,
-                                 std::unordered_set<uint64_t>& visited) {
+static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx, std::unordered_set<uint64_t>& visited) {
     if (!visited.insert(comp->GetId()).second) {
         return;
     }
@@ -41,9 +40,7 @@ void BasicComponentList<StoredPtr>::Added(std::shared_ptr<Component> part, const
     std::shared_ptr<Component> ownerShared;
     try {
         ownerShared = mOwner->GetSharedComponent();
-    } catch (const std::bad_weak_ptr&) {
-        return;
-    }
+    } catch (const std::bad_weak_ptr&) { return; }
     if (!ownerShared) {
         return;
     }
@@ -91,9 +88,7 @@ void BasicComponentList<StoredPtr>::Removed(std::shared_ptr<Component> part, con
     std::shared_ptr<Component> ownerShared;
     try {
         ownerShared = mOwner->GetSharedComponent();
-    } catch (const std::bad_weak_ptr&) {
-        return;
-    }
+    } catch (const std::bad_weak_ptr&) { return; }
     if (!ownerShared) {
         return;
     }
@@ -131,7 +126,8 @@ template <typename StoredPtr> bool BasicComponentList<StoredPtr>::Has(const std:
 }
 
 template <typename StoredPtr>
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> BasicComponentList<StoredPtr>::Get(const std::string& name) const {
+std::shared_ptr<std::vector<std::shared_ptr<Component>>>
+BasicComponentList<StoredPtr>::Get(const std::string& name) const {
 #ifdef COMPONENT_THREAD_SAFE
     const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif

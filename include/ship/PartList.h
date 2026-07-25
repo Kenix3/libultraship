@@ -113,7 +113,8 @@ template <typename C> struct PartListStoredPtrTraits<C, std::weak_ptr<C>> {
  */
 template <typename C = Part, typename StoredPtr = std::shared_ptr<C>> class PartList : public Part {
   public:
-    static_assert(std::is_same<StoredPtr, std::shared_ptr<C>>::value || std::is_same<StoredPtr, std::weak_ptr<C>>::value,
+    static_assert(std::is_same<StoredPtr, std::shared_ptr<C>>::value ||
+                      std::is_same<StoredPtr, std::weak_ptr<C>>::value,
                   "StoredPtr must be std::shared_ptr<C> or std::weak_ptr<C>");
 
     /**
@@ -775,7 +776,8 @@ template <typename C, typename StoredPtr> bool PartList<C, StoredPtr>::CanRemove
     return true;
 }
 
-template <typename C, typename StoredPtr> void PartList<C, StoredPtr>::Added(std::shared_ptr<C> part, const bool forced) {
+template <typename C, typename StoredPtr>
+void PartList<C, StoredPtr>::Added(std::shared_ptr<C> part, const bool forced) {
 }
 
 template <typename C, typename StoredPtr>
