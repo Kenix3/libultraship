@@ -274,3 +274,78 @@ TEST(PartListStoragePolicyTest, WeakStorageRemoveExpiredByIdReturnsNotFound) {
     EXPECT_EQ(list.Remove(id), ListReturnCode::NotFound);
     EXPECT_EQ(list.GetCount(), 0u);
 }
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnGetSnapshot) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+    const uint64_t aliveId = alive->GetId();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    auto snapshot = list.Get();
+    ASSERT_EQ(snapshot->size(), 1u);
+    EXPECT_EQ((*snapshot)[0]->GetId(), aliveId);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnGetByIds) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+    const uint64_t aliveId = alive->GetId();
+    const uint64_t expiredId = expired->GetId();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    auto result = list.Get(std::vector<uint64_t>{ aliveId, expiredId });
+    ASSERT_EQ(result->size(), 1u);
+    EXPECT_EQ((*result)[0]->GetId(), aliveId);
+    EXPECT_FALSE(list.Has(expiredId));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnRemoveAll) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    EXPECT_EQ(list.Remove(), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+    EXPECT_FALSE(list.Has());
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnTypedQueries) {
+    PartList<Component, std::weak_ptr<Component>> list;
+
+    auto alive = std::make_shared<TypeA>();
+    auto expired = std::make_shared<TypeA>();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    EXPECT_TRUE(list.Has<TypeA>());
+    auto first = list.GetFirst<TypeA>();
+    ASSERT_NE(first, nullptr);
+    EXPECT_EQ(first->GetId(), alive->GetId());
+
+    auto typed = list.Get<TypeA>();
+    EXPECT_EQ(typed->size(), 1u);
+    EXPECT_EQ(list.GetCount(), 1u);
+}

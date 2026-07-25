@@ -426,6 +426,33 @@ TEST(ComponentLifecycleTest, ContextCanBeDestroyedWithParentChildLinks) {
     EXPECT_TRUE(weakContext.expired());
 }
 
+TEST(ContextLifecycleTest, ContextCanBeDestroyedAfterAddingMainComponents) {
+    std::weak_ptr<Context> weakContext;
+
+    {
+        auto context = Ship::Context::CreateInstance("TestApp", "test");
+        weakContext = context;
+
+        nlohmann::json spec = {
+            { "components",
+              {
+                  { { "type", "Config" }, { "name", "Config" } },
+                  { { "type", "ConsoleVariable" }, { "name", "ConsoleVariable" } },
+                  { { "type", "ThreadPool" }, { "name", "ThreadPool" } },
+                  { { "type", "CrashHandler" }, { "name", "CrashHandler" } },
+                  { { "type", "Console" }, { "name", "Console" } },
+                  { { "type", "GfxDebugger" }, { "name", "GfxDebugger" } },
+                  { { "type", "Events" }, { "name", "Events" } },
+              } }
+        };
+
+        ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(context, spec));
+        EXPECT_TRUE(context->GetChildren().GetCount() >= 7u);
+    }
+
+    EXPECT_TRUE(weakContext.expired());
+}
+
 TEST(ComponentLifecycleTest, ParentListDropsExpiredParents) {
     auto child = std::make_shared<TestComponent>("Child");
 
