@@ -38,7 +38,15 @@ void BasicComponentList<StoredPtr>::Added(std::shared_ptr<Component> part, const
         return;
     }
 
-    auto ownerShared = mOwner->GetSharedComponent();
+    std::shared_ptr<Component> ownerShared;
+    try {
+        ownerShared = mOwner->GetSharedComponent();
+    } catch (const std::bad_weak_ptr&) {
+        return;
+    }
+    if (!ownerShared) {
+        return;
+    }
 
     if (mRole == ComponentListRole::Children) {
         // Ensure the TickableComponent part has its mWeakSelf initialized before
@@ -80,7 +88,15 @@ void BasicComponentList<StoredPtr>::Removed(std::shared_ptr<Component> part, con
         return;
     }
 
-    auto ownerShared = mOwner->GetSharedComponent();
+    std::shared_ptr<Component> ownerShared;
+    try {
+        ownerShared = mOwner->GetSharedComponent();
+    } catch (const std::bad_weak_ptr&) {
+        return;
+    }
+    if (!ownerShared) {
+        return;
+    }
 
     if (mRole == ComponentListRole::Children) {
         // Remove the owner from the child's parent list
