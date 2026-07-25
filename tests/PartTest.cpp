@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <atomic>
+#include <chrono>
+#include <thread>
 #include "ship/Part.h"
 #include "ship/PartList.h"
 
@@ -33,6 +36,64 @@ class HookCountingPartList : public PartList<HookCountingPart> {
         removedHookCount++;
     }
 };
+
+class ThrowingOnAddedPart : public Part {
+  public:
+    bool throwOnAdded = true;
+
+    void OnAdded(bool /*forced*/) override {
+        if (throwOnAdded) {
+            throw std::runtime_error("OnAdded failed");
+        }
+    }
+};
+
+class ThrowingOnRemovedPart : public Part {
+  public:
+    bool throwOnRemoved = true;
+
+    void OnRemoved(bool /*forced*/) override {
+        if (throwOnRemoved) {
+            throw std::runtime_error("OnRemoved failed");
+        }
+    }
+};
+
+class ThrowingAddedList : public PartList<Part> {
+  protected:
+    void Added(std::shared_ptr<Part> /*part*/, const bool /*forced*/) override {
+        throw std::runtime_error("Added hook failed");
+    }
+};
+
+class ThrowingRemovedList : public PartList<Part> {
+  protected:
+    void Removed(std::shared_ptr<Part> /*part*/, const bool /*forced*/) override {
+        throw std::runtime_error("Removed hook failed");
+    }
+};
+
+#ifdef COMPONENT_THREAD_SAFE
+class CrossCheckingPartList : public PartList<Part> {
+  public:
+    CrossCheckingPartList* other = nullptr;
+
+  protected:
+    bool CanAdd(std::shared_ptr<Part> part) override {
+        if (other != nullptr) {
+            other->Has();
+        }
+        return true;
+    }
+
+    bool CanRemove(std::shared_ptr<Part> part) override {
+        if (other != nullptr) {
+            other->Has();
+        }
+        return true;
+    }
+};
+#endif
 } // namespace
 
 // Part has only GetId() and operator== — no GetName/ToString.
@@ -407,3 +468,92 @@ TEST(PartListHookLifecycleTest, RemovedAndOnRemovedCalledExactlyOnceOnEffectiveR
     EXPECT_EQ(list.removedHookCount, 1);
     EXPECT_EQ(part->onRemovedCount, 1);
 }
+
+TEST(PartListExceptionSafetyTest, AddedHookThrowRollsBackMembership) {
+    ThrowingAddedList list;
+    auto part = std::make_shared<Part>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Failed);
+    EXPECT_FALSE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListExceptionSafetyTest, OnAddedThrowRollsBackMembership) {
+    PartList<ThrowingOnAddedPart> list;
+    auto part = std::make_shared<ThrowingOnAddedPart>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Failed);
+    EXPECT_FALSE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListExceptionSafetyTest, RemovedHookThrowRestoresMembership) {
+    ThrowingRemovedList list;
+    auto part = std::make_shared<Part>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Failed);
+    EXPECT_TRUE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListExceptionSafetyTest, OnRemovedThrowRestoresMembership) {
+    PartList<ThrowingOnRemovedPart> list;
+    auto part = std::make_shared<ThrowingOnRemovedPart>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Failed);
+    EXPECT_TRUE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+#ifdef COMPONENT_THREAD_SAFE
+TEST(PartListThreadSafetyTest, CanAddCrossListChecksDoNotDeadlock) {
+    CrossCheckingPartList listA;
+    CrossCheckingPartList listB;
+    listA.other = &listB;
+    listB.other = &listA;
+
+    auto p1 = std::make_shared<Part>();
+    auto p2 = std::make_shared<Part>();
+
+    std::atomic<bool> start{ false };
+    std::atomic<bool> doneA{ false };
+    std::atomic<bool> doneB{ false };
+
+    std::thread t1([&]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        listA.Add(p1);
+        doneA.store(true);
+    });
+
+    std::thread t2([&]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        listB.Add(p2);
+        doneB.store(true);
+    });
+
+    start.store(true);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() < deadline && (!doneA.load() || !doneB.load())) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (!doneA.load() || !doneB.load()) {
+        t1.detach();
+        t2.detach();
+        FAIL() << "Concurrent add with cross-list CanAdd checks timed out";
+        return;
+    }
+
+    t1.join();
+    t2.join();
+    EXPECT_TRUE(listA.Has(p1));
+    EXPECT_TRUE(listB.Has(p2));
+}
+#endif

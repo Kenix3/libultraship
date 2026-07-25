@@ -45,7 +45,8 @@ class TickableComponentTest : public ::testing::Test {
 
 TEST_F(TickableComponentTest, RegisterWithContextAddsToTickableList) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->RegisterWithContext(tc);
+    mContext->GetChildren().Add(tc);
+    ASSERT_TRUE(tc->RegisterWithContext());
 
     EXPECT_TRUE(mContext->GetTickableComponents().Has(tc));
     tc->UnregisterFromContext();
@@ -55,7 +56,8 @@ TEST_F(TickableComponentTest, RegisterWithContextAddsToTickableList) {
 
 TEST_F(TickableComponentTest, UnregisterFromContextRemovesFromTickableList) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->RegisterWithContext(tc);
+    mContext->GetChildren().Add(tc);
+    ASSERT_TRUE(tc->RegisterWithContext());
     ASSERT_TRUE(mContext->GetTickableComponents().Has(tc));
 
     tc->UnregisterFromContext();
@@ -70,7 +72,8 @@ TEST_F(TickableComponentTest, SetContextMovesFromOldToNew) {
     auto ctx2 = std::make_shared<Context>("test2", "t2");
 
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->RegisterWithContext(tc);
+    mContext->GetChildren().Add(tc);
+    ASSERT_TRUE(tc->RegisterWithContext());
     ASSERT_TRUE(mContext->GetTickableComponents().Has(tc));
 
     tc->SetContext(ctx2);
@@ -177,7 +180,8 @@ TEST_F(TickableComponentTest, MultipleComponentsDifferentOrdersSortCorrectly) {
 
 TEST_F(TickableComponentTest, TickableListHasReturnsTrue) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
-    tc->RegisterWithContext(tc);
+    mContext->GetChildren().Add(tc);
+    ASSERT_TRUE(tc->RegisterWithContext());
 
     EXPECT_TRUE(mContext->GetTickableComponents().Has(tc));
     tc->UnregisterFromContext();
@@ -230,7 +234,8 @@ class ConcreteTickableWithActions : public TickableComponent {
 
 TEST_F(TickableComponentTest, ConstructorWithActionsListRegistersWithContext) {
     auto tc = std::make_shared<ConcreteTickableWithActions>(mContext);
-    tc->RegisterWithContext(tc);
+    mContext->GetChildren().Add(tc);
+    ASSERT_TRUE(tc->RegisterWithContext());
 
     EXPECT_TRUE(mContext->GetTickableComponents().Has(tc));
     tc->UnregisterFromContext();
@@ -265,4 +270,18 @@ TEST_F(TickableComponentTest, AutoUnregistrationWhenLastParentRemoved) {
 
     parent->GetChildren().Remove(tc);
     EXPECT_FALSE(mContext->GetTickableComponents().Has(tc));
+}
+
+// ---- Test 18: TryGetSharedComponent available after Init() ----
+
+TEST_F(TickableComponentTest, TryGetSharedComponentAvailableAfterInit) {
+    auto parent = std::make_shared<Component>("Parent");
+    auto tc = std::make_shared<ConcreteTickable>(mContext);
+    parent->GetChildren().Add(tc);
+
+    tc->Init();
+
+    auto self = tc->TryGetSharedComponent();
+    ASSERT_NE(self, nullptr);
+    EXPECT_EQ(self->GetId(), tc->GetId());
 }

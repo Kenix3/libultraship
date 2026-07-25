@@ -1,7 +1,9 @@
 #include "ship/Component.h"
+#include "ship/Tickable.h"
+#include "ship/TickableComponent.h"
 
-#include <spdlog/spdlog.h>
 #include <algorithm>
+#include <spdlog/spdlog.h>
 
 namespace Ship {
 
@@ -70,8 +72,61 @@ const ComponentList& Component::GetChildren() const {
     return mChildren;
 }
 
+std::shared_ptr<Component> Component::TryGetSharedComponent() noexcept {
+    if (auto self = mWeakSelf.lock()) {
+        return self;
+    }
+
+    try {
+        auto self = shared_from_this();
+        mWeakSelf = self;
+        return self;
+    } catch (const std::bad_weak_ptr&) {
+    }
+
+    if (auto tickableComponent = dynamic_cast<TickableComponent*>(this)) {
+        try {
+            auto derivedSelf = tickableComponent->std::enable_shared_from_this<TickableComponent>::shared_from_this();
+            auto componentSelf = std::static_pointer_cast<Component>(derivedSelf);
+            mWeakSelf = componentSelf;
+            return componentSelf;
+        } catch (const std::bad_weak_ptr&) {
+        }
+    }
+
+    if (auto tickable = dynamic_cast<Tickable*>(this)) {
+        try {
+            auto tickableSelf = tickable->shared_from_this();
+            auto componentSelf = std::dynamic_pointer_cast<Component>(tickableSelf);
+            if (componentSelf) {
+                mWeakSelf = componentSelf;
+                return componentSelf;
+            }
+        } catch (const std::bad_weak_ptr&) {
+        }
+    }
+
+    auto parents = GetParents().Get();
+    for (const auto& parent : *parents) {
+        if (!parent) {
+            continue;
+        }
+        auto selfFromParent = parent->GetChildren().Get(GetId());
+        if (selfFromParent) {
+            mWeakSelf = selfFromParent;
+            return selfFromParent;
+        }
+    }
+
+    return nullptr;
+}
+
 std::shared_ptr<Component> Component::GetSharedComponent() {
-    return shared_from_this();
+    auto self = TryGetSharedComponent();
+    if (!self) {
+        throw std::bad_weak_ptr();
+    }
+    return self;
 }
 
 void Component::Init(const nlohmann::json& initArgs) {
@@ -79,6 +134,7 @@ void Component::Init(const nlohmann::json& initArgs) {
         return;
     }
 
+    TryGetSharedComponent();
     OnInit(initArgs);
     mIsInitialized = true;
 }

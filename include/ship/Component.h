@@ -93,6 +93,14 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     const ComponentList& GetChildren() const;
 
     /**
+     * @brief Returns a shared_ptr to this Component when available, otherwise nullptr.
+     *
+     * This method is safe to call during teardown paths where shared ownership may
+     * no longer be established.
+     */
+    virtual std::shared_ptr<Component> TryGetSharedComponent() noexcept;
+
+    /**
      * @brief Returns a shared_ptr to this Component via the correct enable_shared_from_this base.
      *
      * Subclasses that inherit enable_shared_from_this via multiple paths (e.g. TickableComponent
@@ -197,6 +205,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     std::string ToTreeStringImpl(int depth, std::unordered_set<uint64_t>& visited) const;
 
     std::string mName;
+    std::weak_ptr<Component> mWeakSelf;
     std::atomic<bool> mIsInitialized{false};
     ParentComponentList mParents;
     ComponentList mChildren;

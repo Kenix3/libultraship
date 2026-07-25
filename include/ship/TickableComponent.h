@@ -39,7 +39,9 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
  * is removed.  This is managed automatically by ComponentList when the
  * COMPONENT_THREAD_SAFE or default parent/child relationship hooks fire.
  */
-class TickableComponent : public Tickable, public Component {
+class TickableComponent : public Tickable,
+                          public Component,
+                          public std::enable_shared_from_this<TickableComponent> {
   public:
     /**
      * @brief Constructs a TickableComponent with EventID subscriptions.
@@ -69,24 +71,14 @@ class TickableComponent : public Tickable, public Component {
     virtual ~TickableComponent();
 
     /**
-     * @brief Initializes the internal weak self-reference.
-     *
-     * Must be called once, immediately after the object is owned by a shared_ptr.
-     * Called automatically by RegisterWithContext() and by ComponentList when
-     * this component is added as a child.
-     * @param self The shared_ptr that owns this object.
-     */
-    void InitWeakSelf(std::shared_ptr<TickableComponent> self);
-
-    /**
      * @brief Registers this component with its Context.
      *
-     * Must be called after the object is managed by a shared_ptr.
-     * Calls InitWeakSelf(self) internally. Creates EventActions for all
-     * pending event names.
-     * @param self The shared_ptr that owns this object.
+     * Must be called after the component has shared ownership and is reachable
+     * from the component hierarchy so self can be resolved internally.
+     * Creates EventActions for all pending event names.
+     * @return True on successful registration, false when self cannot be resolved.
      */
-    void RegisterWithContext(std::shared_ptr<TickableComponent> self);
+    bool RegisterWithContext();
 
     /** @brief Unregisters this component from its Context. */
     void UnregisterFromContext();
@@ -133,16 +125,6 @@ class TickableComponent : public Tickable, public Component {
      * @return True if the action executed successfully.
      */
     virtual bool ActionRan(EventID eventId, const double durationSinceLastTick);
-
-    /**
-     * @brief Returns a shared_ptr to this Component via the stored mWeakSelf.
-     *
-     * TickableComponent inherits enable_shared_from_this via two paths (Tickable and Component),
-     * but neither base gets its weak_ptr initialized by make_shared. This override uses the
-     * mWeakSelf field (set by InitWeakSelf) to safely return the shared_ptr.
-     */
-    std::shared_ptr<Component> GetSharedComponent() override;
-
   private:
     TickGroup mTickGroup;
     TickPriority mTickPriority;
@@ -151,7 +133,6 @@ class TickableComponent : public Tickable, public Component {
     // keeps both alive forever. Mirrors Part::mContext, which is also a weak_ptr.
     std::weak_ptr<Context> mContext;
     std::vector<EventID> mPendingEventIds;
-    std::weak_ptr<TickableComponent> mWeakSelf;
 };
 
 } // namespace Ship

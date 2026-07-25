@@ -3,6 +3,7 @@
 #include "ship/Context.h"
 #include "ship/TickableComponent.h"
 
+#include <spdlog/spdlog.h>
 #include <unordered_set>
 
 namespace Ship {
@@ -37,20 +38,31 @@ void BasicComponentList<StoredPtr>::Added(std::shared_ptr<Component> part, const
         return;
     }
 
-    std::shared_ptr<Component> ownerShared;
-    try {
-        ownerShared = mOwner->GetSharedComponent();
-    } catch (const std::bad_weak_ptr&) { return; }
+    std::shared_ptr<Component> ownerShared = nullptr;
+    if (mRole == ComponentListRole::Parents) {
+        ownerShared = part->GetChildren().Get(mOwner->GetId());
+        if (!ownerShared) {
+            ownerShared = mOwner->TryGetSharedComponent();
+        }
+        if (!ownerShared) {
+            auto tickableOwner = dynamic_cast<TickableComponent*>(mOwner);
+            if (tickableOwner) {
+                auto context = tickableOwner->GetContext();
+                if (context) {
+                    ownerShared = std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
+                }
+            }
+        }
+    } else {
+        ownerShared = mOwner->TryGetSharedComponent();
+    }
+
     if (!ownerShared) {
+        SPDLOG_TRACE("Skipping Added() reciprocal sync for owner id {} during teardown", mOwner->GetId());
         return;
     }
 
     if (mRole == ComponentListRole::Children) {
-        // Ensure the TickableComponent part has its mWeakSelf initialized before
-        // the bidirectional sync fires (which calls part->GetSharedComponent()).
-        if (auto tickable = std::dynamic_pointer_cast<TickableComponent>(part)) {
-            tickable->InitWeakSelf(tickable);
-        }
         // Add the owner as a parent of the child (if not already present)
         if (!part->GetParents().Has(ownerShared)) {
             part->GetParents().Add(ownerShared, forced);
@@ -85,11 +97,27 @@ void BasicComponentList<StoredPtr>::Removed(std::shared_ptr<Component> part, con
         return;
     }
 
-    std::shared_ptr<Component> ownerShared;
-    try {
-        ownerShared = mOwner->GetSharedComponent();
-    } catch (const std::bad_weak_ptr&) { return; }
+    std::shared_ptr<Component> ownerShared = nullptr;
+    if (mRole == ComponentListRole::Parents) {
+        ownerShared = part->GetChildren().Get(mOwner->GetId());
+        if (!ownerShared) {
+            ownerShared = mOwner->TryGetSharedComponent();
+        }
+        if (!ownerShared) {
+            auto tickableOwner = dynamic_cast<TickableComponent*>(mOwner);
+            if (tickableOwner) {
+                auto context = tickableOwner->GetContext();
+                if (context) {
+                    ownerShared = std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
+                }
+            }
+        }
+    } else {
+        ownerShared = mOwner->TryGetSharedComponent();
+    }
+
     if (!ownerShared) {
+        SPDLOG_TRACE("Skipping Removed() reciprocal sync for owner id {} during teardown", mOwner->GetId());
         return;
     }
 

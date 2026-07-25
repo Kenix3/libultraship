@@ -1,5 +1,6 @@
 #include "ship/TickableComponent.h"
 #include "ship/Context.h"
+
 #include "ship/actions/EventAction.h"
 
 #include <spdlog/spdlog.h>
@@ -28,14 +29,12 @@ TickableComponent::~TickableComponent() {
     // or the Context should clean up its own references.
 }
 
-void TickableComponent::InitWeakSelf(std::shared_ptr<TickableComponent> self) {
-    if (mWeakSelf.expired()) {
-        mWeakSelf = self;
+bool TickableComponent::RegisterWithContext() {
+    auto self = std::dynamic_pointer_cast<TickableComponent>(TryGetSharedComponent());
+    if (!self) {
+        SPDLOG_WARN("RegisterWithContext failed for {}: shared self unavailable", ToString());
+        return false;
     }
-}
-
-void TickableComponent::RegisterWithContext(std::shared_ptr<TickableComponent> self) {
-    InitWeakSelf(self);
 
     // Create EventActions for all pending EventIDs.
     for (const auto& eventId : mPendingEventIds) {
@@ -49,10 +48,12 @@ void TickableComponent::RegisterWithContext(std::shared_ptr<TickableComponent> s
     if (GetContext() != nullptr) {
         GetContext()->GetTickableComponents().Add(self);
     }
+
+    return true;
 }
 
 void TickableComponent::UnregisterFromContext() {
-    auto self = std::static_pointer_cast<TickableComponent>(mWeakSelf.lock());
+    auto self = std::dynamic_pointer_cast<TickableComponent>(TryGetSharedComponent());
     if (GetContext() != nullptr && self) {
         GetContext()->GetTickableComponents().Remove(self);
     }
@@ -85,7 +86,7 @@ TickableComponent& TickableComponent::SetTickPriority(const TickPriority tickPri
 }
 
 TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> context) {
-    auto self = std::static_pointer_cast<TickableComponent>(mWeakSelf.lock());
+    auto self = std::dynamic_pointer_cast<TickableComponent>(TryGetSharedComponent());
     const auto& oldContext = GetContext();
     if (oldContext != nullptr && self) {
         oldContext->GetTickableComponents().Remove(self);
@@ -99,10 +100,6 @@ TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> contex
 
 bool TickableComponent::ActionRan(EventID eventId, const double durationSinceLastTick) {
     return true;
-}
-
-std::shared_ptr<Component> TickableComponent::GetSharedComponent() {
-    return std::static_pointer_cast<Component>(mWeakSelf.lock());
 }
 
 } // namespace Ship

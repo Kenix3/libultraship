@@ -301,6 +301,8 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
         return nullptr;
     };
 
+    std::vector<std::pair<const nlohmann::json*, std::shared_ptr<Component>>> createdComponents;
+
     // Recursive helper: process a component entry and its children.
     std::function<void(const nlohmann::json&, std::shared_ptr<Component>)> processEntry =
         [&](const nlohmann::json& entry, std::shared_ptr<Component> parent) {
@@ -339,6 +341,7 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
 
             if (component) {
                 parent->GetChildren().Add(component);
+                createdComponents.emplace_back(&entry, component);
 
                 // Recursively process children specified in the JSON hierarchy.
                 if (entry.contains("children") && entry["children"].is_array()) {
@@ -354,63 +357,25 @@ bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nl
         processEntry(entry, context);
     }
 
-    // Phase 2: Initialize components in declaration order.
-    // Components that self-initialize (MarkInitialized in constructor) are skipped.
-    // Iterate in the same order as the components array, including children depth-first.
-    std::function<void(const nlohmann::json&)> initEntry = [&](const nlohmann::json& entry) {
-        if (!entry.contains("type") || !entry["type"].is_string()) {
-            return;
-        }
-        std::string name = entry.value("name", entry["type"].get<std::string>());
-
-        // Skip if condition not met.
-        if (entry.contains("condition") && entry["condition"].is_string()) {
-            std::string condition = entry["condition"].get<std::string>();
-            if (activeConditions.find(condition) == activeConditions.end()) {
-                return;
-            }
+    // Phase 2: Initialize created components in declaration order.
+    for (const auto& created : createdComponents) {
+        const auto* entry = created.first;
+        const auto& component = created.second;
+        if (!entry || !component || component->IsInitialized()) {
+            continue;
         }
 
-        // Merge initArgs for this component.
+        std::string type = (*entry)["type"].get<std::string>();
+        std::string name = entry->value("name", type);
+
         nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
-        if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
-            for (auto& [key, value] : entry["initArgs"].items()) {
+        if (entry->contains("initArgs") && (*entry)["initArgs"].is_object()) {
+            for (auto& [key, value] : (*entry)["initArgs"].items()) {
                 compArgs[key] = value;
             }
         }
 
-        // BFS through the full hierarchy to find the component by name.
-        std::queue<Component*> searchQueue;
-        searchQueue.push(context.get());
-        std::unordered_set<uint64_t> visited;
-        visited.insert(context->GetId());
-
-        while (!searchQueue.empty()) {
-            Component* current = searchQueue.front();
-            searchQueue.pop();
-            auto children = current->GetChildren().Get();
-            for (const auto& child : *children) {
-                if (visited.insert(child->GetId()).second) {
-                    if (child->GetName() == name && !child->IsInitialized()) {
-                        child->Init(compArgs);
-                        goto done;
-                    }
-                    searchQueue.push(child.get());
-                }
-            }
-        }
-    done:
-
-        // Recursively init children in declared order.
-        if (entry.contains("children") && entry["children"].is_array()) {
-            for (const auto& childEntry : entry["children"]) {
-                initEntry(childEntry);
-            }
-        }
-    };
-
-    for (const auto& entry : json["components"]) {
-        initEntry(entry);
+        component->Init(compArgs);
     }
 
     UpdateBridgeCaches(context);
