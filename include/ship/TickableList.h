@@ -15,9 +15,9 @@ namespace Ship {
  * (TickGroup + TickPriority). Call Sort() after order changes to re-establish
  * the correct execution sequence.
  */
-class TickableList : public PartList<TickableComponent> {
+class TickableList : public PartList<TickableComponent, std::shared_ptr<TickableComponent>> {
   public:
-    using PartList<TickableComponent>::PartList;
+    using PartList<TickableComponent, std::shared_ptr<TickableComponent>>::PartList;
 
     /**
      * @brief Sorts the list by each component's composite order value.

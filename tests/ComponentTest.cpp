@@ -315,6 +315,34 @@ TEST(ComponentTest, BidirectionalRemoveAllChildren) {
     EXPECT_EQ(c2->GetParents().GetCount(), 0u);
 }
 
+TEST(ComponentLifecycleTest, ContextCanBeDestroyedWithParentChildLinks) {
+    std::weak_ptr<Context> weakContext;
+
+    {
+        auto context = std::make_shared<Context>("TestApp", "test");
+        weakContext = context;
+
+        auto child = std::make_shared<TestComponent>("Child");
+        context->GetChildren().Add(child);
+        EXPECT_EQ(child->GetParents().GetCount(), 1u);
+    }
+
+    EXPECT_TRUE(weakContext.expired());
+}
+
+TEST(ComponentLifecycleTest, ParentListDropsExpiredParents) {
+    auto child = std::make_shared<TestComponent>("Child");
+
+    {
+        auto parent = std::make_shared<TestComponent>("Parent");
+        child->GetParents().Add(parent);
+        ASSERT_EQ(child->GetParents().GetCount(), 1u);
+    }
+
+    EXPECT_EQ(child->GetParents().GetCount(), 0u);
+    EXPECT_FALSE(child->GetParents().Has());
+}
+
 // ---- ComponentList tests ----
 
 #include "ship/ComponentList.h"

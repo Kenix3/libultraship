@@ -83,7 +83,7 @@ class Part {
      */
     virtual void OnRemoved(bool forced);
 
-    template <typename> friend class PartList;
+    template <typename, typename> friend class PartList;
 
   private:
     static std::atomic<uint64_t> sNextPartId;

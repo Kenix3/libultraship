@@ -211,3 +211,66 @@ TEST(PartListTest, GetFirstReturnsFirstMatch) {
     auto found = list.GetFirst<TypeA>();
     EXPECT_EQ(found, a1);
 }
+
+// ---- PartList storage policy tests ----
+
+TEST(PartListStoragePolicyTest, StrongStorageOwnsPartUntilRemoved) {
+    PartList<Part, std::shared_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    std::weak_ptr<Part> weakPart = part;
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_FALSE(weakPart.expired());
+    EXPECT_TRUE(list.Has(id));
+    EXPECT_EQ(list.GetCount(), 1u);
+
+    EXPECT_EQ(list.Remove(id), ListReturnCode::Success);
+    EXPECT_TRUE(weakPart.expired());
+}
+
+TEST(PartListStoragePolicyTest, WeakStorageDoesNotOwnPart) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    std::weak_ptr<Part> weakPart = part;
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_TRUE(weakPart.expired());
+    EXPECT_EQ(list.GetCount(), 0u);
+    EXPECT_FALSE(list.Has(id));
+    EXPECT_FALSE(list.Has());
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredBeforeDuplicateCheck) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(part), ListReturnCode::Duplicate);
+
+    part.reset();
+
+    auto replacement = std::make_shared<Part>();
+    EXPECT_EQ(list.Add(replacement), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStorageRemoveExpiredByIdReturnsNotFound) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_EQ(list.Remove(id), ListReturnCode::NotFound);
+    EXPECT_EQ(list.GetCount(), 0u);
+}

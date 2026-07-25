@@ -83,9 +83,9 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     // ---- Parent/child relationship accessors ----
 
     /** @brief Returns a mutable reference to the parent list. */
-    ComponentList& GetParents();
+    ParentComponentList& GetParents();
     /** @brief Returns a const reference to the parent list. */
-    const ComponentList& GetParents() const;
+    const ParentComponentList& GetParents() const;
 
     /** @brief Returns a mutable reference to the child list. */
     ComponentList& GetChildren();
@@ -198,7 +198,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 
     std::string mName;
     std::atomic<bool> mIsInitialized{false};
-    ComponentList mParents;
+    ParentComponentList mParents;
     ComponentList mChildren;
 };
 
@@ -441,23 +441,27 @@ template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Component
 // while ComponentList.h only forward-declares Component to break the
 // circular dependency.
 
-template <typename T> bool ComponentList::Has(const std::string& name) const {
+template <typename StoredPtr>
+template <typename T>
+bool BasicComponentList<StoredPtr>::Has(const std::string& name) const {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif
-    const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(), [&name](const std::shared_ptr<Component>& c) {
+    auto list = this->Get();
+    return std::find_if(list->begin(), list->end(), [&name](const std::shared_ptr<Component>& c) {
                return c->GetName() == name && std::dynamic_pointer_cast<T>(c) != nullptr;
-           }) != list.end();
+           }) != list->end();
 }
 
+template <typename StoredPtr>
 template <typename T>
-std::shared_ptr<std::vector<std::shared_ptr<T>>> ComponentList::Get(const std::string& name) const {
+std::shared_ptr<std::vector<std::shared_ptr<T>>> BasicComponentList<StoredPtr>::Get(const std::string& name) const {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif
     auto result = std::make_shared<std::vector<std::shared_ptr<T>>>();
-    for (const auto& c : this->GetList()) {
+    auto list = this->Get();
+    for (const auto& c : *list) {
         auto typed = std::dynamic_pointer_cast<T>(c);
         if (typed && c->GetName() == name) {
             result->push_back(typed);

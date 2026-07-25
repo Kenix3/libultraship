@@ -25,88 +25,88 @@ enum class ComponentListRole {
 };
 
 /**
- * @brief Extends PartList<Component> with name- and type-based search helpers.
+ * @brief Extends PartList<Component, StoredPtr> with name- and type-based search helpers.
  *
- * Provides overloaded Has() and Get() methods that look up Components by their
- * human-readable name, optionally filtered by derived type via dynamic_cast.
- *
- * When constructed with a ComponentListRole and an owner pointer, the list
- * automatically maintains bidirectional parent/child relationships. For
- * TickableComponent owners the list also manages their presence in the
- * Context's global TickableList:
- *
- *  - When a TickableComponent gains its **first parent** (via the Parents-role
- *    list), it is automatically added to the Context's TickableList so that it
- *    will be executed on every engine tick.
- *  - When a TickableComponent loses its **last parent**, it is automatically
- *    removed from the Context's TickableList.
- *
- * The Context's TickableList is the central list that the engine iterates each
- * frame to drive Tick, Draw, and DrawDebugMenu actions.
+ * @tparam StoredPtr Backing pointer storage type (`std::shared_ptr<Component>`
+ *                   for owning child lists, `std::weak_ptr<Component>` for
+ *                   non-owning parent lists).
  */
-class ComponentList : public PartList<Component> {
+template <typename StoredPtr> class BasicComponentList : public PartList<Component, StoredPtr> {
   public:
-    using PartList<Component>::PartList;
+    using PartListBase = PartList<Component, StoredPtr>;
+    using PartListBase::Get;
+    using PartListBase::Has;
+    using PartListBase::PartList;
 
-    ComponentList() = default;
+    BasicComponentList() = default;
 
     /**
-     * @brief Constructs a ComponentList with a role and owner for bidirectional relationships.
-     * @param owner The Component that owns this list (raw pointer, must outlive the list).
-     * @param role  The relationship role (Children or Parents).
+     * @brief Constructs a list with relationship role metadata.
+     * @param owner The owning component of this list.
+     * @param role  Role of this list in relationship synchronization.
      */
-    ComponentList(Component* owner, ComponentListRole role);
+    BasicComponentList(Component* owner, ComponentListRole role);
 
     /**
-     * @brief Checks whether a Component with the given name exists.
-     * @param name The Component name to search for.
-     * @return True if at least one Component with that name is present.
+     * @brief Checks whether any component with the given name exists.
+     * @param name Name to search for.
+     * @return True if any live entry has this name.
      */
     bool Has(const std::string& name) const;
 
-    // Pull in base-class Has overloads so they're not hidden
-    using PartList<Component>::Has;
-
     /**
-     * @brief Checks whether a Component of type T with the given name exists.
-     * @tparam T The derived type to match via dynamic_cast.
-     * @param name The Component name to search for.
-     * @return True if a matching Component is found.
+     * @brief Checks whether any component with the given name matches type T.
+     * @tparam T Target type tested via dynamic_cast.
+     * @param name Name to search for.
+     * @return True if a typed component with matching name exists.
      */
     template <typename T> bool Has(const std::string& name) const;
 
     /**
-     * @brief Returns all Components with the given name.
-     * @param name The Component name to search for.
-     * @return A vector of matching Components.
+     * @brief Returns all components with the given name.
+     * @param name Name to search for.
+     * @return Matching live components.
      */
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> Get(const std::string& name) const;
 
-    // Pull in base-class Get overloads so they're not hidden
-    using PartList<Component>::Get;
-
     /**
-     * @brief Returns all Components of type T with the given name.
-     * @tparam T The derived type to match via dynamic_cast.
-     * @param name The Component name to search for.
-     * @return A vector of matching Components cast to T.
+     * @brief Returns all components of type T with the given name.
+     * @tparam T Target type tested via dynamic_cast.
+     * @param name Name to search for.
+     * @return Matching typed components.
      */
     template <typename T> std::shared_ptr<std::vector<std::shared_ptr<T>>> Get(const std::string& name) const;
 
     /**
-     * @brief Returns all Components matching any of the given names.
-     * @param names A vector of names to search for.
-     * @return A vector of matching Components.
+     * @brief Returns all components whose names are in the provided set.
+     * @param names Names to match.
+     * @return Matching live components.
      */
     std::shared_ptr<std::vector<std::shared_ptr<Component>>> Get(const std::vector<std::string>& names) const;
 
   protected:
+    /**
+     * @brief Synchronization hook called after a component is added.
+     *
+     * Maintains bidirectional parent/child links and tickable registration.
+     */
     void Added(std::shared_ptr<Component> part, const bool forced) override;
+
+    /**
+     * @brief Synchronization hook called after a component is removed.
+     *
+     * Maintains bidirectional parent/child links and tickable unregistration.
+     */
     void Removed(std::shared_ptr<Component> part, const bool forced) override;
 
   private:
     Component* mOwner = nullptr;
     ComponentListRole mRole = ComponentListRole::None;
 };
+
+/** @brief Owning child-component list storage type. */
+using ComponentList = BasicComponentList<std::shared_ptr<Component>>;
+/** @brief Non-owning parent-component list storage type. */
+using ParentComponentList = BasicComponentList<std::weak_ptr<Component>>;
 
 } // namespace Ship

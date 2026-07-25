@@ -54,11 +54,11 @@ Component::operator std::string() const {
 
 // ---- Get ----
 
-ComponentList& Component::GetParents() {
+ParentComponentList& Component::GetParents() {
     return mParents;
 }
 
-const ComponentList& Component::GetParents() const {
+const ParentComponentList& Component::GetParents() const {
     return mParents;
 }
 

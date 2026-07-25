@@ -27,11 +27,13 @@ static void PropagateContextDown(Component* comp, std::shared_ptr<Context> ctx) 
     PropagateContextDown(comp, std::move(ctx), visited);
 }
 
-ComponentList::ComponentList(Component* owner, ComponentListRole role)
-    : PartList<Component>(), mOwner(owner), mRole(role) {
+template <typename StoredPtr>
+BasicComponentList<StoredPtr>::BasicComponentList(Component* owner, ComponentListRole role)
+    : PartListBase(), mOwner(owner), mRole(role) {
 }
 
-void ComponentList::Added(std::shared_ptr<Component> part, const bool forced) {
+template <typename StoredPtr>
+void BasicComponentList<StoredPtr>::Added(std::shared_ptr<Component> part, const bool forced) {
     if (!part || !mOwner) {
         return;
     }
@@ -61,7 +63,7 @@ void ComponentList::Added(std::shared_ptr<Component> part, const bool forced) {
 
         // Register TickableComponent with the Context's global TickableList when it gets its first parent
         auto tickable = std::dynamic_pointer_cast<TickableComponent>(ownerShared);
-        if (tickable && GetCount() == 1) {
+        if (tickable && this->GetCount() == 1) {
             // Use the TickableComponent's own stored context (set at construction time) rather
             // than the owner's Part context, which may not yet be propagated.
             auto context = tickable->GetContext();
@@ -72,7 +74,8 @@ void ComponentList::Added(std::shared_ptr<Component> part, const bool forced) {
     }
 }
 
-void ComponentList::Removed(std::shared_ptr<Component> part, const bool forced) {
+template <typename StoredPtr>
+void BasicComponentList<StoredPtr>::Removed(std::shared_ptr<Component> part, const bool forced) {
     if (!part || !mOwner) {
         return;
     }
@@ -92,7 +95,7 @@ void ComponentList::Removed(std::shared_ptr<Component> part, const bool forced) 
 
         // Unregister TickableComponent from the Context's global TickableList when it loses its last parent
         auto tickable = std::dynamic_pointer_cast<TickableComponent>(ownerShared);
-        if (tickable && GetCount() == 0) {
+        if (tickable && this->GetCount() == 0) {
             // Use the TickableComponent's own stored context (set at construction time).
             auto context = tickable->GetContext();
             if (context && context->GetTickableComponents().Has(tickable)) {
@@ -102,21 +105,23 @@ void ComponentList::Removed(std::shared_ptr<Component> part, const bool forced) 
     }
 }
 
-bool ComponentList::Has(const std::string& name) const {
+template <typename StoredPtr> bool BasicComponentList<StoredPtr>::Has(const std::string& name) const {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif
-    const auto& list = this->GetList();
-    return std::find_if(list.begin(), list.end(),
-                        [&name](const std::shared_ptr<Component>& c) { return c->GetName() == name; }) != list.end();
+    auto list = this->Get();
+    return std::find_if(list->begin(), list->end(),
+                        [&name](const std::shared_ptr<Component>& c) { return c->GetName() == name; }) != list->end();
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<Component>>> ComponentList::Get(const std::string& name) const {
+template <typename StoredPtr>
+std::shared_ptr<std::vector<std::shared_ptr<Component>>> BasicComponentList<StoredPtr>::Get(const std::string& name) const {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif
     auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : this->GetList()) {
+    auto list = this->Get();
+    for (const auto& c : *list) {
         if (c->GetName() == name) {
             result->push_back(c);
         }
@@ -124,18 +129,23 @@ std::shared_ptr<std::vector<std::shared_ptr<Component>>> ComponentList::Get(cons
     return result;
 }
 
+template <typename StoredPtr>
 std::shared_ptr<std::vector<std::shared_ptr<Component>>>
-ComponentList::Get(const std::vector<std::string>& names) const {
+BasicComponentList<StoredPtr>::Get(const std::vector<std::string>& names) const {
 #ifdef COMPONENT_THREAD_SAFE
-    const std::lock_guard<std::recursive_mutex> lock(GetMutex());
+    const std::lock_guard<std::recursive_mutex> lock(this->GetMutex());
 #endif
     auto result = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-    for (const auto& c : this->GetList()) {
+    auto list = this->Get();
+    for (const auto& c : *list) {
         if (std::find(names.begin(), names.end(), c->GetName()) != names.end()) {
             result->push_back(c);
         }
     }
     return result;
 }
+
+template class BasicComponentList<std::shared_ptr<Component>>;
+template class BasicComponentList<std::weak_ptr<Component>>;
 
 } // namespace Ship

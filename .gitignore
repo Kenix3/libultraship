@@ -378,3 +378,4 @@ docs/.jekyll-cache/
 docs/Gemfile.lock
 # Debian packages should never be checked in
 *.deb
+*.dir/**

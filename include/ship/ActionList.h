@@ -17,12 +17,12 @@ namespace Ship {
  * numeric EventID. Automatically starts Actions when added
  * and stops them when removed.
  */
-class ActionList : public PartList<Action> {
+class ActionList : public PartList<Action, std::shared_ptr<Action>> {
   public:
-    using PartList<Action>::PartList;
-    using PartList<Action>::Has;
-    using PartList<Action>::Get;
-    using PartList<Action>::GetFirst;
+    using PartList<Action, std::shared_ptr<Action>>::PartList;
+    using PartList<Action, std::shared_ptr<Action>>::Has;
+    using PartList<Action, std::shared_ptr<Action>>::Get;
+    using PartList<Action, std::shared_ptr<Action>>::GetFirst;
 
     /**
      * @brief Checks whether any Action with the given EventID is in the list.
