@@ -2,11 +2,11 @@
 
 static std::shared_ptr<Ship::ConsoleVariable> sConsoleVariable;
 
-void CVarSetConsoleVariableComponent(std::shared_ptr<Ship::ConsoleVariable> consoleVariable) {
+void CVarSetConsoleVariable(std::shared_ptr<Ship::ConsoleVariable> consoleVariable) {
     sConsoleVariable = std::move(consoleVariable);
 }
 
-std::shared_ptr<Ship::ConsoleVariable> CVarGetConsoleVariableComponent() {
+std::shared_ptr<Ship::ConsoleVariable> CVarGetConsoleVariable() {
     return sConsoleVariable;
 }
 

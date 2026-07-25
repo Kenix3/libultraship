@@ -49,7 +49,7 @@
 namespace Ship {
 static void UpdateBridgeCaches(const std::shared_ptr<Context>& context) {
     ResourceSetResourceManager(context->GetChildren().GetFirst<ResourceManager>());
-    CVarSetConsoleVariableComponent(context->GetChildren().GetFirst<ConsoleVariable>());
+    CVarSetConsoleVariable(context->GetChildren().GetFirst<ConsoleVariable>());
     WindowSetWindowComponent(context->GetChildren().GetFirst<Window>());
     ControllerSetControlDeck(context->GetChildren().GetFirst<ControlDeck>());
     EventSystemSetEvents(context->GetChildren().GetFirst<Events>());
