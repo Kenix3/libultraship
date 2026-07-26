@@ -107,16 +107,19 @@ TEST(TickableTest, ActionListOrderedByEventID) {
 
 // ---- Run tests ----
 
-TEST(TickableTest, RunAllActions) {
+TEST(TickableTest, RunSingleEventIDExplicitly) {
     auto t = MakeTickableWithActions(3);
     double dt = 0.016;
-    t->Run(dt);
+    t->Run(dt, kEvent0);
 
     auto list = t->GetActionList().Get();
     for (const auto& action : *list) {
         auto* ca = dynamic_cast<CountingEventAction*>(action.get());
-        if (ca) {
+        auto* ea = dynamic_cast<EventAction*>(action.get());
+        if (ca && ea && ea->GetEventId() == kEvent0) {
             EXPECT_EQ(ca->mRunCount, 1);
+        } else if (ca && ea) {
+            EXPECT_EQ(ca->mRunCount, 0);
         }
     }
 }
@@ -155,7 +158,7 @@ TEST(TickableTest, RunMultipleEventIDs) {
     }
 }
 
-TEST(TickableTest, RunFilterByType) {
+TEST(TickableTest, RunFilterByTypeAndEventIDs) {
     auto t = std::make_shared<TestTickableObj>();
     auto count = std::make_shared<CountingEventAction>(kTickEvent, t);
     auto special = std::make_shared<SpecialAction>(kDrawEvent, t);
@@ -164,7 +167,7 @@ TEST(TickableTest, RunFilterByType) {
     t->GetActionList().Add(special);
 
     double dt = 0.016;
-    t->Run<SpecialAction>(dt);
+    t->Run<SpecialAction>(dt, std::vector<EventID>{ kTickEvent, kDrawEvent });
 
     EXPECT_EQ(count->mRunCount, 0);
     EXPECT_EQ(special->mRunCount, 1);
@@ -193,7 +196,7 @@ TEST(TickableTest, RunWhenNotTicking) {
     auto action = std::make_shared<CountingEventAction>(kTickEvent, t);
     t->GetActionList().Add(action);
 
-    t->Run(0.016);
+    t->Run(0.016, kTickEvent);
 
     EXPECT_EQ(action->mRunCount, 0);
 }

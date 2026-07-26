@@ -553,7 +553,7 @@ const TickableList& Context::GetTickableComponents() const {
     return mTickableComponents;
 }
 
-void Context::Tick() {
+void Context::Tick(EventID eventId) {
     const auto now = std::chrono::steady_clock::now();
     double durationSinceLastTick = 0.0;
     if (mLastTickTime != std::chrono::steady_clock::time_point{}) {
@@ -562,7 +562,7 @@ void Context::Tick() {
     mLastTickTime = now;
 
     for (const auto& tickable : *mTickableComponents.Get()) {
-        tickable->Run(durationSinceLastTick);
+        tickable->Run(durationSinceLastTick, eventId);
     }
 }
 

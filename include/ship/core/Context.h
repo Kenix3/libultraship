@@ -184,16 +184,17 @@ class Context : public Component {
     const std::string& GetShortName() const;
 
     // ---- TickableComponent list ----
+
     TickableList& GetTickableComponents();
     const TickableList& GetTickableComponents() const;
 
     /**
-     * @brief Drives one frame of all registered TickableComponents.
+     * @brief Drives one frame of all registered TickableComponents for a specific EventID.
      *
      * Computes the duration since the previous Context::Tick() call and runs
-     * all tickables in list order.
+     * all tickables in list order for the provided EventID only.
      */
-    void Tick();
+    void Tick(EventID eventId);
 
   protected:
     Context() = default;

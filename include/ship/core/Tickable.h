@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -22,8 +20,8 @@ class Component;
 /**
  * @brief Manages a collection of Actions, executing them in EventID order.
  *
- * A Tickable owns zero or more Actions and provides Run() methods that run all
- * (or a filtered subset of) those Actions each frame. Actions are executed in
+ * A Tickable owns zero or more Actions and provides Run() methods that run
+ * EventID-targeted subsets of those Actions each frame. Actions are executed in
  * ascending EventID order. Thread safety for the action list is handled
  * internally via a mutex.
  */
@@ -47,7 +45,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     bool IsTicking() const;
 
     /**
-     * @brief Starts ticking, enabling Run() on all Actions.
+     * @brief Starts ticking, enabling EventID-targeted Run() calls on Actions.
      * @param force If true, bypass the CanStart() check.
      * @return True if successfully started.
      */
@@ -59,21 +57,6 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
      * @return True if successfully stopped.
      */
     bool Stop(const bool force = false);
-
-    /**
-     * @brief Runs all running Actions sorted by EventID (low to high).
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
-     */
-    double Run(const double durationSinceLastTick);
-
-    /**
-     * @brief Runs only Actions that can be dynamic_cast to type T.
-     * @tparam T The Action subtype to filter by.
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
-     */
-    template <typename T> double Run(const double durationSinceLastTick);
 
     /**
      * @brief Runs only Actions whose EventID matches the given ID.
@@ -174,29 +157,6 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 };
 
 // ---- Template method implementations ----
-
-template <typename T> double Tickable::Run(const double durationSinceLastTick) {
-#ifdef COMPONENT_THREAD_SAFE
-    if (!mIsTicking.load(std::memory_order_acquire)) {
-#else
-    if (!mIsTicking) {
-#endif
-        return 0.0;
-    }
-#ifdef INCLUDE_PROFILING
-    const auto start = std::chrono::steady_clock::now();
-#endif
-    auto allActions = mActions.Get<T>();
-    for (const auto& action : *allActions) {
-        action->Run(durationSinceLastTick);
-    }
-#ifdef INCLUDE_PROFILING
-    const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
-#endif
-}
 
 template <typename T> double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
 #ifdef COMPONENT_THREAD_SAFE

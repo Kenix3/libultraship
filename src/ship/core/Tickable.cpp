@@ -111,14 +111,7 @@ bool Tickable::Stop(const bool force) {
     return true;
 }
 
-double Tickable::Run(const double durationSinceLastTick) {
-#ifdef INCLUDE_PROFILING
-    SetClock(ClockType::PreviousStart, GetClock(ClockType::Start));
-    SetClock(ClockType::PreviousEnd, GetClock(ClockType::End));
-    SetClock(ClockType::Start, std::chrono::steady_clock::now());
-    SetClock(ClockType::End, {});
-#endif
-
+double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
@@ -126,15 +119,16 @@ double Tickable::Run(const double durationSinceLastTick) {
 #endif
         return 0.0;
     }
-
-    auto actions = mActions.Get();
+#ifdef INCLUDE_PROFILING
+    const auto start = std::chrono::steady_clock::now();
+#endif
+    auto actions = mActions.Get(eventId);
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
-
 #ifdef INCLUDE_PROFILING
-    SetClock(ClockType::End, std::chrono::steady_clock::now());
-    return GetTime(ClockType::End) - GetTime(ClockType::Start);
+    const auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(end - start).count();
 #else
     return 0.0;
 #endif
@@ -152,29 +146,6 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<Event
     const auto start = std::chrono::steady_clock::now();
 #endif
     auto actions = mActions.Get(eventIds);
-    for (const auto& action : *actions) {
-        action->Run(durationSinceLastTick);
-    }
-#ifdef INCLUDE_PROFILING
-    const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
-#endif
-}
-
-double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
-#ifdef COMPONENT_THREAD_SAFE
-    if (!mIsTicking.load(std::memory_order_acquire)) {
-#else
-    if (!mIsTicking) {
-#endif
-        return 0.0;
-    }
-#ifdef INCLUDE_PROFILING
-    const auto start = std::chrono::steady_clock::now();
-#endif
-    auto actions = mActions.Get(eventId);
     for (const auto& action : *actions) {
         action->Run(durationSinceLastTick);
     }
