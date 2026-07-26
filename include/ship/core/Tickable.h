@@ -1,10 +1,15 @@
 #pragma once
 
+#pragma once
+
 #include <memory>
 #include <mutex>
 #include <vector>
 #include <stdint.h>
 #include <stddef.h>
+#ifdef COMPONENT_THREAD_SAFE
+#include <atomic>
+#endif
 
 #include "ship/core/Action.h"
 #include "ship/core/ActionList.h"
@@ -154,7 +159,11 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     std::chrono::time_point<std::chrono::steady_clock> GetClock(const ClockType clockType) const;
 #endif
 
+#ifdef COMPONENT_THREAD_SAFE
+    std::atomic<bool> mIsTicking;
+#else
     bool mIsTicking;
+#endif
     ActionList mActions;
 #ifdef COMPONENT_THREAD_SAFE
     mutable std::mutex mMutex;
@@ -167,7 +176,11 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 // ---- Template method implementations ----
 
 template <typename T> double Tickable::Run(const double durationSinceLastTick) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
@@ -186,7 +199,11 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick) {
 }
 
 template <typename T> double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
@@ -207,7 +224,11 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick, c
 }
 
 template <typename T> double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
@@ -228,3 +249,4 @@ template <typename T> double Tickable::Run(const double durationSinceLastTick, E
 }
 
 } // namespace Ship
+

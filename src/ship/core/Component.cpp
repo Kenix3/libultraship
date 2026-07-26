@@ -130,17 +130,32 @@ std::shared_ptr<Component> Component::GetSharedComponent() {
 }
 
 void Component::Init(const nlohmann::json& initArgs) {
+#ifdef COMPONENT_THREAD_SAFE
+    const std::lock_guard<std::recursive_mutex> lock(mInitMutex);
+    if (mIsInitialized.load(std::memory_order_acquire)) {
+        return;
+    }
+#else
     if (mIsInitialized) {
         return;
     }
+#endif
 
     TryGetSharedComponent();
     OnInit(initArgs);
+#ifdef COMPONENT_THREAD_SAFE
+    mIsInitialized.store(true, std::memory_order_release);
+#else
     mIsInitialized = true;
+#endif
 }
 
 bool Component::IsInitialized() const {
+#ifdef COMPONENT_THREAD_SAFE
+    return mIsInitialized.load(std::memory_order_acquire);
+#else
     return mIsInitialized;
+#endif
 }
 
 void Component::OnInit(const nlohmann::json& /*initArgs*/) {
@@ -148,7 +163,11 @@ void Component::OnInit(const nlohmann::json& /*initArgs*/) {
 }
 
 void Component::MarkInitialized() {
+#ifdef COMPONENT_THREAD_SAFE
+    mIsInitialized.store(true, std::memory_order_release);
+#else
     mIsInitialized = true;
+#endif
 }
 
 } // namespace Ship

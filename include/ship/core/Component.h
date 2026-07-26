@@ -1,10 +1,15 @@
 #pragma once
 
+#pragma once
+
 #include <string>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#ifdef COMPONENT_THREAD_SAFE
 #include <atomic>
+#include <mutex>
+#endif
 #include <queue>
 #include <unordered_set>
 #include <nlohmann/json.hpp>
@@ -206,7 +211,12 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
 
     std::string mName;
     std::weak_ptr<Component> mWeakSelf;
+#ifdef COMPONENT_THREAD_SAFE
     std::atomic<bool> mIsInitialized{false};
+    mutable std::recursive_mutex mInitMutex;
+#else
+    bool mIsInitialized = false;
+#endif
     ParentComponentList mParents;
     ComponentList mChildren;
 };
@@ -480,3 +490,4 @@ std::shared_ptr<std::vector<std::shared_ptr<T>>> BasicComponentList<StoredPtr>::
 }
 
 } // namespace Ship
+

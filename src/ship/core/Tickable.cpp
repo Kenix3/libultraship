@@ -38,11 +38,19 @@ Tickable::Tickable(const bool isTicking, const std::vector<std::shared_ptr<Actio
 Tickable::~Tickable() = default;
 
 bool Tickable::IsTicking() const {
+#ifdef COMPONENT_THREAD_SAFE
+    return mIsTicking.load(std::memory_order_acquire);
+#else
     return mIsTicking;
+#endif
 }
 
 bool Tickable::Start(const bool force) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (mIsTicking) {
+#endif
         return true;
     }
     const bool canStart = CanStart();
@@ -53,8 +61,10 @@ bool Tickable::Start(const bool force) {
     {
 #ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::mutex> lock(mMutex);
-#endif
+        mIsTicking.store(true, std::memory_order_release);
+#else
         mIsTicking = true;
+#endif
     }
     Started(forced);
     if (forced) {
@@ -69,7 +79,11 @@ bool Tickable::Start(const bool force) {
 }
 
 bool Tickable::Stop(const bool force) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return true;
     }
     const bool canStop = CanStop();
@@ -80,8 +94,10 @@ bool Tickable::Stop(const bool force) {
     {
 #ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::mutex> lock(mMutex);
-#endif
+        mIsTicking.store(false, std::memory_order_release);
+#else
         mIsTicking = false;
+#endif
     }
     Stopped(forced);
     if (forced) {
@@ -103,7 +119,11 @@ double Tickable::Run(const double durationSinceLastTick) {
     SetClock(ClockType::End, {});
 #endif
 
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 
@@ -121,7 +141,11 @@ double Tickable::Run(const double durationSinceLastTick) {
 }
 
 double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING
@@ -140,7 +164,11 @@ double Tickable::Run(const double durationSinceLastTick, const std::vector<Event
 }
 
 double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
+#ifdef COMPONENT_THREAD_SAFE
+    if (!mIsTicking.load(std::memory_order_acquire)) {
+#else
     if (!mIsTicking) {
+#endif
         return 0.0;
     }
 #ifdef INCLUDE_PROFILING

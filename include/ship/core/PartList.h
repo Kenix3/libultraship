@@ -408,7 +408,6 @@ ListReturnCode PartList<C, StoredPtr>::Add(std::shared_ptr<C> part, const bool f
 
     const bool forced = !canAdd && force;
     const uint64_t id = part->GetId();
-    uint64_t opVersion = 0;
 
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -419,7 +418,7 @@ ListReturnCode PartList<C, StoredPtr>::Add(std::shared_ptr<C> part, const bool f
             return ListReturnCode::Duplicate;
         }
         mList.push_back(StorePtr(part));
-        opVersion = ++mMutationVersion;
+        ++mMutationVersion;
     }
 
     bool shouldRunHooks = false;
@@ -427,7 +426,7 @@ ListReturnCode PartList<C, StoredPtr>::Add(std::shared_ptr<C> part, const bool f
 #ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-        shouldRunHooks = (mMutationVersion == opVersion) && ContainsIdUnlocked(id);
+        shouldRunHooks = ContainsIdUnlocked(id);
     }
 
     if (!shouldRunHooks) {
@@ -482,7 +481,6 @@ ListReturnCode PartList<C, StoredPtr>::Remove(std::shared_ptr<C> part, const boo
     const bool forced = !canRemove && force;
     const uint64_t id = part->GetId();
     std::shared_ptr<C> removedPart = nullptr;
-    uint64_t opVersion = 0;
 
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -492,7 +490,6 @@ ListReturnCode PartList<C, StoredPtr>::Remove(std::shared_ptr<C> part, const boo
         if (!EraseByIdUnlocked(id, &removedPart)) {
             return ListReturnCode::NotFound;
         }
-        opVersion = mMutationVersion;
     }
 
     if (!removedPart) {
@@ -504,7 +501,7 @@ ListReturnCode PartList<C, StoredPtr>::Remove(std::shared_ptr<C> part, const boo
 #ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-        shouldRunHooks = (mMutationVersion == opVersion) && !ContainsIdUnlocked(id);
+        shouldRunHooks = !ContainsIdUnlocked(id);
     }
 
     if (!shouldRunHooks) {
@@ -558,7 +555,6 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const uint64_t id, const bool forc
 
     const bool forced = !canRemove && force;
     std::shared_ptr<C> removedPart = nullptr;
-    uint64_t opVersion = 0;
 
     {
 #ifdef COMPONENT_THREAD_SAFE
@@ -568,7 +564,6 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const uint64_t id, const bool forc
         if (!EraseByIdUnlocked(id, &removedPart)) {
             return ListReturnCode::NotFound;
         }
-        opVersion = mMutationVersion;
     }
 
     if (!removedPart) {
@@ -580,7 +575,7 @@ ListReturnCode PartList<C, StoredPtr>::Remove(const uint64_t id, const bool forc
 #ifdef COMPONENT_THREAD_SAFE
         const std::lock_guard<std::recursive_mutex> lock(mMutex);
 #endif
-        shouldRunHooks = (mMutationVersion == opVersion) && !ContainsIdUnlocked(id);
+        shouldRunHooks = !ContainsIdUnlocked(id);
     }
 
     if (!shouldRunHooks) {
