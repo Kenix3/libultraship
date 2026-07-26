@@ -10,7 +10,6 @@
 #endif
 
 #include "ship/core/Part.h"
-#include "ship/events/EventTypes.h"
 
 namespace Ship {
 
@@ -28,23 +27,19 @@ class Tickable;
 /**
  * @brief Represents a discrete, repeatable operation run by a Tickable.
  *
- * Actions are owned by a Tickable and executed each frame/tick in numeric-order.
- * Each Action is identified by a numeric EventID (from the Events component).
- * There are no built-in action types — all event IDs are registered dynamically
- * with EventSystem.
+ * Actions are owned by a Tickable and executed each frame/tick.
+ * Subclasses define behavior via ActionRan().
+ *
+ * For event-driven actions that need dispatching via EventID, use EventAction.
  */
 class Action : public Part {
   public:
     /**
-     * @brief Constructs an Action with the given event ID, associated with a Tickable.
-     * @param eventId The EventID this action corresponds to (registered with Events).
+     * @brief Constructs an Action associated with a Tickable.
      * @param tickable The Tickable that owns and will run this Action.
      */
-    Action(EventID eventId, std::shared_ptr<Tickable> tickable);
+    Action(std::shared_ptr<Tickable> tickable);
     virtual ~Action() = default;
-
-    /** @brief Returns the EventID this action corresponds to. */
-    EventID GetEventId() const;
 
     /** @brief Returns the Tickable that owns this Action, or nullptr if expired. */
     std::shared_ptr<Tickable> GetTickable() const;
@@ -116,7 +111,6 @@ class Action : public Part {
     Action& SetClock(const ClockType clockType, std::chrono::time_point<std::chrono::steady_clock> clockValue);
 #endif
 
-    EventID mEventId;
     std::weak_ptr<Tickable> mTickable;
     bool mIsActionRunning;
 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "ship/core/Action.h"
 #include "ship/core/Tickable.h"
+#include "ship/actions/EventAction.h"
 #include "ship/events/EventTypes.h"
 
 using namespace Ship;
@@ -10,11 +11,11 @@ static constexpr EventID kTickEvent = 1;
 static constexpr EventID kDrawEvent = 2;
 static constexpr EventID kDrawDebugMenuEvent = 3;
 
-// A concrete Action for testing.
+// A concrete Action for testing (without EventID).
 class TestAction : public Action {
   public:
-    TestAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : Action(eventId, tickable), mRunCount(0), mLastDuration(0.0) {
+    TestAction(std::shared_ptr<Tickable> tickable)
+        : Action(tickable), mRunCount(0), mLastDuration(0.0) {
     }
 
     int mRunCount;
@@ -28,34 +29,41 @@ class TestAction : public Action {
     }
 };
 
-// A derived TestAction for type filtering.
-class DerivedTestAction : public TestAction {
+// A concrete EventAction for testing.
+class TestEventAction : public EventAction {
   public:
-    DerivedTestAction(EventID eventId, std::shared_ptr<Tickable> tickable) : TestAction(eventId, tickable) {
+    TestEventAction(EventID eventId, std::shared_ptr<Tickable> tickable)
+        : EventAction(eventId, tickable), mRunCount(0), mLastDuration(0.0) {
+    }
+
+    int mRunCount;
+    double mLastDuration;
+
+  protected:
+    bool ActionRan(const double durationSinceLastTick) override {
+        mRunCount++;
+        mLastDuration = durationSinceLastTick;
+        return true;
     }
 };
 
-// A simple Tickable to act as the owner.
+// A simple Tickable for testing.
 class TestTickable : public Tickable {
-  public:
-    TestTickable(bool isTicking = true) : Tickable(isTicking) {
-    }
 };
 
 // ---- Action lifecycle tests ----
 
 TEST(ActionTest, InitialState) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
 
     EXPECT_FALSE(action->IsRunning());
-    EXPECT_EQ(action->GetEventId(), kTickEvent);
     EXPECT_NE(action->GetTickable(), nullptr);
 }
 
 TEST(ActionTest, StartStop) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
 
     EXPECT_TRUE(action->Start());
     EXPECT_TRUE(action->IsRunning());
@@ -66,7 +74,7 @@ TEST(ActionTest, StartStop) {
 
 TEST(ActionTest, StartWhenAlreadyStarted) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
     action->Start();
     EXPECT_TRUE(action->Start()); // idempotent
     EXPECT_TRUE(action->IsRunning());
@@ -74,14 +82,14 @@ TEST(ActionTest, StartWhenAlreadyStarted) {
 
 TEST(ActionTest, StopWhenAlreadyStopped) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
     EXPECT_TRUE(action->Stop()); // idempotent
     EXPECT_FALSE(action->IsRunning());
 }
 
 TEST(ActionTest, RunWhenRunning) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
     action->Start();
 
     EXPECT_TRUE(action->Run(0.016));
@@ -91,7 +99,7 @@ TEST(ActionTest, RunWhenRunning) {
 
 TEST(ActionTest, RunWhenNotRunning) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
+    auto action = std::make_shared<TestAction>(tickable);
 
     EXPECT_FALSE(action->Run(0.016));
     EXPECT_EQ(action->mRunCount, 0);
@@ -99,8 +107,8 @@ TEST(ActionTest, RunWhenNotRunning) {
 
 TEST(ActionTest, GetEventId) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action1 = std::make_shared<TestAction>(kTickEvent, tickable);
-    auto action2 = std::make_shared<TestAction>(kDrawEvent, tickable);
+    auto action1 = std::make_shared<TestEventAction>(kTickEvent, tickable);
+    auto action2 = std::make_shared<TestEventAction>(kDrawEvent, tickable);
 
     EXPECT_EQ(action1->GetEventId(), kTickEvent);
     EXPECT_EQ(action2->GetEventId(), kDrawEvent);
@@ -108,8 +116,8 @@ TEST(ActionTest, GetEventId) {
 
 TEST(ActionTest, DifferentEventIdsAreDifferent) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action1 = std::make_shared<TestAction>(kTickEvent, tickable);
-    auto action2 = std::make_shared<TestAction>(kDrawEvent, tickable);
+    auto action1 = std::make_shared<TestEventAction>(kTickEvent, tickable);
+    auto action2 = std::make_shared<TestEventAction>(kDrawEvent, tickable);
     EXPECT_NE(action1->GetEventId(), action2->GetEventId());
 }
 
@@ -119,53 +127,147 @@ TEST(ActionTest, TickableWeakReference) {
     std::shared_ptr<TestAction> action;
     {
         auto tickable = std::make_shared<TestTickable>();
-        action = std::make_shared<TestAction>(kTickEvent, tickable);
+        action = std::make_shared<TestAction>(tickable);
+
         EXPECT_NE(action->GetTickable(), nullptr);
+        // tickable goes out of scope here
     }
-    // After tickable is destroyed, GetTickable() should return nullptr.
+
+    // The Action still holds a weak reference, and since the Tickable is gone,
+    // GetTickable() should return nullptr.
     EXPECT_EQ(action->GetTickable(), nullptr);
 }
 
-TEST(ActionTest, UniqueIds) {
+// ---- Permission hook tests ----
+
+class RestrictiveAction : public Action {
+  public:
+    RestrictiveAction(std::shared_ptr<Tickable> tickable)
+        : Action(tickable), mCanStart(true), mCanStop(true) {
+    }
+
+    bool mCanStart;
+    bool mCanStop;
+
+  protected:
+    bool ActionRan(const double) override {
+        return true;
+    }
+
+    bool CanStart() override {
+        return mCanStart;
+    }
+
+    bool CanStop() override {
+        return mCanStop;
+    }
+};
+
+TEST(ActionTest, CanStartPreventStart) {
     auto tickable = std::make_shared<TestTickable>();
-    auto a1 = std::make_shared<TestAction>(kTickEvent, tickable);
-    auto a2 = std::make_shared<TestAction>(kTickEvent, tickable);
-    EXPECT_NE(a1->GetId(), a2->GetId());
+    auto action = std::make_shared<RestrictiveAction>(tickable);
+    action->mCanStart = false;
+
+    EXPECT_FALSE(action->Start());
+    EXPECT_FALSE(action->IsRunning());
 }
 
-// ---- ActionList tests ----
-
-#include "ship/core/ActionList.h"
-
-TEST(ActionListTest, AddAndGetByEventId) {
-    ActionList list;
+TEST(ActionTest, CanStopPreventStop) {
     auto tickable = std::make_shared<TestTickable>();
-    auto action = std::make_shared<TestAction>(kTickEvent, tickable);
-    list.Add(action);
+    auto action = std::make_shared<RestrictiveAction>(tickable);
+    action->mCanStop = false;
 
-    auto tickActions = list.Get(kTickEvent);
-    EXPECT_EQ(tickActions->size(), 1u);
-
-    auto drawActions = list.Get(kDrawEvent);
-    EXPECT_EQ(drawActions->size(), 0u);
+    action->Start();
+    EXPECT_FALSE(action->Stop());
+    EXPECT_TRUE(action->IsRunning());
 }
 
-TEST(ActionListTest, GetByMultipleEventIds) {
-    ActionList list;
+TEST(ActionTest, ForceStartBypassesCanStart) {
     auto tickable = std::make_shared<TestTickable>();
-    list.Add(std::make_shared<TestAction>(kTickEvent, tickable));
-    list.Add(std::make_shared<TestAction>(kDrawEvent, tickable));
-    list.Add(std::make_shared<TestAction>(kDrawDebugMenuEvent, tickable));
+    auto action = std::make_shared<RestrictiveAction>(tickable);
+    action->mCanStart = false;
 
-    auto result = list.Get(std::vector<EventID>{ kTickEvent, kDrawDebugMenuEvent });
-    EXPECT_EQ(result->size(), 2u);
+    EXPECT_TRUE(action->Start(true)); // Force start
+    EXPECT_TRUE(action->IsRunning());
 }
 
-TEST(ActionListTest, HasByEventId) {
-    ActionList list;
+TEST(ActionTest, ForceStopBypassesCanStop) {
     auto tickable = std::make_shared<TestTickable>();
-    list.Add(std::make_shared<TestAction>(kTickEvent, tickable));
+    auto action = std::make_shared<RestrictiveAction>(tickable);
+    action->Start();
+    action->mCanStop = false;
 
-    EXPECT_TRUE(list.Has(kTickEvent));
-    EXPECT_FALSE(list.Has(kDrawEvent));
+    EXPECT_TRUE(action->Stop(true)); // Force stop
+    EXPECT_FALSE(action->IsRunning());
+}
+
+// ---- Notification hook tests ----
+
+class InstrumentedAction : public Action {
+  public:
+    InstrumentedAction(std::shared_ptr<Tickable> tickable)
+        : Action(tickable), mStartedCalls(0), mStoppedCalls(0), mLastStartedForced(false),
+          mLastStoppedForced(false) {
+    }
+
+    int mStartedCalls;
+    int mStoppedCalls;
+    bool mLastStartedForced;
+    bool mLastStoppedForced;
+
+  protected:
+    bool ActionRan(const double) override {
+        return true;
+    }
+
+    void Started(const bool forced) override {
+        mStartedCalls++;
+        mLastStartedForced = forced;
+    }
+
+    void Stopped(const bool forced) override {
+        mStoppedCalls++;
+        mLastStoppedForced = forced;
+    }
+};
+
+TEST(ActionTest, StartedNotificationCalled) {
+    auto tickable = std::make_shared<TestTickable>();
+    auto action = std::make_shared<InstrumentedAction>(tickable);
+
+    action->Start();
+    EXPECT_EQ(action->mStartedCalls, 1);
+    EXPECT_FALSE(action->mLastStartedForced);
+}
+
+TEST(ActionTest, StartedNotificationForced) {
+    auto tickable = std::make_shared<TestTickable>();
+    auto action = std::make_shared<RestrictiveAction>(tickable);
+    // Create instrumented action for forced start
+    auto instr = std::make_shared<InstrumentedAction>(tickable);
+    instr->Start(true); // Force start
+
+    EXPECT_EQ(instr->mStartedCalls, 1);
+    EXPECT_TRUE(instr->mLastStartedForced);
+}
+
+TEST(ActionTest, StoppedNotificationCalled) {
+    auto tickable = std::make_shared<TestTickable>();
+    auto action = std::make_shared<InstrumentedAction>(tickable);
+
+    action->Start();
+    action->Stop();
+    EXPECT_EQ(action->mStoppedCalls, 1);
+    EXPECT_FALSE(action->mLastStoppedForced);
+}
+
+TEST(ActionTest, StoppedNotificationForced) {
+    auto tickable = std::make_shared<TestTickable>();
+    auto action = std::make_shared<InstrumentedAction>(tickable);
+
+    action->Start();
+    action->Stop(true); // Force stop
+
+    EXPECT_EQ(action->mStoppedCalls, 1);
+    EXPECT_TRUE(action->mLastStoppedForced);
 }

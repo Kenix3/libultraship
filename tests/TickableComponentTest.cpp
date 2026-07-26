@@ -2,7 +2,7 @@
 #include "ship/core/TickableComponent.h"
 #include "ship/core/Context.h"
 #include "ship/core/TickableList.h"
-#include "ship/core/Action.h"
+#include "ship/core/Action.h"`n#include "ship/actions/EventAction.h"
 
 using namespace Ship;
 
@@ -325,15 +325,15 @@ TEST_F(TickableComponentTest, ActionsConstructorRegistersWithContext) {
 // When at least one action is provided the component must be started after RegisterWithContext().
 TEST_F(TickableComponentTest, ActionsConstructorStartsAfterRegisterWhenActionsPresent) {
     // A minimal concrete Action subclass.
-    class NoopAction : public Action {
+    class NoopEventAction : public EventAction {
       public:
-        NoopAction(EventID id, std::shared_ptr<Tickable> t) : Action(id, t) {}
+        NoopEventAction(EventID id, std::shared_ptr<Tickable> t) : EventAction(id, t) {}
       protected:
         bool ActionRan(const double) override { return true; }
     };
 
     auto owner = std::make_shared<ConcreteTickable>(mContext);
-    auto action = std::make_shared<NoopAction>(0, owner);
+    auto action = std::make_shared<NoopEventAction>(0, owner);
 
     auto tc = std::make_shared<ConcreteTickableWithPendingActions>(
         mContext, std::vector<std::shared_ptr<Action>>{ action });
@@ -374,3 +374,4 @@ TEST_F(TickableComponentTest, ForceStartOnComponentTickableDoesNotCrash) {
     tc->Stop();
     EXPECT_NO_THROW(tc->Start(true));
 }
+
