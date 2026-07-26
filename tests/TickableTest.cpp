@@ -15,6 +15,24 @@ static constexpr EventID kTickEvent = 10;
 static constexpr EventID kDrawEvent = 11;
 static constexpr EventID kDrawDebugMenuEvent = 12;
 
+struct RawCallbackState {
+    int runCount = 0;
+    EventID lastEventId = static_cast<EventID>(-1);
+    double lastDuration = 0.0;
+};
+
+static bool RawEventActionCallback(EventID eventId, const double durationSinceLastTick, uintptr_t userData) {
+    auto* state = reinterpret_cast<RawCallbackState*>(userData);
+    if (state == nullptr) {
+        return false;
+    }
+
+    state->runCount++;
+    state->lastEventId = eventId;
+    state->lastDuration = durationSinceLastTick;
+    return true;
+}
+
 // A concrete EventAction for testing Tickable interaction.
 class CountingEventAction : public EventAction {
   public:
@@ -199,6 +217,83 @@ TEST(TickableTest, RunWhenNotTicking) {
     t->Run(0.016, kTickEvent);
 
     EXPECT_EQ(action->mRunCount, 0);
+}
+
+TEST(TickableTest, EventActionCppCallbackDispatchesDirectly) {
+    auto t = std::make_shared<TestTickableObj>();
+    int runCount = 0;
+    EventID lastEventId = static_cast<EventID>(-1);
+    double lastDuration = 0.0;
+
+    auto action = std::make_shared<EventAction>(
+        kTickEvent, t, [&](EventID eventId, const double durationSinceLastTick, uintptr_t callbackPointerData) {
+            runCount++;
+            lastEventId = eventId;
+            lastDuration = durationSinceLastTick;
+            return callbackPointerData == 0;
+        });
+
+    t->GetActionList().Add(action);
+    t->Run(0.016, kTickEvent);
+
+    EXPECT_EQ(runCount, 1);
+    EXPECT_EQ(lastEventId, kTickEvent);
+    EXPECT_DOUBLE_EQ(lastDuration, 0.016);
+}
+
+TEST(TickableTest, EventActionRawCallbackDispatchesDirectly) {
+    auto t = std::make_shared<TestTickableObj>();
+    RawCallbackState state{};
+
+    auto action = std::make_shared<EventAction>(
+        kDrawEvent, t, reinterpret_cast<uintptr_t>(&RawEventActionCallback), reinterpret_cast<uintptr_t>(&state));
+
+    t->GetActionList().Add(action);
+    t->Run(0.033, kDrawEvent);
+
+    EXPECT_EQ(state.runCount, 1);
+    EXPECT_EQ(state.lastEventId, kDrawEvent);
+    EXPECT_DOUBLE_EQ(state.lastDuration, 0.033);
+}
+
+TEST(TickableTest, EventActionCallbackGettersAndSetters) {
+    auto t = std::make_shared<TestTickableObj>();
+    auto action = std::make_shared<EventAction>(kEvent0, t);
+
+    EXPECT_FALSE(action->HasCallback());
+    EXPECT_FALSE(action->GetHasCppCallback());
+    EXPECT_FALSE(action->GetHasRawCallback());
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(action->GetCallback()));
+    EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(0));
+
+    action->SetCallback([](EventID, const double, uintptr_t callbackPointerData) {
+        return callbackPointerData == static_cast<uintptr_t>(123);
+    }, static_cast<uintptr_t>(123));
+    EXPECT_TRUE(action->HasCallback());
+    EXPECT_TRUE(action->GetHasCppCallback());
+    EXPECT_FALSE(action->GetHasRawCallback());
+    EXPECT_TRUE(std::holds_alternative<EventActionCppCallback>(action->GetCallback()));
+    EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(123));
+
+    RawCallbackState state{};
+    EventActionCallback callbackVariant = reinterpret_cast<uintptr_t>(&RawEventActionCallback);
+    action->SetCallback(callbackVariant, reinterpret_cast<uintptr_t>(&state));
+    EXPECT_TRUE(action->HasCallback());
+    EXPECT_FALSE(action->GetHasCppCallback());
+    EXPECT_TRUE(action->GetHasRawCallback());
+    EXPECT_TRUE(std::holds_alternative<uintptr_t>(action->GetCallback()));
+    EXPECT_EQ(std::get<uintptr_t>(action->GetCallback()), reinterpret_cast<uintptr_t>(&RawEventActionCallback));
+    EXPECT_EQ(action->GetCallbackPointerData(), reinterpret_cast<uintptr_t>(&state));
+
+    action->SetCallbackPointerData(static_cast<uintptr_t>(456));
+    EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(456));
+
+    action->ClearCallback();
+    EXPECT_FALSE(action->HasCallback());
+    EXPECT_FALSE(action->GetHasCppCallback());
+    EXPECT_FALSE(action->GetHasRawCallback());
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(action->GetCallback()));
+    EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(0));
 }
 
 
