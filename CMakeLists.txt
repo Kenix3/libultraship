@@ -79,11 +79,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(cmake/ios-toolchain-populate.cmake)
 endif()
 
+# =========== Tests (configure-time options) =============
+option(LUS_BUILD_TESTS "Build unit tests" OFF)
+if(LUS_BUILD_TESTS)
+    set(COMPONENT_THREAD_SAFE ON CACHE BOOL "Enable thread safety for Component parent/child lists" FORCE)
+endif()
+
 # =========== Sources =============
 add_subdirectory("src")
 
 # =========== Tests =============
-option(LUS_BUILD_TESTS "Build unit tests" OFF)
 if(LUS_BUILD_TESTS)
     enable_testing()
     add_subdirectory("tests")
