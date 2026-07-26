@@ -1,9 +1,9 @@
-#=================== Top-Level ===================
+#=================== Core ===================
 
-file(GLOB Source_Files__TopLevel RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
+file(GLOB Source_Files__Core RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "core/*.cpp")
 
-source_group("" FILES ${Source_Files__TopLevel})
-target_sources(libultraship PRIVATE ${Source_Files__TopLevel})
+source_group("core" FILES ${Source_Files__Core})
+target_sources(libultraship PRIVATE ${Source_Files__Core})
 
 #=================== Actions ===================
 

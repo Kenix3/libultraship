@@ -11,9 +11,9 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "ship/Part.h"
-#include "ship/PartList.h"
-#include "ship/ComponentList.h"
+#include "ship/core/Part.h"
+#include "ship/core/PartList.h"
+#include "ship/core/ComponentList.h"
 
 namespace Ship {
 

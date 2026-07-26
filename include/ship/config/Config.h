@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <nlohmann/json.hpp>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 class Config;

@@ -9,7 +9,7 @@
 #include <chrono>
 #endif
 
-#include "ship/Part.h"
+#include "ship/core/Part.h"
 #include "ship/events/EventTypes.h"
 
 namespace Ship {

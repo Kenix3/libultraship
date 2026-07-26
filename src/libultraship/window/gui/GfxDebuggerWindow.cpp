@@ -1,7 +1,7 @@
 #include "libultraship/window/gui/GfxDebuggerWindow.h"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/resource/ResourceManager.h"
 #include "fast/debug/GfxDebugger.h"
 #include <stack>

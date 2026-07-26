@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include <spdlog/logger.h>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 

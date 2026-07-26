@@ -6,8 +6,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "ship/Action.h"
-#include "ship/ActionList.h"
+#include "ship/core/Action.h"
+#include "ship/core/ActionList.h"
 #include "ship/events/EventTypes.h"
 
 namespace Ship {

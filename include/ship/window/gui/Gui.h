@@ -2,7 +2,7 @@
 
 #ifdef __cplusplus
 
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <memory>

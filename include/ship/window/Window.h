@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/window/MouseStateManager.h"
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 class Gui;

@@ -1,5 +1,5 @@
 #include "ship/window/gui/GuiElement.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
 
 namespace Ship {

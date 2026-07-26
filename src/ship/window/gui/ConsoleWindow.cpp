@@ -1,7 +1,7 @@
 #include "ship/window/gui/ConsoleWindow.h"
 
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"

@@ -1,7 +1,7 @@
 #include "ship/window/gui/ComponentHierarchyWindow.h"
 
-#include "ship/Context.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/Context.h"
+#include "ship/core/TickableComponent.h"
 
 namespace Ship {
 

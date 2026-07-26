@@ -4,7 +4,7 @@
 #include <string>
 #include <thread>
 #include <stdint.h>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE

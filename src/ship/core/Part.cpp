@@ -1,5 +1,5 @@
-#include "ship/Part.h"
-#include "ship/Context.h"
+#include "ship/core/Part.h"
+#include "ship/core/Context.h"
 
 namespace Ship {
 std::atomic<uint64_t> Part::sNextPartId = 0;

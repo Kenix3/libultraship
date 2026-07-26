@@ -8,7 +8,7 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include "ship/window/Window.h"
 
 namespace Ship {

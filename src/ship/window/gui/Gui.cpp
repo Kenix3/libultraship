@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "ship/config/Config.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/Console.h"

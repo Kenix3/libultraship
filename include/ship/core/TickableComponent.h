@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 
-#include "ship/Tickable.h"
-#include "ship/Component.h"
-#include "ship/Action.h"
+#include "ship/core/Tickable.h"
+#include "ship/core/Component.h"
+#include "ship/core/Action.h"
 #include "ship/events/EventTypes.h"
 
 namespace Ship {

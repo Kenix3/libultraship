@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <mutex>
 
-#include "ship/PartList.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/PartList.h"
+#include "ship/core/TickableComponent.h"
 
 namespace Ship {
 

@@ -5,7 +5,7 @@
 #endif
 
 #include <stdexcept>
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 

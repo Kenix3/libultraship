@@ -1,5 +1,5 @@
 #include "ship/actions/EventAction.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/TickableComponent.h"
 
 namespace Ship {
 

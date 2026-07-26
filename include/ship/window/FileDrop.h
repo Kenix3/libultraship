@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include "ship/window/Window.h"
 
 /**

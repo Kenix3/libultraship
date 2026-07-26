@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ship/Action.h"
+#include "ship/core/Action.h"
 
 namespace Ship {
 

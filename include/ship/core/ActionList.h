@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <stdint.h>
 
-#include "ship/PartList.h"
-#include "ship/Action.h"
+#include "ship/core/PartList.h"
+#include "ship/core/Action.h"
 
 namespace Ship {
 

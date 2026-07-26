@@ -1,7 +1,7 @@
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"
 #include "ship/debug/CrashHandler.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/log/Logger.h"
 
 #ifdef _WIN32

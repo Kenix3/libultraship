@@ -5,7 +5,7 @@
 #include <vector>
 #include "ship/audio/AudioBackend.h"
 #include "ship/audio/AudioPlayer.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include "ship/config/Config.h"
 
 namespace Ship {

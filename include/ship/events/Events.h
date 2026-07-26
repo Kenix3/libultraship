@@ -7,7 +7,7 @@
 #include <string>
 
 #include "ship/events/EventTypes.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 

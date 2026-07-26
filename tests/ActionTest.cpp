@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "ship/Action.h"
-#include "ship/Tickable.h"
+#include "ship/core/Action.h"
+#include "ship/core/Tickable.h"
 #include "ship/events/EventTypes.h"
 
 using namespace Ship;
@@ -135,7 +135,7 @@ TEST(ActionTest, UniqueIds) {
 
 // ---- ActionList tests ----
 
-#include "ship/ActionList.h"
+#include "ship/core/ActionList.h"
 
 TEST(ActionListTest, AddAndGetByEventId) {
     ActionList list;

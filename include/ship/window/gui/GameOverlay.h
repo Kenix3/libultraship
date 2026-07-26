@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include "ship/resource/ResourceManager.h"
 #include <imgui.h>
 #include <unordered_map>

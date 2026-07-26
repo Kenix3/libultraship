@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 class Config;

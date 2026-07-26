@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #ifdef __APPLE__

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <stdint.h>
 
-#include "ship/Part.h"
+#include "ship/core/Part.h"
 
 namespace Ship {
 

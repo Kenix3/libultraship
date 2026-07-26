@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <memory>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 #if (__linux__)
 #include <csignal>

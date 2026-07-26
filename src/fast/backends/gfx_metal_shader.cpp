@@ -7,7 +7,7 @@
 
 #ifdef __APPLE__
 
-#include <ship/Context.h>
+#include <ship/core/Context.h>
 #include <ship/resource/factory/ShaderFactory.h>
 // This is a workaround for conflicting defines on Metal.hpp
 #define TRUE 1

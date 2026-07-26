@@ -7,7 +7,7 @@
 #include <functional>
 #include <map>
 #include <imgui.h>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 

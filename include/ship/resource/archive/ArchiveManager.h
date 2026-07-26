@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
 #endif

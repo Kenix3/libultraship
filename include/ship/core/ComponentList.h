@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <mutex>
 
-#include "ship/PartList.h"
+#include "ship/core/PartList.h"
 
 namespace Ship {
 

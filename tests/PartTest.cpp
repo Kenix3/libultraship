@@ -2,8 +2,8 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
-#include "ship/Part.h"
-#include "ship/PartList.h"
+#include "ship/core/Part.h"
+#include "ship/core/PartList.h"
 
 using namespace Ship;
 
@@ -254,7 +254,7 @@ TEST(PartListTest, DirectListAccess) {
 }
 
 // ---- GetFirst<T>() tests (with Component subclasses) ----
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 class TypeA : public Component {
   public:

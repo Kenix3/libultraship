@@ -4,7 +4,7 @@
 
 #include "ship/resource/archive/Archive.h"
 #include "ship/scripting/LibraryLoader.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 #include <unordered_map>
 #include <string>

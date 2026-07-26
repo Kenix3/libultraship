@@ -1,7 +1,7 @@
 #include "fast/Fast3dGui.h"
 
 #include "fast/Fast3dWindow.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/config/Config.h"

@@ -9,8 +9,8 @@
 #include <chrono>
 #include <stdint.h>
 #include "ship/audio/Audio.h"
-#include "ship/Component.h"
-#include "ship/TickableList.h"
+#include "ship/core/Component.h"
+#include "ship/core/TickableList.h"
 
 /**
  * @namespace Ship

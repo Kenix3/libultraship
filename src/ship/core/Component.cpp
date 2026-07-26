@@ -1,6 +1,6 @@
-#include "ship/Component.h"
-#include "ship/Tickable.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/Component.h"
+#include "ship/core/Tickable.h"
+#include "ship/core/TickableComponent.h"
 
 #include <algorithm>
 #include <spdlog/spdlog.h>

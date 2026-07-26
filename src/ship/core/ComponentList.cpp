@@ -1,7 +1,7 @@
-#include "ship/ComponentList.h"
-#include "ship/Component.h"
-#include "ship/Context.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/ComponentList.h"
+#include "ship/core/Component.h"
+#include "ship/core/Context.h"
+#include "ship/core/TickableComponent.h"
 
 #include <spdlog/spdlog.h>
 #include <unordered_set>

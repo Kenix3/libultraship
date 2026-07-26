@@ -12,7 +12,7 @@
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include "ship/thread/ThreadPool.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY

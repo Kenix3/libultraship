@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "ship/TickableComponent.h"
-#include "ship/Context.h"
-#include "ship/TickableList.h"
-#include "ship/Action.h"
+#include "ship/core/TickableComponent.h"
+#include "ship/core/Context.h"
+#include "ship/core/TickableList.h"
+#include "ship/core/Action.h"
 
 using namespace Ship;
 

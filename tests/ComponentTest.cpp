@@ -3,8 +3,8 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
-#include "ship/Component.h"
-#include "ship/Context.h"
+#include "ship/core/Component.h"
+#include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
@@ -633,7 +633,7 @@ TEST(ComponentLifecycleTest, ParentListDropsExpiredParents) {
 
 // ---- ComponentList tests ----
 
-#include "ship/ComponentList.h"
+#include "ship/core/ComponentList.h"
 
 TEST(ComponentListTest, HasByName) {
     ComponentList list;

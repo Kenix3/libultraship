@@ -1,5 +1,5 @@
-#include "ship/Context.h"
-#include "ship/TickableComponent.h"
+#include "ship/core/Context.h"
+#include "ship/core/TickableComponent.h"
 #include <cstring>
 #include <functional>
 #include <iostream>

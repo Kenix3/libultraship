@@ -1,5 +1,5 @@
 #include "libultraship/window/gui/InputEditorWindow.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/window/gui/Gui.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/config/ConsoleVariable.h"

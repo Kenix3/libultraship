@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Ship {
 /**

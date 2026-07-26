@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ship/utils/color.h"
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "ship/Component.h"
+#include "ship/core/Component.h"
 
 namespace Fast {
 union F3DGfx;
