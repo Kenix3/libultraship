@@ -41,6 +41,14 @@ Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVari
         AddGuiWindow(std::make_shared<ConsoleWindow>(CVAR_CONSOLE_WINDOW_OPEN, "Console", ImVec2(520, 600),
                                                      ImGuiWindowFlags_NoFocusOnAppearing));
     }
+
+    // Always-on popup host. No visibility CVar: it isn't a user-toggled window, and Show()ing it here
+    // would call SyncVisibilityConsoleVariable() -> GetWindow()->GetGui() before the Gui is attached
+    // to the Window, which crashes. Constructed already visible so Draw() runs every frame; it renders
+    // nothing until a pick is queued.
+    if (GetGuiWindow("FileBrowser") == nullptr) {
+        AddGuiWindow(std::make_shared<FileBrowserWindow>("", true, "FileBrowser"));
+    }
 }
 
 Gui::Gui() : Gui(std::vector<std::shared_ptr<GuiWindow>>()) {
@@ -95,6 +103,7 @@ void Gui::Init() {
 
     GetGuiWindow("Stats")->Init();
     GetGuiWindow("Console")->Init();
+    GetGuiWindow("FileBrowser")->Init();
     GetGameOverlay()->Init();
 
     Context::GetRawInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
@@ -164,7 +173,21 @@ void Gui::ImGuiWMNewFrame() {
 void Gui::RefreshImGuiGamepads() {
 }
 
+void Gui::UpdateGamepadNavigation() {
+    const bool navWanted = Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+                           (GetMenuOrMenubarVisible() ||
+                            ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel));
+    if (navWanted) {
+        mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    } else {
+        mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+    }
+}
+
 void Gui::DrawMenu() {
+    // Per frame: popups (boot prompts, the file browser) have no open/close event to hook.
+    UpdateGamepadNavigation();
+
     const std::shared_ptr<Window> wnd = Context::GetRawInstance()->GetWindow();
     const std::shared_ptr<Config> conf = Context::GetRawInstance()->GetConfig();
 

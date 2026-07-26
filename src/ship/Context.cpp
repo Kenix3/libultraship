@@ -2,6 +2,7 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <cstring>
 #include <iostream>
+#include <SDL2/SDL.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "ship/install_config.h"
@@ -268,6 +269,21 @@ bool Context::InitControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
     if (GetControlDeck() == nullptr) {
         SPDLOG_ERROR("Failed to initialize control deck");
         return false;
+    }
+
+    // Bring up the SDL game-controller subsystem here rather than in osContInit, so controllers work
+    // in pre-game UI (e.g. navigating extraction prompts). osContInit still runs ControlDeck::Init(),
+    // which needs the game's controllerBits.
+    std::string controllerDb = LocateFileAcrossAppDirs("gamecontrollerdb.txt");
+    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
+    if (mappingsAdded >= 0) {
+        SPDLOG_INFO("Added SDL game controller mappings from \"{}\" ({})", controllerDb, mappingsAdded);
+    } else {
+        SPDLOG_WARN("Failed to add SDL game controller mappings from \"{}\" ({})", controllerDb, SDL_GetError());
+    }
+    SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+        SPDLOG_WARN("Failed to initialize SDL game controllers ({})", SDL_GetError());
     }
 
     return true;
