@@ -23,8 +23,7 @@ inline constexpr const char* kDefaultContextJson = R"JSON({
         },
         {
             "type": "Keystore",
-            "name": "Keystore",
-            "condition": "ENABLE_SCRIPTING"
+            "name": "Keystore"
         },
         {
             "type": "ResourceManager",
@@ -64,8 +63,7 @@ inline constexpr const char* kDefaultContextJson = R"JSON({
         },
         {
             "type": "ScriptLoader",
-            "name": "ScriptLoader",
-            "condition": "ENABLE_SCRIPTING"
+            "name": "ScriptLoader"
         }
     ]
 }

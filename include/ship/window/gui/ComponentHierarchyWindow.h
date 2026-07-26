@@ -23,5 +23,9 @@ class ComponentHierarchyWindow : public GuiWindow {
 
   protected:
     void DrawElement() override;
+
+  private:
+    uint64_t mLastHierarchyVersion = UINT64_MAX;
+    std::string mCachedTreeString;
 };
 } // namespace Ship

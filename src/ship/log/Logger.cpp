@@ -73,7 +73,7 @@ void Logger::OnInit(const nlohmann::json& /*initArgs*/) {
         sinks.push_back(fileSink);
 
 #ifdef _DEBUG
-        mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
+        mLogger = std::make_shared<spdlog::logger>(mAppName, sinks.begin(), sinks.end());
         mLogger->set_level(spdlog::level::debug);
         mLogger->flush_on(spdlog::level::trace);
 #else

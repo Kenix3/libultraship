@@ -152,6 +152,16 @@ template <typename C = Part, typename StoredPtr = std::shared_ptr<C>> class Part
     size_t GetCount() const;
 
     /**
+     * @brief Returns a monotonically increasing counter that increments on every add or remove.
+     *
+     * Callers can store this value and compare it on subsequent frames to detect
+     * whether the list has changed since they last inspected it.
+     */
+    uint64_t GetMutationVersion() const {
+        return mMutationVersion;
+    }
+
+    /**
      * @brief Retrieves a Part by its unique ID.
      * @param id The Part ID to look up.
      * @return The matching Part, or nullptr if not found.

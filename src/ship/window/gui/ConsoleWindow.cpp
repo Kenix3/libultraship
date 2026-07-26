@@ -289,7 +289,12 @@ void ConsoleWindow::OnInit(const nlohmann::json& initArgs) {
         return;
     }
 
-    std::weak_ptr<ConsoleWindow> weakSelf = std::dynamic_pointer_cast<ConsoleWindow>(GetSharedComponent());
+    auto sharedSelf = std::dynamic_pointer_cast<ConsoleWindow>(TryGetSharedComponent());
+    if (!sharedSelf) {
+        SPDLOG_ERROR("ConsoleWindow::OnInit: could not obtain shared_ptr to self; console commands will not be registered");
+        return;
+    }
+    std::weak_ptr<ConsoleWindow> weakSelf = sharedSelf;
 
     mConsole->AddCommand("set", { [weakSelf](std::shared_ptr<Console> console, std::vector<std::string> args,
                                              std::string* output) -> int32_t {

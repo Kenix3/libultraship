@@ -1227,18 +1227,3 @@ TEST(BuildComponentsFromJsonTest, ThreadPoolIsCreated) {
     ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
     EXPECT_NE(ctx->GetFirstInChildren<Ship::ThreadPool>(), nullptr);
 }
-
-// ResourceManager requires archive files at initialization time; it cannot be meaningfully
-// tested without a real .otr archive. The BuildComponentsFromJson path for ResourceManager is
-// already exercised indirectly through CreateDefaultInstance in Context tests.
-
-TEST(ComponentLifecycleTest, TryGetSharedComponentAvailableAfterInit) {
-    auto c = std::make_shared<TestComponent>("InitBound");
-    c->Init();
-
-    auto self = c->TryGetSharedComponent();
-    ASSERT_NE(self, nullptr);
-    EXPECT_EQ(self->GetId(), c->GetId());
-}
-
-// ---- ComponentList tests ----

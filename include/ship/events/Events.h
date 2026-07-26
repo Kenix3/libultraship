@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <unordered_map>
+#include <string>
 
 #include "ship/events/EventTypes.h"
 #include "ship/Component.h"
@@ -20,10 +21,10 @@ namespace Ship {
 struct EventRegistration {
     /** @brief Optional human-readable name for this event (used in debug output). */
     const char* Name;
-    /** @brief Monotonically increasing counter used to assign unique ListenerIDs. */
+    /** @brief Monotonically increasing counter used to assign unique ListenerID. */
     ListenerID NextListenerID = 0;
     /** @brief Map from caller location string to call-site metadata (file, line, count). */
-    std::unordered_map<const char*, EventMetadata> Callers;
+    std::unordered_map<std::string, EventMetadata> Callers;
     /** @brief Active listeners for this event, ordered by priority (highest first). */
     std::vector<EventListener> Listeners;
 };

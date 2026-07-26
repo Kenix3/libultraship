@@ -128,11 +128,8 @@ class TickableComponent : public Tickable,
   private:
     TickGroup mTickGroup;
     TickPriority mTickPriority;
-    // Non-owning reference to the Context. The Context owns this component via its
-    // TickableList, so a strong reference here would create a reference cycle that
-    // keeps both alive forever. Mirrors Part::mContext, which is also a weak_ptr.
-    std::weak_ptr<Context> mContext;
     std::vector<EventID> mPendingEventIds;
+    std::vector<std::shared_ptr<Action>> mPendingActions;
 };
 
 } // namespace Ship

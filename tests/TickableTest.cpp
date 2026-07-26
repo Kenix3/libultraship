@@ -339,3 +339,16 @@ TEST(TickableTest, ConstructWithActions) {
     t2->GetActionList().Add(a2);
     EXPECT_EQ(t2->GetActionList().GetCount(), 2u);
 }
+
+// ============================================================
+// Forced Start/Stop logging path on standalone Tickable
+// ============================================================
+
+// A plain Tickable (not a Component) should still support forced lifecycle calls.
+// The log path now emits "unnamed Tickable" when dynamic_cast<Component*> fails.
+TEST(TickableTest, StandaloneTickableSupportsForcedStartStop) {
+    auto t = std::make_shared<TestTickableObj>();
+    t->Stop();
+    EXPECT_NO_THROW(t->Start(true));
+    EXPECT_TRUE(t->IsTicking());
+}

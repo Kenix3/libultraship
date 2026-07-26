@@ -59,7 +59,11 @@ void Events::CallEvent(const EventID id, IEvent* event, const char* file, const 
         listener.Function(event);
     }
 
-    auto& info = registry.Callers[key];
+    if (key == nullptr) {
+        return;
+    }
+
+    auto& info = registry.Callers[std::string(key)];
 
     if (info.Path == nullptr) {
         info.Path = file;

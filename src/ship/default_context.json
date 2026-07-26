@@ -18,8 +18,7 @@
         },
         {
             "type": "Keystore",
-            "name": "Keystore",
-            "condition": "ENABLE_SCRIPTING"
+            "name": "Keystore"
         },
         {
             "type": "ResourceManager",
@@ -59,8 +58,7 @@
         },
         {
             "type": "ScriptLoader",
-            "name": "ScriptLoader",
-            "condition": "ENABLE_SCRIPTING"
+            "name": "ScriptLoader"
         }
     ]
 }

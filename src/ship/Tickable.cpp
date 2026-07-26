@@ -61,6 +61,8 @@ bool Tickable::Start(const bool force) {
         auto component = dynamic_cast<Component*>(this);
         if (component != nullptr) {
             SPDLOG_WARN("Forcing Start on Component {}", component->ToString());
+        } else {
+            SPDLOG_WARN("Forcing Start on unnamed Tickable");
         }
     }
     return true;
@@ -86,6 +88,8 @@ bool Tickable::Stop(const bool force) {
         auto component = dynamic_cast<Component*>(this);
         if (component != nullptr) {
             SPDLOG_WARN("Forcing Stop on Component {}", component->ToString());
+        } else {
+            SPDLOG_WARN("Forcing Stop on unnamed Tickable");
         }
     }
     return true;

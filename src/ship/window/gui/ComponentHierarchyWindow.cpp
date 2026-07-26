@@ -22,10 +22,15 @@ void ComponentHierarchyWindow::DrawElement() {
         return;
     }
 
+    const uint64_t currentVersion = context->GetChildren().GetMutationVersion();
+    if (currentVersion != mLastHierarchyVersion) {
+        mCachedTreeString = context->ToTreeString();
+        mLastHierarchyVersion = currentVersion;
+    }
+
     if (ImGui::BeginChild("##component_tree", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true)) {
         ImGui::SeparatorText("Component Hierarchy");
-        std::string tree = context->ToTreeString();
-        ImGui::TextUnformatted(tree.c_str());
+        ImGui::TextUnformatted(mCachedTreeString.c_str());
 
         ImGui::Spacing();
         ImGui::SeparatorText("Tickable Components");

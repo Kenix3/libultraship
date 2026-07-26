@@ -507,6 +507,94 @@ TEST(PartListExceptionSafetyTest, OnRemovedThrowRestoresMembership) {
     EXPECT_EQ(list.GetCount(), 1u);
 }
 
+// ============================================================
+// PartList::GetMutationVersion tests
+// ============================================================
+
+// The version starts at 0 before any mutations occur.
+TEST(PartListMutationVersionTest, InitialVersionIsZero) {
+    PartList<Part> list;
+    EXPECT_EQ(list.GetMutationVersion(), 0u);
+}
+
+// Adding a new part must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnAdd) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    const uint64_t before = list.GetMutationVersion();
+    list.Add(p);
+    EXPECT_GT(list.GetMutationVersion(), before);
+}
+
+// Adding a duplicate must NOT increment the version (the list is unchanged).
+TEST(PartListMutationVersionTest, VersionDoesNotIncrementOnDuplicateAdd) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    const uint64_t after_first = list.GetMutationVersion();
+    list.Add(p);
+    EXPECT_EQ(list.GetMutationVersion(), after_first);
+}
+
+// Removing an existing part must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnRemove) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    const uint64_t after_add = list.GetMutationVersion();
+    list.Remove(p);
+    EXPECT_GT(list.GetMutationVersion(), after_add);
+}
+
+// Removing all parts at once must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnRemoveAll) {
+    PartList<Part> list;
+    list.Add(std::make_shared<Part>());
+    list.Add(std::make_shared<Part>());
+    const uint64_t before = list.GetMutationVersion();
+    list.Remove();
+    EXPECT_GT(list.GetMutationVersion(), before);
+}
+
+// Each successful add or remove must produce a strictly greater version number.
+TEST(PartListMutationVersionTest, VersionIsMonotonicallyIncreasing) {
+    PartList<Part> list;
+    uint64_t prev = list.GetMutationVersion();
+    for (int i = 0; i < 5; i++) {
+        auto p = std::make_shared<Part>();
+        list.Add(p);
+        EXPECT_GT(list.GetMutationVersion(), prev);
+        prev = list.GetMutationVersion();
+        list.Remove(p);
+        EXPECT_GT(list.GetMutationVersion(), prev);
+        prev = list.GetMutationVersion();
+    }
+}
+
+// Mutations to one list must not affect another list's version counter.
+TEST(PartListMutationVersionTest, TwoDistinctListsHaveIndependentVersions) {
+    PartList<Part> listA;
+    PartList<Part> listB;
+    listA.Add(std::make_shared<Part>());
+    EXPECT_EQ(listB.GetMutationVersion(), 0u);
+}
+
+// The version must also increment for weak-storage lists when entries are added,
+// and again when expired entries are pruned by a Get() call.
+TEST(PartListMutationVersionTest, WeakStorageVersionIncrementsOnAdd) {
+    PartList<Part, std::weak_ptr<Part>> weak_list;
+    const uint64_t before = weak_list.GetMutationVersion();
+    {
+        auto p = std::make_shared<Part>();
+        weak_list.Add(p);
+        EXPECT_GT(weak_list.GetMutationVersion(), before);
+    }
+    // After the owning shared_ptr expires, Get() triggers PruneExpired which bumps the version.
+    const uint64_t after_expire = weak_list.GetMutationVersion();
+    weak_list.Get();
+    EXPECT_GE(weak_list.GetMutationVersion(), after_expire);
+}
+
 #ifdef COMPONENT_THREAD_SAFE
 TEST(PartListThreadSafetyTest, CanAddCrossListChecksDoNotDeadlock) {
     CrossCheckingPartList listA;

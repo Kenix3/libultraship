@@ -10,7 +10,7 @@ namespace Ship {
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
                                      const std::vector<EventID>& eventIds)
-    : Tickable(false), Component(name, context), mTickGroup(tickGroup), mTickPriority(tickPriority), mContext(context),
+    : Tickable(false), Component(name, context), mTickGroup(tickGroup), mTickPriority(tickPriority),
       mPendingEventIds(eventIds) {
     // Note: Actions and context registration are deferred to RegisterWithContext()
     // because shared_from_this() cannot be called in a constructor.
@@ -19,14 +19,24 @@ TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Co
 TickableComponent::TickableComponent(const std::string& name, std::shared_ptr<Context> context,
                                      const TickGroup tickGroup, const TickPriority tickPriority,
                                      const std::vector<std::shared_ptr<Action>>& actions)
-    : Tickable(true, actions), Component(name, context), mTickGroup(tickGroup), mTickPriority(tickPriority),
-      mContext(context) {
+    : Tickable(false), Component(name, context), mTickGroup(tickGroup), mTickPriority(tickPriority),
+      mPendingActions(actions) {
+    // Note: Actions and context registration are deferred to RegisterWithContext()
+    // because shared_from_this() cannot be called in a constructor.
 }
 
 TickableComponent::~TickableComponent() {
-    // Do not call shared_from_this() in destructor - it is unsafe.
-    // UnregisterFromContext() should be called explicitly before destruction,
-    // or the Context should clean up its own references.
+    // shared_from_this() is unsafe in a destructor. If the component is still
+    // registered with its Context at this point, that is a usage error — callers
+    // should have called UnregisterFromContext() before allowing destruction.
+    // We emit a warning in debug builds to catch this early.
+#ifdef _DEBUG
+    if (GetContext() != nullptr) {
+        SPDLOG_WARN("TickableComponent '{}' destroyed while still potentially registered with Context. "
+                    "Call UnregisterFromContext() before releasing the last shared_ptr.",
+                    GetName());
+    }
+#endif
 }
 
 bool TickableComponent::RegisterWithContext() {
@@ -36,12 +46,17 @@ bool TickableComponent::RegisterWithContext() {
         return false;
     }
 
-    // Create EventActions for all pending EventIDs.
+    // Register pending EventActions.
     for (const auto& eventId : mPendingEventIds) {
         GetActionList().Add(std::make_shared<EventAction>(eventId, self));
     }
 
-    if (!mPendingEventIds.empty()) {
+    // Register explicitly provided Actions.
+    for (const auto& action : mPendingActions) {
+        GetActionList().Add(action);
+    }
+
+    if (!mPendingEventIds.empty() || !mPendingActions.empty()) {
         Start();
     }
 
@@ -60,7 +75,7 @@ void TickableComponent::UnregisterFromContext() {
 }
 
 std::shared_ptr<Context> TickableComponent::GetContext() const {
-    return mContext.lock();
+    return Part::GetContext();
 }
 
 TickGroup TickableComponent::GetTickGroup() const {
@@ -91,7 +106,7 @@ TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> contex
     if (oldContext != nullptr && self) {
         oldContext->GetTickableComponents().Remove(self);
     }
-    mContext = context;
+    Part::SetContext(context);
     if (context != nullptr && self) {
         context->GetTickableComponents().Add(self);
     }
