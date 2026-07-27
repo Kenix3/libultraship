@@ -1204,8 +1204,7 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     // Describe the buffer by what was actually packed (the loaded HD stride)
     uint32_t uploadWidth = safeLineSizeBytes / 4;
     uint32_t uploadHeight = safeLineSizeBytes > 0 ? safeLoadedBytes / safeLineSizeBytes : 0;
-    const bool singleLineLoad =
-        uploadHeight <= 1 && resultNewLineSize != 0 && resultNewLineSize < safeLineSizeBytes;
+    const bool singleLineLoad = uploadHeight <= 1 && resultNewLineSize != 0 && resultNewLineSize < safeLineSizeBytes;
     if (uploadWidth > (uint32_t)mRapi->GetMaxTextureSize() || singleLineLoad) {
         if (safeLoadedBytes == (uint64_t)width * height * 4) {
             // buffer holds the full image, use its real dimensions

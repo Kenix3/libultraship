@@ -372,3 +372,5 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcworkspace
 *.xcsettings
 build*
+# clang-format.exe fetched by run-clang-format.ps1
+/clang-format.exe
