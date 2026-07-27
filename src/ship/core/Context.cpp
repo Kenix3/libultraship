@@ -62,7 +62,32 @@ static void UpdateBridgeCaches(const std::shared_ptr<Context>& context) {
 #endif
 }
 
+// Release all bridge-cache shared_ptrs so components are not kept alive past this
+// context's lifetime by the bridge statics. If bridge statics were the only extra
+// reference, the components will be destroyed here (during normal stack unwinding)
+// rather than during process-exit static destruction where logging infrastructure
+// may already have been torn down.
+static void ClearBridgeCaches() {
+    ResourceSetResourceManager(nullptr);
+    CVarSetConsoleVariable(nullptr);
+    WindowSetWindowComponent(nullptr);
+    ControllerSetControlDeck(nullptr);
+    EventSystemSetEvents(nullptr);
+    AudioSetAudioComponent(nullptr);
+    CrashHandlerSetComponent(nullptr);
+    GfxDebuggerSetComponent(nullptr);
+    GfxSetFast3dWindow(nullptr);
+#ifdef ENABLE_SCRIPTING
+    ScriptSetLoader(nullptr);
+#endif
+}
+
 Context::~Context() {
+    // Clear bridge caches first so components aren't kept alive by bridge statics past
+    // this context's lifetime. Keeping them alive into process-exit static-destruction
+    // causes crashes because spdlog sinks are torn down before the component destructors run.
+    ClearBridgeCaches();
+
     if (spdlog::default_logger()) {
         SPDLOG_TRACE("destruct context");
     }
