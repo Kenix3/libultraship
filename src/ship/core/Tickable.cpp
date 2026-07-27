@@ -111,7 +111,7 @@ bool Tickable::Stop(const bool force) {
     return true;
 }
 
-double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
+double Tickable::Tick(const double durationSinceLastTick, EventID eventId) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
@@ -134,7 +134,7 @@ double Tickable::Run(const double durationSinceLastTick, EventID eventId) {
 #endif
 }
 
-double Tickable::Run(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+double Tickable::Tick(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else

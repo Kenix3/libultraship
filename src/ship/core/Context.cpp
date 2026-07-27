@@ -562,7 +562,7 @@ void Context::Tick(EventID eventId) {
     mLastTickTime = now;
 
     for (const auto& tickable : *mTickableComponents.Get()) {
-        tickable->Run(durationSinceLastTick, eventId);
+        tickable->Tick(durationSinceLastTick, eventId);
     }
 }
 
