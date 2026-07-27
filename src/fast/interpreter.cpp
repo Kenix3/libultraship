@@ -1201,11 +1201,12 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
         memset(mTexUploadBuffer + resourceImageSizeBytes, 0, numLoadedBytes - resourceImageSizeBytes);
     }
 
-    // Describe the buffer by what was actually packed (the loaded HD stride)
-    uint32_t uploadWidth = safeLineSizeBytes / 4;
-    uint32_t uploadHeight = safeLineSizeBytes > 0 ? safeLoadedBytes / safeLineSizeBytes : 0;
-    // LoadBlock can record the whole image as one line, turning e.g. a 256x256
-    // texture into a 65536x1 upload. That exceeds GPU limits and aborts on Metal.
+    // Describe the buffer by the per-line HD stride. loaded_texture.line_size_bytes spans the whole
+    // image for block loads, which collapses the upload to an Nx1 strip and corrupts the texture;
+    // resultNewLineSize (tile line_size * h_byte_scale) is the true per-row stride for both loads.
+    uint32_t uploadWidth = resultNewLineSize / 4;
+    uint32_t uploadHeight = resultNewLineSize > 0 ? safeLoadedBytes / resultNewLineSize : 0;
+    // Safety net: a genuinely oversized replacement can still exceed the GPU limit and abort on Metal.
     if (uploadWidth > (uint32_t)mRapi->GetMaxTextureSize()) {
         if (safeLoadedBytes == (uint64_t)width * height * 4) {
             // buffer holds the full image, use its real dimensions
