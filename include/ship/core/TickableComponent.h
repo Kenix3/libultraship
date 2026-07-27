@@ -39,9 +39,7 @@ enum class TickPriority : uint32_t { TickPriorityDefault = 0 };
  * is removed.  This is managed automatically by ComponentList when the
  * COMPONENT_THREAD_SAFE or default parent/child relationship hooks fire.
  */
-class TickableComponent : public Tickable,
-                          public Component,
-                          public std::enable_shared_from_this<TickableComponent> {
+class TickableComponent : public Tickable, public Component, public std::enable_shared_from_this<TickableComponent> {
   public:
     /**
      * @brief Constructs a TickableComponent with EventID subscriptions.
@@ -125,6 +123,7 @@ class TickableComponent : public Tickable,
      * @return True if the action executed successfully.
      */
     virtual bool ActionRan(EventID eventId, const double durationSinceLastTick);
+
   private:
     TickGroup mTickGroup;
     TickPriority mTickPriority;

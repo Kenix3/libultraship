@@ -212,7 +212,7 @@ class Component : public Part, public std::enable_shared_from_this<Component> {
     std::string mName;
     std::weak_ptr<Component> mWeakSelf;
 #ifdef COMPONENT_THREAD_SAFE
-    std::atomic<bool> mIsInitialized{false};
+    std::atomic<bool> mIsInitialized{ false };
     mutable std::recursive_mutex mInitMutex;
 #else
     bool mIsInitialized = false;
@@ -490,4 +490,3 @@ std::shared_ptr<std::vector<std::shared_ptr<T>>> BasicComponentList<StoredPtr>::
 }
 
 } // namespace Ship
-

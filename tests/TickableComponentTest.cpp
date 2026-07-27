@@ -2,7 +2,8 @@
 #include "ship/core/TickableComponent.h"
 #include "ship/core/Context.h"
 #include "ship/core/TickableList.h"
-#include "ship/core/Action.h"`n#include "ship/actions/EventAction.h"
+#include "ship/core/Action.h"
+#include "ship/actions/EventAction.h"
 
 using namespace Ship;
 

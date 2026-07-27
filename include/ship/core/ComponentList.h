@@ -36,9 +36,11 @@ template <typename StoredPtr> class BasicComponentList : public PartList<Compone
     using PartListBase = PartList<Component, StoredPtr>;
     using PartListBase::Get;
     using PartListBase::Has;
-    using PartListBase::PartList;
 
     BasicComponentList() = default;
+
+    explicit BasicComponentList(const size_t initialAllocation) : PartList<Component, StoredPtr>(initialAllocation) {
+    }
 
     /**
      * @brief Constructs a list with relationship role metadata.

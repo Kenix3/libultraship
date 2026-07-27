@@ -209,4 +209,3 @@ template <typename T> double Tickable::Tick(const double durationSinceLastTick, 
 }
 
 } // namespace Ship
-

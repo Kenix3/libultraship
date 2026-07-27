@@ -49,7 +49,8 @@ void BasicComponentList<StoredPtr>::Added(std::shared_ptr<Component> part, const
             if (tickableOwner) {
                 auto context = tickableOwner->GetContext();
                 if (context) {
-                    ownerShared = std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
+                    ownerShared =
+                        std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
                 }
             }
         }
@@ -108,7 +109,8 @@ void BasicComponentList<StoredPtr>::Removed(std::shared_ptr<Component> part, con
             if (tickableOwner) {
                 auto context = tickableOwner->GetContext();
                 if (context) {
-                    ownerShared = std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
+                    ownerShared =
+                        std::static_pointer_cast<Component>(context->GetTickableComponents().Get(mOwner->GetId()));
                 }
             }
         }

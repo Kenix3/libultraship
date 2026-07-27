@@ -96,9 +96,9 @@ TEST(TickableTest, AddRemoveActions) {
     auto t = std::make_shared<TestTickableObj>();
     auto a = std::make_shared<CountingEventAction>(kTickEvent, t);
 
-    EXPECT_TRUE(t->GetActionList().Add(a));
+    EXPECT_EQ(t->GetActionList().Add(a), ListReturnCode::Success);
     EXPECT_TRUE(t->GetActionList().Has(a));
-    EXPECT_TRUE(t->GetActionList().Remove(a));
+    EXPECT_EQ(t->GetActionList().Remove(a), ListReturnCode::Success);
     EXPECT_FALSE(t->GetActionList().Has(a));
 }
 
@@ -266,9 +266,9 @@ TEST(TickableTest, EventActionCallbackGettersAndSetters) {
     EXPECT_TRUE(std::holds_alternative<std::monostate>(action->GetCallback()));
     EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(0));
 
-    action->SetCallback([](EventID, const double, uintptr_t callbackPointerData) {
+    action->SetCallback(EventActionCppCallback([](EventID, const double, uintptr_t callbackPointerData) {
         return callbackPointerData == static_cast<uintptr_t>(123);
-    }, static_cast<uintptr_t>(123));
+    }), static_cast<uintptr_t>(123));
     EXPECT_TRUE(action->HasCallback());
     EXPECT_TRUE(action->GetHasCppCallback());
     EXPECT_FALSE(action->GetHasRawCallback());

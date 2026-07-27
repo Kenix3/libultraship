@@ -81,8 +81,7 @@ std::shared_ptr<Component> Component::TryGetSharedComponent() noexcept {
         auto self = shared_from_this();
         mWeakSelf = self;
         return self;
-    } catch (const std::bad_weak_ptr&) {
-    }
+    } catch (const std::bad_weak_ptr&) {}
 
     if (auto tickableComponent = dynamic_cast<TickableComponent*>(this)) {
         try {
@@ -90,8 +89,7 @@ std::shared_ptr<Component> Component::TryGetSharedComponent() noexcept {
             auto componentSelf = std::static_pointer_cast<Component>(derivedSelf);
             mWeakSelf = componentSelf;
             return componentSelf;
-        } catch (const std::bad_weak_ptr&) {
-        }
+        } catch (const std::bad_weak_ptr&) {}
     }
 
     if (auto tickable = dynamic_cast<Tickable*>(this)) {
@@ -102,8 +100,7 @@ std::shared_ptr<Component> Component::TryGetSharedComponent() noexcept {
                 mWeakSelf = componentSelf;
                 return componentSelf;
             }
-        } catch (const std::bad_weak_ptr&) {
-        }
+        } catch (const std::bad_weak_ptr&) {}
     }
 
     auto parents = GetParents().Get();
