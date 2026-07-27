@@ -16,12 +16,10 @@ class ConcreteTickable : public TickableComponent {
     }
 
     EventID mLastEventId = -1;
-    double mLastDuration = 0.0;
     bool mActionRanCalled = false;
 
-    bool ActionRan(EventID eventId, const double durationSinceLastTick) override {
+    bool ActionRan(EventID eventId) override {
         mLastEventId = eventId;
-        mLastDuration = durationSinceLastTick;
         mActionRanCalled = true;
         return true;
     }
@@ -201,11 +199,10 @@ TEST_F(TickableComponentTest, TickableListHasReturnsFalseWhenNotPresent) {
 TEST_F(TickableComponentTest, ActionRanCallbackDispatches) {
     auto tc = std::make_shared<ConcreteTickable>(mContext);
     static constexpr EventID kTickEvent = 1;
-    tc->ActionRan(kTickEvent, 0.016);
+    tc->ActionRan(kTickEvent);
 
     EXPECT_TRUE(tc->mActionRanCalled);
     EXPECT_EQ(tc->mLastEventId, kTickEvent);
-    EXPECT_DOUBLE_EQ(tc->mLastDuration, 0.016);
 }
 
 // ---- Test 14: Default ActionRan returns true ----
@@ -216,7 +213,7 @@ TEST_F(TickableComponentTest, DefaultActionRanReturnsTrue) {
     TickableComponent* base = tc.get();
     // Call through the ConcreteTickable which overrides, so test base separately
     static constexpr EventID kDrawDebugMenuEvent = 3;
-    EXPECT_TRUE(tc->ActionRan(kDrawDebugMenuEvent, 0.033));
+    EXPECT_TRUE(tc->ActionRan(kDrawDebugMenuEvent));
 }
 
 // ---- Test 15: Constructor with explicit actions list registers with context ----
@@ -228,7 +225,7 @@ class ConcreteTickableWithActions : public TickableComponent {
                             std::vector<std::shared_ptr<Action>>{}) {
     }
 
-    bool ActionRan(EventID eventId, const double durationSinceLastTick) override {
+    bool ActionRan(EventID eventId) override {
         return true;
     }
 };
@@ -301,7 +298,7 @@ class ConcreteTickableWithPendingActions : public TickableComponent {
         : TickableComponent("TCPendingActions", ctx, TickGroup::TickGroupDefault,
                             TickPriority::TickPriorityDefault, std::move(actions)) {
     }
-    bool ActionRan(EventID /*eventId*/, const double /*durationSinceLastTick*/) override {
+    bool ActionRan(EventID /*eventId*/) {
         return true;
     }
 };
@@ -330,7 +327,7 @@ TEST_F(TickableComponentTest, ActionsConstructorStartsAfterRegisterWhenActionsPr
       public:
         NoopEventAction(EventID id, std::shared_ptr<Tickable> t) : EventAction(id, t) {}
       protected:
-        bool ActionRan(const double) override { return true; }
+        bool ActionRan() { return true; }
     };
 
     auto owner = std::make_shared<ConcreteTickable>(mContext);

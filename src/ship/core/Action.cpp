@@ -17,7 +17,7 @@ std::shared_ptr<Tickable> Action::GetTickable() const {
     return mTickable.lock();
 }
 
-bool Action::Run(const double durationSinceLastTick) {
+bool Action::Run() {
 #ifdef INCLUDE_PROFILING
     SetClock(ClockType::PreviousStart, GetClock(ClockType::Start));
     SetClock(ClockType::PreviousEnd, GetClock(ClockType::End));
@@ -27,7 +27,7 @@ bool Action::Run(const double durationSinceLastTick) {
 
     bool result = false;
     if (IsRunning()) {
-        result = ActionRan(durationSinceLastTick);
+        result = ActionRan();
     }
 
 #ifdef INCLUDE_PROFILING

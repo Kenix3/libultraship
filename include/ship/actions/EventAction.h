@@ -13,18 +13,17 @@ namespace Ship {
  * @brief C++ callback signature for EventAction dispatch.
  *
  * @param eventId Event being dispatched.
- * @param durationSinceLastTick Elapsed time in seconds.
  * @param callbackPointerData Opaque pointer-sized data supplied by EventAction.
  * @return True when callback handled successfully.
  */
-using EventActionCppCallback = std::function<bool(EventID, const double, uintptr_t)>;
+using EventActionCppCallback = std::function<bool(EventID, uintptr_t)>;
 
 /**
  * @brief C-style callback signature for EventAction dispatch.
  *
  * Stored in EventAction as uintptr_t and cast at dispatch time.
  */
-using EventActionRawCallback = bool (*)(EventID, const double, uintptr_t);
+using EventActionRawCallback = bool (*)(EventID, uintptr_t);
 
 /**
  * @brief Stored callback target for EventAction.
@@ -40,7 +39,7 @@ using EventActionCallback = std::variant<std::monostate, EventActionCppCallback,
  *
  * EventAction pairs an Action with an EventID. Dispatch order:
  * 1) callback override in GetCallback(),
- * 2) fallback TickableComponent::ActionRan(eventId, dt).
+ * 2) fallback TickableComponent::ActionRan(eventId).
  *
  * Callback pointer data is shared by both callback forms.
  */
@@ -158,10 +157,9 @@ class EventAction : public Action {
   protected:
     /**
      * @brief Dispatches callback override when present, else delegates to TickableComponent::ActionRan().
-     * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
-    bool ActionRan(const double durationSinceLastTick) override;
+    bool ActionRan() override;
 
   private:
     EventID mEventId;

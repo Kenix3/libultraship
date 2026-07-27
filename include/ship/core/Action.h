@@ -46,10 +46,9 @@ class Action : public Part {
 
     /**
      * @brief Executes the Action if it is currently running.
-     * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the Action executed successfully.
      */
-    bool Run(const double durationSinceLastTick);
+    bool Run();
 
     /** @brief Returns true if this Action is currently in the running state. */
     bool IsRunning() const;
@@ -100,10 +99,9 @@ class Action : public Part {
      * @brief Pure virtual hook invoked by Run() each cycle.
      *
      * Subclasses must implement this to define the Action's behaviour.
-     * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
-    virtual bool ActionRan(const double durationSinceLastTick) = 0;
+    virtual bool ActionRan() = 0;
 
   private:
 #ifdef INCLUDE_PROFILING

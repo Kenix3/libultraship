@@ -104,22 +104,22 @@ EventAction& EventAction::SetCallbackPointerData(uintptr_t callbackPointerData) 
     return *this;
 }
 
-bool EventAction::ActionRan(const double durationSinceLastTick) {
+bool EventAction::ActionRan() {
     if (std::holds_alternative<EventActionCppCallback>(mCallback)) {
-        return std::get<EventActionCppCallback>(mCallback)(mEventId, durationSinceLastTick, mCallbackPointerData);
+        return std::get<EventActionCppCallback>(mCallback)(mEventId, mCallbackPointerData);
     }
 
     if (std::holds_alternative<uintptr_t>(mCallback)) {
         const auto callbackAddr = std::get<uintptr_t>(mCallback);
         if (callbackAddr != 0) {
             const auto callback = reinterpret_cast<EventActionRawCallback>(callbackAddr);
-            return callback(mEventId, durationSinceLastTick, mCallbackPointerData);
+            return callback(mEventId, mCallbackPointerData);
         }
     }
 
     auto tickable = GetTickable();
     if (auto* tc = dynamic_cast<TickableComponent*>(tickable.get())) {
-        return tc->ActionRan(mEventId, durationSinceLastTick);
+        return tc->ActionRan(mEventId);
     }
     return true;
 }

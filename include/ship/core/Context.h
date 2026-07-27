@@ -188,20 +188,34 @@ class Context : public Component {
     TickableList& GetTickableComponents();
     const TickableList& GetTickableComponents() const;
 
+    /** @brief Returns elapsed time in seconds since this Context was initialized. */
+    double GetElapsedTimeSeconds() const;
+
+    /** @brief Recomputes elapsed time in seconds since this Context was initialized. */
+    void UpdateElapsedTimeSeconds();
+
     /**
      * @brief Drives one frame of all registered TickableComponents for a specific EventID.
      *
-     * Computes the duration since the previous Context::Tick() call and runs
-     * all tickables in list order for the provided EventID only.
+     * Runs all tickables in list order for the provided EventID only.
      */
     void Tick(EventID eventId);
+
+    /**
+     * @brief Runs the default frame sequence: Update, LateUpdate, then Draw.
+     *
+     * Calls UpdateElapsedTimeSeconds() first, then dispatches Tick(Update),
+     * Tick(LateUpdate), and Tick(Draw).
+     */
+    void Tick();
 
   protected:
     Context() = default;
 
   private:
     std::string mShortName;
-    std::chrono::steady_clock::time_point mLastTickTime{};
+    std::chrono::steady_clock::time_point mInitTime{};
+    double mElapsedTimeSeconds = 0.0;
 
     TickableList mTickableComponents;
 #ifdef COMPONENT_THREAD_SAFE

@@ -119,10 +119,9 @@ class TickableComponent : public Tickable, public Component, public std::enable_
      *
      * Subclasses override this to respond to specific EventIDs.
      * @param eventId The EventID that executed.
-     * @param durationSinceLastTick Elapsed time in seconds since the last tick.
      * @return True if the action executed successfully.
      */
-    virtual bool ActionRan(EventID eventId, const double durationSinceLastTick);
+    virtual bool ActionRan(EventID eventId);
 
   private:
     TickGroup mTickGroup;

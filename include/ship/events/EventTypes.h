@@ -177,3 +177,10 @@ typedef struct EventListener {
 #define UNREGISTER_LISTENER(eventType, listenerID) EventSystemUnregisterListener(eventType##ID, listenerID);
 
 /** @} */ // end of EventMacros group
+
+/** @brief Built-in tick phases used by Context::Tick(). */
+typedef enum {
+    TICK_EVENT_UPDATE = 0,
+    TICK_EVENT_LATE_UPDATE = 1,
+    TICK_EVENT_DRAW = 2,
+} TickEvent;

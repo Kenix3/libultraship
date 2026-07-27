@@ -21,9 +21,8 @@ class Component;
  * @brief Manages a collection of Actions, executing them in EventID order.
  *
  * A Tickable owns zero or more Actions and provides Tick() methods that run
- * EventID-targeted subsets of those Actions each frame. Actions are executed in
- * ascending EventID order. Thread safety for the action list is handled
- * internally via a mutex.
+ * EventID-targeted subsets of those Actions each frame. Thread safety for
+ * the action list is handled internally via a mutex when Thread safety is on.
  */
 class Tickable : public std::enable_shared_from_this<Tickable> {
   public:
@@ -60,37 +59,33 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
     /**
      * @brief Ticks only Actions whose EventID matches the given ID.
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @param eventId The EventID to include.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
+     * @return True if at least one matching Action ran.
      */
-    double Tick(const double durationSinceLastTick, EventID eventId);
+    bool Tick(EventID eventId);
 
     /**
      * @brief Ticks only Actions whose EventID matches one of the given IDs.
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @param eventIds The EventIDs to include.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
+     * @return True if at least one matching Action ran.
      */
-    double Tick(const double durationSinceLastTick, const std::vector<EventID>& eventIds);
+    bool Tick(const std::vector<EventID>& eventIds);
 
     /**
      * @brief Ticks Actions matching both type T and one of the given EventIDs.
      * @tparam T The Action subtype to filter by.
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @param eventIds The EventIDs to include.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
+     * @return True if at least one matching Action ran.
      */
-    template <typename T> double Tick(const double durationSinceLastTick, const std::vector<EventID>& eventIds);
+    template <typename T> bool Tick(const std::vector<EventID>& eventIds);
 
     /**
      * @brief Ticks Actions matching both type T and the given EventID.
      * @tparam T The Action subtype to filter by.
-     * @param durationSinceLastTick Elapsed time in seconds since the previous tick.
      * @param eventId The EventID to include.
-     * @return Duration of the tick in seconds (non-zero only with INCLUDE_PROFILING).
+     * @return True if at least one matching Action ran.
      */
-    template <typename T> double Tick(const double durationSinceLastTick, EventID eventId);
+    template <typename T> bool Tick(EventID eventId);
 
     /**
      * @brief Returns a mutable reference to the ActionList.
@@ -158,54 +153,56 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 
 // ---- Template method implementations ----
 
-template <typename T> double Tickable::Tick(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+template <typename T> bool Tickable::Tick(const std::vector<EventID>& eventIds) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
     if (!mIsTicking) {
 #endif
-        return 0.0;
+        return false;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
+    bool ran = false;
     auto allActions = mActions.Get(eventIds);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
-            action->Run(durationSinceLastTick);
+            ran = action->Run() || ran;
         }
     }
 #ifdef INCLUDE_PROFILING
     const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
+    (void)end;
+    (void)start;
 #endif
+    return ran;
 }
 
-template <typename T> double Tickable::Tick(const double durationSinceLastTick, EventID eventId) {
+template <typename T> bool Tickable::Tick(EventID eventId) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
     if (!mIsTicking) {
 #endif
-        return 0.0;
+        return false;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
+    bool ran = false;
     auto allActions = mActions.Get(eventId);
     for (const auto& action : *allActions) {
         if (std::dynamic_pointer_cast<T>(action)) {
-            action->Run(durationSinceLastTick);
+            ran = action->Run() || ran;
         }
     }
 #ifdef INCLUDE_PROFILING
     const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
+    (void)end;
+    (void)start;
 #endif
+    return ran;
 }
 
 } // namespace Ship

@@ -15,16 +15,14 @@ static constexpr EventID kDrawDebugMenuEvent = 3;
 class TestAction : public Action {
   public:
     TestAction(std::shared_ptr<Tickable> tickable)
-        : Action(tickable), mRunCount(0), mLastDuration(0.0) {
+        : Action(tickable), mRunCount(0) {
     }
 
     int mRunCount;
-    double mLastDuration;
 
   protected:
-    bool ActionRan(const double durationSinceLastTick) override {
+    bool ActionRan() override {
         mRunCount++;
-        mLastDuration = durationSinceLastTick;
         return true;
     }
 };
@@ -33,16 +31,14 @@ class TestAction : public Action {
 class TestEventAction : public EventAction {
   public:
     TestEventAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : EventAction(eventId, tickable), mRunCount(0), mLastDuration(0.0) {
+        : EventAction(eventId, tickable), mRunCount(0) {
     }
 
     int mRunCount;
-    double mLastDuration;
 
   protected:
-    bool ActionRan(const double durationSinceLastTick) override {
+    bool ActionRan() override {
         mRunCount++;
-        mLastDuration = durationSinceLastTick;
         return true;
     }
 };
@@ -92,16 +88,15 @@ TEST(ActionTest, RunWhenRunning) {
     auto action = std::make_shared<TestAction>(tickable);
     action->Start();
 
-    EXPECT_TRUE(action->Run(0.016));
+    EXPECT_TRUE(action->Run());
     EXPECT_EQ(action->mRunCount, 1);
-    EXPECT_DOUBLE_EQ(action->mLastDuration, 0.016);
 }
 
 TEST(ActionTest, RunWhenNotRunning) {
     auto tickable = std::make_shared<TestTickable>();
     auto action = std::make_shared<TestAction>(tickable);
 
-    EXPECT_FALSE(action->Run(0.016));
+    EXPECT_FALSE(action->Run());
     EXPECT_EQ(action->mRunCount, 0);
 }
 
@@ -150,7 +145,7 @@ class RestrictiveAction : public Action {
     bool mCanStop;
 
   protected:
-    bool ActionRan(const double) override {
+    bool ActionRan() override {
         return true;
     }
 
@@ -216,7 +211,7 @@ class InstrumentedAction : public Action {
     bool mLastStoppedForced;
 
   protected:
-    bool ActionRan(const double) override {
+    bool ActionRan() override {
         return true;
     }
 

@@ -113,7 +113,7 @@ TickableComponent& TickableComponent::SetContext(std::shared_ptr<Context> contex
     return *this;
 }
 
-bool TickableComponent::ActionRan(EventID eventId, const double durationSinceLastTick) {
+bool TickableComponent::ActionRan(EventID eventId) {
     return true;
 }
 

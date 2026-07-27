@@ -425,7 +425,7 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 }
 
 Context::Context(std::string name, std::string shortName)
-    : Component(std::move(name)), mShortName(std::move(shortName)) {
+    : Component(std::move(name)), mShortName(std::move(shortName)), mInitTime(std::chrono::steady_clock::now()) {
 }
 
 const std::string& Context::GetShortName() const {
@@ -578,17 +578,25 @@ const TickableList& Context::GetTickableComponents() const {
     return mTickableComponents;
 }
 
-void Context::Tick(EventID eventId) {
-    const auto now = std::chrono::steady_clock::now();
-    double durationSinceLastTick = 0.0;
-    if (mLastTickTime != std::chrono::steady_clock::time_point{}) {
-        durationSinceLastTick = std::chrono::duration<double>(now - mLastTickTime).count();
-    }
-    mLastTickTime = now;
+double Context::GetElapsedTimeSeconds() const {
+    return mElapsedTimeSeconds;
+}
 
+void Context::UpdateElapsedTimeSeconds() {
+    mElapsedTimeSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - mInitTime).count();
+}
+
+void Context::Tick(EventID eventId) {
     for (const auto& tickable : *mTickableComponents.Get()) {
-        tickable->Tick(durationSinceLastTick, eventId);
+        tickable->Tick(eventId);
     }
+}
+
+void Context::Tick() {
+    UpdateElapsedTimeSeconds();
+    Tick(TICK_EVENT_UPDATE);
+    Tick(TICK_EVENT_LATE_UPDATE);
+    Tick(TICK_EVENT_DRAW);
 }
 
 } // namespace Ship

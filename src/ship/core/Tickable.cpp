@@ -111,50 +111,52 @@ bool Tickable::Stop(const bool force) {
     return true;
 }
 
-double Tickable::Tick(const double durationSinceLastTick, EventID eventId) {
+bool Tickable::Tick(EventID eventId) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
     if (!mIsTicking) {
 #endif
-        return 0.0;
+        return false;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
+    bool ran = false;
     auto actions = mActions.Get(eventId);
     for (const auto& action : *actions) {
-        action->Run(durationSinceLastTick);
+        ran = action->Run() || ran;
     }
 #ifdef INCLUDE_PROFILING
     const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
+    (void)end;
+    (void)start;
 #endif
+    return ran;
 }
 
-double Tickable::Tick(const double durationSinceLastTick, const std::vector<EventID>& eventIds) {
+bool Tickable::Tick(const std::vector<EventID>& eventIds) {
 #ifdef COMPONENT_THREAD_SAFE
     if (!mIsTicking.load(std::memory_order_acquire)) {
 #else
     if (!mIsTicking) {
 #endif
-        return 0.0;
+        return false;
     }
 #ifdef INCLUDE_PROFILING
     const auto start = std::chrono::steady_clock::now();
 #endif
+    bool ran = false;
     auto actions = mActions.Get(eventIds);
     for (const auto& action : *actions) {
-        action->Run(durationSinceLastTick);
+        ran = action->Run() || ran;
     }
 #ifdef INCLUDE_PROFILING
     const auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(end - start).count();
-#else
-    return 0.0;
+    (void)end;
+    (void)start;
 #endif
+    return ran;
 }
 
 ActionList& Tickable::GetActionList() {
