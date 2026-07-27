@@ -48,9 +48,8 @@ bool Action::Start(const bool force) {
     if (!canStart && !force) {
         return false;
     }
-    const bool forced = !canStart && force;
     mIsActionRunning = true;
-    Started(forced);
+    Started(force);
     return true;
 }
 
@@ -62,9 +61,8 @@ bool Action::Stop(const bool force) {
     if (!canStop && !force) {
         return false;
     }
-    const bool forced = !canStop && force;
     mIsActionRunning = false;
-    Stopped(forced);
+    Stopped(force);
     return true;
 }
 
