@@ -547,11 +547,12 @@ static uint32_t GetEffectiveLineSize(uint32_t lineSizeBytes, uint32_t fullImageL
 }
 
 static uint32_t GetTileSizeFromCoordinates(float low, float high) {
-    float size = (high - low + 4.0f) / 4.0f;
-    if (size <= 0.0f) {
+    // An unset tile (high <= low) defines no region; return 0 so callers skip the tile-region clamp
+    // instead of collapsing the texture to the phantom 1-texel size the +4 formula would yield.
+    if (high <= low) {
         return 0;
     }
-    return static_cast<uint32_t>(lroundf(size));
+    return static_cast<uint32_t>(lroundf((high - low + 4.0f) / 4.0f));
 }
 
 void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
