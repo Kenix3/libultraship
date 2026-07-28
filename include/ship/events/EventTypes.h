@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "ship/Api.h"
 
-/** @brief Numeric identifier for a registered event; -1 is the uninitialized sentinel. */
+/** @brief Numeric identifier for an event. -1 is uninitialized, IDs < -1 are internally registered, and IDs >= 0 are user defined. */
 typedef int32_t EventID;
 /** @brief Numeric identifier for a registered listener; used to unregister later. */
 typedef int64_t ListenerID;

@@ -159,11 +159,11 @@ bool Tickable::Tick(const std::vector<EventID>& eventIds) {
     return ran;
 }
 
-ActionList& Tickable::GetActionList() {
+EventActionList& Tickable::GetActionList() {
     return mActions;
 }
 
-const ActionList& Tickable::GetActionList() const {
+const EventActionList& Tickable::GetActionList() const {
     return mActions;
 }
 
@@ -181,16 +181,16 @@ void Tickable::Started(const bool forced) {
 void Tickable::Stopped(const bool forced) {
 }
 
-#ifdef INCLUDE_PROFILING
-double Tickable::GetTime(const ClockType clockType) const {
-    return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
-}
-
 #ifdef COMPONENT_THREAD_SAFE
 std::mutex& Tickable::GetMutex() {
     return mMutex;
 }
 #endif
+
+#ifdef INCLUDE_PROFILING
+double Tickable::GetTime(const ClockType clockType) const {
+    return std::chrono::duration<double>(GetClock(clockType).time_since_epoch()).count();
+}
 
 std::chrono::time_point<std::chrono::steady_clock> Tickable::GetClock(const ClockType clockType) const {
     return mClocks[static_cast<size_t>(clockType)];
@@ -200,12 +200,6 @@ Tickable& Tickable::SetClock(const ClockType clockType, std::chrono::time_point<
     mClocks[static_cast<size_t>(clockType)] = clockValue;
     return *this;
 }
-#else
-#ifdef COMPONENT_THREAD_SAFE
-std::mutex& Tickable::GetMutex() {
-    return mMutex;
-}
-#endif
 #endif
 
 } // namespace Ship

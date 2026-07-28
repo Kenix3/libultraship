@@ -26,6 +26,10 @@ ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, Event
     return GetEvents()->RegisterListener(id, callback, priority, file, line);
 }
 
+void EventSystemUnregisterEvent(EventID id) {
+    GetEvents()->RemoveEvent(id);
+}
+
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {
     GetEvents()->UnregisterListener(ev, id);
 }

@@ -6,42 +6,52 @@
 #include <unordered_map>
 #include <string>
 
+#include "ship/core/TickableComponent.h"
 #include "ship/events/EventTypes.h"
-#include "ship/core/Component.h"
+#include "ship/events/ListenerAction.h"
 
 namespace Ship {
 
 /**
- * @brief Tracks listener registration metadata for a single event.
+ * @brief Tracks registration state for a single EventID.
  *
- * EventRegistration is the internal bookkeeping record stored for each registered
- * event ID. It holds the event's debug name, all active listeners sorted by priority,
- * and a map of callers that have invoked the event (used for diagnostics/profiling).
+ * Each record stores the event's debug name, listener allocation counters,
+ * caller metadata for diagnostics, and the currently registered
+ * `ListenerAction`s keyed by `ListenerID`.
  */
 struct EventRegistration {
-    /** @brief Optional human-readable name for this event (used in debug output). */
+    /** @brief Optional human-readable name for this event. */
     const char* Name;
-    /** @brief Monotonically increasing counter used to assign unique ListenerID. */
+    /** @brief Monotonically increasing listener identifier counter for this event. */
     ListenerID NextListenerID = 0;
-    /** @brief Map from caller location string to call-site metadata (file, line, count). */
+    /** @brief Registration-order sequence used to preserve stable listener ordering. */
+    uint64_t NextListenerSequence = 0;
+    /** @brief Diagnostic map of event call sites keyed by file:line string. */
     std::unordered_map<std::string, EventMetadata> Callers;
-    /** @brief Active listeners for this event, ordered by priority (highest first). */
-    std::vector<EventListener> Listeners;
+    /** @brief Active listeners for this event keyed by ListenerID. */
+    std::unordered_map<ListenerID, std::shared_ptr<ListenerAction>> Listeners;
 };
 
 /**
- * @brief Lightweight publish/subscribe event bus.
+ * @brief Tickable event bus that dispatches listeners through `Tick(EventID)`.
  *
- * Events allows decoupled subsystems to communicate without direct dependencies.
- * Events are identified by numeric EventIDs (allocated by RegisterEvent()) and may
- * carry arbitrary payload structs derived from IEvent.
+ * `Events` now owns all registered listeners as `ListenerAction`s in its
+ * `ActionList`. Calling `CallEvent()` pushes a transient `DispatchContext`,
+ * ticks the matching `EventID`, and each `ListenerAction` pulls the active
+ * payload from that context during execution.
  *
- * Listeners are invoked synchronously in priority order whenever CallEvent() is called.
- * Any listener may set IEvent::Cancelled to true; CallEvent() does not enforce
- * cancellation itself â€” the caller is responsible for checking it via the
- * CALL_CANCELLABLE_EVENT macro.
+ * EventID contract:
+ * - `-1` = uninitialized / invalid
+ * - `< -1` = internally registered events returned by `RegisterEvent()`
+ * - `>= 0` = user-defined events created on demand when listeners/calls occur
  *
- * **Required Context children:** None â€” Events has no dependencies on other
+ * Listeners are invoked synchronously in priority order whenever `CallEvent()`
+ * is called.
+ * Any listener may set `IEvent::Cancelled` to true; `CallEvent()` does not
+ * enforce cancellation itself — the caller is responsible for checking it via
+ * the `CALL_CANCELLABLE_EVENT` macro.
+ *
+ * **Required Context children:** None — `Events` has no dependencies on other
  * components.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<Events>()`.
@@ -61,60 +71,97 @@ struct EventRegistration {
  * CALL_EVENT(MyEvent, payload);
  * @endcode
  */
-class Events : public Component {
+class Events : public TickableComponent {
   public:
-    Events() : Component("Events") {
-        MarkInitialized();
-    }
     /**
-     * @brief Allocates a new unique EventID and optionally assigns it a debug name.
-     * @param name Optional human-readable name for diagnostics (may be nullptr).
-     * @return Newly allocated EventID (always >= 0).
+     * @brief Active payload and call-site data for a single in-flight dispatch.
+     *
+     * A new context is pushed for each `CallEvent()` invocation so nested event
+     * dispatch remains well-defined.
+     */
+    struct DispatchContext {
+        /** @brief EventID currently being dispatched. */
+        EventID ID = -1;
+        /** @brief Event payload supplied by the caller. */
+        IEvent* Event = nullptr;
+        /** @brief Source file that initiated the dispatch, when provided. */
+        const char* File = nullptr;
+        /** @brief Source line that initiated the dispatch, when provided. */
+        int Line = 0;
+        /** @brief Optional deduplication key used for caller diagnostics. */
+        const char* Key = nullptr;
+    };
+
+    /**
+     * @brief Constructs and self-initializes the global event bus component.
+     *
+     * The component starts ticking immediately so listener actions can be run as
+     * soon as the `Events` instance is reachable through the active `Context`.
+     */
+    Events() : TickableComponent("Events", nullptr) {
+        MarkInitialized();
+        Start();
+    }
+
+    /**
+     * @brief Allocates a new internally managed EventID.
+     * @param name Optional human-readable event name for diagnostics.
+     * @return A negative EventID less than `-1`.
      */
     EventID RegisterEvent(const char* name = nullptr);
 
     /**
-     * @brief Subscribes a callback to an event.
+     * @brief Registers a callback listener for an event.
      *
-     * The listener is inserted into the event's listener list sorted by @p priority
-     * (higher priority listeners are called first). If multiple listeners share the
-     * same priority they are called in registration order.
+     * For internally managed events (`id < -1`), the event must already have
+     * been registered with `RegisterEvent()`. User-defined event IDs (`id >= 0`)
+     * are created lazily when first referenced.
      *
-     * @param id       EventID returned by RegisterEvent().
-     * @param callback Function to invoke when the event fires.
-     * @param priority Dispatch priority; defaults to EVENT_PRIORITY_NORMAL.
-     * @param file     Source file of the registration site (for diagnostics).
-     * @param line     Source line of the registration site (for diagnostics).
-     * @return Unique ListenerID that can be passed to UnregisterListener().
+     * @param id       EventID to subscribe to.
+     * @param callback Listener callback invoked with the active `IEvent*`.
+     * @param priority Dispatch priority; higher values run first.
+     * @param file     Optional source file of the registration site.
+     * @param line     Optional source line of the registration site.
+     * @return ListenerID scoped to the target event.
      */
     ListenerID RegisterListener(EventID id, EventCallback callback, EventPriority priority = EVENT_PRIORITY_NORMAL,
                                 const char* file = nullptr, int line = 0);
 
     /**
-     * @brief Removes a previously registered listener.
-     * @param id         EventID the listener was registered with.
-     * @param listenerId ListenerID returned by RegisterListener().
+     * @brief Removes a previously registered listener from an event.
+     *
+     * Removing a listener also removes its backing `ListenerAction` from the
+     * `Events` action list.
+     *
+     * @param id         EventID the listener belongs to.
+     * @param listenerId ListenerID returned by `RegisterListener()`.
      */
     void UnregisterListener(EventID id, ListenerID listenerId);
 
     /**
-     * @brief Dispatches an event to all registered listeners in priority order.
+     * @brief Removes an event and all listeners currently registered to it.
+     * @param id EventID to remove.
+     */
+    void RemoveEvent(EventID id);
+
+    /**
+     * @brief Dispatches an event by pushing dispatch state and ticking its EventID.
      *
-     * Each listener's callback is invoked with a pointer to @p event. Listeners may
-     * set IEvent::Cancelled to signal that subsequent handling should be skipped
-     * (the caller must check this via the CALL_CANCELLABLE_EVENT macro family).
+     * `ListenerAction`s matching @p id are executed through `Tick(id)` and read
+     * the active payload from `GetActiveDispatchContext()`.
      *
-     * @param id    EventID of the event to fire.
-     * @param event Pointer to the event payload struct.
-     * @param file  Source file of the call site (for diagnostics).
-     * @param line  Source line of the call site (for diagnostics).
-     * @param key   Optional string key used to deduplicate diagnostic metadata.
+     * @param id    EventID to dispatch.
+     * @param event Event payload.
+     * @param file  Optional source file of the call site.
+     * @param line  Optional source line of the call site.
+     * @param key   Optional caller-diagnostic key.
      */
     void CallEvent(EventID id, IEvent* event, const char* file = nullptr, int line = 0, const char* key = nullptr);
 
     /**
-     * @brief Returns the EventRegistration for the given ID, or nullptr if not found.
+     * @brief Returns the registration record for an EventID, if present.
      * @param id EventID to look up.
+     * @return Pointer to the registration, or `nullptr` if not found.
      */
     EventRegistration* GetEventRegistration(EventID id) {
         if (mEventRegistry.contains(id)) {
@@ -124,17 +171,34 @@ class Events : public Component {
     }
 
     /**
-     * @brief Returns a reference to the complete event registry map (EventID â†’ EventRegistration).
+     * @brief Returns the complete event registry map.
      *
-     * Intended for inspection/tooling; prefer the typed accessors for normal use.
+     * Intended for inspection and tooling such as the event debugger.
      */
     std::unordered_map<EventID, EventRegistration>& GetEventRegistrations() {
         return this->mEventRegistry;
     }
 
+    /**
+     * @brief Returns the current top-of-stack dispatch context.
+     * @return Active dispatch context, or `nullptr` when no event is being dispatched.
+     */
+    const DispatchContext* GetActiveDispatchContext() const;
+
   private:
+    /**
+     * @brief Gets or lazily creates a registration record for an EventID.
+     * @param id EventID to resolve.
+     * @return Registration record, or `nullptr` when @p id is invalid.
+     */
+    EventRegistration* GetOrCreateEventRegistration(EventID id);
+
+    /** @brief Full registry of known EventIDs. */
     std::unordered_map<EventID, EventRegistration> mEventRegistry;
-    EventID mInternalEventID = 0;
+    /** @brief Next internally allocated EventID; decrements from `-2`. */
+    EventID mInternalEventID = -2;
+    /** @brief Stack of active dispatch contexts used to support nested event calls. */
+    std::vector<DispatchContext> mDispatchStack;
 };
 
 } // namespace Ship

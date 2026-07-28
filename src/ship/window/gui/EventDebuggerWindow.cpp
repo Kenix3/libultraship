@@ -59,17 +59,23 @@ void DrawEventListenerInfo(std::string& name, const EventRegistration& registry)
         ImGui::TableHeadersRow();
 
         int i = 0;
-        for (auto& listener : registry.Listeners) {
+        for (const auto& [listenerId, listenerAction] : registry.Listeners) {
+            if (!listenerAction) {
+                continue;
+            }
+
+            const auto& metadata = listenerAction->GetMetadata();
+
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
             ImGui::Text("%d", i++);
 
             ImGui::TableNextColumn();
-            ImGui::TextWrapped("%s:%d ", listener.Metadata.Path, listener.Metadata.Line);
+            ImGui::TextWrapped("%s:%d ", metadata.Path == nullptr ? "Unknown" : metadata.Path, metadata.Line);
 
             ImGui::TableNextColumn();
-            switch (listener.Priority) {
+            switch (listenerAction->GetPriority()) {
                 case EVENT_PRIORITY_LOW:
                     ImGui::TextColored(ImVec4(0.75, 0.75, 0.75, 1), "Low");
                     break;

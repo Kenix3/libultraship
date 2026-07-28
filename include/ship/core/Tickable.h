@@ -11,6 +11,7 @@
 
 #include "ship/core/Action.h"
 #include "ship/core/ActionList.h"
+#include "ship/core/EventActionList.h"
 #include "ship/events/EventTypes.h"
 
 namespace Ship {
@@ -18,11 +19,12 @@ namespace Ship {
 class Component;
 
 /**
- * @brief Manages a collection of Actions, executing them in EventID order.
+ * @brief Manages a collection of Actions and indexed EventActions.
  *
- * A Tickable owns zero or more Actions and provides Tick() methods that run
- * EventID-targeted subsets of those Actions each frame. Thread safety for
- * the action list is handled internally via a mutex when Thread safety is on.
+ * A Tickable owns zero or more Actions. Actions are stored in an internal
+ * `EventActionList`, which provides both generic action storage and indexed
+ * `EventID` lookup for efficient event dispatch. Thread safety for the action
+ * list is handled internally via a mutex when thread safety is enabled.
  */
 class Tickable : public std::enable_shared_from_this<Tickable> {
   public:
@@ -58,14 +60,14 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     bool Stop(const bool force = false);
 
     /**
-     * @brief Ticks only Actions whose EventID matches the given ID.
+     * @brief Ticks only indexed EventActions whose EventID matches the given ID.
      * @param eventId The EventID to include.
      * @return True if at least one matching Action ran.
      */
     bool Tick(EventID eventId);
 
     /**
-     * @brief Ticks only Actions whose EventID matches one of the given IDs.
+     * @brief Ticks only indexed EventActions whose EventID matches one of the given IDs.
      * @param eventIds The EventIDs to include.
      * @return True if at least one matching Action ran.
      */
@@ -88,14 +90,14 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
     template <typename T> bool Tick(EventID eventId);
 
     /**
-     * @brief Returns a mutable reference to the ActionList.
+     * @brief Returns a mutable reference to the internal EventActionList.
      */
-    ActionList& GetActionList();
+    EventActionList& GetActionList();
 
     /**
-     * @brief Returns a const reference to the ActionList.
+     * @brief Returns a const reference to the internal EventActionList.
      */
-    const ActionList& GetActionList() const;
+    const EventActionList& GetActionList() const;
 
 #ifdef INCLUDE_PROFILING
     /**
@@ -142,7 +144,7 @@ class Tickable : public std::enable_shared_from_this<Tickable> {
 #else
     bool mIsTicking;
 #endif
-    ActionList mActions;
+    EventActionList mActions;
 #ifdef COMPONENT_THREAD_SAFE
     mutable std::mutex mMutex;
 #endif

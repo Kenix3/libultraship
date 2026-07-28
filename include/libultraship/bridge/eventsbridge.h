@@ -9,44 +9,65 @@
 namespace Ship {
 class Events;
 }
+ /**
+  * @brief Sets the global `Events` instance used by the C bridge.
+  * @param events Shared `Events` component to forward bridge calls to.
+  */
 void EventSystemSetEvents(std::shared_ptr<Ship::Events> events);
+/** @brief Returns the current bridged `Events` component, if any. */
 std::shared_ptr<Ship::Events> EventSystemGetEvents();
 extern "C" {
 #endif
 
 /**
- * @brief Registers a new event type under the given name and returns its unique ID.
+ * @brief Registers a new internally managed event type under the given name.
  *
- * If an event with @p name has already been registered the existing ID is returned.
+ * Returned IDs are negative values less than `-1`. User-defined event IDs are
+ * represented by `0` and positive values and do not need to be allocated here.
  *
  * @param name Human-readable event name (e.g. "OnLoadGame").
- * @return EventID that can be passed to EventSystemRegisterListener() and EventSystemCallEvent().
+ * @return Negative EventID that can be passed to listener registration and dispatch.
  */
 API_EXPORT EventID EventSystemRegisterEvent(const char* name);
 
 /**
  * @brief Registers a listener callback for the given event.
  *
- * @param id       Event to listen to (obtained from EventSystemRegisterEvent()).
+ * Negative IDs must already be registered through `EventSystemRegisterEvent()`.
+ * Zero and positive IDs are treated as user-defined IDs and are created lazily.
+ *
+ * @param id       Event to listen to.
  * @param callback Function invoked when the event fires.
  * @param priority Relative priority; higher-priority listeners are called first.
  * @param file     Source file of the caller (use the @c __FILE__ macro).
  * @param line     Source line of the caller (use the @c __LINE__ macro).
- * @return ListenerID that can be passed to EventSystemUnregisterListener() to remove this listener.
+ * @return ListenerID that can be passed to `EventSystemUnregisterListener()`.
  */
 API_EXPORT ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority,
                                                   const char* file, int line);
 
 /**
+ * @brief Removes an event and all listeners registered to it.
+ * @param id Event to remove.
+ */
+API_EXPORT void EventSystemUnregisterEvent(EventID id);
+
+/**
  * @brief Removes a previously registered listener.
  *
+ * Removing the listener also removes its backing `ListenerAction` from the
+ * `Events` component's action list.
+ *
  * @param ev Event the listener was registered for.
- * @param id ListenerID returned by EventSystemRegisterListener().
+ * @param id ListenerID returned by `EventSystemRegisterListener()`.
  */
 API_EXPORT void EventSystemUnregisterListener(EventID ev, ListenerID id);
 
 /**
- * @brief Fires an event synchronously, invoking all registered listeners in priority order.
+ * @brief Fires an event synchronously.
+ *
+ * Internally this forwards to `Ship::Events::CallEvent()`, which pushes a
+ * dispatch context and executes matching listeners by calling `Events->Tick(id)`.
  *
  * @param id    Event to fire.
  * @param event Pointer to event-specific data passed to each listener callback.
