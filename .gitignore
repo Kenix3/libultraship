@@ -379,3 +379,6 @@ docs/Gemfile.lock
 # Debian packages should never be checked in
 *.deb
 *.dir/**
+tests/**/*.cmake
+tests/**/*.json
+tests/**/*.exe
