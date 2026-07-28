@@ -3,7 +3,8 @@
 // Auto-generated from default_context.json — do not edit manually.
 // clang-format off
 namespace Ship {
-inline constexpr const char* kDefaultContextJson = R"JSON({
+/** @brief Embedded default component-layout JSON used for Context bootstrap. */
+inline constexpr const char* gKDefaultContextJson = R"JSON({
     "components": [
         {
             "type": "Logger",
