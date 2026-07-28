@@ -5,6 +5,7 @@
 #include <thread>
 #include "ship/core/Component.h"
 #include "ship/core/Context.h"
+#include "ship/config/Config.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
@@ -593,25 +594,21 @@ TEST(ComponentLifecycleTest, ContextCanBeDestroyedWithParentChildLinks) {
     EXPECT_TRUE(weakContext.expired());
 }
 
-TEST(ContextLifecycleTest, ContextCanBeDestroyedAfterAddingMainComponents) {
+TEST(ComponentLifecycleTest, ContextCanBeDestroyedAfterAddingMainComponents) {
     std::weak_ptr<Context> weakContext;
 
     {
         auto context = Ship::Context::CreateInstance("TestApp", "test");
         weakContext = context;
 
-        nlohmann::json spec = { { "components",
-                                  {
-                                      { { "type", "Config" }, { "name", "Config" } },
-                                      { { "type", "ConsoleVariable" }, { "name", "ConsoleVariable" } },
-                                      { { "type", "ThreadPool" }, { "name", "ThreadPool" } },
-                                      { { "type", "CrashHandler" }, { "name", "CrashHandler" } },
-                                      { { "type", "Console" }, { "name", "Console" } },
-                                      { { "type", "GfxDebugger" }, { "name", "GfxDebugger" } },
-                                      { { "type", "Events" }, { "name", "Events" } },
-                                  } } };
+        context->GetChildren().Add(std::make_shared<Ship::Config>("test.cfg"));
+        context->GetChildren().Add(std::make_shared<Ship::ConsoleVariable>(context->GetChildren().GetFirst<Ship::Config>()));
+        context->GetChildren().Add(std::make_shared<Ship::ThreadPool>(1));
+        context->GetChildren().Add(std::make_shared<Ship::CrashHandler>());
+        context->GetChildren().Add(std::make_shared<Ship::Console>());
+        context->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
+        context->GetChildren().Add(std::make_shared<Ship::Events>());
 
-        ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(context, spec));
         EXPECT_TRUE(context->GetChildren().GetCount() >= 7u);
     }
 
@@ -1108,77 +1105,6 @@ TEST(ComponentSearchTest, GetInParentsFindsAllAncestors) {
     EXPECT_EQ(all->size(), 2u);
 }
 
-// ---- BuildComponentsFromJson cross-namespace tests ----
-//
-// These tests verify that Context::BuildComponentsFromJson correctly instantiates
-// components that belong to different C++ namespaces (Ship::*, Fast::*).  The
-// type strings in JSON are unqualified names; the factory inside BuildComponentsFromJson
-// maps each name to the concrete class in the appropriate namespace.
-
-// Helper: create a fresh Context instance for each test, then destroy it afterward.
-// Uses CreateInstance so that Context::GetCurrent() returns the context during the test,
-// satisfying components (e.g. ConsoleVariable) that look up siblings via the singleton.
-// The context singleton is a weak_ptr; when the returned shared_ptr goes out of scope at
-// the end of the test, the weak_ptr expires and the next test can create a fresh one.
-static std::shared_ptr<Ship::Context> MakeTestContext() {
-    return Ship::Context::CreateInstance("TestApp", "test");
-}
-
-// BuildComponentsFromJson should return false when the JSON has no "components" array.
-TEST(BuildComponentsFromJsonTest, ReturnsFalseForMissingComponentsArray) {
-    auto ctx = MakeTestContext();
-    nlohmann::json bad = nlohmann::json::object();
-    EXPECT_FALSE(Ship::Context::BuildComponentsFromJson(ctx, bad));
-}
-
-// "ConsoleVariable" type maps to Ship::ConsoleVariable (Ship namespace).
-// Config must be present first because ConsoleVariable::Load() looks it up via the context.
-TEST(BuildComponentsFromJsonTest, ShipNamespaceConsoleVariableIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "Config" } }, { { "type", "ConsoleVariable" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    // The component was added and initialized; look it up by type.
-    auto cv = ctx->GetFirstInChildren<Ship::ConsoleVariable>();
-    ASSERT_NE(cv, nullptr);
-    EXPECT_TRUE(cv->IsInitialized());
-}
-
-// "GfxDebugger" type maps to Fast::GfxDebugger (Fast namespace, not Ship).
-// This specifically exercises the cross-namespace path in BuildComponentsFromJson.
-TEST(BuildComponentsFromJsonTest, FastNamespaceGfxDebuggerIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "GfxDebugger" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    // GetFirstInChildren uses the C++ type, verifying the correct concrete class.
-    auto dbg = ctx->GetFirstInChildren<Fast::GfxDebugger>();
-    ASSERT_NE(dbg, nullptr) << "GfxDebugger was not added as a Fast::GfxDebugger instance";
-    EXPECT_TRUE(dbg->IsInitialized());
-}
-
-// Both a Ship-namespace and a Fast-namespace component can coexist in the same JSON spec.
-// Config must precede ConsoleVariable because ConsoleVariable::Load() depends on it.
-TEST(BuildComponentsFromJsonTest, MixedNamespaceComponentsCoexist) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = {
-        { "components", { { { "type", "Config" } }, { { "type", "ConsoleVariable" } }, { { "type", "GfxDebugger" } } } }
-    };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-
-    EXPECT_NE(ctx->GetFirstInChildren<Ship::ConsoleVariable>(), nullptr);
-    EXPECT_NE(ctx->GetFirstInChildren<Fast::GfxDebugger>(), nullptr);
-}
-
-// An unknown type string logs a warning and returns true (the rest of the spec is processed).
-TEST(BuildComponentsFromJsonTest, UnknownTypeIsSkipped) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components",
-                              { { { "type", "ThisTypeDoesNotExist" } }, { { "type", "GfxDebugger" } } } } };
-    // BuildComponentsFromJson should not fail for an unknown type.
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    // The known type must still have been added despite the unknown one preceding it.
-    EXPECT_NE(ctx->GetFirstInChildren<Fast::GfxDebugger>(), nullptr);
-}
-
 // ---- Component::ToTreeString tests ----
 
 // ToTreeString of a lone component (no children) yields the component name followed by newline.
@@ -1196,34 +1122,4 @@ TEST(ComponentToTreeStringTest, ChildIsIndented) {
     std::string tree = parent->ToTreeString();
     // Parent at depth 0, child at depth 1 (2-space indent).
     EXPECT_EQ(tree, "Parent\n  Child\n");
-}
-
-// BuildComponentsFromJson: verifies that all types handled by the factory
-// are instantiated as the correct concrete type.
-TEST(BuildComponentsFromJsonTest, CrashHandlerIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "CrashHandler" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    EXPECT_NE(ctx->GetFirstInChildren<Ship::CrashHandler>(), nullptr);
-}
-
-TEST(BuildComponentsFromJsonTest, ConsoleIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "Console" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    EXPECT_NE(ctx->GetFirstInChildren<Ship::Console>(), nullptr);
-}
-
-TEST(BuildComponentsFromJsonTest, EventsIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "Events" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    EXPECT_NE(ctx->GetFirstInChildren<Ship::Events>(), nullptr);
-}
-
-TEST(BuildComponentsFromJsonTest, ThreadPoolIsCreated) {
-    auto ctx = MakeTestContext();
-    nlohmann::json spec = { { "components", { { { "type", "ThreadPool" } } } } };
-    ASSERT_TRUE(Ship::Context::BuildComponentsFromJson(ctx, spec));
-    EXPECT_NE(ctx->GetFirstInChildren<Ship::ThreadPool>(), nullptr);
 }

@@ -1,12 +1,10 @@
 #include "ship/core/Context.h"
 #include "ship/core/TickableComponent.h"
 #include <cstring>
-#include <functional>
 #include <iostream>
 #include <algorithm>
 #include <queue>
 #include "ship/install_config.h"
-#include "ship/default_context_json.h" // Auto-generated from default_context.json by CMake
 #include "fast/debug/GfxDebugger.h"
 #include "fast/Fast3dWindow.h"
 #include "ship/config/ConsoleVariable.h"
@@ -257,154 +255,6 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     UpdateBridgeCaches(shared);
 
     return shared;
-}
-
-bool Context::BuildComponentsFromJson(std::shared_ptr<Context> context, const nlohmann::json& json,
-                                      const nlohmann::json& initArgs,
-                                      const std::unordered_map<std::string, std::shared_ptr<Component>>& overrides) {
-    if (!json.contains("components") || !json["components"].is_array()) {
-        SPDLOG_ERROR("BuildComponentsFromJson: missing or invalid 'components' array");
-        return false;
-    }
-
-    // Set of compile-time conditions that are active.
-    std::unordered_set<std::string> activeConditions;
-#ifdef ENABLE_SCRIPTING
-    activeConditions.insert("ENABLE_SCRIPTING");
-#endif
-#ifdef ENABLE_DX11
-    activeConditions.insert("ENABLE_DX11");
-#endif
-
-    // Helper: create a component by type name.
-    auto createComponent = [&](const std::string& type, const nlohmann::json& compArgs) -> std::shared_ptr<Component> {
-        if (type == "Config") {
-            std::string configPath = compArgs.value("path", "");
-            return std::make_shared<Config>(configPath);
-        } else if (type == "ConsoleVariable") {
-            return std::make_shared<ConsoleVariable>(context->GetChildren().GetFirst<Config>());
-        } else if (type == "ThreadPool") {
-            size_t threadCount = compArgs.value("threadCount", static_cast<size_t>(1));
-            return std::make_shared<ThreadPool>(threadCount);
-        } else if (type == "ResourceManager") {
-            auto threadPool = context->GetChildren().GetFirst<ThreadPool>();
-#ifdef ENABLE_SCRIPTING
-            return std::make_shared<ResourceManager>(threadPool, context->GetChildren().GetFirst<Keystore>());
-#else
-            return std::make_shared<ResourceManager>(threadPool);
-#endif
-        } else if (type == "CrashHandler") {
-            return std::make_shared<CrashHandler>();
-        } else if (type == "Console") {
-            return std::make_shared<Console>();
-        } else if (type == "Audio") {
-            AudioSettings settings;
-            if (compArgs.contains("channelSetting")) {
-                settings.ChannelSetting = static_cast<AudioChannelsSetting>(compArgs["channelSetting"].get<int>());
-            }
-            return std::make_shared<Audio>(settings, context->GetChildren().GetFirst<Config>());
-        } else if (type == "GfxDebugger") {
-            return std::make_shared<Fast::GfxDebugger>();
-        } else if (type == "Events") {
-            return std::make_shared<Events>();
-        } else if (type == "FileDrop") {
-            return std::make_shared<FileDrop>(context->GetChildren().GetFirst<Window>());
-        } else if (type == "Logger") {
-            // Logger requires a logger - skip if not provided in overrides.
-            return nullptr;
-#ifdef ENABLE_SCRIPTING
-        } else if (type == "Keystore") {
-            return std::make_shared<Keystore>(context->GetChildren().GetFirst<Config>());
-        } else if (type == "ScriptLoader") {
-            return std::make_shared<ScriptLoader>(std::unordered_map<std::string, std::string>{}, 1, "-g -Wl",
-                                                  std::vector<std::string>{}, std::vector<std::string>{},
-                                                  std::vector<std::string>{},
-                                                  context->GetChildren().GetFirst<ResourceManager>());
-#endif
-        }
-        SPDLOG_WARN("BuildComponentsFromJson: unknown component type '{}'", type);
-        return nullptr;
-    };
-
-    std::vector<std::pair<const nlohmann::json*, std::shared_ptr<Component>>> createdComponents;
-
-    // Recursive helper: process a component entry and its children.
-    std::function<void(const nlohmann::json&, std::shared_ptr<Component>)> processEntry =
-        [&](const nlohmann::json& entry, std::shared_ptr<Component> parent) {
-            if (!entry.contains("type") || !entry["type"].is_string()) {
-                return;
-            }
-            std::string type = entry["type"].get<std::string>();
-            std::string name = entry.value("name", type);
-
-            // Check compile-time condition.
-            if (entry.contains("condition") && entry["condition"].is_string()) {
-                std::string condition = entry["condition"].get<std::string>();
-                if (activeConditions.find(condition) == activeConditions.end()) {
-                    return;
-                }
-            }
-
-            std::shared_ptr<Component> component = nullptr;
-
-            // Merge initArgs: inline "initArgs" from the entry takes precedence,
-            // then the top-level initArgs keyed by name.
-            nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
-            if (entry.contains("initArgs") && entry["initArgs"].is_object()) {
-                // Inline initArgs override top-level ones.
-                for (auto& [key, value] : entry["initArgs"].items()) {
-                    compArgs[key] = value;
-                }
-            }
-
-            // Check if an override is provided.
-            if (overrides.count(type)) {
-                component = overrides.at(type);
-            } else {
-                component = createComponent(type, compArgs);
-            }
-
-            if (component) {
-                parent->GetChildren().Add(component);
-                createdComponents.emplace_back(&entry, component);
-
-                // Recursively process children specified in the JSON hierarchy.
-                if (entry.contains("children") && entry["children"].is_array()) {
-                    for (const auto& childEntry : entry["children"]) {
-                        processEntry(childEntry, component);
-                    }
-                }
-            }
-        };
-
-    // Phase 1: Create and add all components respecting hierarchy.
-    for (const auto& entry : json["components"]) {
-        processEntry(entry, context);
-    }
-
-    // Phase 2: Initialize created components in declaration order.
-    for (const auto& created : createdComponents) {
-        const auto* entry = created.first;
-        const auto& component = created.second;
-        if (!entry || !component || component->IsInitialized()) {
-            continue;
-        }
-
-        std::string type = (*entry)["type"].get<std::string>();
-        std::string name = entry->value("name", type);
-
-        nlohmann::json compArgs = initArgs.contains(name) ? initArgs[name] : nlohmann::json::object();
-        if (entry->contains("initArgs") && (*entry)["initArgs"].is_object()) {
-            for (auto& [key, value] : (*entry)["initArgs"].items()) {
-                compArgs[key] = value;
-            }
-        }
-
-        component->Init(compArgs);
-    }
-
-    UpdateBridgeCaches(context);
-    return true;
 }
 
 std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const std::string& shortName) {

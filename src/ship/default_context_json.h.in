@@ -1,9 +1,0 @@
-#pragma once
-
-// Auto-generated from default_context.json — do not edit manually.
-// clang-format off
-namespace Ship {
-/** @brief Embedded default component-layout JSON used for Context bootstrap. */
-inline constexpr const char* gKDefaultContextJson = R"JSON(@DEFAULT_CONTEXT_JSON@)JSON";
-} // namespace Ship
-// clang-format on
