@@ -31,6 +31,9 @@ class ResourceManager;
 #include <SDL2/SDL_opengl.h>
 #endif
 namespace Fast {
+/**
+ * @brief OpenGL shader program metadata cached by the Fast3D renderer.
+ */
 struct ShaderProgram {
     GLuint openglProgramId;
     uint8_t numInputs;
@@ -47,6 +50,9 @@ struct ShaderProgram {
     GLint texture_filtering_location;
 };
 
+/**
+ * @brief OpenGL framebuffer object and associated attachments.
+ */
 struct FramebufferOGL {
     uint32_t width, height;
     bool has_depth_buffer;
@@ -56,17 +62,27 @@ struct FramebufferOGL {
     GLuint fbo, clrbuf, clrbufMsaa, rbo;
 };
 
+/**
+ * @brief Cached texture metadata tracked per texture id.
+ */
 struct TextureInfo {
     uint16_t width;
     uint16_t height;
     uint16_t filtering;
 };
 
+/**
+ * @brief OpenGL/OpenGLES implementation of the Fast3D rendering API.
+ */
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   public:
+    /** @brief Constructs the OpenGL renderer with optional shared dependencies. */
     GfxRenderingAPIOGL(std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
                        std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
     ~GfxRenderingAPIOGL() override = default;
+
+    /** @name GfxRenderingAPI implementation */
+    /** @{ */
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
@@ -112,7 +128,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     FilteringMode GetTextureFilter() override;
     void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
-
+    /** @} */
   private:
     void SetUniforms(ShaderProgram* prg) const;
     std::string BuildFsShader(const CCFeatures& cc_features);

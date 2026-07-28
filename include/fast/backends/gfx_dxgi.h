@@ -18,14 +18,23 @@ class ConsoleVariable;
 namespace Fast {
 class Fast3dGui;
 
+/**
+ * @brief DXGI/Win32 window backend used by the Fast3D renderer on Windows.
+ *
+ * Implements the `GfxWindowBackend` interface for input, timing, swap-chain
+ * management, and fullscreen/windowed transitions.
+ */
 class GfxWindowBackendDXGI final : public GfxWindowBackend {
   public:
+    /** @brief Constructs the backend with optional shared engine dependencies. */
     GfxWindowBackendDXGI(std::shared_ptr<Ship::Config> config = nullptr,
                          std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
                          std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
                          std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
     ~GfxWindowBackendDXGI() override;
 
+    /** @name GfxWindowBackend implementation */
+    /** @{ */
     void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height,
               int32_t posX, int32_t posY) override;
     void Close() override;
@@ -59,11 +68,16 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
     bool IsRunning() override;
     void Destroy() override;
     bool IsFullscreen() override;
+    /** @} */
 
+    /** @brief Returns the native Win32 window handle. */
     HWND GetWindowHandle();
+    /** @brief Returns the active DXGI swap chain. */
     IDXGISwapChain1* GetSwapChain();
     // These need to be public to be accessible in the window callback
+    /** @brief Creates/recreates the swap chain and runs a pre-destroy callback when replacing it. */
     void CreateSwapChain(IUnknown* mDevice, std::function<void()>&& before_destroy_fn);
+    /** @brief Creates the DXGI factory/device and invokes the renderer-side creation callback. */
     void CreateFactoryAndDevice(bool debug, int d3d_version, class GfxRenderingAPIDX11* self,
                                 bool (*createFunc)(class GfxRenderingAPIDX11* self, bool SoftwareRenderer));
     void OnKeydown(WPARAM wParam, LPARAM lParam);
@@ -134,7 +148,14 @@ class GfxWindowBackendDXGI final : public GfxWindowBackend {
 } // namespace Fast
 
 #ifdef DECLARE_GFX_DXGI_FUNCTIONS
+/**
+ * @brief Throws an exception when an HRESULT indicates failure.
+ */
 void ThrowIfFailed(HRESULT res);
+
+/**
+ * @brief Throws an exception when an HRESULT indicates failure, including window/context message details.
+ */
 void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message);
 #endif
 

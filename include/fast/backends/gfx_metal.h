@@ -19,8 +19,11 @@ class ConsoleVariable;
 class ResourceManager;
 } // namespace Ship
 
+/** @brief Number of rotating vertex buffers kept to reduce CPU/GPU sync stalls. */
 static constexpr size_t kMaxVertexBufferPoolSize = 3;
+/** @brief Maximum multisample count supported by this Metal backend implementation. */
 static constexpr size_t METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
+/** @brief Maximum number of pixel-depth coordinates queried in a single pass. */
 static constexpr size_t MAX_PIXEL_DEPTH_COORDS = 1024;
 
 namespace MTL {
@@ -49,10 +52,12 @@ namespace NS {
 class AutoreleasePool;
 }
 
+/** @brief Combines two integer keys using the Cantor pairing function. */
 static size_t cantor(uint64_t a, uint64_t b) {
     return (a + b) * (a + b + 1) / 2 + b;
 }
 
+/** @brief Hash functor for `(shaderId, msaaLevel)` pairs used by shader caches. */
 struct hash_pair_shader_ids {
     size_t operator()(const std::pair<uint64_t, uint32_t>& p) const {
         auto value1 = p.first;
@@ -63,6 +68,9 @@ struct hash_pair_shader_ids {
 
 namespace Fast {
 
+/**
+ * @brief Cached Metal shader program and pipeline variants for one combiner key.
+ */
 struct ShaderProgramMetal {
     uint64_t shader_id0;
     uint64_t shader_id1;
@@ -76,6 +84,9 @@ struct ShaderProgramMetal {
     MTL::RenderPipelineState* pipeline_state_variants[9];
 };
 
+/**
+ * @brief Metal texture object metadata tracked by the renderer cache.
+ */
 struct TextureDataMetal {
     MTL::Texture* texture;
     MTL::Texture* msaaTexture;
@@ -86,6 +97,9 @@ struct TextureDataMetal {
     bool linear_filtering;
 };
 
+/**
+ * @brief Framebuffer state for an offscreen or onscreen Metal render target.
+ */
 struct FramebufferMetal {
     MTL::CommandBuffer* mCommandBuffer;
     MTL::RenderPassDescriptor* mRenderPassDescriptor;
@@ -118,25 +132,33 @@ struct FramebufferMetal {
     bool mUseReadbackQueue = false;
 };
 
+/** @brief Per-frame uniforms consumed by Metal shader programs. */
 struct FrameUniforms {
     simd::int1 frameCount;
     simd::float1 noiseScale;
 };
 
+/** @brief Per-draw uniforms consumed by Metal shader programs. */
 struct DrawUniforms {
     simd::int1 textureFiltering[SHADER_MAX_TEXTURES];
     simd::float1 prim_depth;
 };
 
+/** @brief Buffer payload used for batched pixel-depth coordinate queries. */
 struct CoordUniforms {
     simd::uint2 coords[MAX_PIXEL_DEPTH_COORDS];
 };
 
+/// Metal implementation of the Fast3D rendering API.
 class GfxRenderingAPIMetal final : public GfxRenderingAPI {
   public:
+    /** @brief Constructs the Metal renderer with optional shared dependencies. */
     GfxRenderingAPIMetal(std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
                          std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
     ~GfxRenderingAPIMetal() override = default;
+
+    /** @name GfxRenderingAPI implementation */
+    /** @{ */
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
@@ -171,7 +193,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
                          int dstX1, int dstY1) override;
     void ClearFramebuffer(bool color, bool depth) override;
     void ReadFramebufferToCPU(int fbId, uint32_t width, uint32_t height, uint16_t* rgba16Buf) override;
-    void ResolveMSAAColorBuffer(int fbIdTarger, int fbIdSrc) override;
+    void ResolveMSAAColorBuffer(int fbIdTarge, int fbIdSrc) override;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff>
     GetPixelDepth(int fb_id, const std::set<std::pair<float, float>>& coordinates) override;
     void* GetFramebufferTextureId(int fbId) override;
@@ -181,10 +203,15 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     FilteringMode GetTextureFilter() override;
     void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
+    /** @} */
 
+    /** @brief Begins a new ImGui frame for the Metal renderer bridge. */
     void NewFrame();
+    /** @brief Prepares floating-frame state for rendering ImGui draw data. */
     void SetupFloatingFrame();
+    /** @brief Renders ImGui draw data using the active Metal command encoder. */
     void RenderDrawData(ImDrawData* drawData);
+    /** @brief Initializes Metal/SDL bridge objects for this renderer instance. */
     bool MetalInit(SDL_Renderer* renderer);
 
   private:
@@ -250,6 +277,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
 
 } // namespace Fast
 
+/** @brief Returns true when Metal is available on the current runtime platform. */
 bool Metal_IsSupported();
 
 #endif

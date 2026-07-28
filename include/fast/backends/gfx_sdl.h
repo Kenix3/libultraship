@@ -12,14 +12,23 @@ class FileDrop;
 namespace Fast {
 class Fast3dGui;
 
+/**
+ * @brief SDL2 implementation of the Fast3D window/input backend.
+ *
+ * Handles window creation, input polling, fullscreen transitions, framerate
+ * pacing, and callback forwarding to the renderer/runtime.
+ */
 class GfxWindowBackendSDL2 final : public GfxWindowBackend {
   public:
+    /** @brief Constructs the backend with optional shared engine dependencies. */
     GfxWindowBackendSDL2(std::shared_ptr<Ship::Config> config = nullptr,
                          std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
                          std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
                          std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
     ~GfxWindowBackendSDL2() override;
 
+    /** @name GfxWindowBackend implementation */
+    /** @{ */
     void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height,
               int32_t posX, int32_t posY) override;
     void Close() override;
@@ -53,7 +62,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     bool IsRunning() override;
     void Destroy() override;
     bool IsFullscreen() override;
-
+    /** @} */
   private:
     void SetFullscreenImpl(bool on, bool call_callback);
     void HandleSingleEvent(SDL_Event& event);
