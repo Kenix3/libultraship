@@ -40,8 +40,8 @@ ListenerID Events::RegisterListener(EventID id, EventCallback callback, EventPri
     const ListenerID listenerId = registry->NextListenerID++;
     const uint64_t listenerSequence = registry->NextListenerSequence++;
     auto self = std::dynamic_pointer_cast<Tickable>(TryGetSharedComponent());
-    auto listenerAction = std::make_shared<ListenerAction>(id, listenerId, priority, listenerSequence, self, callback,
-                                                           EventMetadata{ file, line, 0 });
+    auto listenerAction = std::make_shared<ListenerAction>(id, listenerId, priority, listenerSequence, this, self,
+                                                           callback, EventMetadata{ file, line, 0 });
 
     registry->Listeners[listenerId] = listenerAction;
     GetActionList().Add(std::static_pointer_cast<Action>(listenerAction));

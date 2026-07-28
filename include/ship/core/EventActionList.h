@@ -89,7 +89,8 @@ inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> EventActionList::Ge
     return result;
 }
 
-inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> EventActionList::Get(const std::vector<EventID>& eventIds) const {
+inline std::shared_ptr<std::vector<std::shared_ptr<Action>>>
+EventActionList::Get(const std::vector<EventID>& eventIds) const {
     auto result = std::make_shared<std::vector<std::shared_ptr<Action>>>();
     std::unordered_set<EventID> seen;
     for (const auto eventId : eventIds) {
@@ -107,6 +108,24 @@ inline std::shared_ptr<std::vector<std::shared_ptr<Action>>> EventActionList::Ge
 inline void EventActionList::Added(std::shared_ptr<Action> action, const bool forced) {
     ActionList::Added(action, forced);
     IndexEventAction(action);
+
+    // Keep the flat list sorted by EventID so that the generic Get() returns
+    // actions in a predictable EventID-ascending order.
+    auto& list = GetList();
+    std::stable_sort(list.begin(), list.end(), [](const std::shared_ptr<Action>& a, const std::shared_ptr<Action>& b) {
+        const auto* ea = dynamic_cast<const EventAction*>(a.get());
+        const auto* eb = dynamic_cast<const EventAction*>(b.get());
+        if (!ea && !eb) {
+            return false;
+        }
+        if (!ea) {
+            return false;
+        }
+        if (!eb) {
+            return true;
+        }
+        return ea->GetEventId() < eb->GetEventId();
+    });
 }
 
 inline void EventActionList::Removed(std::shared_ptr<Action> action, const bool forced) {
@@ -123,7 +142,7 @@ inline bool EventActionList::ShouldInsertBefore(const std::shared_ptr<Action>& e
     }
 
     if (incomingListener->GetPriority() != existingListener->GetPriority()) {
-        return incomingListener->GetPriority() > existingListener->GetPriority();
+        return incomingListener->GetPriority() < existingListener->GetPriority();
     }
 
     return incomingListener->GetSequence() < existingListener->GetSequence();
@@ -154,9 +173,10 @@ inline void EventActionList::UnindexEventAction(const std::shared_ptr<Action>& a
     }
 
     auto& bucket = it->second;
-    bucket.erase(std::remove_if(bucket.begin(), bucket.end(), [&action](const std::shared_ptr<Action>& existing) {
-                     return existing && action && existing->GetId() == action->GetId();
-                 }),
+    bucket.erase(std::remove_if(bucket.begin(), bucket.end(),
+                                [&action](const std::shared_ptr<Action>& existing) {
+                                    return existing && action && existing->GetId() == action->GetId();
+                                }),
                  bucket.end());
 
     if (bucket.empty()) {

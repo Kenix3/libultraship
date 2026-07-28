@@ -11,7 +11,7 @@ using namespace Ship;
 TEST(EventsTest, RegisterEventReturnsValidId) {
     Events events;
     EventID id = events.RegisterEvent("TestEvent");
-    EXPECT_GE(id, 0);
+    EXPECT_NE(id, -1);
 }
 
 TEST(EventsTest, RegisterMultipleEventsReturnDistinctIds) {

@@ -42,7 +42,7 @@ static void Noop(IEvent*) {
 TEST(EventSystem, RegisterEventReturnsValidId) {
     Ship::EventSystem sys;
     EventID id = sys.RegisterEvent("TestEvent");
-    EXPECT_GE(id, 0);
+    EXPECT_NE(id, -1);
 }
 
 TEST(EventSystem, RegisterMultipleEventsReturnDistinctIds) {

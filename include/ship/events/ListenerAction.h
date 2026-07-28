@@ -25,13 +25,14 @@ class ListenerAction : public EventAction {
      * @brief Constructs a listener action for a single EventID.
      * @param eventId    EventID this listener subscribes to.
      * @param listenerId Event-scoped listener identifier.
-     * @param priority   Dispatch priority; higher values run first.
+     * @param priority   Dispatch priority; lower values fire first.
      * @param sequence   Stable registration-order sequence within the event.
-     * @param tickable   Owning `Events` tickable.
+     * @param events     Non-owning pointer to the owning `Events` component.
+     * @param tickable   Owning `Events` tickable (may be null for stack-allocated `Events`).
      * @param callback   Listener callback invoked with the active event payload.
      * @param metadata   Registration-site diagnostic metadata.
      */
-    ListenerAction(EventID eventId, ListenerID listenerId, EventPriority priority, uint64_t sequence,
+    ListenerAction(EventID eventId, ListenerID listenerId, EventPriority priority, uint64_t sequence, Events* events,
                    std::shared_ptr<Tickable> tickable, EventCallback callback,
                    EventMetadata metadata = { nullptr, 0, 0 });
 
@@ -52,6 +53,8 @@ class ListenerAction : public EventAction {
     bool ActionRan() override;
 
   private:
+    /** @brief Non-owning pointer to the owning Events component; always valid during dispatch. */
+    Events* mEvents;
     /** @brief Event-scoped listener identifier. */
     ListenerID mListenerId;
     /** @brief Dispatch priority used by `ActionList` ordering. */

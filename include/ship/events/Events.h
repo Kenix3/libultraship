@@ -48,10 +48,10 @@ struct EventRegistration {
  * Listeners are invoked synchronously in priority order whenever `CallEvent()`
  * is called.
  * Any listener may set `IEvent::Cancelled` to true; `CallEvent()` does not
- * enforce cancellation itself — the caller is responsible for checking it via
+ * enforce cancellation itself ï¿½ the caller is responsible for checking it via
  * the `CALL_CANCELLABLE_EVENT` macro.
  *
- * **Required Context children:** None — `Events` has no dependencies on other
+ * **Required Context children:** None ï¿½ `Events` has no dependencies on other
  * components.
  *
  * Obtain the instance from `Context::GetChildren().GetFirst<Events>()`.
@@ -119,7 +119,7 @@ class Events : public TickableComponent {
      *
      * @param id       EventID to subscribe to.
      * @param callback Listener callback invoked with the active `IEvent*`.
-     * @param priority Dispatch priority; higher values run first.
+     * @param priority Dispatch priority; lower values run first.
      * @param file     Optional source file of the registration site.
      * @param line     Optional source line of the registration site.
      * @return ListenerID scoped to the target event.

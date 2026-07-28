@@ -9,10 +9,10 @@
 namespace Ship {
 class Events;
 }
- /**
-  * @brief Sets the global `Events` instance used by the C bridge.
-  * @param events Shared `Events` component to forward bridge calls to.
-  */
+/**
+ * @brief Sets the global `Events` instance used by the C bridge.
+ * @param events Shared `Events` component to forward bridge calls to.
+ */
 void EventSystemSetEvents(std::shared_ptr<Ship::Events> events);
 /** @brief Returns the current bridged `Events` component, if any. */
 std::shared_ptr<Ship::Events> EventSystemGetEvents();

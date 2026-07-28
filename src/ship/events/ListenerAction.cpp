@@ -5,9 +5,10 @@
 namespace Ship {
 
 ListenerAction::ListenerAction(EventID eventId, ListenerID listenerId, EventPriority priority, uint64_t sequence,
-                               std::shared_ptr<Tickable> tickable, EventCallback callback, EventMetadata metadata)
-    : EventAction(eventId, std::move(tickable)), mListenerId(listenerId), mPriority(priority), mSequence(sequence),
-      mEventCallback(callback), mMetadata(metadata) {
+                               Events* events, std::shared_ptr<Tickable> tickable, EventCallback callback,
+                               EventMetadata metadata)
+    : EventAction(eventId, std::move(tickable)), mEvents(events), mListenerId(listenerId), mPriority(priority),
+      mSequence(sequence), mEventCallback(callback), mMetadata(metadata) {
 }
 
 ListenerID ListenerAction::GetListenerId() const {
@@ -31,13 +32,11 @@ bool ListenerAction::ActionRan() {
         return true;
     }
 
-    auto tickable = GetTickable();
-    auto* events = dynamic_cast<Events*>(tickable.get());
-    if (events == nullptr) {
+    if (mEvents == nullptr) {
         return false;
     }
 
-    const auto* dispatchContext = events->GetActiveDispatchContext();
+    const auto* dispatchContext = mEvents->GetActiveDispatchContext();
     if (dispatchContext == nullptr || dispatchContext->Event == nullptr || dispatchContext->ID != GetEventId()) {
         return false;
     }
