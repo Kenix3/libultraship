@@ -462,7 +462,12 @@ std::shared_ptr<Ship::IResource> Interpreter::ResolveResourceCached(const char* 
         return it->second;
     }
     auto res = Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(path);
-    mResolvedResourceCache[path] = res;
+    // Only memoize a hit. The resource manager caches its own misses, so re-asking
+    // for one is cheap, and CacheExternalResource can turn a path that missed into a
+    // valid resource at runtime. A memoized null would outlive the resource itself.
+    if (res != nullptr) {
+        mResolvedResourceCache[path] = res;
+    }
     return res;
 }
 
