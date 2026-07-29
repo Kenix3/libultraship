@@ -96,7 +96,7 @@ class StringHelper {
      * @param separator Separator inserted between consecutive elements.
      * @return Joined string.
      */
-    static std::string Implode(std::vector<std::string>& elements, const char* const separator);
+    static std::string Implode(const std::vector<std::string>& elements, const char* const separator);
 
     /**
      * @brief Converts a string to a 64-bit signed integer.

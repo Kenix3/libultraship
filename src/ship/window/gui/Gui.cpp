@@ -24,7 +24,7 @@ namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
-Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Context> context,
+Gui::Gui(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Context> context,
          std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
          std::shared_ptr<Config> config, std::shared_ptr<ResourceManager> resourceManager,
          std::shared_ptr<GameOverlay> gameOverlay)

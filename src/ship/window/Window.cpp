@@ -26,7 +26,7 @@ Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config)
     : Window(gui, std::make_shared<MouseStateManager>(), std::move(config)) {
 }
 
-Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Config> config)
+Window::Window(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Config> config)
     : Window(std::make_shared<Gui>(guiWindows), std::move(config)) {
 }
 

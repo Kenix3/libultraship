@@ -46,7 +46,7 @@ class Gui : public Component {
      * @brief Constructs a Gui and pre-registers a list of GuiWindows.
      * @param guiWindows Windows to add before Init() is called.
      */
-    Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Context> context = nullptr,
+    Gui(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Context> context = nullptr,
         std::shared_ptr<ConsoleVariable> consoleVariable = nullptr, std::shared_ptr<Window> window = nullptr,
         std::shared_ptr<Config> config = nullptr, std::shared_ptr<ResourceManager> resourceManager = nullptr,
         std::shared_ptr<GameOverlay> gameOverlay = nullptr);
