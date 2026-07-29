@@ -178,6 +178,7 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
     initData->Type =
         Context::GetRawInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
+    initData->IsCustom = parsed.value("isCustom", false);
 
     return initData;
 }
