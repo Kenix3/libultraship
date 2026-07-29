@@ -6,7 +6,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 
 ## Documentation
 
-?? **[Full Documentation](https://kenix3.github.io/libultraship/)** | ?? **[API Reference](https://kenix3.github.io/libultraship/api/)**
+**[Full Documentation](https://kenix3.github.io/libultraship/)** | **[API Reference](https://kenix3.github.io/libultraship/api/)**
 
 - [Porting Guide](https://kenix3.github.io/libultraship/PORTING.html) - How to port an N64 game to PC using LUS
 - [Scripting Guide](https://kenix3.github.io/libultraship/SCRIPTING.html) - Writing and packaging C mods
@@ -84,9 +84,6 @@ cmake -S . -Bbuild-android -GNinja \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build-android
 ```
-
-## Sponsors
-Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
 
 ## License
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.
