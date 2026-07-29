@@ -2,7 +2,6 @@
 
 #include "ship/resource/archive/OtrArchive.h"
 
-#include "ship/Context.h"
 #include "ship/utils/filesystemtools/FileHelper.h"
 #include "ship/resource/ResourceManager.h"
 #include "ship/resource/archive/ArchiveManager.h"
@@ -10,7 +9,9 @@
 #include "spdlog/spdlog.h"
 
 namespace Ship {
-OtrArchive::OtrArchive(const std::string& archivePath) : Archive(archivePath) {
+OtrArchive::OtrArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
+                       std::shared_ptr<Keystore> keystore)
+    : Archive(archivePath, std::move(resourceManager), std::move(keystore)) {
     mHandle = nullptr;
 }
 
@@ -62,8 +63,7 @@ std::shared_ptr<File> OtrArchive::LoadFile(const std::string& filePath) {
 }
 
 std::shared_ptr<File> OtrArchive::LoadFile(uint64_t hash) {
-    const std::string& filePath =
-        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath = *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 

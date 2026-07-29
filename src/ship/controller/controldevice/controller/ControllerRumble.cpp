@@ -1,6 +1,5 @@
 #include "ship/controller/controldevice/controller/ControllerRumble.h"
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include <sstream>
@@ -8,7 +7,11 @@
 #include "ship/controller/controldevice/controller/mapping/factories/RumbleMappingFactory.h"
 
 namespace Ship {
-ControllerRumble::ControllerRumble(uint8_t portIndex) : mPortIndex(portIndex) {
+ControllerRumble::ControllerRumble(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                                   std::shared_ptr<ControlDeck> controlDeck)
+    : mPortIndex(portIndex) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 ControllerRumble::~ControllerRumble() {
@@ -37,13 +40,12 @@ void ControllerRumble::SaveRumbleMappingIdsToConfig() {
     const std::string rumbleMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
     if (rumbleMappingIdListString == "") {
-        Ship::Context::GetInstance()->GetConsoleVariables()->ClearVariable(rumbleMappingIdsCvarKey.c_str());
+        mConsoleVariable->ClearVariable(rumbleMappingIdsCvarKey.c_str());
     } else {
-        Ship::Context::GetInstance()->GetConsoleVariables()->SetString(rumbleMappingIdsCvarKey.c_str(),
-                                                                       rumbleMappingIdListString.c_str());
+        mConsoleVariable->SetString(rumbleMappingIdsCvarKey.c_str(), rumbleMappingIdListString.c_str());
     }
 
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->Save();
 }
 
 void ControllerRumble::AddRumbleMapping(std::shared_ptr<ControllerRumbleMapping> mapping) {
@@ -88,7 +90,8 @@ void ControllerRumble::ClearAllMappingsForDeviceType(PhysicalDeviceType physical
 }
 
 void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType) {
-    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex)) {
+    for (auto mapping : RumbleMappingFactory::CreateDefaultSDLRumbleMappings(physicalDeviceType, mPortIndex,
+                                                                             mConsoleVariable, mControlDeck)) {
         AddRumbleMapping(mapping);
     }
 
@@ -99,7 +102,7 @@ void ControllerRumble::AddDefaultMappings(PhysicalDeviceType physicalDeviceType)
 }
 
 void ControllerRumble::LoadRumbleMappingFromConfig(std::string id) {
-    auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id);
+    auto mapping = RumbleMappingFactory::CreateRumbleMappingFromConfig(mPortIndex, id, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return;
@@ -118,8 +121,7 @@ void ControllerRumble::ReloadAllMappingsFromConfig() {
     // hardcoded or provided by an otr file
     const std::string rumbleMappingIdsCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.RumbleMappingIds", mPortIndex + 1);
-    std::stringstream rumbleMappingIdsStringStream(
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
+    std::stringstream rumbleMappingIdsStringStream(mConsoleVariable->GetString(rumbleMappingIdsCvarKey.c_str(), ""));
     std::string rumbleMappingIdString;
     while (getline(rumbleMappingIdsStringStream, rumbleMappingIdString, ',')) {
         LoadRumbleMappingFromConfig(rumbleMappingIdString);
@@ -133,7 +135,7 @@ std::unordered_map<std::string, std::shared_ptr<ControllerRumbleMapping>> Contro
 bool ControllerRumble::AddRumbleMappingFromRawPress() {
     std::shared_ptr<ControllerRumbleMapping> mapping = nullptr;
 
-    mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex);
+    mapping = RumbleMappingFactory::CreateRumbleMappingFromSDLInput(mPortIndex, mConsoleVariable, mControlDeck);
 
     if (mapping == nullptr) {
         return false;
@@ -144,8 +146,8 @@ bool ControllerRumble::AddRumbleMappingFromRawPress() {
     SaveRumbleMappingIdsToConfig();
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);
-    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(hasConfigCvarKey.c_str(), true);
-    Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetInteger(hasConfigCvarKey.c_str(), true);
+    mConsoleVariable->Save();
     return true;
 }
 

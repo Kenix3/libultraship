@@ -3,6 +3,13 @@
 #include "ship/window/MouseStateManager.h"
 
 namespace Fast {
+
+/**
+ * @brief Fast3D-specific mouse-state manager.
+ *
+ * Requires a **Ship::Window** component as a direct child of the Context so
+ * that ResetCursorVisibilityTimer() can query the target framerate.
+ */
 class FastMouseStateManager : public Ship::MouseStateManager {
   public:
     void ResetCursorVisibilityTimer() override;

@@ -4,6 +4,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class Window;
+}
+void WindowSetWindowComponent(std::shared_ptr<Ship::Window> window);
+std::shared_ptr<Ship::Window> WindowGetWindowComponent();
 extern "C" {
 #endif
 

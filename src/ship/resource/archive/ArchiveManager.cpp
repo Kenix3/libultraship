@@ -14,7 +14,8 @@
 #include "ship/utils/StrHash64.h"
 
 namespace Ship {
-ArchiveManager::ArchiveManager() {
+ArchiveManager::ArchiveManager(std::shared_ptr<ResourceManager> resourceManager, std::shared_ptr<Keystore> keystore)
+    : Component("ArchiveManager"), mResourceManager(std::move(resourceManager)), mKeystore(std::move(keystore)) {
 }
 
 void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
@@ -28,15 +29,14 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
     for (const auto& archive : archives) {
         AddArchive(archive);
     }
+    if (!mArchives.empty()) {
+        MarkInitialized();
+    }
 }
 
 ArchiveManager::~ArchiveManager() {
     SPDLOG_TRACE("destruct archive manager");
     SetArchives(nullptr);
-}
-
-bool ArchiveManager::IsLoaded() {
-    return !mArchives.empty();
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
@@ -243,17 +243,18 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
     SPDLOG_INFO("Reading archive: {}", path.string());
 
     if (StringHelper::IEquals(extension, ".o2r") || StringHelper::IEquals(extension, ".zip")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
+        archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath, mResourceManager, mKeystore));
 #ifdef INCLUDE_MPQ_SUPPORT
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
+        archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath, mResourceManager, mKeystore));
 #endif
     } else if (StringHelper::IEquals(extension, "")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<FolderArchive>(archivePath));
+        archive =
+            dynamic_pointer_cast<Archive>(std::make_shared<FolderArchive>(archivePath, mResourceManager, mKeystore));
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
-        archive = std::make_shared<O2rArchive>(archivePath);
+        archive = std::make_shared<O2rArchive>(archivePath, mResourceManager, mKeystore);
     }
 
     archive->Load();
@@ -261,7 +262,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
 }
 
 std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> archive) {
-    if (!archive->IsLoaded()) {
+    if (!archive->IsInitialized()) {
         SPDLOG_WARN("Attempting to add unloaded Archive at {} to Archive Manager", archive->GetPath());
         return nullptr;
     }

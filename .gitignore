@@ -372,3 +372,13 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcworkspace
 *.xcsettings
 build*
+doxygen_out/
+docs/_site/
+docs/.jekyll-cache/
+docs/Gemfile.lock
+# Debian packages should never be checked in
+*.deb
+*.dir/**
+tests/**/*.cmake
+tests/**/*.json
+tests/**/*.exe

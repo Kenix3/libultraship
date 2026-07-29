@@ -2,18 +2,16 @@
 
 #include "spdlog/spdlog.h"
 
-#include "ship/Context.h"
 #include "ship/resource/File.h"
 #include "ship/resource/ResourceLoader.h"
+#include "ship/resource/ResourceManager.h"
 #include "ship/resource/ResourceType.h"
+#include "ship/security/Keystore.h"
 #include "ship/utils/binarytools/MemoryStream.h"
 #include "ship/utils/glob.h"
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 #include "ship/utils/StringHelper.h"
-#ifdef ENABLE_SCRIPTING
-#include "ship/security/Keystore.h"
-#endif
 
 #include <tinyxml2.h>
 #include <monocypher.h>
@@ -21,9 +19,11 @@
 #include <monocypher-ed25519.h>
 
 namespace Ship {
-Archive::Archive(const std::string& path)
-    : mIsLoaded(false), mIsSigned(false), mIsChecksumValid(false), mHasGameVersion(false), mGameVersion(0xFFFFFFFF),
-      mManifest(), mPath(path) {
+Archive::Archive(const std::string& path, std::shared_ptr<ResourceManager> resourceManager,
+                 std::shared_ptr<Keystore> keystore)
+    : mResourceManager(std::move(resourceManager)), mKeystore(std::move(keystore)), mIsInitialized(false),
+      mIsSigned(false), mIsChecksumValid(false), mHasGameVersion(false), mGameVersion(0xFFFFFFFF), mManifest(),
+      mPath(path) {
     mHashes = std::make_shared<std::unordered_map<uint64_t, std::string>>();
 }
 
@@ -47,8 +47,9 @@ void Archive::Load() {
         Endianness endianness = (Endianness)reader->ReadUByte();
         reader->SetEndianness(endianness);
         SetGameVersion(reader->ReadUInt32());
-        isGameVersionValid =
-            Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
+        if (mResourceManager) {
+            isGameVersionValid = mResourceManager->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
+        }
 
         if (!isGameVersionValid) {
             SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(), GetGameVersion());
@@ -78,9 +79,9 @@ void Archive::Load() {
             if (mManifest.GameVersion != 0xFFFFFFFF) {
                 mHasGameVersion = true;
                 SetGameVersion(mManifest.GameVersion);
-                isGameVersionValid =
-                    Context::GetInstance()->GetResourceManager()->GetArchiveManager()->IsGameVersionValid(
-                        GetGameVersion());
+                if (mResourceManager) {
+                    isGameVersionValid = mResourceManager->GetArchiveManager()->IsGameVersionValid(GetGameVersion());
+                }
 
                 if (!isGameVersionValid) {
                     SPDLOG_WARN("Attempting to load Archive \"{}\" with invalid version {}", GetPath(),
@@ -94,21 +95,20 @@ void Archive::Load() {
         }
     }
 
-    SetLoaded(opened && (!mHasGameVersion || isGameVersionValid));
+    SetInitialized(opened && (!mHasGameVersion || isGameVersionValid));
 
-    if (!IsLoaded()) {
+    if (!IsInitialized()) {
         Unload();
     }
 }
 
 void Archive::Unload() {
     Close();
-    SetLoaded(false);
+    SetInitialized(false);
 }
 
 std::shared_ptr<File> Archive::LoadFile(uint64_t hash) {
-    const std::string& filePath =
-        *Context::GetInstance()->GetResourceManager()->GetArchiveManager()->HashToString(hash);
+    const std::string& filePath = *mResourceManager->GetArchiveManager()->HashToString(hash);
     return LoadFile(filePath);
 }
 
@@ -159,12 +159,12 @@ const std::string& Archive::GetPath() {
     return mPath;
 }
 
-bool Archive::IsLoaded() {
-    return mIsLoaded;
+bool Archive::IsInitialized() {
+    return mIsInitialized;
 }
 
-void Archive::SetLoaded(bool isLoaded) {
-    mIsLoaded = isLoaded;
+void Archive::SetInitialized(bool isInitialized) {
+    mIsInitialized = isInitialized;
 }
 
 void Archive::SetGameVersion(uint32_t gameVersion) {
@@ -187,8 +187,18 @@ void Archive::Validate() {
         return;
     }
 
-    auto keystore = Context::GetInstance()->GetKeystore();
-    auto manager = Context::GetInstance()->GetResourceManager()->GetArchiveManager();
+    auto keystore = mKeystore;
+    if (keystore == nullptr) {
+        SPDLOG_WARN("Archive {} could not be validated because no keystore is available", GetPath());
+        return;
+    }
+
+    if (mResourceManager == nullptr) {
+        SPDLOG_WARN("Archive {} could not be validated because no resource manager is available", GetPath());
+        return;
+    }
+
+    auto manager = mResourceManager->GetArchiveManager();
     std::vector<uint8_t> manifestKey = StringHelper::HexToBytes(mManifest.PublicKey);
 
     if (!keystore->HasKey(manifestKey)) {

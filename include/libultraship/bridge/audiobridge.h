@@ -6,6 +6,12 @@
 #include "ship/audio/AudioChannelsSetting.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class Audio;
+}
+void AudioSetAudioComponent(std::shared_ptr<Ship::Audio> audio);
+std::shared_ptr<Ship::Audio> AudioGetAudioComponent();
 extern "C" {
 #endif
 

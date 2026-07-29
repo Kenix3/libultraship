@@ -1,8 +1,11 @@
 #include "fast/Fast3dGui.h"
 
 #include "fast/Fast3dWindow.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
+#include "ship/window/Window.h"
+#include "ship/config/Config.h"
+#include "ship/resource/ResourceManager.h"
 #include "fast/backends/gfx_metal.h"
 #include "fast/interpreter.h"
 #include "fast/backends/gfx_rendering_api.h"
@@ -47,7 +50,14 @@ Fast3dGui::Fast3dGui(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows) :
 
 void Fast3dGui::Init(GuiWindowInitData windowImpl) {
     mImpl = windowImpl;
-    Gui::Init();
+    auto context = RequireDependency(GetContext(), "Context");
+    mWindow = context->GetChildren().GetFirst<Ship::Window>();
+    if (mWindow == nullptr) {
+        throw std::runtime_error("Component 'Fast3dGui' requires dependency 'Window' to exist before use");
+    }
+    mConsoleVariables = RequireDependency(context->GetChildren().GetFirst<Ship::ConsoleVariable>(), "ConsoleVariable");
+    mResourceManager = RequireDependency(context->GetChildren().GetFirst<Ship::ResourceManager>(), "ResourceManager");
+    Gui::OnInit({});
 }
 
 bool Fast3dGui::SupportsViewports() {
@@ -66,7 +76,19 @@ bool Fast3dGui::SupportsViewports() {
 }
 
 void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    if (!mWindow) {
+        auto context = GetContext();
+        if (context) {
+            mWindow = context->GetChildren().GetFirst<Ship::Window>();
+        }
+    }
+
+    auto window = mWindow;
+    if (!window || !window->IsInitialized() || window->GetWindowBackend() <= 0 ||
+        ImGui::GetCurrentContext() == nullptr) {
+        return;
+    }
+
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
@@ -87,13 +109,13 @@ void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
 }
 
 void Fast3dGui::ImGuiWMInit() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     mInterpreter = std::dynamic_pointer_cast<Fast3dWindow>(window)->GetInterpreterWeak();
 
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
@@ -101,7 +123,7 @@ void Fast3dGui::ImGuiWMInit() {
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-            if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
+            if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
             ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
@@ -121,7 +143,7 @@ void Fast3dGui::ImGuiWMInit() {
 }
 
 void Fast3dGui::ImGuiWMShutdown() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -144,7 +166,7 @@ void Fast3dGui::ImGuiWMShutdown() {
 }
 
 void Fast3dGui::ImGuiBackendInit() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -178,7 +200,7 @@ void Fast3dGui::ImGuiBackendInit() {
 }
 
 void Fast3dGui::ImGuiBackendShutdown() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -201,7 +223,7 @@ void Fast3dGui::ImGuiBackendShutdown() {
 }
 
 void Fast3dGui::ImGuiBackendNewFrame() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -228,7 +250,7 @@ void Fast3dGui::ImGuiBackendNewFrame() {
 }
 
 void Fast3dGui::ImGuiWMNewFrame() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
@@ -247,7 +269,7 @@ void Fast3dGui::ImGuiWMNewFrame() {
 // Bind ImGui's SDL2 gamepad backend to the controller(s) the
 // ControlDeck has already opened
 void Fast3dGui::RefreshImGuiGamepads() {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     auto backend = window->GetWindowBackend();
     if (backend != WindowBackend::FAST3D_SDL_OPENGL && backend != WindowBackend::FAST3D_SDL_METAL) {
         return;
@@ -257,7 +279,7 @@ void Fast3dGui::RefreshImGuiGamepads() {
 }
 
 void Fast3dGui::ImGuiRenderDrawData(ImDrawData* data) {
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
@@ -288,7 +310,7 @@ void Fast3dGui::DrawFloatingWindows() {
         return;
     }
 
-    auto window = Ship::Context::GetInstance()->GetWindow();
+    auto window = mWindow;
     // OpenGL requires extra platform handling for the GL context
     if (window->GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL && mImpl.Opengl.Context != nullptr) {
         // Backup window and context before calling RenderPlatformWindowsDefault
@@ -337,12 +359,11 @@ void Fast3dGui::CalculateGameViewport() {
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
     mInterpreter.lock()->mGameWindowViewport.height = (int16_t)size.y;
 
-    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
-                                                                        0)) {
+    if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
         ApplyResolutionChanges();
     }
 
-    switch (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_LOW_RES_MODE, 0)) {
+    switch (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0)) {
         case 1: { // N64 Mode
             mInterpreter.lock()->mCurDimensions.width = 320;
             mInterpreter.lock()->mCurDimensions.height = 240;
@@ -386,17 +407,13 @@ void Fast3dGui::DrawGame() {
     ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImVec2(0, 0);
-    if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_LOW_RES_MODE, 0) ==
-        1) { // N64 Mode takes priority
+    if (mConsoleVariables->GetInteger(CVAR_LOW_RES_MODE, 0) == 1) { // N64 Mode takes priority
         const float sw = size.y * 320.0f / 240.0f;
         pos = ImVec2(floor(size.x / 2 - sw / 2), 0);
         size = ImVec2(sw, size.y);
-    } else if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-                   CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
-        if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-                CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
-            if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-                    CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
+    } else if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled", 0)) {
+        if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".PixelPerfectMode", 0)) {
+            if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IgnoreAspectCorrection", 0)) {
                 float sWdth =
                     size.y * mInterpreter.lock()->mCurDimensions.width / mInterpreter.lock()->mCurDimensions.height;
                 float sHght =
@@ -423,7 +440,7 @@ void Fast3dGui::DrawGame() {
                           float(mInterpreter.lock()->mCurDimensions.height) * factor);
         }
     }
-    uintptr_t fb = Ship::Context::GetInstance()->GetWindow()->GetGfxFrameBuffer();
+    uintptr_t fb = mWindow->GetGfxFrameBuffer();
     if (fb) {
         ImGui::SetCursorPos(pos);
         ImGui::Image(reinterpret_cast<ImTextureID>(fb), size);
@@ -435,14 +452,12 @@ void Fast3dGui::DrawGame() {
 void Fast3dGui::ApplyResolutionChanges() {
     ImVec2 size = ImGui::GetContentRegionAvail();
 
-    const float aspectRatioX = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
-    const float aspectRatioY = Ship::Context::GetInstance()->GetConsoleVariables()->GetFloat(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
-    const uint32_t verticalPixelCount = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
-    const bool verticalResolutionToggle = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-        CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
+    const float aspectRatioX = mConsoleVariables->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
+    const float aspectRatioY = mConsoleVariables->GetFloat(CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioY", 9.0f);
+    const uint32_t verticalPixelCount =
+        mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalPixelCount", 480);
+    const bool verticalResolutionToggle =
+        mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".VerticalResolutionToggle", 0);
 
     const bool aspectRatioIsEnabled = (aspectRatioX > 0.0f) && (aspectRatioY > 0.0f);
 
@@ -492,13 +507,10 @@ void Fast3dGui::ApplyResolutionChanges() {
 }
 
 int16_t Fast3dGui::GetIntegerScaleFactor() {
-    if (!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
-        int16_t factor = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
+    if (!mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
+        int16_t factor = mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.Factor", 1);
 
-        if (Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-                CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
+        if (mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
             if (((float)mInterpreter.lock()->mGameWindowViewport.height /
                  mInterpreter.lock()->mGameWindowViewport.width) <
                 ((float)mInterpreter.lock()->mCurDimensions.height / mInterpreter.lock()->mCurDimensions.width)) {
@@ -529,8 +541,7 @@ int16_t Fast3dGui::GetIntegerScaleFactor() {
             factor = mInterpreter.lock()->mGameWindowViewport.width / mInterpreter.lock()->mCurDimensions.width;
         }
 
-        factor += Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
-            CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
+        factor += mConsoleVariables->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.ExceedBoundsBy", 0);
 
         if (factor < 1) {
             factor = 1;
@@ -568,8 +579,7 @@ void Fast3dGui::LoadTextureFromRawImage(const std::string& name, const std::stri
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
     initData->ResourceVersion = 0;
     initData->Path = path;
-    auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(
-        Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, false, initData));
+    auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(mResourceManager->LoadResource(path, false, initData));
 
     LoadTextureFromResource(name, guiTexture);
 }
@@ -586,30 +596,30 @@ void Fast3dGui::LoadTextureFromResource(const std::string& name, std::shared_ptr
     mGuiTextures[name] = texture->Metadata;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint) {
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
-    texBuffer.reserve(res.Width * res.Height * 4);
+    texBuffer.reserve(tex.Width * tex.Height * 4);
 
     // For HD textures we need to load the buffer raw (similar to inside gfx_pp)
-    if ((res.Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
+    if ((tex.Flags & TEX_FLAG_LOAD_AS_RAW) != 0) {
         // Raw loading doesn't support TLUT textures
-        if (res.Type == Fast::TextureType::Palette4bpp || res.Type == Fast::TextureType::Palette8bpp) {
+        if (tex.Type == Fast::TextureType::Palette4bpp || tex.Type == Fast::TextureType::Palette8bpp) {
             // TODO convert other image types
             SPDLOG_WARN("ImGui::ResourceLoad: Attempting to load unsupported image type");
             return;
         }
 
-        texBuffer.assign(res.ImageData, res.ImageData + (res.Width * res.Height * 4));
+        texBuffer.assign(tex.ImageData, tex.ImageData + (tex.Width * tex.Height * 4));
     } else {
-        switch (res.Type) {
+        switch (tex.Type) {
             case Fast::TextureType::RGBA32bpp:
-                texBuffer.assign(res.ImageData, res.ImageData + (res.Width * res.Height * 4));
+                texBuffer.assign(tex.ImageData, tex.ImageData + (tex.Width * tex.Height * 4));
                 break;
             case Fast::TextureType::RGBA16bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t b1 = res.ImageData[i * 2 + 0];
-                    uint8_t b2 = res.ImageData[i * 2 + 1];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t b1 = tex.ImageData[i * 2 + 0];
+                    uint8_t b2 = tex.ImageData[i * 2 + 1];
                     uint8_t r = (b1 >> 3) * 0xFF / 0x1F;
                     uint8_t g = (((b1 & 7) << 2) | (b2 >> 6)) * 0xFF / 0x1F;
                     uint8_t b = ((b2 >> 1) & 0x1F) * 0xFF / 0x1F;
@@ -622,9 +632,9 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha16bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t color = res.ImageData[i * 2 + 0];
-                    uint8_t alpha = res.ImageData[i * 2 + 1];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t color = tex.ImageData[i * 2 + 0];
+                    uint8_t alpha = tex.ImageData[i * 2 + 1];
                     texBuffer.push_back(color);
                     texBuffer.push_back(color);
                     texBuffer.push_back(color);
@@ -633,8 +643,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha8bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t ia = res.ImageData[i];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t ia = tex.ImageData[i];
                     uint8_t color = ((ia >> 4) & 0xF) * 255 / 15;
                     uint8_t alpha = (ia & 0xF) * 255 / 15;
                     texBuffer.push_back(color);
@@ -645,8 +655,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::GrayscaleAlpha4bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
-                    uint8_t b = res.ImageData[i / 2];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i += 2) {
+                    uint8_t b = tex.ImageData[i / 2];
 
                     uint8_t ia4 = b >> 4;
                     uint8_t color = ((ia4 >> 1) & 0xF) * 255 / 0b111;
@@ -667,8 +677,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::Grayscale8bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i++) {
-                    uint8_t ia = res.ImageData[i];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i++) {
+                    uint8_t ia = tex.ImageData[i];
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
                     texBuffer.push_back(ia);
@@ -677,8 +687,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
                 break;
             }
             case Fast::TextureType::Grayscale4bpp: {
-                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
-                    uint8_t b = res.ImageData[i / 2];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i += 2) {
+                    uint8_t b = tex.ImageData[i / 2];
 
                     uint8_t ia4 = ((b >> 4) * 0xFF) / 0b1111;
                     texBuffer.push_back(ia4);
@@ -710,19 +720,18 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& res
 
     Ship::GuiTextureMetadata asset;
     asset.RendererTextureId = api->NewTexture();
-    asset.Width = res.Width;
-    asset.Height = res.Height;
+    asset.Width = tex.Width;
+    asset.Height = tex.Height;
 
     api->SelectTexture(0, asset.RendererTextureId);
     api->SetSamplerParameters(0, false, 0, 0);
-    api->UploadTexture(texBuffer.data(), res.Width, res.Height);
+    api->UploadTexture(texBuffer.data(), tex.Width, tex.Height);
 
     mGuiTextures[name] = asset;
 }
 
 void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
-    const auto res =
-        static_cast<Fast::Texture*>(Ship::Context::GetInstance()->GetResourceManager()->LoadResource(path, true).get());
+    const auto res = static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
 
     LoadGuiTexture(name, *res, tint);
 }

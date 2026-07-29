@@ -8,6 +8,7 @@
 
 namespace Ship {
 struct File;
+class ResourceManager;
 
 /**
  * @brief Cache key that uniquely identifies a ResourceFactory by format, type, and version.
@@ -49,7 +50,7 @@ struct ResourceFactoryKeyHash {
  */
 class ResourceLoader {
   public:
-    ResourceLoader();
+    explicit ResourceLoader(std::shared_ptr<ResourceManager> resourceManager = nullptr);
     virtual ~ResourceLoader();
 
     /**
@@ -138,8 +139,8 @@ class ResourceLoader {
      * @param document Parsed XML document containing the header.
      * @return Populated ResourceInitData, or nullptr on failure.
      */
-    static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
-                                                                     std::shared_ptr<tinyxml2::XMLDocument> document);
+    std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
+                                                              std::shared_ptr<tinyxml2::XMLDocument> document);
 
     /**
      * @brief Reads a PNG image header to produce ResourceInitData.
@@ -172,5 +173,6 @@ class ResourceLoader {
     std::string DecodeASCII(uint32_t value);
     std::unordered_map<std::string, uint32_t> mResourceTypes;
     std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>, ResourceFactoryKeyHash> mFactories;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship

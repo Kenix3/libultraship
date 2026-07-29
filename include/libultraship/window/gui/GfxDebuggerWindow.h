@@ -7,7 +7,14 @@
 namespace Fast {
 union F3DGfx;
 class Interpreter;
+class GfxDebugger;
+class Fast3dGui;
+class Fast3dWindow;
 } // namespace Fast
+
+namespace Ship {
+class ResourceManager;
+} // namespace Ship
 
 namespace LUS {
 
@@ -25,12 +32,22 @@ namespace LUS {
  */
 class GfxDebuggerWindow : public Ship::GuiWindow {
   public:
-    using GuiWindow::GuiWindow;
+    /**
+     * @brief Constructs a GfxDebuggerWindow with constructor-injected dependencies.
+     * @param consoleVariable  CVar name controlling window visibility.
+     * @param name             Window title.
+     * @param fast3dWindow     Fast3dWindow whose interpreter and GUI are used.
+     * @param gfxDebugger      GfxDebugger used to capture/inspect display lists.
+     * @param resourceManager  ResourceManager for archive lookups.
+     */
+    GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name,
+                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow, std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                      std::shared_ptr<Ship::ResourceManager> resourceManager);
     virtual ~GfxDebuggerWindow();
 
   protected:
     /** @brief Caches a weak reference to the Fast3D interpreter on first init. */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Polls the interpreter for a new display list when debugging is requested. */
     void UpdateElement() override;
@@ -52,7 +69,10 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
 
   private:
     std::vector<const Fast::F3DGfx*> mLastBreakPoint = {}; ///< Last captured display list command buffer.
-    std::weak_ptr<Fast::Interpreter> mInterpreter;         ///< Weak reference to the Fast3D interpreter.
+    std::weak_ptr<Fast::Interpreter> mInterpreter; ///< Weak reference to the Fast3D interpreter (constructor-injected).
+    std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;         ///< GfxDebugger component (constructor-injected).
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;             ///< Fast3dGui reference (constructor-injected).
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< ResourceManager component (constructor-injected).
 };
 
 } // namespace LUS

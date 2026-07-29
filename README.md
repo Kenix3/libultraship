@@ -1,7 +1,17 @@
 # libultraship
+
 libultraship (LUS) is a library meant to provide reimplementations of libultra (n64 sdk) functions that run on modern hardware.
 
 LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr` or `.o2r`. `.otr` files are [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible files. `.o2r` files are `.zip` compatible files. This separation of data from executable follows modern design practices which are more mod friendly. All one needs to do is supply a patch `.otr` or `.o2r` and the system will automatically replace the data.
+
+## Documentation
+
+**[Full Documentation](https://kenix3.github.io/libultraship/)** | **[API Reference](https://kenix3.github.io/libultraship/api/)**
+
+- [Porting Guide](https://kenix3.github.io/libultraship/PORTING.html) - How to port an N64 game to PC using LUS
+- [Scripting Guide](https://kenix3.github.io/libultraship/SCRIPTING.html) - Writing and packaging C mods
+- [Fast3D Renderer](https://kenix3.github.io/libultraship/fast-renderer.html) - Overview of the display-list renderer
+- [API Reference](https://kenix3.github.io/libultraship/api/) - Doxygen-generated API documentation
 
 ## Contributing
 LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
@@ -74,9 +84,6 @@ cmake -S . -Bbuild-android -GNinja \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build-android
 ```
-
-## Sponsors
-Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
 
 ## License
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.

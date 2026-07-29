@@ -29,6 +29,12 @@ struct File;
  * with MPQ support enabled (`-DINCLUDE_MPQ_SUPPORT`).
  *
  * All file I/O operations are thread-safe via the StormLib handle.
+ *
+ * @deprecated OtrArchive and the ".otr" format are deprecated in favour of the
+ *   ".o2r" format backed by Ship::O2rArchive. MPQ support is **disabled by
+ *   default**; opt in with `-DINCLUDE_MPQ_SUPPORT=ON` only for projects that
+ *   still need to load legacy ".otr" archives. New projects should use the ".o2r"
+ *   format exclusively.
  */
 class OtrArchive final : virtual public Archive {
   public:
@@ -36,7 +42,8 @@ class OtrArchive final : virtual public Archive {
      * @brief Constructs an OtrArchive for the given MPQ file path.
      * @param archivePath Absolute or relative filesystem path to the ".otr" file.
      */
-    OtrArchive(const std::string& archivePath);
+    OtrArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+               std::shared_ptr<Keystore> keystore = nullptr);
     ~OtrArchive();
 
     /**

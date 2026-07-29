@@ -1,13 +1,17 @@
 #include "ship/window/MouseStateManager.h"
 
-#include "ship/Context.h"
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 
 namespace Ship {
 MouseStateManager::MouseStateManager() {
 }
 
 MouseStateManager::~MouseStateManager() {
+}
+
+void MouseStateManager::SetWindow(std::shared_ptr<Window> window) {
+    mWindow = std::move(window);
 }
 
 void MouseStateManager::StartFrame() {
@@ -17,23 +21,22 @@ void MouseStateManager::StartFrame() {
 void MouseStateManager::CursorVisibilityTimeoutTick() {
     static Coords sPrevMousePos;
 
-    std::shared_ptr<Window> wnd = Context::GetInstance()->GetWindow();
-    if (ShouldForceCursorVisibility() || wnd->IsMouseCaptured()) {
+    if (ShouldForceCursorVisibility() || mWindow->IsMouseCaptured()) {
         return;
     }
 
-    Coords mousePos = wnd->GetMousePos();
+    Coords mousePos = mWindow->GetMousePos();
     bool mouseMoved = abs(mousePos.x - sPrevMousePos.x) > 0 || abs(mousePos.y - sPrevMousePos.y) > 0;
     sPrevMousePos = mousePos;
 
     if (mouseMoved) {
-        wnd->SetCursorVisibility(true);
+        mWindow->SetCursorVisibility(true);
         ResetCursorVisibilityTimer();
         return;
     }
 
     if (mCursorVisibleTicksCounter == 0) {
-        wnd->SetCursorVisibility(false);
+        mWindow->SetCursorVisibility(false);
         mCursorVisibleTicksCounter = -1;
         return;
     }
@@ -60,16 +63,14 @@ void MouseStateManager::SetForceCursorVisibility(bool visible) {
 }
 
 void MouseStateManager::ToggleMouseCaptureOverride() {
-    const std::shared_ptr<Window> window = Context::GetInstance()->GetWindow();
-    window->SetMouseCapture(!window->IsMouseCaptured());
+    mWindow->SetMouseCapture(!mWindow->IsMouseCaptured());
 }
 
 void MouseStateManager::UpdateMouseCapture() {
-    const std::shared_ptr<Window> window = Context::GetInstance()->GetWindow();
-    if (!window->GetGui()->GetMenuOrMenubarVisible()) {
-        window->SetMouseCapture(ShouldAutoCaptureMouse());
+    if (!mWindow->GetGui()->GetMenuOrMenubarVisible()) {
+        mWindow->SetMouseCapture(ShouldAutoCaptureMouse());
     } else {
-        window->SetMouseCapture(false);
+        mWindow->SetMouseCapture(false);
         ResetCursorVisibilityTimer();
     }
 }

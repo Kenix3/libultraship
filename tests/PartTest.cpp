@@ -1,0 +1,647 @@
+#include <gtest/gtest.h>
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include "ship/core/Part.h"
+#include "ship/core/PartList.h"
+
+using namespace Ship;
+
+namespace {
+class HookCountingPart : public Part {
+  public:
+    int onAddedCount = 0;
+    int onRemovedCount = 0;
+
+    void OnAdded(bool /*forced*/) override {
+        onAddedCount++;
+    }
+
+    void OnRemoved(bool /*forced*/) override {
+        onRemovedCount++;
+    }
+};
+
+class HookCountingPartList : public PartList<HookCountingPart> {
+  public:
+    int addedHookCount = 0;
+    int removedHookCount = 0;
+
+  protected:
+    void Added(std::shared_ptr<HookCountingPart> /*part*/, const bool /*forced*/) override {
+        addedHookCount++;
+    }
+
+    void Removed(std::shared_ptr<HookCountingPart> /*part*/, const bool /*forced*/) override {
+        removedHookCount++;
+    }
+};
+
+class ThrowingOnAddedPart : public Part {
+  public:
+    bool throwOnAdded = true;
+
+    void OnAdded(bool /*forced*/) override {
+        if (throwOnAdded) {
+            throw std::runtime_error("OnAdded failed");
+        }
+    }
+};
+
+class ThrowingOnRemovedPart : public Part {
+  public:
+    bool throwOnRemoved = true;
+
+    void OnRemoved(bool /*forced*/) override {
+        if (throwOnRemoved) {
+            throw std::runtime_error("OnRemoved failed");
+        }
+    }
+};
+
+class ThrowingAddedList : public PartList<Part> {
+  protected:
+    void Added(std::shared_ptr<Part> /*part*/, const bool /*forced*/) override {
+        throw std::runtime_error("Added hook failed");
+    }
+};
+
+class ThrowingRemovedList : public PartList<Part> {
+  protected:
+    void Removed(std::shared_ptr<Part> /*part*/, const bool /*forced*/) override {
+        throw std::runtime_error("Removed hook failed");
+    }
+};
+
+#ifdef COMPONENT_THREAD_SAFE
+class CrossCheckingPartList : public PartList<Part> {
+  public:
+    CrossCheckingPartList* other = nullptr;
+
+  protected:
+    bool CanAdd(std::shared_ptr<Part> part) override {
+        if (other != nullptr) {
+            other->Has();
+        }
+        return true;
+    }
+
+    bool CanRemove(std::shared_ptr<Part> part) override {
+        if (other != nullptr) {
+            other->Has();
+        }
+        return true;
+    }
+};
+#endif
+} // namespace
+
+// Part has only GetId() and operator== — no GetName/ToString.
+// Name-based operations are on Component/ComponentList.
+
+// ---- Part tests ----
+
+TEST(PartTest, UniqueIds) {
+    Part a;
+    Part b;
+    EXPECT_NE(a.GetId(), b.GetId());
+}
+
+TEST(PartTest, Equality) {
+    Part a;
+    Part b;
+    EXPECT_TRUE(a == a);
+    EXPECT_FALSE(a == b);
+}
+
+// ---- PartList tests ----
+
+TEST(PartListTest, AddAndHas) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    EXPECT_FALSE(list.Has(p));
+    EXPECT_EQ(list.Add(p), ListReturnCode::Success);
+    EXPECT_TRUE(list.Has(p));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListTest, AddDuplicate) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    EXPECT_EQ(list.Add(p), ListReturnCode::Duplicate);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListTest, AddNull) {
+    PartList<Part> list;
+    EXPECT_EQ(list.Add(nullptr), ListReturnCode::Failed);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListTest, RemoveById) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    EXPECT_EQ(list.Remove(p->GetId()), ListReturnCode::Success);
+    EXPECT_FALSE(list.Has(p));
+}
+
+TEST(PartListTest, RemoveByPointer) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    EXPECT_EQ(list.Remove(p), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListTest, RemoveAll) {
+    PartList<Part> list;
+    list.Add(std::make_shared<Part>());
+    list.Add(std::make_shared<Part>());
+    EXPECT_EQ(list.Remove(), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListTest, RemoveNotFound) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    EXPECT_EQ(list.Remove(p), ListReturnCode::NotFound);
+}
+
+TEST(PartListTest, HasById) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    EXPECT_TRUE(list.Has(p->GetId()));
+    EXPECT_FALSE(list.Has(p->GetId() + 999));
+}
+
+TEST(PartListTest, GetById) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    auto found = list.Get(p->GetId());
+    ASSERT_NE(found, nullptr);
+    EXPECT_EQ(found->GetId(), p->GetId());
+}
+
+TEST(PartListTest, GetAll) {
+    PartList<Part> list;
+    list.Add(std::make_shared<Part>());
+    list.Add(std::make_shared<Part>());
+    auto all = list.Get();
+    EXPECT_EQ(all->size(), 2u);
+}
+
+TEST(PartListTest, GetByMultipleIds) {
+    PartList<Part> list;
+    auto a = std::make_shared<Part>();
+    auto b = std::make_shared<Part>();
+    auto c = std::make_shared<Part>();
+    list.Add(a);
+    list.Add(b);
+    list.Add(c);
+
+    auto result = list.Get(std::vector<uint64_t>{ a->GetId(), c->GetId() });
+    EXPECT_EQ(result->size(), 2u);
+}
+
+TEST(PartListTest, AddMultiple) {
+    PartList<Part> list;
+    std::vector<std::shared_ptr<Part>> parts = { std::make_shared<Part>(), std::make_shared<Part>() };
+    EXPECT_EQ(list.Add(parts), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 2u);
+}
+
+TEST(PartListTest, RemoveMultipleByPointer) {
+    PartList<Part> list;
+    auto a = std::make_shared<Part>();
+    auto b = std::make_shared<Part>();
+    list.Add(a);
+    list.Add(b);
+    EXPECT_EQ(list.Remove(std::vector<std::shared_ptr<Part>>{ a, b }), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListTest, RemoveMultipleByIds) {
+    PartList<Part> list;
+    auto a = std::make_shared<Part>();
+    auto b = std::make_shared<Part>();
+    list.Add(a);
+    list.Add(b);
+    EXPECT_EQ(list.Remove(std::vector<uint64_t>{ a->GetId(), b->GetId() }), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListTest, EmptyList) {
+    PartList<Part> list;
+    EXPECT_FALSE(list.Has());
+    EXPECT_EQ(list.GetCount(), 0u);
+    list.Add(std::make_shared<Part>());
+    EXPECT_TRUE(list.Has());
+}
+
+TEST(PartListTest, DirectListAccess) {
+    PartList<Part> list;
+    list.Add(std::make_shared<Part>());
+    auto vec = list.Get();
+    EXPECT_EQ(vec->size(), 1u);
+
+    const PartList<Part>& constList = list;
+    auto constVec = constList.Get();
+    EXPECT_EQ(constVec->size(), 1u);
+}
+
+// ---- GetFirst<T>() tests (with Component subclasses) ----
+#include "ship/core/Component.h"
+
+class TypeA : public Component {
+  public:
+    TypeA() : Component("TypeA") {
+    }
+};
+
+class TypeB : public Component {
+  public:
+    TypeB() : Component("TypeB") {
+    }
+};
+
+TEST(PartListTest, GetFirstByType) {
+    PartList<Component> list;
+    auto a = std::make_shared<TypeA>();
+    auto b = std::make_shared<TypeB>();
+    list.Add(a);
+    list.Add(b);
+
+    auto found = list.GetFirst<TypeA>();
+    ASSERT_NE(found, nullptr);
+    EXPECT_EQ(found->GetName(), "TypeA");
+}
+
+TEST(PartListTest, GetFirstByTypeNotFound) {
+    PartList<Component> list;
+    list.Add(std::make_shared<TypeA>());
+    auto found = list.GetFirst<TypeB>();
+    EXPECT_EQ(found, nullptr);
+}
+
+TEST(PartListTest, GetFirstByTypeFromEmpty) {
+    PartList<Component> list;
+    auto found = list.GetFirst<TypeA>();
+    EXPECT_EQ(found, nullptr);
+}
+
+TEST(PartListTest, GetFirstReturnsFirstMatch) {
+    PartList<Component> list;
+    auto a1 = std::make_shared<TypeA>();
+    auto a2 = std::make_shared<TypeA>();
+    list.Add(a1);
+    list.Add(a2);
+
+    auto found = list.GetFirst<TypeA>();
+    EXPECT_EQ(found, a1);
+}
+
+// ---- PartList storage policy tests ----
+
+TEST(PartListStoragePolicyTest, StrongStorageOwnsPartUntilRemoved) {
+    PartList<Part, std::shared_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    std::weak_ptr<Part> weakPart = part;
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_FALSE(weakPart.expired());
+    EXPECT_TRUE(list.Has(id));
+    EXPECT_EQ(list.GetCount(), 1u);
+
+    EXPECT_EQ(list.Remove(id), ListReturnCode::Success);
+    EXPECT_TRUE(weakPart.expired());
+}
+
+TEST(PartListStoragePolicyTest, WeakStorageDoesNotOwnPart) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    std::weak_ptr<Part> weakPart = part;
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_TRUE(weakPart.expired());
+    EXPECT_EQ(list.GetCount(), 0u);
+    EXPECT_FALSE(list.Has(id));
+    EXPECT_FALSE(list.Has());
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredBeforeDuplicateCheck) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(part), ListReturnCode::Duplicate);
+
+    part.reset();
+
+    auto replacement = std::make_shared<Part>();
+    EXPECT_EQ(list.Add(replacement), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStorageRemoveExpiredByIdReturnsNotFound) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto part = std::make_shared<Part>();
+    const uint64_t id = part->GetId();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    part.reset();
+
+    EXPECT_EQ(list.Remove(id), ListReturnCode::NotFound);
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnGetSnapshot) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+    const uint64_t aliveId = alive->GetId();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    auto snapshot = list.Get();
+    ASSERT_EQ(snapshot->size(), 1u);
+    EXPECT_EQ((*snapshot)[0]->GetId(), aliveId);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnGetByIds) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+    const uint64_t aliveId = alive->GetId();
+    const uint64_t expiredId = expired->GetId();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    auto result = list.Get(std::vector<uint64_t>{ aliveId, expiredId });
+    ASSERT_EQ(result->size(), 1u);
+    EXPECT_EQ((*result)[0]->GetId(), aliveId);
+    EXPECT_FALSE(list.Has(expiredId));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnRemoveAll) {
+    PartList<Part, std::weak_ptr<Part>> list;
+
+    auto alive = std::make_shared<Part>();
+    auto expired = std::make_shared<Part>();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    EXPECT_EQ(list.Remove(), ListReturnCode::Success);
+    EXPECT_EQ(list.GetCount(), 0u);
+    EXPECT_FALSE(list.Has());
+}
+
+TEST(PartListStoragePolicyTest, WeakStoragePrunesExpiredOnTypedQueries) {
+    PartList<Component, std::weak_ptr<Component>> list;
+
+    auto alive = std::make_shared<TypeA>();
+    auto expired = std::make_shared<TypeA>();
+
+    ASSERT_EQ(list.Add(alive), ListReturnCode::Success);
+    ASSERT_EQ(list.Add(expired), ListReturnCode::Success);
+
+    expired.reset();
+
+    EXPECT_TRUE(list.Has<TypeA>());
+    auto first = list.GetFirst<TypeA>();
+    ASSERT_NE(first, nullptr);
+    EXPECT_EQ(first->GetId(), alive->GetId());
+
+    auto typed = list.Get<TypeA>();
+    EXPECT_EQ(typed->size(), 1u);
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListHookLifecycleTest, AddedAndOnAddedCalledExactlyOnceOnEffectiveAdd) {
+    HookCountingPartList list;
+    auto part = std::make_shared<HookCountingPart>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.addedHookCount, 1);
+    EXPECT_EQ(part->onAddedCount, 1);
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Duplicate);
+    EXPECT_EQ(list.addedHookCount, 1);
+    EXPECT_EQ(part->onAddedCount, 1);
+}
+
+TEST(PartListHookLifecycleTest, RemovedAndOnRemovedCalledExactlyOnceOnEffectiveRemove) {
+    HookCountingPartList list;
+    auto part = std::make_shared<HookCountingPart>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Success);
+    EXPECT_EQ(list.removedHookCount, 1);
+    EXPECT_EQ(part->onRemovedCount, 1);
+
+    EXPECT_EQ(list.Remove(part), ListReturnCode::NotFound);
+    EXPECT_EQ(list.removedHookCount, 1);
+    EXPECT_EQ(part->onRemovedCount, 1);
+}
+
+TEST(PartListExceptionSafetyTest, AddedHookThrowRollsBackMembership) {
+    ThrowingAddedList list;
+    auto part = std::make_shared<Part>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Failed);
+    EXPECT_FALSE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListExceptionSafetyTest, OnAddedThrowRollsBackMembership) {
+    PartList<ThrowingOnAddedPart> list;
+    auto part = std::make_shared<ThrowingOnAddedPart>();
+
+    EXPECT_EQ(list.Add(part), ListReturnCode::Failed);
+    EXPECT_FALSE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 0u);
+}
+
+TEST(PartListExceptionSafetyTest, RemovedHookThrowRestoresMembership) {
+    ThrowingRemovedList list;
+    auto part = std::make_shared<Part>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Failed);
+    EXPECT_TRUE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+TEST(PartListExceptionSafetyTest, OnRemovedThrowRestoresMembership) {
+    PartList<ThrowingOnRemovedPart> list;
+    auto part = std::make_shared<ThrowingOnRemovedPart>();
+
+    ASSERT_EQ(list.Add(part), ListReturnCode::Success);
+    EXPECT_EQ(list.Remove(part), ListReturnCode::Failed);
+    EXPECT_TRUE(list.Has(part));
+    EXPECT_EQ(list.GetCount(), 1u);
+}
+
+// ============================================================
+// PartList::GetMutationVersion tests
+// ============================================================
+
+// The version starts at 0 before any mutations occur.
+TEST(PartListMutationVersionTest, InitialVersionIsZero) {
+    PartList<Part> list;
+    EXPECT_EQ(list.GetMutationVersion(), 0u);
+}
+
+// Adding a new part must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnAdd) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    const uint64_t before = list.GetMutationVersion();
+    list.Add(p);
+    EXPECT_GT(list.GetMutationVersion(), before);
+}
+
+// Adding a duplicate must NOT increment the version (the list is unchanged).
+TEST(PartListMutationVersionTest, VersionDoesNotIncrementOnDuplicateAdd) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    const uint64_t after_first = list.GetMutationVersion();
+    list.Add(p);
+    EXPECT_EQ(list.GetMutationVersion(), after_first);
+}
+
+// Removing an existing part must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnRemove) {
+    PartList<Part> list;
+    auto p = std::make_shared<Part>();
+    list.Add(p);
+    const uint64_t after_add = list.GetMutationVersion();
+    list.Remove(p);
+    EXPECT_GT(list.GetMutationVersion(), after_add);
+}
+
+// Removing all parts at once must increment the version.
+TEST(PartListMutationVersionTest, VersionIncrementsOnRemoveAll) {
+    PartList<Part> list;
+    list.Add(std::make_shared<Part>());
+    list.Add(std::make_shared<Part>());
+    const uint64_t before = list.GetMutationVersion();
+    list.Remove();
+    EXPECT_GT(list.GetMutationVersion(), before);
+}
+
+// Each successful add or remove must produce a strictly greater version number.
+TEST(PartListMutationVersionTest, VersionIsMonotonicallyIncreasing) {
+    PartList<Part> list;
+    uint64_t prev = list.GetMutationVersion();
+    for (int i = 0; i < 5; i++) {
+        auto p = std::make_shared<Part>();
+        list.Add(p);
+        EXPECT_GT(list.GetMutationVersion(), prev);
+        prev = list.GetMutationVersion();
+        list.Remove(p);
+        EXPECT_GT(list.GetMutationVersion(), prev);
+        prev = list.GetMutationVersion();
+    }
+}
+
+// Mutations to one list must not affect another list's version counter.
+TEST(PartListMutationVersionTest, TwoDistinctListsHaveIndependentVersions) {
+    PartList<Part> listA;
+    PartList<Part> listB;
+    listA.Add(std::make_shared<Part>());
+    EXPECT_EQ(listB.GetMutationVersion(), 0u);
+}
+
+// The version must also increment for weak-storage lists when entries are added,
+// and again when expired entries are pruned by a Get() call.
+TEST(PartListMutationVersionTest, WeakStorageVersionIncrementsOnAdd) {
+    PartList<Part, std::weak_ptr<Part>> weak_list;
+    const uint64_t before = weak_list.GetMutationVersion();
+    {
+        auto p = std::make_shared<Part>();
+        weak_list.Add(p);
+        EXPECT_GT(weak_list.GetMutationVersion(), before);
+    }
+    // After the owning shared_ptr expires, Get() triggers PruneExpired which bumps the version.
+    const uint64_t after_expire = weak_list.GetMutationVersion();
+    weak_list.Get();
+    EXPECT_GE(weak_list.GetMutationVersion(), after_expire);
+}
+
+#ifdef COMPONENT_THREAD_SAFE
+TEST(PartListThreadSafetyTest, CanAddCrossListChecksDoNotDeadlock) {
+    CrossCheckingPartList listA;
+    CrossCheckingPartList listB;
+    listA.other = &listB;
+    listB.other = &listA;
+
+    auto p1 = std::make_shared<Part>();
+    auto p2 = std::make_shared<Part>();
+
+    std::atomic<bool> start{ false };
+    std::atomic<bool> doneA{ false };
+    std::atomic<bool> doneB{ false };
+
+    std::thread t1([&]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        listA.Add(p1);
+        doneA.store(true);
+    });
+
+    std::thread t2([&]() {
+        while (!start.load()) {
+            std::this_thread::yield();
+        }
+        listB.Add(p2);
+        doneB.store(true);
+    });
+
+    start.store(true);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() < deadline && (!doneA.load() || !doneB.load())) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (!doneA.load() || !doneB.load()) {
+        t1.detach();
+        t2.detach();
+        FAIL() << "Concurrent add with cross-list CanAdd checks timed out";
+        return;
+    }
+
+    t1.join();
+    t2.join();
+    EXPECT_TRUE(listA.Has(p1));
+    EXPECT_TRUE(listB.Has(p2));
+}
+#endif

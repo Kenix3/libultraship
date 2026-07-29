@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerAxisDirectionMapping.h"
 #include "SDLButtonToAnyMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad button to a virtual analog stick direction.
@@ -19,7 +22,8 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
      * @param sdlControllerButton The SDL controller button index.
      */
     SDLButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex, Direction direction,
-                                    int32_t sdlControllerButton);
+                                    int32_t sdlControllerButton, std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                                    std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Returns the normalised axis value (0 or MAX_AXIS_RANGE). */
     float GetNormalizedAxisDirectionValue() override;
@@ -41,5 +45,9 @@ class SDLButtonToAxisDirectionMapping final : public ControllerAxisDirectionMapp
 
     /** @brief Returns the human-readable name of the bound button. */
     std::string GetPhysicalInputName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 };
 } // namespace Ship

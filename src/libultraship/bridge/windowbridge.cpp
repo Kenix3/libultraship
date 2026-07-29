@@ -1,34 +1,47 @@
 #include "libultraship/bridge/windowbridge.h"
 #include "ship/window/Window.h"
-#include "ship/Context.h"
+
+static std::shared_ptr<Ship::Window> sWindow;
+
+void WindowSetWindowComponent(std::shared_ptr<Ship::Window> window) {
+    sWindow = std::move(window);
+}
+
+std::shared_ptr<Ship::Window> WindowGetWindowComponent() {
+    return sWindow;
+}
+
+static Ship::Window* GetWindow() {
+    return sWindow.get();
+}
 
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return Ship::Context::GetInstance()->GetWindow()->GetWidth();
+    return GetWindow()->GetWidth();
 }
 
 uint32_t WindowGetHeight() {
-    return Ship::Context::GetInstance()->GetWindow()->GetHeight();
+    return GetWindow()->GetHeight();
 }
 
 float WindowGetAspectRatio() {
-    return Ship::Context::GetInstance()->GetWindow()->GetCurrentAspectRatio();
+    return GetWindow()->GetCurrentAspectRatio();
 }
 
 bool WindowIsRunning() {
-    return Ship::Context::GetInstance()->GetWindow()->IsRunning();
+    return GetWindow()->IsRunning();
 }
 
 int32_t WindowGetPosX() {
-    return Ship::Context::GetInstance()->GetWindow()->GetPosX();
+    return GetWindow()->GetPosX();
 }
 
 int32_t WindowGetPosY() {
-    return Ship::Context::GetInstance()->GetWindow()->GetPosY();
+    return GetWindow()->GetPosY();
 }
 
 bool WindowIsFullscreen() {
-    return Ship::Context::GetInstance()->GetWindow()->IsFullscreen();
+    return GetWindow()->IsFullscreen();
 }
 }

@@ -7,7 +7,8 @@ StatsWindow::~StatsWindow() {
     SPDLOG_TRACE("destruct stats window");
 }
 
-void StatsWindow::InitElement() {
+void StatsWindow::OnInit(const nlohmann::json& initArgs) {
+    GuiWindow::OnInit(initArgs);
 }
 
 void StatsWindow::DrawElement() {

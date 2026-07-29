@@ -4,6 +4,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class ControlDeck;
+}
+void ControllerSetControlDeck(std::shared_ptr<Ship::ControlDeck> controlDeck);
+std::shared_ptr<Ship::ControlDeck> ControllerGetControlDeck();
 extern "C" {
 #endif
 

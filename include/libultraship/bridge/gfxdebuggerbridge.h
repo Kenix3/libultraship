@@ -5,6 +5,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Fast {
+class GfxDebugger;
+}
+void GfxDebuggerSetComponent(std::shared_ptr<Fast::GfxDebugger> gfxDebugger);
+std::shared_ptr<Fast::GfxDebugger> GfxDebuggerGetComponent();
 extern "C" {
 #endif
 

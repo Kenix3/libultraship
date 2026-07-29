@@ -16,7 +16,7 @@ struct WheelDirections {
 };
 
 /**
- * @brief Singleton that tracks mouse scroll-wheel state and converts it into
+ * @brief Tracks mouse scroll-wheel state and converts it into
  *        axis-like values consumable by the input mapping system.
  *
  * Call Update() once per frame to sample the latest wheel data from the
@@ -26,18 +26,14 @@ struct WheelDirections {
 class WheelHandler {
   public:
     /** @brief Constructs a WheelHandler with default (zero) state. */
-    WheelHandler();
+    WheelHandler(std::shared_ptr<Window> window);
 
     /** @brief Destructor. */
     ~WheelHandler();
 
     /**
-     * @brief Returns the global WheelHandler singleton.
-     * @return Shared pointer to the WheelHandler instance.
+     * @brief Samples the latest wheel data from the window back-end.
      */
-    static std::shared_ptr<WheelHandler> GetInstance();
-
-    /** @brief Samples the latest wheel data from the window back-end. */
     void Update();
 
     /**
@@ -70,10 +66,9 @@ class WheelHandler {
     float CalcDirectionValue(CoordsF& coords, WheelDirection direction);
     void UpdateAxisBuffer(float* buf, float input);
 
-    static std::shared_ptr<WheelHandler> mInstance;
-
     WheelDirections mDirections;
     CoordsF mCoords;
     CoordsF mBufferedCoords;
+    std::shared_ptr<Window> mWindow;
 };
 } // namespace Ship
