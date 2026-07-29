@@ -2998,6 +2998,9 @@ void Interpreter::GfxDpFillRectangle(int32_t ulx, int32_t uly, int32_t lrx, int3
         float y = expanded_lry / 4.0f;
         float w = (expanded_lrx - ulx) / 4.0f;
         float h = (expanded_lry - uly) / 4.0f;
+        float halfNativeWidth = (float)HALF_SCREEN_WIDTH(mActiveFrameBuffer);
+        x = halfNativeWidth + AdjXForAspectRatio(x - halfNativeWidth);
+        w = AdjXForAspectRatio(w);
 
         struct XYWidthHeight area;
         area.x = (int16_t)x;
