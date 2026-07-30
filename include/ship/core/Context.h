@@ -183,17 +183,6 @@ class Context : public Component {
      */
     void Tick();
 
-    /**
-     * @brief Registers an optional callback that can install additional default components.
-     */
-    static void SetDefaultComponentInstaller(const std::function<void(const std::shared_ptr<Context>&)>& installer);
-
-    /**
-     * @brief Registers optional callbacks for bridge cache update and clear lifecycle hooks.
-     */
-    static void SetBridgeCacheHandlers(const std::function<void(const std::shared_ptr<Context>&)>& update,
-                                       const std::function<void()>& clear);
-
   protected:
     Context() = default;
 

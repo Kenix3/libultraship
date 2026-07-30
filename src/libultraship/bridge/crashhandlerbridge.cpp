@@ -11,10 +11,8 @@ std::shared_ptr<Ship::CrashHandler> CrashHandlerGetComponent() {
     return sCrashHandler;
 }
 
-static Ship::CrashHandler* GetCrashHandler() {
-    return sCrashHandler.get();
-}
-
 void CrashHandlerRegisterCallback(CrashHandlerCallback callback) {
-    GetCrashHandler()->RegisterCallback(callback);
+    if (auto crashHandler = CrashHandlerGetComponent()) {
+        crashHandler->RegisterCallback(callback);
+    }
 }

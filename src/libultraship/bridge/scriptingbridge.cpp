@@ -16,12 +16,9 @@ std::shared_ptr<Ship::ScriptLoader> ScriptGetLoader() {
     return sScriptLoader;
 }
 
-static Ship::ScriptLoader* GetScriptLoader() {
-    return sScriptLoader.get();
-}
-
 extern "C" void* ScriptGetFunction(const char* module, const char* function) {
-    return GetScriptLoader()->GetFunction(module, function);
+    auto scriptLoader = ScriptGetLoader();
+    return scriptLoader ? scriptLoader->GetFunction(module, function) : nullptr;
 }
 
 #endif // ENABLE_SCRIPTING

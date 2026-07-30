@@ -13,19 +13,35 @@ std::shared_ptr<Fast::GfxDebugger> GfxDebuggerGetComponent() {
     return sGfxDebugger;
 }
 
-static Fast::GfxDebugger* GetGfxDebugger() {
-    return sGfxDebugger.get();
-}
-
 void GfxDebuggerRequestDebugging() {
-    GetGfxDebugger()->RequestDebugging();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return;
+    }
+
+    gfxDebugger->RequestDebugging();
 }
 bool GfxDebuggerIsDebugging() {
-    return GetGfxDebugger()->IsDebugging();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return false;
+    }
+
+    return gfxDebugger->IsDebugging();
 }
 bool GfxDebuggerIsDebuggingRequested() {
-    return GetGfxDebugger()->IsDebuggingRequested();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return false;
+    }
+
+    return gfxDebugger->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    GetGfxDebugger()->DebugDisplayList((Fast::F3DGfx*)cmds);
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return;
+    }
+
+    gfxDebugger->DebugDisplayList((Fast::F3DGfx*)cmds);
 }

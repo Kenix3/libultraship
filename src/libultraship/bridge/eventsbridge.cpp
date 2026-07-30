@@ -11,30 +11,34 @@ std::shared_ptr<Ship::Events> EventSystemGetEvents() {
     return sEvents;
 }
 
-static Ship::Events* GetEvents() {
-    return sEvents.get();
-}
-
 extern "C" {
 
 EventID EventSystemRegisterEvent(const char* name) {
-    return GetEvents()->RegisterEvent(name);
+    auto events = EventSystemGetEvents();
+    return events ? events->RegisterEvent(name) : -1;
 }
 
 ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file,
                                        int line) {
-    return GetEvents()->RegisterListener(id, callback, priority, file, line);
+    auto events = EventSystemGetEvents();
+    return events ? events->RegisterListener(id, callback, priority, file, line) : -1;
 }
 
 void EventSystemUnregisterEvent(EventID id) {
-    GetEvents()->RemoveEvent(id);
+    if (auto events = EventSystemGetEvents()) {
+        events->RemoveEvent(id);
+    }
 }
 
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {
-    GetEvents()->UnregisterListener(ev, id);
+    if (auto events = EventSystemGetEvents()) {
+        events->UnregisterListener(ev, id);
+    }
 }
 
 void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key) {
-    GetEvents()->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
+    if (auto events = EventSystemGetEvents()) {
+        events->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
+    }
 }
 }
