@@ -23,9 +23,12 @@
 #define SHIP_VERSION_MINOR LUS_VERSION_MINOR
 #define SHIP_VERSION_PATCH LUS_VERSION_PATCH
 
-#define SHIP_PACK_VERSION(epoch, major, minor, patch) ((((uint32_t)((epoch) & 0xFF)) << 24) | (((uint32_t)((major) & 0xFF)) << 16) | (((uint32_t)((minor) & 0xFF)) << 8) | ((uint32_t)((patch) & 0xFF)))
+#define SHIP_PACK_VERSION(epoch, major, minor, patch)                                                              \
+    ((((uint32_t)((epoch)&0xFF)) << 24) | (((uint32_t)((major)&0xFF)) << 16) | (((uint32_t)((minor)&0xFF)) << 8) | \
+     ((uint32_t)((patch)&0xFF)))
 
-#define SHIP_VERSION_U32 SHIP_PACK_VERSION(SHIP_VERSION_EPOCH, SHIP_VERSION_MAJOR, SHIP_VERSION_MINOR, SHIP_VERSION_PATCH)
+#define SHIP_VERSION_U32 \
+    SHIP_PACK_VERSION(SHIP_VERSION_EPOCH, SHIP_VERSION_MAJOR, SHIP_VERSION_MINOR, SHIP_VERSION_PATCH)
 
 #ifdef __cplusplus
 namespace Ship {
