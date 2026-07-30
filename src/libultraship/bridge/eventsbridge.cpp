@@ -1,15 +1,14 @@
 #include "libultraship/bridge/eventsbridge.h"
 #include "ship/events/Events.h"
-#include <atomic>
 
-static std::atomic<std::shared_ptr<Ship::Events>> sEvents;
+static std::shared_ptr<Ship::Events> sEvents;
 
 void EventSystemSetEvents(std::shared_ptr<Ship::Events> events) {
-    sEvents.store(std::move(events), std::memory_order_release);
+    sEvents = std::move(events);
 }
 
 std::shared_ptr<Ship::Events> EventSystemGetEvents() {
-    return sEvents.load(std::memory_order_acquire);
+    return sEvents;
 }
 
 extern "C" {

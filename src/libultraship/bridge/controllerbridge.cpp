@@ -1,15 +1,14 @@
 #include "libultraship/bridge/controllerbridge.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include <atomic>
 
-static std::atomic<std::shared_ptr<Ship::ControlDeck>> sControlDeck;
+static std::shared_ptr<Ship::ControlDeck> sControlDeck;
 
 void ControllerSetControlDeck(std::shared_ptr<Ship::ControlDeck> controlDeck) {
-    sControlDeck.store(std::move(controlDeck), std::memory_order_release);
+    sControlDeck = std::move(controlDeck);
 }
 
 std::shared_ptr<Ship::ControlDeck> ControllerGetControlDeck() {
-    return sControlDeck.load(std::memory_order_acquire);
+    return sControlDeck;
 }
 
 extern "C" {

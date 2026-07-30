@@ -1,15 +1,14 @@
 #include "libultraship/bridge/audiobridge.h"
 #include "ship/audio/Audio.h"
-#include <atomic>
 
-static std::atomic<std::shared_ptr<Ship::Audio>> sAudio;
+static std::shared_ptr<Ship::Audio> sAudio;
 
 void AudioSetAudioComponent(std::shared_ptr<Ship::Audio> audio) {
-    sAudio.store(std::move(audio), std::memory_order_release);
+    sAudio = std::move(audio);
 }
 
 std::shared_ptr<Ship::Audio> AudioGetAudioComponent() {
-    return sAudio.load(std::memory_order_acquire);
+    return sAudio;
 }
 
 // Audio bridge functions require a Ship::Audio component as a direct child of the Context.

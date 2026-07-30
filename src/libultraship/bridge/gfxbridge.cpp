@@ -2,18 +2,17 @@
 
 #include "fast/Fast3dWindow.h"
 #include "fast/interpreter.h"
-#include <atomic>
 
 // Dependency: requires Ship::Window (specifically Fast::Fast3dWindow) to be present in Ship::Context.
 
-static std::atomic<std::shared_ptr<Fast::Fast3dWindow>> sFast3dWindow;
+static std::shared_ptr<Fast::Fast3dWindow> sFast3dWindow;
 
 void GfxSetFast3dWindow(std::shared_ptr<Fast::Fast3dWindow> window) {
-    sFast3dWindow.store(std::move(window), std::memory_order_release);
+    sFast3dWindow = std::move(window);
 }
 
 std::shared_ptr<Fast::Fast3dWindow> GfxGetFast3dWindow() {
-    return sFast3dWindow.load(std::memory_order_acquire);
+    return sFast3dWindow;
 }
 
 // Set the dimensions for the VI mode that the console would be using

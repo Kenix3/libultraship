@@ -2,19 +2,18 @@
 #include "ship/resource/ResourceManager.h"
 #include <string>
 #include <algorithm>
-#include <atomic>
 #include <cstring>
 #include "ship/utils/StrHash64.h"
 #include "ship/window/Window.h"
 
-static std::atomic<std::shared_ptr<Ship::ResourceManager>> sResourceManager;
+static std::shared_ptr<Ship::ResourceManager> sResourceManager;
 
 void ResourceSetResourceManager(std::shared_ptr<Ship::ResourceManager> resourceManager) {
-    sResourceManager.store(std::move(resourceManager), std::memory_order_release);
+    sResourceManager = std::move(resourceManager);
 }
 
 std::shared_ptr<Ship::ResourceManager> ResourceGetResourceManager() {
-    return sResourceManager.load(std::memory_order_acquire);
+    return sResourceManager;
 }
 
 std::shared_ptr<Ship::IResource> ResourceLoad(const char* name) {

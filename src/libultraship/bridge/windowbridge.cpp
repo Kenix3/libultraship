@@ -1,15 +1,14 @@
 #include "libultraship/bridge/windowbridge.h"
 #include "ship/window/Window.h"
-#include <atomic>
 
-static std::atomic<std::shared_ptr<Ship::Window>> sWindow;
+static std::shared_ptr<Ship::Window> sWindow;
 
 void WindowSetWindowComponent(std::shared_ptr<Ship::Window> window) {
-    sWindow.store(std::move(window), std::memory_order_release);
+    sWindow = std::move(window);
 }
 
 std::shared_ptr<Ship::Window> WindowGetWindowComponent() {
-    return sWindow.load(std::memory_order_acquire);
+    return sWindow;
 }
 
 extern "C" {

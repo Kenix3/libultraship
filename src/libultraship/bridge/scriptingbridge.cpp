@@ -3,18 +3,17 @@
 #ifdef ENABLE_SCRIPTING
 
 #include "ship/scripting/ScriptLoader.h"
-#include <atomic>
 
 // Dependency: requires Ship::ScriptLoader component to be present in Ship::Context (only when ENABLE_SCRIPTING is set).
 
-static std::atomic<std::shared_ptr<Ship::ScriptLoader>> sScriptLoader;
+static std::shared_ptr<Ship::ScriptLoader> sScriptLoader;
 
 void ScriptSetLoader(std::shared_ptr<Ship::ScriptLoader> scriptLoader) {
-    sScriptLoader.store(std::move(scriptLoader), std::memory_order_release);
+    sScriptLoader = std::move(scriptLoader);
 }
 
 std::shared_ptr<Ship::ScriptLoader> ScriptGetLoader() {
-    return sScriptLoader.load(std::memory_order_acquire);
+    return sScriptLoader;
 }
 
 extern "C" void* ScriptGetFunction(const char* module, const char* function) {

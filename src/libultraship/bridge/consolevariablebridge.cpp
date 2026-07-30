@@ -1,14 +1,13 @@
 #include "libultraship/bridge/consolevariablebridge.h"
-#include <atomic>
 
-static std::atomic<std::shared_ptr<Ship::ConsoleVariable>> sConsoleVariable;
+static std::shared_ptr<Ship::ConsoleVariable> sConsoleVariable;
 
 void CVarSetConsoleVariable(std::shared_ptr<Ship::ConsoleVariable> consoleVariable) {
-    sConsoleVariable.store(std::move(consoleVariable), std::memory_order_release);
+    sConsoleVariable = std::move(consoleVariable);
 }
 
 std::shared_ptr<Ship::ConsoleVariable> CVarGetConsoleVariable() {
-    return sConsoleVariable.load(std::memory_order_acquire);
+    return sConsoleVariable;
 }
 
 std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
