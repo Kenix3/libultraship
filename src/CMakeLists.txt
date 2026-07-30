@@ -141,6 +141,13 @@ endif()
 
 #=================== Compile Options & Defs ===================
 
+target_compile_definitions(libultraship PUBLIC
+    LUS_VERSION_EPOCH=${LUS_VERSION_EPOCH}
+    LUS_VERSION_MAJOR=${LUS_VERSION_MAJOR}
+    LUS_VERSION_MINOR=${LUS_VERSION_MINOR}
+    LUS_VERSION_PATCH=${LUS_VERSION_PATCH}
+)
+
 if(INCLUDE_PROFILING)
     target_compile_definitions(libultraship PUBLIC INCLUDE_PROFILING)
 endif()

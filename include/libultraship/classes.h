@@ -7,6 +7,9 @@
  * configuration.
  */
 #pragma once
+
+#include "ship/core/Version.h"
+
 #ifdef __cplusplus
 
 #include "ship/resource/archive/ArchiveManager.h"
