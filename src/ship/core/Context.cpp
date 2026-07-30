@@ -4,12 +4,16 @@
 #include <iostream>
 #include <algorithm>
 #include <queue>
+#if defined(__APPLE__)
+#include <pwd.h>
+#endif
 #include "ship/install_config.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/resource/ResourceManager.h"
+#include "ship/utils/AppleFolderManager.h"
 #include "ship/window/FileDrop.h"
 #include "ship/log/Logger.h"
 #include "ship/thread/ThreadPool.h"
