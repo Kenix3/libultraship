@@ -654,7 +654,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
                 if (isNew && metadata.resource != nullptr) {
                     gui->UnloadTexture(name);
-                    gui->LoadGuiTexture(name, *metadata.resource, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+                    gui->LoadGuiTexture(name, "", ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
                 }
 
                 ImGui::Image(gui->GetTextureByName(name), ImVec2{ 100.0f, 100.0f });
@@ -678,7 +678,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
                 // if (isNew && g_rdp.texture_to_load.raw_tex_metadata.resource != nullptr) {
                 //     gui->UnloadTexture(TO_LOAD_TEX);
-                //     gui->LoadGuiTexture(TO_LOAD_TEX, *g_rdp.texture_to_load.raw_tex_metadata.resource,
+                //     gui->LoadGuiTexture(TO_LOAD_TEX, "",
                 //                         ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
                 // }
 
