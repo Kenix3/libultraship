@@ -1,4 +1,5 @@
 #include "ship/core/Context.h"
+#include "ship/bridge/Bridge.h"
 #include "ship/core/TickableComponent.h"
 #include <cstring>
 #include <iostream>
@@ -25,21 +26,26 @@
 
 namespace Ship {
 namespace {
-using ContextHook = std::function<void(const std::shared_ptr<Context>&)>;
+void UpdateBridgeCachesIfPresent(const std::shared_ptr<Context>& context) {
+    if (!context) {
+        return;
+    }
 
-ContextHook& GetDefaultComponentInstallerHook() {
-    static ContextHook sHook;
-    return sHook;
+    auto bridge = context->GetChildren().GetFirst<Bridge>();
+    if (bridge) {
+        bridge->UpdateCaches(context);
+    }
 }
 
-ContextHook& GetBridgeCacheUpdateHook() {
-    static ContextHook sHook;
-    return sHook;
-}
+void ClearBridgeCachesIfPresent(Context* context) {
+    if (context == nullptr) {
+        return;
+    }
 
-std::function<void()>& GetBridgeCacheClearHook() {
-    static std::function<void()> sHook;
-    return sHook;
+    auto bridge = context->GetChildren().GetFirst<Bridge>();
+    if (bridge) {
+        bridge->ClearCaches();
+    }
 }
 } // namespace
 
@@ -50,10 +56,7 @@ std::function<void()>& GetBridgeCacheClearHook() {
 // may already have been torn down.
 
 Context::~Context() {
-    auto& clearHook = GetBridgeCacheClearHook();
-    if (clearHook) {
-        clearHook();
-    }
+    ClearBridgeCachesIfPresent(this);
 
     if (spdlog::default_logger()) {
         SPDLOG_TRACE("destruct context");
@@ -173,11 +176,6 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     auto audio = std::make_shared<Audio>(audioSettings, config);
     shared->GetChildren().Add(audio);
 
-    auto& installerHook = GetDefaultComponentInstallerHook();
-    if (installerHook) {
-        installerHook(shared);
-    }
-
     // ---- Events ----
     shared->GetChildren().Add(std::make_shared<Events>());
 
@@ -224,11 +222,7 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     fileDropMgr->Init();
     audio->Init();
 
-    auto& updateHook = GetBridgeCacheUpdateHook();
-    if (updateHook) {
-        updateHook(shared);
-    }
-
+    UpdateBridgeCachesIfPresent(shared);
     return shared;
 }
 
@@ -246,22 +240,8 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
         component->Init();
     }
 
-    auto& updateHook = GetBridgeCacheUpdateHook();
-    if (updateHook) {
-        updateHook(ctx);
-    }
-
+    UpdateBridgeCachesIfPresent(ctx);
     return ctx;
-}
-
-void Context::SetDefaultComponentInstaller(const std::function<void(const std::shared_ptr<Context>&)>& installer) {
-    GetDefaultComponentInstallerHook() = installer;
-}
-
-void Context::SetBridgeCacheHandlers(const std::function<void(const std::shared_ptr<Context>&)>& update,
-                                     const std::function<void()>& clear) {
-    GetBridgeCacheUpdateHook() = update;
-    GetBridgeCacheClearHook() = clear;
 }
 
 Context::Context(std::string name, std::string shortName)

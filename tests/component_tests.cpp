@@ -384,7 +384,7 @@ TEST(ComponentLifecycleTest, RemoveAllWithMixedLiveAndExpiredWeakParentEntries) 
     EXPECT_FALSE(liveParent->GetChildren().Has(child));
 }
 
-TEST(ContextLifecycleTest, CreateInstanceWithExplicitComponentsInitializesAndCanDestruct) {
+TEST(ComponentLifecycleTest, CreateInstanceWithExplicitComponentsInitializesAndCanDestruct) {
     std::weak_ptr<Context> weakContext;
 
     {
@@ -403,48 +403,22 @@ TEST(ContextLifecycleTest, CreateInstanceWithExplicitComponentsInitializesAndCan
     EXPECT_TRUE(weakContext.expired());
 }
 
-TEST(ContextLifecycleTest, BridgeCallbacksCanBeNull) {
-    Ship::Context::SetDefaultComponentInstaller(nullptr);
-    Ship::Context::SetBridgeCacheHandlers(nullptr, nullptr);
-
+TEST(ContextLifecycleTest, ComponentsPassedToCreateInstanceAreInitialized) {
     std::weak_ptr<Context> weakContext;
     {
         auto c1 = std::make_shared<TestComponent>("C1");
         auto c2 = std::make_shared<TestComponent>("C2");
+
         auto context = Ship::Context::CreateInstance("TestApp", "test", { c1, c2 });
         weakContext = context;
 
-        ASSERT_NE(context, nullptr);
         EXPECT_TRUE(c1->IsInitialized());
         EXPECT_TRUE(c2->IsInitialized());
+        EXPECT_TRUE(context->GetChildren().Has(c1));
+        EXPECT_TRUE(context->GetChildren().Has(c2));
     }
 
     EXPECT_TRUE(weakContext.expired());
-}
-
-TEST(ContextLifecycleTest, BridgeCallbacksAreInvokedWhenRegistered) {
-    int updateCount = 0;
-    int clearCount = 0;
-
-    Ship::Context::SetDefaultComponentInstaller(nullptr);
-    Ship::Context::SetBridgeCacheHandlers(
-        [&](const std::shared_ptr<Ship::Context>& context) {
-            EXPECT_NE(context, nullptr);
-            updateCount++;
-        },
-        [&]() { clearCount++; });
-
-    {
-        auto c1 = std::make_shared<TestComponent>("C1");
-        auto context = Ship::Context::CreateInstance("TestApp", "test", { c1 });
-        ASSERT_NE(context, nullptr);
-        EXPECT_EQ(updateCount, 1);
-        EXPECT_EQ(clearCount, 0);
-    }
-
-    EXPECT_EQ(clearCount, 1);
-
-    Ship::Context::SetBridgeCacheHandlers(nullptr, nullptr);
 }
 
 #ifdef COMPONENT_THREAD_SAFE

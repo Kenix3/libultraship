@@ -9,4 +9,3 @@
 #include "libultraship/bridge/gfxdebuggerbridge.h"
 #include "libultraship/bridge/gfxbridge.h"
 #include "libultraship/bridge/eventsbridge.h"
-#include "libultraship/bridge/contextbridge.h"

@@ -1,31 +1,48 @@
 #include "libultraship/bridge/gfxdebuggerbridge.h"
 #include "fast/debug/GfxDebugger.h"
+#include <atomic>
 
 // Dependency: requires Fast::GfxDebugger component to be present in Ship::Context.
 
-static std::shared_ptr<Fast::GfxDebugger> sGfxDebugger;
+static std::atomic<std::shared_ptr<Fast::GfxDebugger>> sGfxDebugger;
 
 void GfxDebuggerSetComponent(std::shared_ptr<Fast::GfxDebugger> gfxDebugger) {
-    sGfxDebugger = std::move(gfxDebugger);
+    sGfxDebugger.store(std::move(gfxDebugger), std::memory_order_release);
 }
 
 std::shared_ptr<Fast::GfxDebugger> GfxDebuggerGetComponent() {
-    return sGfxDebugger;
-}
-
-static Fast::GfxDebugger* GetGfxDebugger() {
-    return sGfxDebugger.get();
+    return sGfxDebugger.load(std::memory_order_acquire);
 }
 
 void GfxDebuggerRequestDebugging() {
-    GetGfxDebugger()->RequestDebugging();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return;
+    }
+
+    gfxDebugger->RequestDebugging();
 }
 bool GfxDebuggerIsDebugging() {
-    return GetGfxDebugger()->IsDebugging();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return false;
+    }
+
+    return gfxDebugger->IsDebugging();
 }
 bool GfxDebuggerIsDebuggingRequested() {
-    return GetGfxDebugger()->IsDebuggingRequested();
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return false;
+    }
+
+    return gfxDebugger->IsDebuggingRequested();
 }
 void GfxDebuggerDebugDisplayList(void* cmds) {
-    GetGfxDebugger()->DebugDisplayList((Fast::F3DGfx*)cmds);
+    auto gfxDebugger = GfxDebuggerGetComponent();
+    if (gfxDebugger == nullptr) {
+        return;
+    }
+
+    gfxDebugger->DebugDisplayList((Fast::F3DGfx*)cmds);
 }

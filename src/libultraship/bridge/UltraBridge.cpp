@@ -1,4 +1,4 @@
-#include "libultraship/bridge/contextbridge.h"
+#include "UltraBridge.h"
 
 #include "fast/Fast3dWindow.h"
 #include "fast/debug/GfxDebugger.h"
@@ -11,6 +11,7 @@
 #include "libultraship/bridge/gfxdebuggerbridge.h"
 #include "libultraship/bridge/resourcebridge.h"
 #include "libultraship/bridge/windowbridge.h"
+#include "ship/audio/Audio.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/core/Context.h"
@@ -23,13 +24,16 @@
 #include "ship/scripting/ScriptLoader.h"
 #endif
 
-void ContextBridgeInstallDefaultComponents(const std::shared_ptr<Ship::Context>& context) {
-    if (context->GetChildren().GetFirst<Fast::GfxDebugger>() == nullptr) {
-        context->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
-    }
+namespace LUS {
+
+UltraBridge::UltraBridge() : Bridge("UltraBridge") {
 }
 
-void ContextBridgeUpdateCaches(const std::shared_ptr<Ship::Context>& context) {
+UltraBridge::~UltraBridge() {
+    ClearCaches();
+}
+
+void UltraBridge::UpdateCaches(const std::shared_ptr<Ship::Context>& context) {
     ResourceSetResourceManager(context->GetChildren().GetFirst<Ship::ResourceManager>());
     CVarSetConsoleVariable(context->GetChildren().GetFirst<Ship::ConsoleVariable>());
     WindowSetWindowComponent(context->GetChildren().GetFirst<Ship::Window>());
@@ -44,7 +48,7 @@ void ContextBridgeUpdateCaches(const std::shared_ptr<Ship::Context>& context) {
 #endif
 }
 
-void ContextBridgeClearCaches() {
+void UltraBridge::ClearCaches() {
     ResourceSetResourceManager(nullptr);
     CVarSetConsoleVariable(nullptr);
     WindowSetWindowComponent(nullptr);
@@ -59,17 +63,4 @@ void ContextBridgeClearCaches() {
 #endif
 }
 
-void ContextBridgeRegisterCallbacks() {
-    Ship::Context::SetDefaultComponentInstaller(ContextBridgeInstallDefaultComponents);
-    Ship::Context::SetBridgeCacheHandlers(ContextBridgeUpdateCaches, ContextBridgeClearCaches);
-}
-
-namespace {
-struct ContextBridgeRegistrar {
-    ContextBridgeRegistrar() {
-        ContextBridgeRegisterCallbacks();
-    }
-};
-
-ContextBridgeRegistrar sContextBridgeRegistrar;
-} // namespace
+} // namespace LUS

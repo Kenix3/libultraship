@@ -1,47 +1,51 @@
 #include "libultraship/bridge/windowbridge.h"
 #include "ship/window/Window.h"
+#include <atomic>
 
-static std::shared_ptr<Ship::Window> sWindow;
+static std::atomic<std::shared_ptr<Ship::Window>> sWindow;
 
 void WindowSetWindowComponent(std::shared_ptr<Ship::Window> window) {
-    sWindow = std::move(window);
+    sWindow.store(std::move(window), std::memory_order_release);
 }
 
 std::shared_ptr<Ship::Window> WindowGetWindowComponent() {
-    return sWindow;
-}
-
-static Ship::Window* GetWindow() {
-    return sWindow.get();
+    return sWindow.load(std::memory_order_acquire);
 }
 
 extern "C" {
 
 uint32_t WindowGetWidth() {
-    return GetWindow()->GetWidth();
+    auto window = WindowGetWindowComponent();
+    return window ? window->GetWidth() : 0;
 }
 
 uint32_t WindowGetHeight() {
-    return GetWindow()->GetHeight();
+    auto window = WindowGetWindowComponent();
+    return window ? window->GetHeight() : 0;
 }
 
 float WindowGetAspectRatio() {
-    return GetWindow()->GetCurrentAspectRatio();
+    auto window = WindowGetWindowComponent();
+    return window ? window->GetCurrentAspectRatio() : 0.0f;
 }
 
 bool WindowIsRunning() {
-    return GetWindow()->IsRunning();
+    auto window = WindowGetWindowComponent();
+    return window ? window->IsRunning() : false;
 }
 
 int32_t WindowGetPosX() {
-    return GetWindow()->GetPosX();
+    auto window = WindowGetWindowComponent();
+    return window ? window->GetPosX() : 0;
 }
 
 int32_t WindowGetPosY() {
-    return GetWindow()->GetPosY();
+    auto window = WindowGetWindowComponent();
+    return window ? window->GetPosY() : 0;
 }
 
 bool WindowIsFullscreen() {
-    return GetWindow()->IsFullscreen();
+    auto window = WindowGetWindowComponent();
+    return window ? window->IsFullscreen() : false;
 }
 }
