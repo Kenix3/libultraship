@@ -24,18 +24,18 @@ namespace {
 using ContextHook = std::function<void(const std::shared_ptr<Context>&)>;
 
 ContextHook& GetDefaultComponentInstallerHook() {
-    static ContextHook hook;
-    return hook;
+    static ContextHook sHook;
+    return sHook;
 }
 
 ContextHook& GetBridgeCacheUpdateHook() {
-    static ContextHook hook;
-    return hook;
+    static ContextHook sHook;
+    return sHook;
 }
 
 std::function<void()>& GetBridgeCacheClearHook() {
-    static std::function<void()> hook;
-    return hook;
+    static std::function<void()> sHook;
+    return sHook;
 }
 } // namespace
 
