@@ -4,87 +4,56 @@
 #include <iostream>
 #include <algorithm>
 #include <queue>
+#if defined(__APPLE__)
+#include <pwd.h>
+#endif
 #include "ship/install_config.h"
-#include "fast/debug/GfxDebugger.h"
-#include "fast/Fast3dWindow.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/debug/Console.h"
 #include "ship/debug/CrashHandler.h"
 #include "ship/resource/ResourceManager.h"
+#include "ship/utils/AppleFolderManager.h"
 #include "ship/window/FileDrop.h"
 #include "ship/log/Logger.h"
 #include "ship/thread/ThreadPool.h"
 #include "ship/events/Events.h"
-#include "libultraship/bridge/audiobridge.h"
-#include "libultraship/bridge/consolevariablebridge.h"
-#include "libultraship/bridge/controllerbridge.h"
-#include "libultraship/bridge/crashhandlerbridge.h"
-#include "libultraship/bridge/eventsbridge.h"
-#include "libultraship/bridge/gfxbridge.h"
-#include "libultraship/bridge/gfxdebuggerbridge.h"
-#include "libultraship/bridge/resourcebridge.h"
-#include "libultraship/bridge/windowbridge.h"
 #ifdef ENABLE_SCRIPTING
-#include "libultraship/bridge/scriptingbridge.h"
 #include "ship/scripting/ScriptLoader.h"
 #include "ship/security/Keystore.h"
 #endif
 
-#ifdef _WIN32
-#include <libloaderapi.h>
-#include <tchar.h>
-#include <windows.h>
-#include <stringapiset.h>
-#endif
-
-#ifdef __APPLE__
-#include "ship/utils/AppleFolderManager.h"
-#include <unistd.h>
-#include <pwd.h>
-#endif
-
 namespace Ship {
-static void UpdateBridgeCaches(const std::shared_ptr<Context>& context) {
-    ResourceSetResourceManager(context->GetChildren().GetFirst<ResourceManager>());
-    CVarSetConsoleVariable(context->GetChildren().GetFirst<ConsoleVariable>());
-    WindowSetWindowComponent(context->GetChildren().GetFirst<Window>());
-    ControllerSetControlDeck(context->GetChildren().GetFirst<ControlDeck>());
-    EventSystemSetEvents(context->GetChildren().GetFirst<Events>());
-    AudioSetAudioComponent(context->GetChildren().GetFirst<Audio>());
-    CrashHandlerSetComponent(context->GetChildren().GetFirst<CrashHandler>());
-    GfxDebuggerSetComponent(context->GetChildren().GetFirst<Fast::GfxDebugger>());
-    GfxSetFast3dWindow(std::dynamic_pointer_cast<Fast::Fast3dWindow>(context->GetChildren().GetFirst<Window>()));
-#ifdef ENABLE_SCRIPTING
-    ScriptSetLoader(context->GetChildren().GetFirst<ScriptLoader>());
-#endif
+namespace {
+using ContextHook = std::function<void(const std::shared_ptr<Context>&)>;
+
+ContextHook& GetDefaultComponentInstallerHook() {
+    static ContextHook sHook;
+    return sHook;
 }
+
+ContextHook& GetBridgeCacheUpdateHook() {
+    static ContextHook sHook;
+    return sHook;
+}
+
+std::function<void()>& GetBridgeCacheClearHook() {
+    static std::function<void()> sHook;
+    return sHook;
+}
+} // namespace
 
 // Release all bridge-cache shared_ptrs so components are not kept alive past this
 // context's lifetime by the bridge statics. If bridge statics were the only extra
 // reference, the components will be destroyed here (during normal stack unwinding)
 // rather than during process-exit static destruction where logging infrastructure
 // may already have been torn down.
-static void ClearBridgeCaches() {
-    ResourceSetResourceManager(nullptr);
-    CVarSetConsoleVariable(nullptr);
-    WindowSetWindowComponent(nullptr);
-    ControllerSetControlDeck(nullptr);
-    EventSystemSetEvents(nullptr);
-    AudioSetAudioComponent(nullptr);
-    CrashHandlerSetComponent(nullptr);
-    GfxDebuggerSetComponent(nullptr);
-    GfxSetFast3dWindow(nullptr);
-#ifdef ENABLE_SCRIPTING
-    ScriptSetLoader(nullptr);
-#endif
-}
 
 Context::~Context() {
-    // Clear bridge caches first so components aren't kept alive by bridge statics past
-    // this context's lifetime. Keeping them alive into process-exit static-destruction
-    // causes crashes because spdlog sinks are torn down before the component destructors run.
-    ClearBridgeCaches();
+    auto& clearHook = GetBridgeCacheClearHook();
+    if (clearHook) {
+        clearHook();
+    }
 
     if (spdlog::default_logger()) {
         SPDLOG_TRACE("destruct context");
@@ -204,8 +173,10 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     auto audio = std::make_shared<Audio>(audioSettings, config);
     shared->GetChildren().Add(audio);
 
-    // ---- Gfx Debugger ----
-    shared->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
+    auto& installerHook = GetDefaultComponentInstallerHook();
+    if (installerHook) {
+        installerHook(shared);
+    }
 
     // ---- Events ----
     shared->GetChildren().Add(std::make_shared<Events>());
@@ -252,7 +223,11 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     window->Init();
     fileDropMgr->Init();
     audio->Init();
-    UpdateBridgeCaches(shared);
+
+    auto& updateHook = GetBridgeCacheUpdateHook();
+    if (updateHook) {
+        updateHook(shared);
+    }
 
     return shared;
 }
@@ -270,8 +245,23 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
         ctx->GetChildren().Add(component);
         component->Init();
     }
-    UpdateBridgeCaches(ctx);
+
+    auto& updateHook = GetBridgeCacheUpdateHook();
+    if (updateHook) {
+        updateHook(ctx);
+    }
+
     return ctx;
+}
+
+void Context::SetDefaultComponentInstaller(const std::function<void(const std::shared_ptr<Context>&)>& installer) {
+    GetDefaultComponentInstallerHook() = installer;
+}
+
+void Context::SetBridgeCacheHandlers(const std::function<void(const std::shared_ptr<Context>&)>& update,
+                                     const std::function<void()>& clear) {
+    GetBridgeCacheUpdateHook() = update;
+    GetBridgeCacheClearHook() = clear;
 }
 
 Context::Context(std::string name, std::string shortName)

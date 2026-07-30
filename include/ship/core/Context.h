@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <stdint.h>
+#include <functional>
 #include "ship/audio/Audio.h"
 #include "ship/core/Component.h"
 #include "ship/core/TickableList.h"
@@ -66,9 +67,9 @@ class Context : public Component {
      *
      * This is the convenience factory that replicates the original initialization order:
      * Logging, Config, ConsoleVariables, ThreadPool, Keystore, ResourceManager, ControlDeck,
-     * CrashHandler, Console, Window, Audio, GfxDebugger, Events, FileDrop,
+     * CrashHandler, Console, Window, Audio, Events, FileDrop,
      * and ScriptLoader (if enabled).
-     *
+
      * **All components are added to the hierarchy before any Init() is called.**
      * This ensures that every component can safely look up siblings during its own
      * Init() without requiring a specific add-order dependency.
@@ -181,6 +182,17 @@ class Context : public Component {
      * Tick(LateUpdate), and Tick(Draw).
      */
     void Tick();
+
+    /**
+     * @brief Registers an optional callback that can install additional default components.
+     */
+    static void SetDefaultComponentInstaller(const std::function<void(const std::shared_ptr<Context>&)>& installer);
+
+    /**
+     * @brief Registers optional callbacks for bridge cache update and clear lifecycle hooks.
+     */
+    static void SetBridgeCacheHandlers(const std::function<void(const std::shared_ptr<Context>&)>& update,
+                                       const std::function<void()>& clear);
 
   protected:
     Context() = default;
