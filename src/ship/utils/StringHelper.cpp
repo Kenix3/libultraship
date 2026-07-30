@@ -109,7 +109,7 @@ std::string StringHelper::Sprintf(const char* format, ...) {
     return output;
 }
 
-std::string StringHelper::Implode(std::vector<std::string>& elements, const char* const separator) {
+std::string StringHelper::Implode(const std::vector<std::string>& elements, const char* const separator) {
     return std::accumulate(
         std::begin(elements), std::end(elements), std::string(),
         [separator](const std::string& ss, const std::string& s) { return ss.empty() ? s : ss + separator + s; });

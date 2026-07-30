@@ -68,7 +68,7 @@ class Window : public Component {
      * @brief Constructs a Window and pre-registers a list of GUI windows.
      * @param guiWindows GUI overlay windows to register with the Gui layer.
      */
-    Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows, std::shared_ptr<Config> config = nullptr);
+    Window(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Config> config = nullptr);
     /**
      * @brief Constructs a Window backed by a pre-constructed Gui instance.
      * @param gui Gui layer to use.
