@@ -505,6 +505,26 @@ TEST(ResourceIdentifier, HasherGivesDifferentValuesForDifferentPaths) {
     EXPECT_NE(hasher(a), hasher(b));
 }
 
+TEST(ResourceIdentifier, HashIdentifiersCompareEqualWhenHashOwnerAndParentMatch) {
+    constexpr uint64_t hash = 0x12345678ULL;
+    Ship::ResourceIdentifier a(hash, 0, nullptr);
+    Ship::ResourceIdentifier b(hash, 0, nullptr);
+    EXPECT_EQ(a, b);
+}
+
+TEST(ResourceIdentifier, PathAndHashIdentifiersDoNotCompareEqual) {
+    Ship::ResourceIdentifier pathId("305419896", 0, nullptr);
+    Ship::ResourceIdentifier hashId(static_cast<uint64_t>(305419896ULL), 0, nullptr);
+    EXPECT_NE(pathId, hashId);
+}
+
+TEST(ResourceIdentifier, HasherDiffersBetweenPathAndHashIdentifierKinds) {
+    Ship::ResourceIdentifier pathId("305419896", 0, nullptr);
+    Ship::ResourceIdentifier hashId(static_cast<uint64_t>(305419896ULL), 0, nullptr);
+    Ship::ResourceIdentifierHash hasher;
+    EXPECT_NE(hasher(pathId), hasher(hashId));
+}
+
 // ============================================================
 // ResourceManager — Init and IsInitialized
 // ============================================================
