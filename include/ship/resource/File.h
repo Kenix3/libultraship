@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <stdint.h>
+#include "ship/resource/ResourceIdentifier.h"
 #include "ship/resource/ResourceType.h"
 #include "ship/utils/binarytools/BinaryReader.h"
 
@@ -29,10 +30,8 @@ class Archive;
  * supply override metadata when loading a resource with non-default options.
  */
 struct ResourceInitData {
-    /** @brief The archive this resource was loaded from (may be null for loose files). */
-    std::shared_ptr<Archive> Parent;
-    /** @brief Virtual path of the resource within its archive or filesystem. */
-    std::string Path;
+    /** @brief Cache/resource identity used for loading and ownership scoping. */
+    ResourceIdentifier Identifier;
     /** @brief Byte order of the raw data. */
     Endianness ByteOrder;
     /** @brief Resource type identifier (see ResourceType). */

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 #include <variant>
+#include "ship/resource/ResourceIdentifier.h"
 #include "ship/resource/Resource.h"
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
@@ -42,40 +43,6 @@ struct ResourceFilter {
     const uintptr_t Owner = 0;
     /** @brief Archive to scope the query to; nullptr matches resources from any archive. */
     const std::shared_ptr<Archive> Parent = nullptr;
-};
-
-/**
- * @brief Uniquely identifies a cached resource by path, owner, and source archive.
- *
- * Two ResourceIdentifiers compare equal only when all three fields match, which allows
- * the same logical path to be loaded from different archives or by different owners
- * without colliding in the resource cache.
- */
-struct ResourceIdentifier {
-    friend struct ResourceIdentifierHash;
-
-    ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
-    ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
-    bool operator==(const ResourceIdentifier& rhs) const;
-
-    // Must be an exact path. Passing a path with a wildcard will return a fail state
-    const std::string Path = "";
-    /** @brief Opaque handle that identifies the owner of this cache entry. */
-    const uintptr_t Owner = 0;
-    /** @brief The archive from which the resource was (or should be) loaded. */
-    const std::shared_ptr<Archive> Parent = nullptr;
-
-  private:
-    size_t GetHash() const;
-    size_t CalculateHash();
-    size_t mHash;
-};
-
-/**
- * @brief std::hash specialization for ResourceIdentifier, used by unordered containers.
- */
-struct ResourceIdentifierHash {
-    size_t operator()(const ResourceIdentifier& rcd) const;
 };
 
 /**
@@ -147,7 +114,7 @@ class ResourceManager : public Component {
 
     /**
      * @brief Loads a resource synchronously by ResourceIdentifier.
-     * @param identifier Exact identifier (path + owner + parent archive).
+     * @param identifier Exact identifier (path/hash + owner + parent archive).
      * @param loadExact  If true, skips alt-asset path resolution.
      * @param initData   Optional metadata overrides.
      * @return Loaded (or cached) IResource, or nullptr on failure.
@@ -158,7 +125,7 @@ class ResourceManager : public Component {
     /**
      * @brief Loads a resource synchronously by ResourceIdentifier, cast to the concrete type T.
      * @tparam T         Concrete resource type (must derive from IResource).
-     * @param identifier Exact identifier (path + owner + parent archive).
+     * @param identifier Exact identifier (path/hash + owner + parent archive).
      * @param loadExact  If true, skips alt-asset path resolution.
      * @param initData   Optional metadata overrides.
      * @return Loaded (or cached) resource cast to T, or nullptr on failure.
@@ -248,6 +215,15 @@ class ResourceManager : public Component {
      * @return true on success.
      */
     bool WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data, bool unloadFile);
+
+    /**
+     * @brief Writes raw data into an archive by hash and optionally evicts the stale cache entry.
+     * @param hash       Virtual-file hash of the resource to write.
+     * @param data       Raw bytes to write.
+     * @param unloadFile If true, removes the old cache entry after writing.
+     * @return true on success.
+     */
+    bool WriteResource(uint64_t hash, const std::vector<uint8_t>& data, bool unloadFile);
 
     /**
      * @brief Loads all resources whose paths match the given glob mask.
@@ -354,6 +330,13 @@ class ResourceManager : public Component {
      * @return Loaded File with raw buffer, or nullptr on failure.
      */
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
+
+    /**
+     * @brief Loads raw file bytes from the archive by hash.
+     * @param hash Virtual-file hash of the file.
+     * @return Loaded File with raw buffer, or nullptr on failure.
+     */
+    std::shared_ptr<File> LoadFileProcess(uint64_t hash);
 
     /**
      * @brief Returns the byte size of the payload of a loaded resource.

@@ -10,7 +10,13 @@ bool ResourceFactoryXML::FileHasValidFormatAndReader(std::shared_ptr<File> file,
     }
 
     if (!std::holds_alternative<std::shared_ptr<tinyxml2::XMLDocument>>(file->Reader)) {
-        SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", initData->Type, initData->Path);
+        if (initData->Identifier.IsPath()) {
+            SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", initData->Type,
+                         initData->Identifier.GetPath());
+        } else {
+            SPDLOG_ERROR("Failed to load resource: File has no XML document ({} - {})", initData->Type,
+                         initData->Identifier.GetPathHash());
+        }
         return false;
     }
 

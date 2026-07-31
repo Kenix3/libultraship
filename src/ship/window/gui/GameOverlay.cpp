@@ -27,7 +27,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const Resour
     initData->Format = RESOURCE_FORMAT_BINARY;
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
-    initData->Path = identifier.Path;
+    initData->Identifier = identifier;
     auto font = mResourceManager->LoadResource<Font>(identifier, false, initData);
 
     if (font == nullptr) {
@@ -45,7 +45,7 @@ void GameOverlay::LoadFont(const std::string& name, float fontSize, const std::s
     initData->Format = RESOURCE_FORMAT_BINARY;
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_FONT);
     initData->ResourceVersion = 0;
-    initData->Path = path;
+    initData->Identifier = ResourceIdentifier(path, 0, nullptr);
     auto font = mResourceManager->LoadResource<Font>(path, false, initData);
 
     if (font == nullptr) {

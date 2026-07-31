@@ -578,7 +578,7 @@ void Fast3dGui::LoadTextureFromRawImage(const std::string& name, const std::stri
     initData->Format = RESOURCE_FORMAT_BINARY;
     initData->Type = static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE);
     initData->ResourceVersion = 0;
-    initData->Path = path;
+    initData->Identifier = Ship::ResourceIdentifier(path, 0, nullptr);
     auto guiTexture = std::static_pointer_cast<Ship::GuiTexture>(mResourceManager->LoadResource(path, false, initData));
 
     LoadTextureFromResource(name, guiTexture);

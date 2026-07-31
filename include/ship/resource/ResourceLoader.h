@@ -59,10 +59,16 @@ class ResourceLoader {
      * Reads the resource header from @p fileToLoad, selects the matching factory,
      * and calls ResourceFactory::ReadResource().
      *
-     * @param filePath   Virtual path (used for logging and to populate ResourceInitData).
+     * @param identifier Resource identifier (path/hash + owner + archive context).
      * @param fileToLoad Raw file buffer as returned by the archive layer.
      * @param initData   Optional metadata overrides; pass nullptr to infer from the header.
      * @return Deserialized IResource, or nullptr if no matching factory was found or parsing failed.
+     */
+    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, std::shared_ptr<File> fileToLoad,
+                                            std::shared_ptr<ResourceInitData> initData = nullptr);
+
+    /**
+     * @brief Compatibility overload that loads a resource by virtual path.
      */
     std::shared_ptr<IResource> LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
