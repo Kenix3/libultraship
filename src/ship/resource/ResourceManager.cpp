@@ -393,6 +393,12 @@ void ResourceManager::UnloadResourcesProcess(const ResourceFilter& filter) {
 
     for (const auto& key : *list.get()) {
         UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
+
+        // A `.meta` alias resource is cached under its base path, which is not itself a listed
+        // file. Evict it too so it can't survive stale after its target/dependencies are unloaded.
+        if (key.ends_with(".meta")) {
+            UnloadResource({ key.substr(0, key.size() - 5), mDefaultCacheOwner, mDefaultCacheArchive });
+        }
     }
 }
 
