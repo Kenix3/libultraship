@@ -13,7 +13,8 @@
 
 namespace Ship {
 namespace {
-std::string ResolveIdentifierPath(const ResourceIdentifier& identifier, const std::shared_ptr<ResourceManager>& resourceManager) {
+std::string ResolveIdentifierPath(const ResourceIdentifier& identifier,
+                                  const std::shared_ptr<ResourceManager>& resourceManager) {
     if (identifier.IsPath()) {
         return identifier.GetPath();
     }
@@ -149,7 +150,7 @@ std::shared_ptr<BinaryReader> ResourceLoader::CreateBinaryReader(std::shared_ptr
 }
 
 std::shared_ptr<tinyxml2::XMLDocument> ResourceLoader::CreateXMLReader(std::shared_ptr<File> fileToLoad,
-                                                                        std::shared_ptr<ResourceInitData> initData) {
+                                                                       std::shared_ptr<ResourceInitData> initData) {
     auto stream = std::make_shared<MemoryStream>(fileToLoad->Buffer);
     auto binaryReader = std::make_shared<BinaryReader>(stream);
 
@@ -270,7 +271,8 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(const ResourceIdentifier
     }
 
     if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load file for resource {}.", DescribeIdentifier(initData->Identifier, mResourceManager));
+        SPDLOG_ERROR("Failed to load file for resource {}.",
+                     DescribeIdentifier(initData->Identifier, mResourceManager));
         return nullptr;
     }
 

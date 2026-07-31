@@ -18,13 +18,11 @@ class ResourceIdentifier {
   public:
     ResourceIdentifier() = default;
 
-    ResourceIdentifier(std::string path, const uintptr_t owner = 0,
-                       const std::shared_ptr<Archive> parent = nullptr)
+    ResourceIdentifier(std::string path, const uintptr_t owner = 0, const std::shared_ptr<Archive> parent = nullptr)
         : mPath(std::move(path)), mOwner(owner), mParent(parent) {
     }
 
-    ResourceIdentifier(uint64_t hash, const uintptr_t owner = 0,
-                       const std::shared_ptr<Archive> parent = nullptr)
+    ResourceIdentifier(uint64_t hash, const uintptr_t owner = 0, const std::shared_ptr<Archive> parent = nullptr)
         : mPath(hash), mOwner(owner), mParent(parent) {
     }
 
@@ -96,9 +94,9 @@ class ResourceIdentifier {
     }
 
     size_t CalculateHash() const {
-        size_t pathHash = HashCombine(std::hash<size_t>{}(mPath.index()),
-                                      IsPath() ? std::hash<std::string>{}(GetPath())
-                                               : std::hash<uint64_t>{}(GetPathHash()));
+        size_t pathHash =
+            HashCombine(std::hash<size_t>{}(mPath.index()),
+                        IsPath() ? std::hash<std::string>{}(GetPath()) : std::hash<uint64_t>{}(GetPathHash()));
 
         size_t hash = HashCombine(pathHash, std::hash<std::uintptr_t>{}(mOwner));
         hash = HashCombine(hash, std::hash<std::shared_ptr<Archive>>{}(mParent));

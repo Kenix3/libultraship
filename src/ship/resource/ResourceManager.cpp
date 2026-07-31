@@ -122,9 +122,8 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     if (shouldCheckAlt) {
         std::string altPath = IResource::gAltAssetPrefix;
         altPath += identifier.GetPath();
-        auto altResource =
-            LoadResourceProcess({ std::move(altPath), identifier.GetOwner(), identifier.GetParent() }, loadExact,
-                                initData);
+        auto altResource = LoadResourceProcess({ std::move(altPath), identifier.GetOwner(), identifier.GetParent() },
+                                               loadExact, initData);
 
         if (altResource != nullptr) {
             return altResource;
