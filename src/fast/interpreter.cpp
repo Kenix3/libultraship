@@ -112,6 +112,7 @@ static std::string GetPathWithoutFileName(char* filePath) {
 }
 
 constexpr size_t MAX_TRI_BUFFER = 256;
+constexpr float STEREO_BACKGROUND_DEPTH_SCALE = 0.0014f;
 
 Interpreter::Interpreter() {
     mRsp = new RSP();
@@ -1267,7 +1268,7 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         auto fbIt = mFbTextures.find((uintptr_t)origAddr);
         if (fbIt != mFbTextures.end()) {
             Flush();
-            mRapi->SelectTextureFb(fbIt->second);
+            mRapi->SelectTextureFb(GetFramebufferForCurrentEye(fbIt->second));
             mRdp->textures_changed[i] = false;
             return;
         }
@@ -1517,6 +1518,9 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
     if (parameters & mtx_projection) {
         if (parameters & mtx_load) {
             memcpy(mRsp->P_matrix, matrix, sizeof(matrix));
+            // A viewing matrix may subsequently be multiplied into P_matrix, so the final matrix no longer has the
+            // canonical perspective layout. Remember the projection-only values while they are still available.
+            mRsp->projection_is_perspective = std::abs(matrix[2][3]) > 0.0001f && std::abs(matrix[3][3]) < 0.0001f;
         } else {
             MatrixMul(mRsp->P_matrix, matrix, mRsp->P_matrix);
         }
@@ -1595,6 +1599,8 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
                   v->ob[2] * mRsp->MP_matrix[2][2] + mRsp->MP_matrix[3][2];
         float w = v->ob[0] * mRsp->MP_matrix[0][3] + v->ob[1] * mRsp->MP_matrix[1][3] +
                   v->ob[2] * mRsp->MP_matrix[2][3] + mRsp->MP_matrix[3][3];
+
+        ApplyStereoToClipCoordinates(x, w);
 
         float world_pos[3] = { 0.0 };
         if (mRsp->geometry_mode & G_LIGHTING_POSITIONAL) {
@@ -2301,8 +2307,9 @@ void Interpreter::AdjustVIewportOrScissor(XYWidthHeight* area) {
         area->x *= RATIO_X(mActiveFrameBuffer, mCurDimensions);
         area->y *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
 
-        if (!mRendersToFb || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
-                              mCurDimensions.height == mGameWindowViewport.height)) {
+        if (!mRendersToFb ||
+            (!IsStereoEnabled() && mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+             mCurDimensions.height == mGameWindowViewport.height)) {
             area->x += mGameWindowViewport.x;
             area->y += mGfxCurrentWindowDimensions.height - (mGameWindowViewport.y + mGameWindowViewport.height);
         }
@@ -2810,7 +2817,7 @@ void Interpreter::GfxDpSetFillColor(uint32_t packed_color) {
     mRdp->fill_color.a = a * 255;
 }
 
-void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
+void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, bool applyStereoUiDepth) {
     uint32_t saved_other_mode_h = mRdp->other_mode_h;
     uint32_t cycle_type = (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE));
 
@@ -2828,6 +2835,17 @@ void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_
     ulyf = -(ulyf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer))) + 1.0f;
     lrxf = lrxf / (4.0f * HALF_SCREEN_WIDTH(mActiveFrameBuffer)) - 1.0f;
     lryf = -(lryf / (4.0f * HALF_SCREEN_HEIGHT(mActiveFrameBuffer))) + 1.0f;
+
+    float stereoOffset = applyStereoUiDepth ? GetStereoUiOffset() : 0.0f;
+    float stereoOverscan = 0.0f;
+    if (IsStereoPass() && (mRsp->extra_geometry_mode & G_EX_STEREO_BACKGROUND) != 0) {
+        // Moving a fullscreen background exposes its opposite edge. Expand both sides by the disparity so each eye
+        // keeps covering the viewport without changing the background's constant stereo depth.
+        stereoOffset = GetStereoBackgroundOffset();
+        stereoOverscan = std::abs(stereoOffset);
+    }
+    ulxf += stereoOffset - stereoOverscan;
+    lrxf += stereoOffset + stereoOverscan;
 
     ulxf = AdjXForAspectRatio(ulxf);
     lrxf = AdjXForAspectRatio(lrxf);
@@ -2993,7 +3011,9 @@ void Interpreter::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_
     }
     mRdp->first_tile_index = tile;
 
-    GfxDrawRectangle(ulx, uly, lrx, lry);
+    // Image rectangles present custom framebuffer contents. Moving one as UI would shift the entire rendered scene
+    // during pause/blur effects instead of changing the depth of UI drawn over it.
+    GfxDrawRectangle(ulx, uly, lrx, lry, false);
     if (saved_tile != tile) {
         mRdp->textures_changed[0] = true;
         mRdp->textures_changed[1] = true;
@@ -4179,6 +4199,9 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     height = C1(16, 16);
 
     gfx->Flush();
+    if (gfx->ShouldSuppressFramebufferReadback()) {
+        return false;
+    }
     gfx->mRapi->ReadFramebufferToCPU(fbId, width, height, rgba16Buffer);
 
 #ifndef IS_BIGENDIAN
@@ -4229,7 +4252,7 @@ bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
 
     gfx->Flush();
-    gfx->mRapi->SelectTextureFb((uint32_t)cmd->words.w1);
+    gfx->mRapi->SelectTextureFb(gfx->GetFramebufferForCurrentEye((uint32_t)cmd->words.w1));
     gfx->mRdp->textures_changed[0] = false;
     gfx->mRdp->textures_changed[1] = false;
     return false;
@@ -4961,15 +4984,20 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mWapi->Init(game_name, rapi->GetName(), start_in_fullscreen, width, height, posX, posY);
     mRapi->Init();
     mRapi->UpdateFramebufferParameters(0, width, height, 1, false, true, true, true);
-    mCurDimensions.internal_mul =
-        Ship::Context::GetRawInstance()->GetConsoleVariables()->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
-    mMsaaLevel = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1);
+    const auto cvars = Ship::Context::GetRawInstance()->GetConsoleVariables();
+    mCurDimensions.internal_mul = cvars->GetFloat(CVAR_INTERNAL_RESOLUTION, 1);
+    mMsaaLevel = cvars->GetInteger(CVAR_MSAA_VALUE, 1);
+    SetStereoMode(cvars->GetInteger(CVAR_STEREO_MODE, static_cast<int32_t>(StereoMode::Off)));
+    SetStereoSeparation(cvars->GetFloat(CVAR_STEREO_SEPARATION, 20.0f));
+    SetStereoConvergence(cvars->GetFloat(CVAR_STEREO_CONVERGENCE, 20.0f));
+    SetStereoUiDepth(cvars->GetFloat(CVAR_STEREO_UI_DEPTH, 0.0f));
 
     mCurDimensions.width = width;
     mCurDimensions.height = height;
 
     mGameFb = mRapi->CreateFramebuffer();
     mGameFbMsaaResolved = mRapi->CreateFramebuffer();
+    mStereoOutputFb = mRapi->CreateFramebuffer();
 
     mNativeDimensions.width = SCREEN_WIDTH;
     mNativeDimensions.height = SCREEN_HEIGHT;
@@ -5049,22 +5077,50 @@ void Interpreter::StartFrame() {
         mNativeDimensions.width != mPrevNativeDimensions.width ||
         mNativeDimensions.height != mPrevNativeDimensions.height) {
 
-        for (auto& fb : mFrameBuffers) {
-            uint32_t width = fb.second.orig_width, height = fb.second.orig_height;
-            if (fb.second.resize) {
-                AdjustWidthHeightForScale(width, height, fb.second.native_width, fb.second.native_height);
+        for (auto& [fb, info] : mFrameBuffers) {
+            uint32_t width = info.orig_width, height = info.orig_height;
+            if (info.resize) {
+                AdjustWidthHeightForScale(width, height, info.native_width, info.native_height);
             }
-            if (width != fb.second.applied_width || height != fb.second.applied_height) {
-                mRapi->UpdateFramebufferParameters(fb.first, width, height, 1, true, true, true, true);
-                fb.second.applied_width = width;
-                fb.second.applied_height = height;
+            if (width != info.applied_width || height != info.applied_height) {
+                mRapi->UpdateFramebufferParameters(fb, width, height, 1, true, true, true, true);
+                if (info.stereo_right_fb != 0) {
+                    mRapi->UpdateFramebufferParameters(info.stereo_right_fb, width, height, 1, true, true, true, true);
+                }
+                info.applied_width = width;
+                info.applied_height = height;
             }
         }
     }
 
     mPrvDimensions = mCurDimensions;
     mPrevNativeDimensions = mNativeDimensions;
-    if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
+
+    if (IsStereoEnabled()) {
+        // Stereo always renders into an eye-sized offscreen target. Keeping the logical eye dimensions separate from
+        // the packed output dimensions avoids changing viewport, scissor, aspect-ratio, and framebuffer-copy math.
+        mRendersToFb = true;
+        mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true, true,
+                                           true, true);
+
+        // Persistent effects such as the pause capture need a target that the left replay cannot overwrite.
+        for (auto& fb : mFrameBuffers) {
+            FBInfo& info = fb.second;
+            if (info.stereo_right_fb == 0) {
+                info.stereo_right_fb = mRapi->CreateFramebuffer();
+                mRapi->UpdateFramebufferParameters(info.stereo_right_fb, info.applied_width, info.applied_height, 1,
+                                                   true, true, true, true);
+            }
+        }
+
+        const StereoLayout layout = GetStereoLayout();
+        // The aspect-correct eye rectangles may leave bars around the copied image, so this target must support a
+        // real color clear on every backend before either eye is composed.
+        mRapi->UpdateFramebufferParameters(mStereoOutputFb, layout.output_width, layout.output_height, 1, true, true,
+                                           false, false);
+    } else if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1) {
+        // Keep the original mono path unchanged. Several framebuffer commands rely on its exact target sizing and
+        // viewport-offset behavior.
         mRendersToFb = true;
         if (!ViewportMatchesRendererResolution()) {
             mRapi->UpdateFramebufferParameters(mGameFb, mCurDimensions.width, mCurDimensions.height, mMsaaLevel, true,
@@ -5106,6 +5162,16 @@ void Interpreter::RunGuiOnly() {
     Flush();
     mGfxFrameBuffer = 0;
 
+    if (IsStereoEnabled()) {
+        ClearStereoOutput();
+        ComposeStereoEye(StereoEye::Left);
+        ComposeStereoEye(StereoEye::Right);
+        mGfxFrameBuffer = reinterpret_cast<uintptr_t>(mRapi->GetFramebufferTextureId(mStereoOutputFb));
+        mRapi->StartDrawToFramebuffer(0, 1);
+        mRapi->ClearFramebuffer(true, true);
+        return;
+    }
+
     if (mRendersToFb) {
         mRapi->StartDrawToFramebuffer(0, 1);
         mRapi->ClearFramebuffer(true, true);
@@ -5129,37 +5195,108 @@ void Interpreter::RunGuiOnly() {
 }
 
 void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
-    SpReset();
-
     mGetPixelDepthPending.clear();
     mGetPixelDepthCached.clear();
-
-    mCurMtxReplacements = &mtx_replacements;
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
                                        false, true, true, !mRendersToFb);
     mRapi->StartFrame();
-    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, (float)mCurDimensions.height / mNativeDimensions.height);
+    mGfxFrameBuffer = 0;
+
+    if (!IsStereoEnabled()) {
+        RunCommandPass(commands, mtx_replacements, StereoEye::Mono, true);
+
+        if (mRendersToFb) {
+            mRapi->StartDrawToFramebuffer(0, 1);
+            mRapi->ClearFramebuffer(true, true);
+            if (mMsaaLevel > 1) {
+                if (!ViewportMatchesRendererResolution()) {
+                    mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
+                    mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
+                } else {
+                    mRapi->ResolveMSAAColorBuffer(0, mGameFb);
+                }
+            } else {
+                mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFb);
+            }
+        } else if (mFbActive) {
+            // Failsafe reset to main framebuffer to prevent softlocking the renderer
+            mFbActive = 0;
+            mRapi->StartDrawToFramebuffer(0, 1);
+
+            assert(0 && "active framebuffer was never reset back to original");
+        }
+        return;
+    }
+
+    ClearStereoOutput();
+
+    // A display list is not guaranteed to establish every piece of RSP/RDP state before its first draw. Replaying it
+    // from the first pass's final state can therefore select different shaders, textures, or render modes. Preserve
+    // the logical state that a normal single pass would start with and restore it before the primary-eye replay.
+    const RSP rspBeforePass = *mRsp;
+    const RDP rdpBeforePass = *mRdp;
+    uintptr_t segmentPointersBeforePass[MAX_SEGMENT_POINTERS];
+    memcpy(segmentPointersBeforePass, mSegmentPointers, sizeof(segmentPointersBeforePass));
+    const UcodeHandlers ucodeBeforePass = ucode_handler_index;
+    const bool markerBeforePass = mMarkerOn;
+    const int interpolationTargetBeforePass = mInterpolationIndexTarget;
+
+    // Draw the secondary eye first. Leaving the primary eye in mGameFb keeps subsequent depth queries and readbacks
+    // consistent with the mono renderer.
+    RunCommandPass(commands, mtx_replacements, StereoEye::Right, false);
+    ComposeStereoEye(StereoEye::Right);
+
+    *mRsp = rspBeforePass;
+    *mRdp = rdpBeforePass;
+    memcpy(mSegmentPointers, segmentPointersBeforePass, sizeof(segmentPointersBeforePass));
+    ucode_handler_index = ucodeBeforePass;
+    mMarkerOn = markerBeforePass;
+    mInterpolationIndexTarget = interpolationTargetBeforePass;
+    InvalidateReplayBindings();
+
+    RunCommandPass(commands, mtx_replacements, StereoEye::Left, true);
+    ComposeStereoEye(StereoEye::Left);
+
+    mGfxFrameBuffer = reinterpret_cast<uintptr_t>(mRapi->GetFramebufferTextureId(mStereoOutputFb));
+    mRapi->StartDrawToFramebuffer(0, 1);
+    mRapi->ClearFramebuffer(true, true);
+}
+
+void Interpreter::RunCommandPass(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements, StereoEye eye,
+                                 bool enableDebugger) {
+    SpReset();
+
+    mStereoEye = eye;
+    mCurMtxReplacements = &mtxReplacements;
+    mFbActive = false;
+    mActiveFrameBuffer = mFrameBuffers.end();
+
+    const int passFramebuffer = IsStereoPass() || mRendersToFb ? mGameFb : 0;
+    mRapi->StartDrawToFramebuffer(passFramebuffer,
+                                  static_cast<float>(mCurDimensions.height) / mNativeDimensions.height);
     mRapi->ClearFramebuffer(true, true);
     mRdp->viewport_or_scissor_changed = true;
     mRenderingState.viewport = {};
     mRenderingState.scissor = {};
+    if (IsStereoPass()) {
+        mRenderingState.viewport.width = UINT32_MAX;
+        mRenderingState.scissor.width = UINT32_MAX;
+    }
 
     auto dbg = mGfxDebugger;
     g_exec_stack.start((F3DGfx*)commands);
     while (!g_exec_stack.cmd_stack.empty()) {
         auto cmd = g_exec_stack.cmd_stack.top();
 
-        if (dbg->IsDebugging()) {
+        if (enableDebugger && dbg->IsDebugging()) {
             g_exec_stack.gfx_path.push_back(cmd);
             if (dbg->HasBreakPoint(g_exec_stack.gfx_path)) {
-                // On a breakpoint with the active framebuffer still set, we need to reset back to prevent
-                // soft locking the renderer
                 if (mFbActive) {
-                    mFbActive = 0;
-                    mRapi->StartDrawToFramebuffer(mRendersToFb ? mGameFb : 0, 1);
+                    mFbActive = false;
+                    mActiveFrameBuffer = mFrameBuffers.end();
+                    mRapi->StartDrawToFramebuffer(passFramebuffer, 1);
                 }
-
                 break;
             }
             g_exec_stack.gfx_path.pop_back();
@@ -5168,29 +5305,61 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     }
 
     Flush();
-    mGfxFrameBuffer = 0;
     currentDir = std::stack<std::string>();
 
-    if (mRendersToFb) {
-        mRapi->StartDrawToFramebuffer(0, 1);
-        mRapi->ClearFramebuffer(true, true);
-        if (mMsaaLevel > 1) {
-            if (!ViewportMatchesRendererResolution()) {
-                mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
-                mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
-            } else {
-                mRapi->ResolveMSAAColorBuffer(0, mGameFb);
-            }
-        } else {
-            mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFb);
-        }
-    } else if (mFbActive) {
-        // Failsafe reset to main framebuffer to prevent softlocking the renderer
-        mFbActive = 0;
-        mRapi->StartDrawToFramebuffer(0, 1);
-
-        assert(0 && "active framebuffer was never reset back to original");
+    if (IsStereoPass() && mFbActive) {
+        // A malformed custom framebuffer sequence must not leave the next eye bound to the wrong render target.
+        mFbActive = false;
+        mActiveFrameBuffer = mFrameBuffers.end();
+        mRapi->StartDrawToFramebuffer(mGameFb, 1);
     }
+
+    mStereoEye = StereoEye::Mono;
+}
+
+StereoLayout Interpreter::GetStereoLayout() const {
+    uint32_t displayWidth;
+    uint32_t displayHeight;
+    GetStereoEyeViewportDimensions(&displayWidth, &displayHeight);
+
+    const double scale = std::max(static_cast<double>(mCurDimensions.width) / displayWidth,
+                                  static_cast<double>(mCurDimensions.height) / displayHeight);
+
+    StereoLayout layout{};
+    layout.eye_width = std::max(mCurDimensions.width, static_cast<uint32_t>(std::lround(displayWidth * scale)));
+    layout.eye_height = std::max(mCurDimensions.height, static_cast<uint32_t>(std::lround(displayHeight * scale)));
+    // Keep opposite bars pixel-identical even when the aspect calculation rounds to an odd remainder.
+    layout.eye_width += (layout.eye_width - mCurDimensions.width) % 2;
+    layout.eye_height += (layout.eye_height - mCurDimensions.height) % 2;
+    layout.content_x = static_cast<int32_t>((layout.eye_width - mCurDimensions.width) / 2);
+    layout.content_y = static_cast<int32_t>((layout.eye_height - mCurDimensions.height) / 2);
+    layout.output_width = IsStereoSideBySide() ? layout.eye_width * 2 : layout.eye_width;
+    layout.output_height = IsStereoSideBySide() ? layout.eye_height : layout.eye_height * 2;
+    return layout;
+}
+
+void Interpreter::ClearStereoOutput() {
+    mRapi->StartDrawToFramebuffer(mStereoOutputFb, 1);
+    mRapi->ClearFramebuffer(true, false);
+}
+
+void Interpreter::ComposeStereoEye(StereoEye eye) {
+    const StereoLayout layout = GetStereoLayout();
+    int dstX0 = layout.content_x;
+    int dstY0 = layout.content_y;
+    if (eye == StereoEye::Right) {
+        if (IsStereoSideBySide()) {
+            dstX0 += static_cast<int>(layout.eye_width);
+        } else {
+            dstY0 += static_cast<int>(layout.eye_height);
+        }
+    }
+
+    // Keep composition unscaled for identical behavior across rendering backends. Half modes perform their
+    // anamorphic compression only when this full-resolution intermediate is presented.
+    mRapi->CopyFramebuffer(
+        mStereoOutputFb, mGameFb, 0, 0, static_cast<int>(mCurDimensions.width), static_cast<int>(mCurDimensions.height),
+        dstX0, dstY0, dstX0 + static_cast<int>(mCurDimensions.width), dstY0 + static_cast<int>(mCurDimensions.height));
 }
 
 void Interpreter::EndFrame() {
@@ -5226,14 +5395,20 @@ int Interpreter::CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t nat
     int fb = mRapi->CreateFramebuffer();
     mRapi->UpdateFramebufferParameters(fb, width, height, 1, true, true, true, true);
 
-    mFrameBuffers[fb] = {
-        orig_width, orig_height, width, height, native_width, native_height, static_cast<bool>(resize), forceFixedAspect
-    };
+    mFrameBuffers[fb] = { orig_width,
+                          orig_height,
+                          width,
+                          height,
+                          native_width,
+                          native_height,
+                          static_cast<bool>(resize),
+                          forceFixedAspect,
+                          0 };
     return fb;
 }
 
 void Interpreter::SetFrameBuffer(int fb, float noiseScale) {
-    mRapi->StartDrawToFramebuffer(fb, noiseScale);
+    mRapi->StartDrawToFramebuffer(GetFramebufferForCurrentEye(fb), noiseScale);
     mRapi->ClearFramebuffer(false, true);
 }
 
@@ -5248,12 +5423,16 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
         fb_src_id = mGameFb;
     }
 
+    // Stereo: route copies through the current eye's persistent framebuffer, including the pause-menu capture.
+    fb_dst_id = GetFramebufferForCurrentEye(fb_dst_id);
+    fb_src_id = GetFramebufferForCurrentEye(fb_src_id);
+
     int srcX0, srcY0, srcX1, srcY1;
     int dstX0, dstY0, dstX1, dstY1;
 
     // When rendering to the main window buffer or MSAA is enabled with a buffer size equal to the view port,
     // then the source coordinates must account for any docked ImGui elements
-    if (fb_src_id == 0 || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+    if (fb_src_id == 0 || (!IsStereoEnabled() && mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
                            mCurDimensions.height == mGameWindowViewport.height)) {
         srcX0 = mGameWindowViewport.x;
         srcY0 = mGameWindowViewport.y;
@@ -5273,8 +5452,8 @@ void Interpreter::CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, b
 
     mRapi->CopyFramebuffer(fb_dst_id, fb_src_id, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1);
 
-    // Set the copied pointer if we have one
-    if (hasCopiedPtr != nullptr) {
+    // The right eye is replayed first. Commit one-shot state only after the left (or mono) pass has also copied.
+    if (hasCopiedPtr != nullptr && mStereoEye != StereoEye::Right) {
         *hasCopiedPtr = true;
     }
 }
@@ -5287,7 +5466,7 @@ void Interpreter::AdjustPixelDepthCoordinates(float& x, float& y) {
     x = x * RATIO_X(mActiveFrameBuffer, mCurDimensions) -
         (mNativeDimensions.width * RATIO_X(mActiveFrameBuffer, mCurDimensions) - mCurDimensions.width) / 2;
     y *= RATIO_Y(mActiveFrameBuffer, mCurDimensions);
-    if (!mRendersToFb || (mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
+    if (!mRendersToFb || (!IsStereoEnabled() && mMsaaLevel > 1 && mCurDimensions.width == mGameWindowViewport.width &&
                           mCurDimensions.height == mGameWindowViewport.height)) {
         x += mGameWindowViewport.x;
         y += mGfxCurrentWindowDimensions.height - (mGameWindowViewport.y + mGameWindowViewport.height);
@@ -5385,9 +5564,123 @@ void Interpreter::SetMsaaLevel(uint32_t level) {
     mMsaaLevel = level;
 }
 
+void Interpreter::SetStereoMode(int32_t mode) {
+    if (mode < static_cast<int32_t>(StereoMode::Off) || mode > static_cast<int32_t>(StereoMode::FullTAB)) {
+        mStereoMode = StereoMode::Off;
+        return;
+    }
+
+    mStereoMode = static_cast<StereoMode>(mode);
+}
+
+void Interpreter::SetStereoSeparation(float separation) {
+    mStereoSeparation = std::max(0.0f, separation);
+}
+
+void Interpreter::SetStereoConvergence(float convergence) {
+    mStereoConvergence = std::max(0.0f, convergence);
+}
+
+void Interpreter::SetStereoUiDepth(float uiDepth) {
+    mStereoUiDepth = std::clamp(uiDepth, -50.0f, 50.0f);
+}
+
 void Interpreter::GetCurDimensions(uint32_t* width, uint32_t* height) {
     *width = mCurDimensions.width;
     *height = mCurDimensions.height;
+}
+
+void Interpreter::GetStereoEyeViewportDimensions(uint32_t* width, uint32_t* height) const {
+    *width = std::max<uint32_t>(mGameWindowViewport.width, 1);
+    *height = std::max<uint32_t>(mGameWindowViewport.height, 1);
+    if (mStereoMode == StereoMode::FullSBS) {
+        // The Full SBS swapchain contains both eyes, so one eye receives half of its width.
+        *width = std::max<uint32_t>(*width / 2, 1);
+    } else if (mStereoMode == StereoMode::FullTAB) {
+        // The Full TAB swapchain contains both eyes, so one eye receives half of its height.
+        *height = std::max<uint32_t>(*height / 2, 1);
+    }
+}
+
+float Interpreter::GetStereoPresentationAspectRatio() const {
+    const StereoLayout layout = GetStereoLayout();
+    if (IsHalfStereoMode()) {
+        return static_cast<float>(layout.eye_width) / static_cast<float>(layout.eye_height);
+    }
+    return static_cast<float>(layout.output_width) / static_cast<float>(layout.output_height);
+}
+
+bool Interpreter::IsStereoEnabled() const {
+    return mStereoMode != StereoMode::Off;
+}
+
+bool Interpreter::IsStereoPass() const {
+    return mStereoEye != StereoEye::Mono;
+}
+
+bool Interpreter::IsStereoSideBySide() const {
+    return mStereoMode == StereoMode::HalfSBS || mStereoMode == StereoMode::FullSBS;
+}
+
+bool Interpreter::IsHalfStereoMode() const {
+    return mStereoMode == StereoMode::HalfSBS || mStereoMode == StereoMode::HalfTAB;
+}
+
+bool Interpreter::ShouldSuppressFramebufferReadback() const {
+    return mStereoEye == StereoEye::Right;
+}
+
+void Interpreter::InvalidateReplayBindings() {
+    // Restoring RDP state does not restore the textures left bound by the first eye.
+    std::fill(std::begin(mRenderingState.mTextures), std::end(mRenderingState.mTextures), nullptr);
+    mRdp->textures_changed[0] = true;
+    mRdp->textures_changed[1] = true;
+}
+
+int Interpreter::GetFramebufferForCurrentEye(int fb) const {
+    if (mStereoEye != StereoEye::Right) {
+        return fb;
+    }
+
+    auto it = mFrameBuffers.find(fb);
+    return it != mFrameBuffers.end() && it->second.stereo_right_fb != 0 ? it->second.stereo_right_fb : fb;
+}
+
+float Interpreter::GetStereoUiOffset() const {
+    if (!IsStereoPass() || mFbActive) {
+        return 0.0f;
+    }
+
+    // Positive UI depth produces crossed disparity (closer to the viewer).
+    return static_cast<float>(static_cast<int8_t>(mStereoEye)) *
+           std::min(mStereoSeparation * 0.0016f, mStereoUiDepth * 0.001f);
+}
+
+float Interpreter::GetStereoBackgroundOffset() const {
+    return static_cast<float>(static_cast<int8_t>(mStereoEye)) * mStereoSeparation * STEREO_BACKGROUND_DEPTH_SCALE;
+}
+
+void Interpreter::ApplyStereoToClipCoordinates(float& x, float w) const {
+    if (!IsStereoPass()) {
+        return;
+    }
+
+    const float eyeSign = static_cast<float>(static_cast<int8_t>(mStereoEye));
+    const float eyeOffset = eyeSign * mStereoSeparation * 0.0015f;
+    if ((mRsp->extra_geometry_mode & G_EX_STEREO_HORIZON) != 0) {
+        // Stereo: indoor panoramas share the prerendered-background depth; outdoor sky stays at the horizon.
+        const float horizonOffset =
+            (mRsp->extra_geometry_mode & G_EX_STEREO_BACKGROUND) != 0 ? GetStereoBackgroundOffset() : eyeOffset;
+        x += horizonOffset * w;
+        return;
+    }
+
+    if (!mRsp->projection_is_perspective) {
+        x += GetStereoUiOffset() * w;
+        return;
+    }
+
+    x += eyeOffset * (w - mStereoConvergence * 1.8f);
 }
 
 } // namespace Fast

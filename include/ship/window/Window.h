@@ -143,6 +143,14 @@ class Window {
      * @param value Number of MSAA samples (e.g. 1, 2, 4, 8).
      */
     virtual void SetMsaaLevel(uint32_t value) = 0;
+    /** @brief Sets the stereoscopic output mode. */
+    virtual void SetStereoMode(int32_t mode) = 0;
+    /** @brief Sets the distance between the stereoscopic cameras. */
+    virtual void SetStereoSeparation(float separation) = 0;
+    /** @brief Sets the stereoscopic zero-disparity distance. */
+    virtual void SetStereoConvergence(float convergence) = 0;
+    /** @brief Sets the stereoscopic depth of orthographic UI elements. */
+    virtual void SetStereoUiDepth(float uiDepth) = 0;
     /**
      * @brief Switches between fullscreen and windowed mode.
      * @param isFullscreen true to enter fullscreen, false to return to windowed.
