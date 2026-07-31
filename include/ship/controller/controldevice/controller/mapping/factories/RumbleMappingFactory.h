@@ -46,8 +46,8 @@ class RumbleMappingFactory {
 
     /**
      * @brief Creates default SDL rumble mappings for a specific physical device type.
-     * @param physicalDeviceType The type of physical device (e.g., SDL2 gamepad, Nintendo controller).
-     * @param portIndex          The controller port index (0-based).
+     * @param physicalDeviceType SDL gamepad type.
+     * @param portIndex          Controller port index (0-based).
      * @param consoleVariable    ConsoleVariable for persisting mappings.
      * @param controlDeck        ControlDeck for physical device access.
      * @return Vector of rumble mappings suitable for the device type.

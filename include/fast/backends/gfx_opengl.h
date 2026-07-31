@@ -11,24 +11,24 @@ class ResourceManager;
 } // namespace Ship
 
 #ifdef _MSC_VER
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 // #define GL_GLEXT_PROTOTYPES 1
 #include <GL/glew.h>
 #elif FOR_WINDOWS
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
+#include <SDL3/SDL_opengl.h>
 #elif __APPLE__
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <GL/glew.h>
 #elif USE_OPENGLES
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <GLES3/gl3.h>
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengl.h>
+#include <SDL3/SDL_opengl.h>
 #endif
 namespace Fast {
 /**

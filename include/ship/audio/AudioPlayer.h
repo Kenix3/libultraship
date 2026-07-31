@@ -25,7 +25,7 @@ struct AudioSettings {
  * AudioPlayer owns the audio device lifecycle (DoInit / DoClose) and the optional
  * SoundMatrixDecoder that converts stereo input to 5.1 surround. Concrete
  * subclasses implement DoInit(), DoClose(), and DoPlay() for each supported platform
- * (SDL2, CoreAudio, WASAPI, or a null no-op).
+ * (SDL3, CoreAudio, WASAPI, or a null no-op).
  *
  * Obtain the active instance from Context::GetAudio() → Audio::GetAudioPlayer().
  */

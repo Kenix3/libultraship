@@ -204,8 +204,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
         )
 
-        if(TARGET SDL2)
-            set_target_properties(SDL2 PROPERTIES
+        if(TARGET SDL3-static)
+            set_target_properties(SDL3-static PROPERTIES
                 XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
                 XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
             )

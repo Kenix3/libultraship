@@ -20,17 +20,17 @@
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
+#include <SDL3/SDL_opengl.h>
 #elif __APPLE__
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "fast/backends/gfx_metal.h"
 #include "ship/utils/macUtils.h"
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengles2.h>
+#include <SDL3/SDL_opengles2.h>
 #endif
 
 #include "ship/window/gui/Gui.h"
@@ -39,7 +39,6 @@
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
-#include <SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -224,19 +223,34 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
         return;
     }
 
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
-    if (display_in_use < 0) {
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
+    if (display_in_use == 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
     }
 
     if (on) {
         // OTRTODO: Get mode from config.
-        SDL_DisplayMode mode;
-        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(mWnd, &mode);
-        } else {
+        const bool windowedFullscreen = mConsoleVariable->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) != 0;
+        SDL_DisplayMode fullscreenMode{};
+        const SDL_DisplayMode* mode = nullptr;
+
+        if (!windowedFullscreen) {
+            const SDL_DisplayMode* desktopMode = SDL_GetDesktopDisplayMode(display_in_use);
+            if (desktopMode == nullptr ||
+                !SDL_GetClosestFullscreenDisplayMode(display_in_use, desktopMode->w, desktopMode->h,
+                                                     desktopMode->refresh_rate, true, &fullscreenMode)) {
+                SPDLOG_ERROR("Failed to find an exclusive fullscreen mode.");
+                SPDLOG_ERROR(SDL_GetError());
+                return;
+            }
+            mode = &fullscreenMode;
+        }
+
+        if (!SDL_SetWindowFullscreenMode(mWnd, mode)) {
+            SPDLOG_ERROR("Failed to set the fullscreen display mode.");
             SPDLOG_ERROR(SDL_GetError());
+            return;
         }
     }
 
@@ -247,10 +261,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     }
     mFullScreen = on;
 #else
-    if (SDL_SetWindowFullscreen(mWnd, on ? (mConsoleVariable->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0)
-                                                ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                : SDL_WINDOW_FULLSCREEN)
-                                         : 0) >= 0) {
+    if (SDL_SetWindowFullscreen(mWnd, on)) {
         mFullScreen = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
@@ -263,7 +274,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
         mWindowHeight = mConfig->GetInt("Window.Height", 480);
         int32_t posX = mConfig->GetInt("Window.PositionX", 100);
         int32_t posY = mConfig->GetInt("Window.PositionY", 100);
-        if (display_in_use < 0) { // Fallback to default if out of bounds
+        if (display_in_use == 0) { // Fallback to default if out of bounds
             posX = 100;
             posY = 100;
         }
@@ -277,11 +288,10 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
 }
 
 void GfxWindowBackendSDL2::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
 
-    SDL_DisplayMode mode;
-    SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate != 0 ? mode.refresh_rate : 60;
+    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(display_in_use);
+    *refresh_rate = mode != nullptr && mode->refresh_rate > 0.0f ? static_cast<uint32_t>(mode->refresh_rate) : 60;
 }
 
 static uint64_t previous_time;
@@ -325,14 +335,12 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     mWindowWidth = width;
     mWindowHeight = height;
 
-#if SDL_VERSION_ATLEAST(2, 24, 0)
-    /* fix DPI scaling issues on Windows */
-    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
-#endif
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        SPDLOG_ERROR("SDL video initialization failed: {}", SDL_GetError());
+        return;
+    }
 
-    SDL_Init(SDL_INIT_VIDEO);
-
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    SDL_SetEventEnabled(SDL_EVENT_DROP_FILE, true);
 
 #if defined(__APPLE__)
     bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
@@ -377,9 +385,9 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
-    Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
+    Uint32 flags = SDL_WINDOW_BORDERLESS;
 #else
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #endif
 
     if (use_opengl) {
@@ -388,27 +396,37 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         flags = flags | SDL_WINDOW_METAL;
     }
 
-    mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
+    SDL_PropertiesID windowProperties = SDL_CreateProperties();
+    SDL_SetStringProperty(windowProperties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_X_NUMBER, posX);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_Y_NUMBER, posY);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, mWindowWidth);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, mWindowHeight);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags);
+    mWnd = SDL_CreateWindowWithProperties(windowProperties);
+    SDL_DestroyProperties(windowProperties);
+    if (mWnd == nullptr) {
+        SPDLOG_ERROR("Error creating SDL window: {}", SDL_GetError());
+        return;
+    }
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(mWnd, &wmInfo);
-    HWND hwnd = wmInfo.info.win.window;
+    HWND hwnd = static_cast<HWND>(
+        SDL_GetPointerProperty(SDL_GetWindowProperties(mWnd), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
     Fast::GuiWindowInitData window_impl;
 
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
-    if (display_in_use < 0) { // Fallback to default if out of bounds
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
+    if (display_in_use == 0) { // Fallback to default if out of bounds
         posX = 100;
         posY = 100;
     }
 
     if (use_opengl) {
-        SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+        SDL_GetWindowSizeInPixels(mWnd, &mWindowWidth, &mWindowHeight);
 
         if (startFullScreen) {
             SetFullscreenImpl(true, false);
@@ -421,21 +439,18 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
 
         window_impl.Opengl = { mWnd, mCtx };
     } else {
-        uint32_t flags = SDL_RENDERER_ACCELERATED;
-        if (mVsyncEnabled) {
-            flags |= SDL_RENDERER_PRESENTVSYNC;
-        }
-        mRenderer = SDL_CreateRenderer(mWnd, -1, flags);
+        mRenderer = SDL_CreateRenderer(mWnd, nullptr);
         if (mRenderer == nullptr) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
         }
+        SDL_SetRenderVSync(mRenderer, mVsyncEnabled ? 1 : 0);
 
         if (startFullScreen) {
             SetFullscreenImpl(true, false);
         }
 
-        SDL_GetRendererOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
+        SDL_GetCurrentRenderOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
         window_impl.Metal = { mWnd, mRenderer };
     }
 
@@ -467,22 +482,30 @@ void GfxWindowBackendSDL2::SetFullscreen(bool enable) {
 
 void GfxWindowBackendSDL2::SetCursorVisibility(bool visible) {
     if (visible) {
-        SDL_ShowCursor(SDL_ENABLE);
+        SDL_ShowCursor();
     } else {
-        SDL_ShowCursor(SDL_DISABLE);
+        SDL_HideCursor();
     }
 }
 
 void GfxWindowBackendSDL2::SetMousePos(int32_t x, int32_t y) {
-    SDL_WarpMouseInWindow(mWnd, x, y);
+    SDL_WarpMouseInWindow(mWnd, static_cast<float>(x), static_cast<float>(y));
 }
 
 void GfxWindowBackendSDL2::GetMousePos(int32_t* x, int32_t* y) {
-    SDL_GetMouseState(x, y);
+    float mouseX = 0.0f;
+    float mouseY = 0.0f;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    *x = static_cast<int32_t>(mouseX);
+    *y = static_cast<int32_t>(mouseY);
 }
 
 void GfxWindowBackendSDL2::GetMouseDelta(int32_t* x, int32_t* y) {
-    SDL_GetRelativeMouseState(x, y);
+    float deltaX = 0.0f;
+    float deltaY = 0.0f;
+    SDL_GetRelativeMouseState(&deltaX, &deltaY);
+    *x = static_cast<int32_t>(deltaX);
+    *y = static_cast<int32_t>(deltaY);
 }
 
 void GfxWindowBackendSDL2::GetMouseWheel(float* x, float* y) {
@@ -497,21 +520,11 @@ bool GfxWindowBackendSDL2::GetMouseState(uint32_t btn) {
 }
 
 void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
-    SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
-    // TODO: Manually setting a clipping rect here because
-    // https://wiki.libsdl.org/SDL2/SDL_HINT_MOUSE_RELATIVE_MODE_CENTER isn't working as epxected.
-    // Revisit on SDL3
-    auto mouse = SDL_GetWindowMouseRect(mWnd);
-    if (capture) {
-        int w, h;
-        SDL_GetWindowSize(mWnd, &w, &h);
-        mCursorClip = { (w / 2) - 1, (h / 2) - 1, 2, 2 };
-    }
-    SDL_SetWindowMouseRect(mWnd, capture ? &mCursorClip : NULL);
+    SDL_SetWindowRelativeMouseMode(mWnd, capture);
 }
 
 bool GfxWindowBackendSDL2::IsMouseCaptured() {
-    return (SDL_GetRelativeMouseMode() == SDL_TRUE);
+    return SDL_GetWindowRelativeMouseMode(mWnd);
 }
 
 void GfxWindowBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
@@ -530,7 +543,7 @@ void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int3
 #ifdef __APPLE__
     SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #else
-    SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowSizeInPixels(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #endif
     SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
@@ -545,14 +558,14 @@ void GfxWindowBackendSDL2::SetDimensions(uint32_t width, uint32_t height, int32_
 }
 
 Ship::WindowRect GfxWindowBackendSDL2::GetPrimaryMonitorRect() {
-    SDL_DisplayMode mode;
-    int display_in_use = mWnd ? SDL_GetWindowDisplayIndex(mWnd) : 0;
-    if (display_in_use < 0) {
+    SDL_DisplayID display_in_use = mWnd ? SDL_GetDisplayForWindow(mWnd) : SDL_GetPrimaryDisplay();
+    if (display_in_use == 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
-        display_in_use = 0;
+        display_in_use = SDL_GetPrimaryDisplay();
     }
-    if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-        return { 0, 0, mode.w, mode.h };
+    const SDL_DisplayMode* mode = SDL_GetDesktopDisplayMode(display_in_use);
+    if (mode != nullptr) {
+        return { 0, 0, mode->w, mode->h };
     }
     SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
     return { 0, 0, 0, 0 };
@@ -615,45 +628,41 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
-        case SDL_KEYDOWN:
-            OnKeydown(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_DOWN:
+            OnKeydown(event.key.scancode);
             break;
-        case SDL_KEYUP:
-            OnKeyup(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_UP:
+            OnKeyup(event.key.scancode);
             break;
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
             OnMouseButtonDown(event.button.button - 1);
             break;
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
             OnMouseButtonUp(event.button.button - 1);
             break;
-        case SDL_MOUSEWHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
             mMouseWheelX = event.wheel.x;
             mMouseWheelY = event.wheel.y;
             break;
 #endif
-        case SDL_WINDOWEVENT:
-            switch (event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 #ifdef __APPLE__
-                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
+            SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
 #else
-                    SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+            SDL_GetWindowSizeInPixels(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
-                    break;
-                case SDL_WINDOWEVENT_CLOSE:
-                    if (event.window.windowID == SDL_GetWindowID(mWnd)) {
-                        // We listen specifically for main window close because closing main window
-                        // on macOS does not trigger SDL_Quit.
-                        Close();
-                    }
-                    break;
+            break;
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            if (event.window.windowID == SDL_GetWindowID(mWnd)) {
+                // We listen specifically for main window close because closing main window
+                // on macOS does not trigger SDL_Quit.
+                Close();
             }
             break;
-        case SDL_DROPFILE:
-            mFileDrop->SetDroppedFile(event.drop.file);
+        case SDL_EVENT_DROP_FILE:
+            mFileDrop->SetDroppedFile(event.drop.data);
             break;
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             Close();
             break;
     }
@@ -662,10 +671,10 @@ void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
 void GfxWindowBackendSDL2::HandleEvents() {
     SDL_Event event;
     SDL_PumpEvents();
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_GAMEPAD_ADDED - 1) > 0) {
         HandleSingleEvent(event);
     }
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED + 1, SDL_EVENT_LAST) > 0) {
         HandleSingleEvent(event);
     }
 
@@ -739,7 +748,7 @@ void GfxWindowBackendSDL2::SwapBuffersBegin() {
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
-        SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+        SDL_SetRenderVSync(mRenderer, mVsyncEnabled ? 1 : 0);
     }
 
     SyncFramerateWithTime();
@@ -778,10 +787,18 @@ bool GfxWindowBackendSDL2::IsRunning() {
 }
 
 void GfxWindowBackendSDL2::Destroy() {
-    // TODO: destroy _any_ resources used by SDL
-    SDL_GL_DeleteContext(mCtx);
-    SDL_DestroyWindow(mWnd);
-    SDL_DestroyRenderer(mRenderer);
+    if (mCtx != nullptr) {
+        SDL_GL_DestroyContext(mCtx);
+        mCtx = nullptr;
+    }
+    if (mRenderer != nullptr) {
+        SDL_DestroyRenderer(mRenderer);
+        mRenderer = nullptr;
+    }
+    if (mWnd != nullptr) {
+        SDL_DestroyWindow(mWnd);
+        mWnd = nullptr;
+    }
     SDL_Quit();
 }
 

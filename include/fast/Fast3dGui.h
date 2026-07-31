@@ -1,5 +1,5 @@
 #pragma once
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "ship/window/gui/Gui.h"
 #include "fast/WindowEvent.h"
 #include "fast/resource/type/Texture.h"

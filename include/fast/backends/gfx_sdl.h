@@ -13,7 +13,7 @@ namespace Fast {
 class Fast3dGui;
 
 /**
- * @brief SDL2 implementation of the Fast3D window/input backend.
+ * @brief SDL implementation of the Fast3D window/input backend.
  *
  * Handles window creation, input polling, fullscreen transitions, framerate
  * pacing, and callback forwarding to the renderer/runtime.
@@ -74,10 +74,10 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void OnMouseButtonUp(int btn) const;
     void SyncFramerateWithTime() const;
 
-    SDL_Window* mWnd;
+    SDL_Window* mWnd = nullptr;
     SDL_Rect mCursorClip;
-    SDL_GLContext mCtx;
-    SDL_Renderer* mRenderer;
+    SDL_GLContext mCtx = nullptr;
+    SDL_Renderer* mRenderer = nullptr;
     int mSdlToLusTable[512];
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
