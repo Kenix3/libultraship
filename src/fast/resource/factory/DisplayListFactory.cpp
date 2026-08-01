@@ -492,7 +492,7 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
 
             if (fName[0] == '>' && fName[1] == '0' && (fName[2] == 'x' || fName[2] == 'X')) {
                 uint32_t seg = std::stoul(fName.substr(1), nullptr, 16);
-                g = {gsSPVertex(seg | 1, child->IntAttribute("Count"), child->IntAttribute("VertexOffset"))};
+                g = { gsSPVertex(seg | 1, child->IntAttribute("Count"), child->IntAttribute("VertexOffset")) };
             } else {
                 char* str = (char*)malloc(fName.size() + 1);
                 dl->Strings.push_back(str);
