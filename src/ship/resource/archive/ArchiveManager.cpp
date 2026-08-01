@@ -68,6 +68,14 @@ std::shared_ptr<Archive> ArchiveManager::GetArchiveFromFile(const std::string& f
     return mFileToArchive[CRC64(filePath.c_str())];
 }
 
+int32_t ArchiveManager::GetFilePriority(const std::string& filePath) {
+    auto it = mFileToArchive.find(CRC64(filePath.c_str()));
+    if (it == mFileToArchive.end() || it->second == nullptr) {
+        return -1;
+    }
+    return it->second->GetPriority();
+}
+
 std::shared_ptr<std::vector<std::string>> ArchiveManager::ListFiles(const std::string& searchMask) {
     std::list<std::string> includes = {};
     if (!searchMask.empty()) {
@@ -275,6 +283,8 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     SPDLOG_INFO("Adding Archive {} to Archive Manager", archive->GetPath());
 
     mArchives.push_back(archive);
+    // Index in mArchives is the load-order priority (last added = highest, wins conflicts).
+    archive->SetPriority(static_cast<int32_t>(mArchives.size() - 1));
     if (archive->HasGameVersion()) {
         mGameVersions.push_back(archive->GetGameVersion());
     }

@@ -149,9 +149,11 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         }
     }
 
-    // Get the file from the OTR
+    // Get the file from the OTR. It may be null when the resource exists only as a `.meta`
+    // alias (no real file at this path); fall through so the loader can resolve the alias,
+    // but only when a `.meta` for this path actually exists.
     auto file = LoadFileProcess(identifier.Path);
-    if (file == nullptr) {
+    if (file == nullptr && !mArchiveManager->HasFile(identifier.Path + ".meta")) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;
@@ -391,6 +393,12 @@ void ResourceManager::UnloadResourcesProcess(const ResourceFilter& filter) {
 
     for (const auto& key : *list.get()) {
         UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
+
+        // A `.meta` alias resource is cached under its base path, which is not itself a listed
+        // file. Evict it too so it can't survive stale after its target/dependencies are unloaded.
+        if (key.ends_with(".meta")) {
+            UnloadResource({ key.substr(0, key.size() - 5), mDefaultCacheOwner, mDefaultCacheArchive });
+        }
     }
 }
 

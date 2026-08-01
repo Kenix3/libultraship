@@ -178,28 +178,72 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
     initData->Type =
         Context::GetRawInstance()->GetResourceManager()->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
+    initData->IsCustom = parsed.value("isCustom", false);
 
     return initData;
 }
 
-std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
-                                                        std::shared_ptr<ResourceInitData> initData) {
-    if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File not loaded");
+// Position File::BufferOffset at the resource body. A currently-headed binary resource keeps an OTR
+// header ahead of its body; when init data was supplied externally (a caller or a `.meta`) rather
+// than parsed from that header, skip past it. Headerless buffers (a shader, or any asset once
+// Kenix3/libultraship#1160 removes the header) have no valid byte order / matching type and are left
+// at offset 0. Remove this and its call sites along with the header under #1160.
+static void SetBufferOffset(const std::shared_ptr<File>& file, const std::shared_ptr<ResourceInitData>& initData) {
+    if (file == nullptr || initData->Format != RESOURCE_FORMAT_BINARY || file->Buffer->size() < OTR_HEADER_SIZE) {
+        return;
+    }
+    auto reader = std::make_shared<BinaryReader>(std::make_shared<MemoryStream>(file->Buffer));
+    auto byteOrder = (Endianness)reader->ReadInt8();
+    if (byteOrder != Endianness::Little && byteOrder != Endianness::Big) {
+        return;
+    }
+    reader->SetEndianness(byteOrder);
+    reader->ReadInt8(); // isCustom
+    reader->ReadInt8(); // reserved
+    reader->ReadInt8(); // reserved
+    if (reader->ReadUInt32() == initData->Type) {
+        file->BufferOffset = OTR_HEADER_SIZE;
+    }
+}
+
+std::shared_ptr<ResourceInitData> ResourceLoader::ResolveMetaAlias(const std::string& filePath,
+                                                                   std::shared_ptr<File>& fileToLoad) {
+    auto resourceManager = Context::GetRawInstance()->GetResourceManager();
+    auto metaFileToLoad = resourceManager->LoadFileProcess(filePath + ".meta");
+    if (metaFileToLoad == nullptr) {
         return nullptr;
     }
 
-    if (initData == nullptr) {
-        auto metaFilePath = filePath + ".meta";
-        auto metaFileToLoad = Context::GetRawInstance()->GetResourceManager()->LoadFileProcess(metaFilePath);
+    auto metaInitData = ReadResourceInitData(filePath, metaFileToLoad);
+    auto aliasedFileToLoad = resourceManager->LoadFileProcess(metaInitData->Path);
+    if (aliasedFileToLoad == nullptr) {
+        return nullptr;
+    }
 
-        if (metaFileToLoad != nullptr) {
-            auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-            fileToLoad = Context::GetRawInstance()->GetResourceManager()->LoadFileProcess(initDataFromMetaFile->Path);
-            initData = initDataFromMetaFile;
-        } else {
-            initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-        }
+    // The alias wins only if its target lives in an equal-or-higher priority archive than the
+    // real asset at filePath (ties go to the alias; a missing real asset reports priority -1).
+    auto archiveManager = resourceManager->GetArchiveManager();
+    int32_t realPriority = archiveManager->GetFilePriority(filePath);
+    int32_t aliasPriority = archiveManager->GetFilePriority(metaInitData->Path);
+    if (aliasPriority < realPriority) {
+        return nullptr;
+    }
+
+    fileToLoad = aliasedFileToLoad;
+    return metaInitData;
+}
+
+std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
+                                                        std::shared_ptr<ResourceInitData> initData) {
+    // fileToLoad is the highest-priority real asset at filePath, or null when the resource
+    // exists only as a `.meta` alias. Prefer a winning alias, else read the real asset's header.
+    bool legacyInitData = false;
+    if (initData == nullptr) {
+        initData = ResolveMetaAlias(filePath, fileToLoad);
+    }
+    if (initData == nullptr && fileToLoad != nullptr) {
+        initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
+        legacyInitData = true;
     }
 
     if (fileToLoad == nullptr) {
@@ -209,6 +253,9 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(std::string filePath, st
 
     switch (initData->Format) {
         case RESOURCE_FORMAT_BINARY:
+            if (!legacyInitData) {
+                SetBufferOffset(fileToLoad, initData);
+            }
             fileToLoad->Reader = CreateBinaryReader(fileToLoad, initData);
             break;
         case RESOURCE_FORMAT_XML:
