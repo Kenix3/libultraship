@@ -18,6 +18,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 | [Fast3D Renderer](fast-renderer) | Overview of the Fast3D display-list renderer. |
 | [Contributing](contributing) | How to contribute code, formatting guidelines, and CI troubleshooting. |
 | [Code of Conduct](code-of-conduct) | Community standards for contributors. |
+| [Versioning](versioning) | Epoch semantic versioning policy and epoch maintenance strategy. |
 | [API Reference](api/) | Doxygen-generated documentation for all public classes and functions. |
 
 ## Contributing
@@ -27,7 +28,11 @@ Please see the [Contributing](contributing) page for more information.
 
 ## Versioning
 
-We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
+We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
+
+When LUS goes through major refactors, `main` may be unstable while work progresses in a new epoch. The previous epoch then enters maintenance mode so fixes and selected features can continue to land there until the new epoch stabilizes.
+
+See [Versioning](versioning) for details.
 
 ## Building
 
