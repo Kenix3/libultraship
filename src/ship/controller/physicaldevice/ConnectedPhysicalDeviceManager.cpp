@@ -73,7 +73,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
     for (auto gamepadIt = mConnectedSDLGamepads.begin(); gamepadIt != mConnectedSDLGamepads.end();) {
         const SDL_JoystickID instanceId = gamepadIt->first;
-        if (connectedInstanceIds.contains(instanceId) && SDL_IsGamepad(instanceId)) {
+        if (connectedInstanceIds.contains(instanceId)) {
             ++gamepadIt;
             continue;
         }
@@ -85,6 +85,10 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
 
     for (int32_t i = 0; i < joystickCount; i++) {
         const SDL_JoystickID instanceId = joysticks[i];
+
+        if (mConnectedSDLGamepads.contains(instanceId)) {
+            continue;
+        }
 
         SDL_GUID deviceGUID = SDL_GetJoystickGUIDForID(instanceId);
         if (SDL_memcmp(&deviceGUID, &sZeroGuid, sizeof(deviceGUID)) == 0) {
@@ -104,17 +108,10 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             continue;
         }
 
-        SDL_Gamepad* gamepad = nullptr;
-        const auto existingGamepad = mConnectedSDLGamepads.find(instanceId);
-        if (existingGamepad != mConnectedSDLGamepads.end()) {
-            gamepad = existingGamepad->second;
-        } else {
-            gamepad = SDL_OpenGamepad(instanceId);
-            if (gamepad == nullptr) {
-                SPDLOG_ERROR("SDL_OpenGamepad error (GUID: {}): {}", deviceGuidCStr, SDL_GetError());
-                continue;
-            }
-            mConnectedSDLGamepads[instanceId] = gamepad;
+        auto gamepad = SDL_OpenGamepad(instanceId);
+        if (gamepad == nullptr) {
+            SPDLOG_ERROR("SDL_OpenGamepad error (GUID: {}): {}", deviceGuidCStr, SDL_GetError());
+            continue;
         }
 
         std::string gamepadName;
@@ -126,6 +123,7 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             gamepadName = name;
         }
 
+        mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = gamepadName;
 
         for (uint8_t port = 1; port < 4; port++) {

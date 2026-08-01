@@ -18,14 +18,14 @@ class Fast3dGui;
  * Handles window creation, input polling, fullscreen transitions, framerate
  * pacing, and callback forwarding to the renderer/runtime.
  */
-class GfxWindowBackendSDL2 final : public GfxWindowBackend {
+class GfxWindowBackendSDL final : public GfxWindowBackend {
   public:
     /** @brief Constructs the backend with optional shared engine dependencies. */
-    GfxWindowBackendSDL2(std::shared_ptr<Ship::Config> config = nullptr,
-                         std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
-                         std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
-                         std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
-    ~GfxWindowBackendSDL2() override;
+    GfxWindowBackendSDL(std::shared_ptr<Ship::Config> config = nullptr,
+                        std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
+                        std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                        std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
+    ~GfxWindowBackendSDL() override;
 
     /** @name GfxWindowBackend implementation */
     /** @{ */

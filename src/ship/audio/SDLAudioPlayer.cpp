@@ -41,6 +41,8 @@ bool SDLAudioPlayer::DoInit() {
 }
 
 int SDLAudioPlayer::Buffered() {
+    // SDL_GetAudioStreamQueued is the SDL3 replacement for the producer-side queue size used by SDL2.
+    // SDL_GetAudioStreamAvailable reports converted data for callers that read from the stream instead.
     return mStream == nullptr ? 0 : SDL_GetAudioStreamQueued(mStream) / (sizeof(int16_t) * mNumChannels);
 }
 

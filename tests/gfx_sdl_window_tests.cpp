@@ -22,11 +22,10 @@ class GfxWindowBackendSDLTest : public testing::Test {
     }
 };
 
-TEST_F(GfxWindowBackendSDLTest, HandleEventsLeavesGamepadLifecycleEventsQueued) {
+TEST_F(GfxWindowBackendSDLTest, HandleEventsLeavesGamepadAddRemoveEventsQueued) {
     constexpr SDL_EventType lifecycleEvents[] = {
         SDL_EVENT_GAMEPAD_ADDED,
         SDL_EVENT_GAMEPAD_REMOVED,
-        SDL_EVENT_GAMEPAD_REMAPPED,
     };
 
     for (const SDL_EventType type : lifecycleEvents) {
@@ -35,7 +34,7 @@ TEST_F(GfxWindowBackendSDLTest, HandleEventsLeavesGamepadLifecycleEventsQueued) 
         ASSERT_TRUE(SDL_PushEvent(&event));
     }
 
-    GfxWindowBackendSDL2 backend;
+    GfxWindowBackendSDL backend;
     backend.HandleEvents();
 
     for (const SDL_EventType type : lifecycleEvents) {

@@ -37,6 +37,10 @@ std::vector<std::shared_ptr<ControllerRumbleMapping>>
 RumbleMappingFactory::CreateDefaultSDLRumbleMappings(PhysicalDeviceType physicalDeviceType, uint8_t portIndex,
                                                      std::shared_ptr<ConsoleVariable> consoleVariable,
                                                      std::shared_ptr<ControlDeck> controlDeck) {
+    if (physicalDeviceType != PhysicalDeviceType::SDLGamepad) {
+        return {};
+    }
+
     std::vector<std::shared_ptr<ControllerRumbleMapping>> mappings = { std::make_shared<SDLRumbleMapping>(
         portIndex, DEFAULT_LOW_FREQUENCY_RUMBLE_PERCENTAGE, DEFAULT_HIGH_FREQUENCY_RUMBLE_PERCENTAGE, controlDeck,
         consoleVariable) };
