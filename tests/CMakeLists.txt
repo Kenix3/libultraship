@@ -33,6 +33,7 @@ add_executable(libultraship_tests
     path_diskfile_tests.cpp
     resource_type_tests.cpp
     archive_self_tests.cpp
+    connected_physical_device_manager_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <stdio.h>
 
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
@@ -291,7 +292,8 @@ void GfxWindowBackendSDL2::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
     SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
 
     const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(display_in_use);
-    *refresh_rate = mode != nullptr && mode->refresh_rate > 0.0f ? static_cast<uint32_t>(mode->refresh_rate) : 60;
+    *refresh_rate =
+        mode != nullptr && mode->refresh_rate > 0.0f ? static_cast<uint32_t>(std::round(mode->refresh_rate)) : 60;
 }
 
 static uint64_t previous_time;

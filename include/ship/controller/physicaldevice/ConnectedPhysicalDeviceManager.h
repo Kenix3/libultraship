@@ -77,7 +77,7 @@ class ConnectedPhysicalDeviceManager {
      */
     void HandlePhysicalDeviceDisconnect(int32_t instanceId);
 
-    /** @brief Re-scans all connected SDL gamepads and rebuilds the internal maps. */
+    /** @brief Re-scans SDL gamepads, preserving handles for devices that remain connected. */
     void RefreshConnectedSDLGamepads();
 
   private:

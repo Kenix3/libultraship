@@ -57,11 +57,10 @@ void ConnectedPhysicalDeviceManager::CloseConnectedSDLGamepads() {
         }
     }
     mConnectedSDLGamepads.clear();
+    mConnectedSDLGamepadNames.clear();
 }
 
 void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
-    CloseConnectedSDLGamepads();
-    mConnectedSDLGamepadNames.clear();
     static SDL_GUID sZeroGuid;
 
     int32_t joystickCount = 0;
@@ -70,8 +69,26 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         return;
     }
 
+    std::unordered_set<SDL_JoystickID> connectedInstanceIds(joysticks, joysticks + joystickCount);
+
+    for (auto gamepadIt = mConnectedSDLGamepads.begin(); gamepadIt != mConnectedSDLGamepads.end();) {
+        const SDL_JoystickID instanceId = gamepadIt->first;
+        if (connectedInstanceIds.contains(instanceId)) {
+            ++gamepadIt;
+            continue;
+        }
+
+        SDL_CloseGamepad(gamepadIt->second);
+        gamepadIt = mConnectedSDLGamepads.erase(gamepadIt);
+        mConnectedSDLGamepadNames.erase(instanceId);
+    }
+
     for (int32_t i = 0; i < joystickCount; i++) {
         const SDL_JoystickID instanceId = joysticks[i];
+
+        if (mConnectedSDLGamepads.contains(instanceId)) {
+            continue;
+        }
 
         SDL_GUID deviceGUID = SDL_GetJoystickGUIDForID(instanceId);
         if (SDL_memcmp(&deviceGUID, &sZeroGuid, sizeof(deviceGUID)) == 0) {
@@ -97,13 +114,6 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             continue;
         }
 
-        const SDL_JoystickID openedInstanceId = SDL_GetJoystickID(SDL_GetGamepadJoystick(gamepad));
-        if (openedInstanceId == 0) {
-            SPDLOG_ERROR("SDL_GetJoystickID error (GUID: {}): {}", deviceGuidCStr, SDL_GetError());
-            SDL_CloseGamepad(gamepad);
-            continue;
-        }
-
         std::string gamepadName;
         auto name = SDL_GetGamepadName(gamepad);
         if (name == nullptr) {
@@ -113,11 +123,11 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
             gamepadName = name;
         }
 
-        mConnectedSDLGamepads[openedInstanceId] = gamepad;
-        mConnectedSDLGamepadNames[openedInstanceId] = gamepadName;
+        mConnectedSDLGamepads[instanceId] = gamepad;
+        mConnectedSDLGamepadNames[instanceId] = gamepadName;
 
         for (uint8_t port = 1; port < 4; port++) {
-            mIgnoredInstanceIds[port].insert(openedInstanceId);
+            mIgnoredInstanceIds[port].insert(instanceId);
         }
     }
 
