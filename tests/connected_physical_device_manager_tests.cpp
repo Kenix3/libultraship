@@ -61,6 +61,22 @@ TEST_F(ConnectedPhysicalDeviceManagerTest, RefreshPreservesHandleAndUpdatesNameF
     EXPECT_EQ(manager.GetConnectedSDLGamepadNames().at(mInstanceId), "Remapped LUS virtual gamepad");
 }
 
+TEST_F(ConnectedPhysicalDeviceManagerTest, RefreshClosesHandleWhenGamepadMappingIsRemoved) {
+    ConnectedPhysicalDeviceManager manager;
+
+    manager.RefreshConnectedSDLGamepads();
+    ASSERT_TRUE(manager.GetConnectedSDLGamepadsForPort(0).contains(mInstanceId));
+    ASSERT_NE(SDL_GetGamepadFromID(mInstanceId), nullptr);
+
+    ASSERT_TRUE(SDL_ReloadGamepadMappings()) << SDL_GetError();
+    ASSERT_FALSE(SDL_IsGamepad(mInstanceId));
+    manager.RefreshConnectedSDLGamepads();
+
+    EXPECT_FALSE(manager.GetConnectedSDLGamepadsForPort(0).contains(mInstanceId));
+    EXPECT_FALSE(manager.GetConnectedSDLGamepadNames().contains(mInstanceId));
+    EXPECT_EQ(SDL_GetGamepadFromID(mInstanceId), nullptr);
+}
+
 TEST_F(ConnectedPhysicalDeviceManagerTest, RefreshClosesHandleWhenJoystickIsDetached) {
     ConnectedPhysicalDeviceManager manager;
 
