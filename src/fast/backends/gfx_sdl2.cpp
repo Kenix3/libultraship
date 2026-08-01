@@ -676,7 +676,7 @@ void GfxWindowBackendSDL2::HandleEvents() {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_GAMEPAD_ADDED - 1) > 0) {
         HandleSingleEvent(event);
     }
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED + 1, SDL_EVENT_LAST) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMAPPED + 1, SDL_EVENT_LAST) > 0) {
         HandleSingleEvent(event);
     }
 

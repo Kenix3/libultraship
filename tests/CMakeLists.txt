@@ -34,6 +34,7 @@ add_executable(libultraship_tests
     resource_type_tests.cpp
     archive_self_tests.cpp
     connected_physical_device_manager_tests.cpp
+    gfx_sdl_window_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)
