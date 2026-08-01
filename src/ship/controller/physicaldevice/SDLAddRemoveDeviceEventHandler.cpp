@@ -40,8 +40,15 @@ void SDLAddRemoveDeviceEventHandler::UpdateElement() {
         }
     }
 
-    // The connected controller set changed, so re-point the ImGui gamepad
-    // backend at it (keeps menu navigation working across hotplug).
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMAPPED, SDL_EVENT_GAMEPAD_REMAPPED) > 0) {
+        if (mControlDeck) {
+            mControlDeck->GetConnectedPhysicalDeviceManager()->RefreshConnectedSDLGamepads();
+            changed = true;
+        }
+    }
+
+    // The connected controller set or mapping changed, so re-point the ImGui
+    // gamepad backend at it (keeps menu navigation working across hotplug).
     if (changed) {
         auto window = GetWindow();
         if (window != nullptr && window->GetGui() != nullptr) {
