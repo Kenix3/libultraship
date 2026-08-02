@@ -81,6 +81,12 @@ class Fast3dGui : public Ship::Gui {
     void HandleWindowEvents(Fast::WindowEvent event);
 
     /**
+     * @brief Returns true if a texture with the given name is already cached.
+     * @param name Texture cache key.
+     */
+    bool HasTextureByName(const std::string& name);
+
+    /**
      * @brief Loads an image from an archive path and caches it under the given name.
      * @param name Path/texture name used to reference the texture in GetTextureByName().
      * @param path Virtual resource path of the source image.
@@ -90,12 +96,6 @@ class Fast3dGui : public Ship::Gui {
                         const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     /**
-     * @brief Returns true if a texture with the given name is already cached.
-     * @param name Texture cache key.
-     */
-    bool HasTextureByName(const std::string& name);
-
-    /**
      * @brief Uploads a Fast::Texture object to the GPU and caches it under @p name.
      * @param name Texture cache key.
      * @param tex  Source texture data.
@@ -103,6 +103,13 @@ class Fast3dGui : public Ship::Gui {
      */
     void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const std::string& palettePath = "",
                         const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+    /**
+     * @brief Downloads the palette currently in the rdp.
+     * @param name Path/texture name used to reference the texture in GetTextureByName().
+     * @return A copy of the palette in the rdp
+     */
+    std::vector<uint8_t> GetRdpTexturePalette();
 
     /**
      * @brief Removes the texture with the given name from the cache and frees GPU resources.
