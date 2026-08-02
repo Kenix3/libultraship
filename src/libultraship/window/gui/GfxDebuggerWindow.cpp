@@ -670,20 +670,10 @@ void GfxDebuggerWindow::DrawDisas() {
             ImGui::Text("Loaded Textures");
             for (size_t i = 0; i < 2; i++) {
                 auto& tex = mInterpreter.lock()->mRdp->loaded_texture[i];
-                // ImGui::Text("%s", fmt::format("{}: {}x{} type={}", i, tex.raw_tex_metadata.width,
-                //                               tex.raw_tex_metadata.height, getTexType(tex.raw_tex_metadata.type))
-                //                       .c_str());
                 draw_img(std::to_string(i), fmt::format("GfxDebuggerWindowLoadedTexture{}", i), tex.raw_tex_metadata);
-            }
-            ImGui::Text("Texture To Load");
-            {
-                auto& tex = mInterpreter.lock()->mRdp->texture_to_load;
-                draw_img(std::nullopt, TO_LOAD_TEX, tex.raw_tex_metadata);
                 // Draw the palette for CI8 textures
                 if (tex.raw_tex_metadata.type == Fast::TextureType::Palette8bpp) {
-                    auto str = fmt::format("GfxDbgWindowLoadedPaletteTexture{}", i);
-                    gui->UnloadTexture(str);
-                    std::vector<uint8_t> paletteData = gui->GetRdpTexturePalette(str);
+                    std::vector<uint8_t> paletteData = gui->GetRdpTexturePalette();
                     if (paletteData.empty()) {
                         return;
                     }
@@ -695,9 +685,10 @@ void GfxDebuggerWindow::DrawDisas() {
 
                     constexpr float cell = 8.0f; // 8 * 16 = 128x128 texture
 
-                    // Scale the texture to 128x128
-                    // This method was used to prevent pixel blurring.
-                    // ImGui::Image() method blurred the texture
+                    /**
+                     * Scale the texture to 128x128 so it is easier to see.
+                     * This method prevents the pixel blurring that ImGui::Image() does.
+                     */
                     for (int y = 0; y < 16; y++) {
                         for (int x = 0; x < 16; x++) {
                             const uint8_t* c = &paletteData[(y * 16 + x) * 4];
@@ -712,6 +703,11 @@ void GfxDebuggerWindow::DrawDisas() {
 
                     ImGui::Dummy(ImVec2(16 * cell, 16 * cell));
                 }
+            }
+            ImGui::Text("Texture To Load");
+            {
+                auto& tex = mInterpreter.lock()->mRdp->texture_to_load;
+                draw_img(std::nullopt, TO_LOAD_TEX, tex.raw_tex_metadata);
             }
             ImGui::EndChild();
         }
