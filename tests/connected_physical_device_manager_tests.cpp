@@ -54,6 +54,7 @@ TEST_F(ConnectedPhysicalDeviceManagerTest, RefreshPreservesHandleForConnectedGam
     mInstanceId = 0;
     manager.RefreshConnectedSDLGamepads();
     EXPECT_FALSE(manager.GetConnectedSDLGamepadsForPort(0).contains(detachedInstanceId));
+    EXPECT_EQ(SDL_GetGamepadFromID(detachedInstanceId), nullptr);
 }
 
 } // namespace

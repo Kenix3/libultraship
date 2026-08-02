@@ -10,9 +10,11 @@ namespace Fast {
 /**
  * @brief Platform-agnostic wrapper around a window system event.
  *
- * Constructed by the Fast3D backends (gfx_sdl, gfx_dxgi) and passed to
- * Fast3dGui::HandleWindowEvents() so that the
- * ImGui backend can process input events without the ship layer depending on any Fast3D or platform-specific type.
+ * Constructed by the Fast3D backends (gfx_sdl,
+ * gfx_dxgi) and passed to
+ * Fast3dGui::HandleWindowEvents() so that the ImGui backend can process input
+ * events
+ * without the ship layer depending on any Fast3D or platform-specific type.
  */
 typedef union {
     struct {

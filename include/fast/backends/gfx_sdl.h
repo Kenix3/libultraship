@@ -75,6 +75,7 @@ class GfxWindowBackendSDL final : public GfxWindowBackend {
     void SyncFramerateWithTime() const;
 
     SDL_Window* mWnd = nullptr;
+    SDL_Rect mCursorClip{};
     SDL_GLContext mCtx = nullptr;
     SDL_Renderer* mRenderer = nullptr;
     int mSdlToLusTable[512];

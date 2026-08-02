@@ -520,6 +520,18 @@ bool GfxWindowBackendSDL::GetMouseState(uint32_t btn) {
 
 void GfxWindowBackendSDL::SetMouseCapture(bool capture) {
     SDL_SetWindowRelativeMouseMode(mWnd, capture);
+    // Keep the cursor fixed while captured. Relative mode alone constrains it to
+    // the window, but does not preserve the centering behavior expected here.
+    const SDL_Rect* cursorClip = nullptr;
+    if (capture) {
+        int width = 0;
+        int height = 0;
+        if (SDL_GetWindowSize(mWnd, &width, &height)) {
+            mCursorClip = { (width / 2) - 1, (height / 2) - 1, 2, 2 };
+            cursorClip = &mCursorClip;
+        }
+    }
+    SDL_SetWindowMouseRect(mWnd, cursorClip);
 }
 
 bool GfxWindowBackendSDL::IsMouseCaptured() {
