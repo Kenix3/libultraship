@@ -623,7 +623,8 @@ void GfxDebuggerWindow::DrawDisas() {
     const F3DGfx* cmd = dlist;
     auto gui = std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui());
 
-    ImGui::BeginChild("###State", ImVec2(0.0f, 200.0f), true);
+    static float stateHeight = 200.0f; // default height of upper content
+    ImGui::BeginChild("###State", ImVec2(0.0f, stateHeight), true);
     {
         ImGui::BeginGroup();
         {
@@ -677,19 +678,40 @@ void GfxDebuggerWindow::DrawDisas() {
             ImGui::Text("Texture To Load");
             {
                 auto& tex = mInterpreter.lock()->mRdp->texture_to_load;
-                // ImGui::Text("%s", fmt::format("{}x{} type={}", tex.raw_tex_metadata.width,
-                // tex.raw_tex_metadata.height,
-                //                               getTexType(tex.raw_tex_metadata.type))
-                //                       .c_str());
-
-                // if (isNew && g_rdp.texture_to_load.raw_tex_metadata.resource != nullptr) {
-                //     gui->UnloadTexture(TO_LOAD_TEX);
-                //     gui->LoadGuiTexture(TO_LOAD_TEX, *g_rdp.texture_to_load.raw_tex_metadata.resource,
-                //                         ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-                // }
-
-                // ImGui::Image(gui->GetTextureByName(TO_LOAD_TEX), ImVec2{ 100.0f, 100.0f });
                 draw_img(std::nullopt, TO_LOAD_TEX, tex.raw_tex_metadata);
+                // Draw the palette for CI8 textures
+                if (tex.raw_tex_metadata.type == Fast::TextureType::Palette8bpp) {
+                    auto str = fmt::format("GfxDbgWindowLoadedPaletteTexture{}", i);
+                    gui->UnloadTexture(str);
+                    std::vector<uint8_t> paletteData = gui->GetRdpTexturePalette(str);
+                    if (paletteData.empty()) {
+                        return;
+                    }
+                    ImGui::Text("Texture Palette");
+
+
+                    ImDrawList* draw = ImGui::GetWindowDrawList();
+                    ImVec2 p = ImGui::GetCursorScreenPos();
+
+                    constexpr float cell = 8.0f; // 8 * 16 = 128x128 texture
+
+                    // Scale the texture to 128x128
+                    // This method was used to prevent pixel blurring.
+                    // ImGui::Image() method blurred the texture
+                    for (int y = 0; y < 16; y++) {
+                        for (int x = 0; x < 16; x++) {
+                            const uint8_t* c = &paletteData[(y * 16 + x) * 4];
+                            ImU32 color = IM_COL32(c[0], c[1], c[2], c[3]);
+
+                            draw->AddRectFilled(
+                                ImVec2(p.x + x * cell, p.y + y * cell),
+                                ImVec2(p.x + (x + 1) * cell, p.y + (y + 1) * cell),
+                                color);
+                        }
+                    }
+
+                    ImGui::Dummy(ImVec2(16 * cell, 16 * cell));
+                }
             }
             ImGui::EndChild();
         }
@@ -714,6 +736,23 @@ void GfxDebuggerWindow::DrawDisas() {
         ImGui::EndGroup();
     }
     ImGui::EndChild();
+
+    // Add button so the top area can be dragged bigger/smaller.
+    ImGui::InvisibleButton("##splitter", ImVec2(-1, 6.0f));
+
+    if (ImGui::IsItemActive()) {
+        stateHeight += ImGui::GetIO().MouseDelta.y;
+        stateHeight = std::clamp(stateHeight, 50.0f, 800.0f);
+    }
+
+    ImGui::SetItemAllowOverlap();
+    
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        ImGui::GetItemRectMin(),
+        ImGui::GetItemRectMax(),
+        IM_COL32(100, 100, 100, 255)
+    );
+    // End of button
 
     ImGui::BeginChild("##Disassembler", ImVec2(0.0f, 0.0f), true);
     {
