@@ -768,7 +768,7 @@ std::vector<uint8_t> Fast3dGui::GetRdpTexturePalette() {
         return {};
     }
 
-    const uint8_t* paletteData = interpreter->GetPaletteData(0);
+    const uint8_t* paletteData = interpreter->GetRdpPaletteData();
     if (!paletteData) {
         SPDLOG_WARN("ImGui::LoadPaletteTexture: No palette data available");
         return {};
