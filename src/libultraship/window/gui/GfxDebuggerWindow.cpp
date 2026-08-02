@@ -679,7 +679,6 @@ void GfxDebuggerWindow::DrawDisas() {
                     }
                     ImGui::Text("Texture Palette");
 
-
                     ImDrawList* draw = ImGui::GetWindowDrawList();
                     ImVec2 p = ImGui::GetCursorScreenPos();
 
@@ -694,10 +693,8 @@ void GfxDebuggerWindow::DrawDisas() {
                             const uint8_t* c = &paletteData[(y * 16 + x) * 4];
                             ImU32 color = IM_COL32(c[0], c[1], c[2], c[3]);
 
-                            draw->AddRectFilled(
-                                ImVec2(p.x + x * cell, p.y + y * cell),
-                                ImVec2(p.x + (x + 1) * cell, p.y + (y + 1) * cell),
-                                color);
+                            draw->AddRectFilled(ImVec2(p.x + x * cell, p.y + y * cell),
+                                                ImVec2(p.x + (x + 1) * cell, p.y + (y + 1) * cell), color);
                         }
                     }
 
@@ -742,12 +739,8 @@ void GfxDebuggerWindow::DrawDisas() {
     }
 
     ImGui::SetItemAllowOverlap();
-    
-    ImGui::GetWindowDrawList()->AddRectFilled(
-        ImGui::GetItemRectMin(),
-        ImGui::GetItemRectMax(),
-        IM_COL32(100, 100, 100, 255)
-    );
+    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+                                              IM_COL32(100, 100, 100, 255));
     // End of button
 
     ImGui::BeginChild("##Disassembler", ImVec2(0.0f, 0.0f), true);
