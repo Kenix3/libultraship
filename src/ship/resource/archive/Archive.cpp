@@ -167,6 +167,14 @@ void Archive::SetInitialized(bool isInitialized) {
     mIsInitialized = isInitialized;
 }
 
+int32_t Archive::GetPriority() {
+    return mPriority;
+}
+
+void Archive::SetPriority(int32_t priority) {
+    mPriority = priority;
+}
+
 void Archive::SetGameVersion(uint32_t gameVersion) {
     mGameVersion = gameVersion;
 }
