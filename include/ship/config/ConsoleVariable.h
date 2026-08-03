@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <string>
 #include <string_view>
@@ -209,5 +210,7 @@ class ConsoleVariable {
         }
     };
     std::unordered_map<std::string, std::shared_ptr<CVar>, TransparentStringHash, TransparentStringEqual> mVariables;
+    // Guards mVariables against concurrent access from the audio thread and the game thread.
+    std::recursive_mutex mVariablesMutex;
 };
 } // namespace Ship
