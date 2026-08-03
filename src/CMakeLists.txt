@@ -51,6 +51,34 @@ add_subdirectory("fast")
 
 add_subdirectory("libultraship")
 
+#=================== SDL3 audio backend (optional) ===================
+
+# The SDL3 audio backend is built on SDL3's audio API only, independent of the
+# SDL2 the rest of the engine uses for window / input / ImGui.
+find_package(SDL3 CONFIG QUIET)
+if(SDL3_FOUND)
+    target_compile_definitions(libultraship PRIVATE ENABLE_SDL3=1)
+
+    # SDL3 is needed at build time for HEADERS ONLY. SDL3AudioPlayer.cpp loads the
+    # SDL3 library at runtime (dlopen / LoadLibrary, local visibility) and calls it
+    # through resolved function pointers, so we deliberately do NOT link it.
+    #
+    # Linking SDL3 normally is wrong here: the engine also links SDL2 (window /
+    # input / ImGui), and on ELF that puts both libraries' SDL_* symbols in one
+    # global table. The names common to both (SDL_InitSubSystem, SDL_GetError, ...)
+    # then bind to SDL2, so SDL3's audio subsystem is never initialised and stream
+    # creation fails. Loading SDL3 privately avoids this and makes it an optional
+    # runtime dependency. SDL3::Headers is a headers-only target that (unlike
+    # SDL3::SDL3) carries no SDL_VERSION compatibility property, so it coexists with
+    # SDL2 without tripping CMake's COMPATIBLE_INTERFACE_STRING guard.
+    target_link_libraries(libultraship PRIVATE SDL3::Headers)
+    target_link_libraries(libultraship PRIVATE ${CMAKE_DL_LIBS})
+    message(STATUS "libultraship: SDL3 found - SDL3 audio backend enabled (loaded at runtime)")
+else()
+    target_compile_definitions(libultraship PRIVATE ENABLE_SDL3=0)
+    message(STATUS "libultraship: SDL3 not found - SDL3 audio backend disabled")
+endif()
+
 #=================== Ship ===================
 
 add_subdirectory("ship")

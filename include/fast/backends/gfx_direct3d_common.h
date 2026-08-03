@@ -3,6 +3,8 @@
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #ifdef __cplusplus
+#include <windows.h>
+#include <wrl/client.h>
 #include "../interpreter.h"
 #include <cstdint>
 #include <string>

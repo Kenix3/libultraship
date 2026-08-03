@@ -1,6 +1,6 @@
 #pragma once
-#include "stdint.h"
-#include "stddef.h"
+#include <cstdint>
+#include <cstddef>
 #include <string>
 #include <memory>
 #include "ship/audio/AudioChannelsSetting.h"
@@ -153,14 +153,3 @@ class AudioPlayer {
     bool mInitialized = false;
 };
 } // namespace Ship
-
-#ifdef _WIN32
-#include "WasapiAudioPlayer.h"
-#endif
-
-#ifdef __APPLE__
-#include "CoreAudioAudioPlayer.h"
-#endif
-
-#include "SDLAudioPlayer.h"
-#include "NullAudioPlayer.h"

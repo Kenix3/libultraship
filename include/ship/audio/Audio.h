@@ -9,7 +9,7 @@ namespace Ship {
 class Config;
 
 /** @brief Identifies the audio backend implementation in use. */
-enum class AudioBackend { WASAPI, SDL, COREAUDIO, NUL };
+enum class AudioBackend { WASAPI, SDL, SDL3, COREAUDIO, NUL };
 
 /**
  * @brief Manages audio playback through a platform-specific AudioPlayer.
