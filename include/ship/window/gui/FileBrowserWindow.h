@@ -88,7 +88,7 @@ class FileBrowserWindow : public GuiWindow {
     /** @brief Popup host: renders the modal directly (no host window) when a request is active. */
     void Draw() override;
 
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
     void DrawElement() override;
     void UpdateElement() override;
 
