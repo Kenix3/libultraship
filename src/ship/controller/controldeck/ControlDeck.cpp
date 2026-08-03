@@ -44,7 +44,7 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
         SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
     }
-  
+
     mWheelHandler = std::make_shared<WheelHandler>(GetWindow());
 
     auto self = std::dynamic_pointer_cast<ControlDeck>(GetSharedComponent());
