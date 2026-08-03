@@ -30,6 +30,21 @@ void ControlDeck::Init(uint8_t* controllerBits) {
     mControllerBits = controllerBits;
     *mControllerBits |= 1 << 0;
 
+    // Bring up the SDL game-controller subsystem here rather than in osContInit, so controllers work
+    // in pre-game UI (e.g. navigating extraction prompts). osContInit still runs ControlDeck::Init(),
+    // which needs the game's controllerBits.
+    std::string controllerDb = LocateFileAcrossAppDirs("gamecontrollerdb.txt");
+    int mappingsAdded = SDL_GameControllerAddMappingsFromFile(controllerDb.c_str());
+    if (mappingsAdded >= 0) {
+        SPDLOG_INFO("Added SDL game controller mappings from \"{}\" ({})", controllerDb, mappingsAdded);
+    } else {
+        SPDLOG_ERROR("Failed to add SDL game controller mappings from \"{}\" ({})", controllerDb, SDL_GetError());Expand commentComment on line R282Resolved
+    }
+    SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
+        SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
+    }
+  
     mWheelHandler = std::make_shared<WheelHandler>(GetWindow());
 
     auto self = std::dynamic_pointer_cast<ControlDeck>(GetSharedComponent());
