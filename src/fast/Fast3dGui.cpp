@@ -773,10 +773,11 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex
     mGuiTextures[name] = asset;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path,
+                               const std::string& palettePath, const ImVec4& tint) {
     const auto res = static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
 
-    LoadGuiTexture(name, *res, tint);
+    LoadGuiTexture(name, *res, palettePath, tint);
 }
 
 void Fast3dGui::UnloadTexture(const std::string& name) {
