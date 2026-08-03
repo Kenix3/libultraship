@@ -67,7 +67,7 @@ FileBrowserWindow::~FileBrowserWindow() {
     SPDLOG_TRACE("destruct file browser window");
 }
 
-void FileBrowserWindow::InitElement() {
+void FileBrowserWindow::OnInit(const nlohmann::json& initArgs) {
 }
 
 void FileBrowserWindow::UpdateElement() {
