@@ -458,13 +458,13 @@ std::shared_ptr<Ship::IResource> Interpreter::ResolveResourceCached(const char* 
         return nullptr;
     }
     if (!mResolvedResourceCacheEnabled) {
-        return Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(path);
+        return mResourceManager->LoadResourceProcess(path);
     }
     auto it = mResolvedResourceCache.find(path);
     if (it != mResolvedResourceCache.end()) {
         return it->second;
     }
-    auto res = Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(path);
+    auto res = mResourceManager->LoadResourceProcess(path);
     // Only memoize a hit. The resource manager caches its own misses, so re-asking
     // for one is cheap, and CacheExternalResource can turn a path that missed into a
     // valid resource at runtime. A memoized null would outlive the resource itself.
