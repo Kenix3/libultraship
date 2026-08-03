@@ -446,6 +446,7 @@ class Interpreter {
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
+
     /** 
      * Opt-in memoization of OTR texture-path resolution, keyed by display-list
      * pointer and dropped with the texture cache. Safe for ports whose display
