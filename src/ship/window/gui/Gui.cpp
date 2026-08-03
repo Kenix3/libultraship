@@ -205,7 +205,21 @@ void Gui::ImGuiWMNewFrame() {
 void Gui::RefreshImGuiGamepads() {
 }
 
+void Gui::UpdateGamepadNavigation() {
+    const bool navWanted = Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+                           (GetMenuOrMenubarVisible() ||
+                            ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel));
+    if (navWanted) {
+        mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    } else {
+        mImGuiIo->ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+    }
+}
+
 void Gui::DrawMenu() {
+    // Per frame: popups (boot prompts, the file browser) have no open/close event to hook.
+    UpdateGamepadNavigation();
+
     const std::shared_ptr<Window> wnd = mWindow;
     const std::shared_ptr<Config> conf = mConfig;
 
