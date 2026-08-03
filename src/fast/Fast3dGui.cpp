@@ -596,7 +596,8 @@ void Fast3dGui::LoadTextureFromResource(const std::string& name, std::shared_ptr
     mGuiTextures[name] = texture->Metadata;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const std::string& palettePath,
+                               const ImVec4& tint) {
     GfxRenderingAPI* api = mInterpreter.lock()->GetCurrentRenderingAPI();
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(tex.Width * tex.Height * 4);
@@ -645,8 +646,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex
                     return;
                 }
 
-                for (int32_t i = 0; i < res.Width * res.Height; i += 2) {
-                    uint8_t b = res.ImageData[i / 2];
+                for (int32_t i = 0; i < tex.Width * tex.Height; i += 2) {
+                    uint8_t b = tex.ImageData[i / 2];
 
                     uint8_t idx1 = b >> 4;
                     uint8_t p1_b1 = paletteRes->ImageData[idx1 * 2 + 0];
