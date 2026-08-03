@@ -6908,7 +6908,14 @@ int32_t gfx_check_image_signature(const char* imgData) {
 #if UINTPTR_MAX > 0xFFFFFFFFu
     // On 64-bit: filter kernel/sentinel addresses. Upper bound covers all
     // user-space layouts (x86_64 47-bit canonical, ARM64 48-bit VA, etc.).
-    if (i > 0x0000FFFFFFFFFFFFull) {
+    //
+    // The top byte is masked off first because arm64 ignores it when
+    // dereferencing (top-byte-ignore), and Android's allocator uses that to tag
+    // heap pointers — they come back looking like 0xb4000070_0179c830. Without
+    // the mask every heap pointer reads as a kernel address and gets rejected,
+    // so any asset reached through a heap-allocated path string (skybox tiles,
+    // the title background, HUD glyphs) was silently drawn as raw texture data.
+    if ((i & 0x00FFFFFFFFFFFFFFull) > 0x0000FFFFFFFFFFFFull) {
         return 0;
     }
 #endif
