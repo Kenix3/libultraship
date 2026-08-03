@@ -736,6 +736,40 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path,
     LoadGuiTexture(name, *res, tint);
 }
 
+std::vector<uint8_t> Fast3dGui::GetRdpTexturePalette() {
+    auto interpreter = mInterpreter.lock();
+    if (!interpreter) {
+        SPDLOG_WARN("ImGui::LoadPaletteTexture: Interpreter unavailable");
+        return {};
+    }
+
+    const uint8_t* paletteData = interpreter->GetRdpPaletteData();
+    if (!paletteData) {
+        SPDLOG_WARN("ImGui::LoadPaletteTexture: No palette data available");
+        return {};
+    }
+
+    std::vector<uint8_t> texBuffer;
+    texBuffer.reserve(16 * 16 * 4);
+
+    // CI8 palette: 256 entries, RGBA16 (RGBA5551)
+    for (int32_t i = 0; i < 256; i++) {
+        uint8_t b1 = paletteData[i * 2 + 0];
+        uint8_t b2 = paletteData[i * 2 + 1];
+
+        uint8_t r = (b1 >> 3) * 0xFF / 0x1F;
+        uint8_t g = (((b1 & 7) << 2) | (b2 >> 6)) * 0xFF / 0x1F;
+        uint8_t b = ((b2 >> 1) & 0x1F) * 0xFF / 0x1F;
+        uint8_t a = (b2 & 1) ? 0xFF : 0x00;
+
+        texBuffer.push_back(r);
+        texBuffer.push_back(g);
+        texBuffer.push_back(b);
+        texBuffer.push_back(a);
+    }
+    return texBuffer;
+}
+
 void Fast3dGui::UnloadTexture(const std::string& name) {
     if (mGuiTextures.contains(name)) {
         Ship::GuiTextureMetadata tex = mGuiTextures[name];

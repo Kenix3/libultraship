@@ -106,6 +106,12 @@ class Fast3dGui : public Ship::Gui {
     void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
 
     /**
+     * @brief Downloads the palette currently in the rdp.
+     * @return A copy of the palette in the rdp
+     */
+    std::vector<uint8_t> GetRdpTexturePalette();
+
+    /**
      * @brief Removes the texture with the given name from the cache and frees GPU resources.
      * @param name Texture cache key to remove.
      */

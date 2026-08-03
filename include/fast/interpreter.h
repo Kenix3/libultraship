@@ -444,6 +444,7 @@ class Interpreter {
     void ImportTextureImg(int tile, bool importReplacement);
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
+    const uint8_t* GetRdpPaletteData();
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
 
     void GfxSpMatrix(uint8_t params, const int32_t* addr);
