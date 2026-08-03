@@ -206,7 +206,7 @@ void Gui::RefreshImGuiGamepads() {
 }
 
 void Gui::UpdateGamepadNavigation() {
-    const bool navWanted = Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+    const bool navWanted = mConsoleVariable->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
                            (GetMenuOrMenubarVisible() ||
                             ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel));
     if (navWanted) {
