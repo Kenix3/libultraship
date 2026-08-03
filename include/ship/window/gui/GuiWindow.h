@@ -106,7 +106,7 @@ class GuiWindow : public GuiElement {
    /**
     * @brief Sets a windows initial size
     */
-    void SetOriginalSize(ImGuiVec2 size) {
+    void SetOriginalSize(ImVec2 size) {
         mOriginalSize = size;
     }
 
