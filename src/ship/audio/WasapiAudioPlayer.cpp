@@ -24,6 +24,15 @@ void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
     }
 }
 
+WasapiAudioPlayer::~WasapiAudioPlayer() {
+    DoClose();
+
+    if (mDeviceEnumerator) {
+        mDeviceEnumerator->UnregisterEndpointNotificationCallback(this);
+        mDeviceEnumerator.Reset();
+    }
+}
+
 bool WasapiAudioPlayer::SetupStream() {
     try {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
@@ -108,7 +117,7 @@ int WasapiAudioPlayer::Buffered() {
     std::lock_guard<std::mutex> lock(mMutex);
     if (!mInitialized) {
         if (!SetupStream()) {
-            return 0;
+            return GetDesiredBuffered();
         }
     }
     try {
@@ -117,7 +126,7 @@ int WasapiAudioPlayer::Buffered() {
         return padding;
     } catch (const HResultException& e) {
         SPDLOG_ERROR("WasapiAudioPlayer::Buffered failed: {}", e.what());
-        return 0;
+        return GetDesiredBuffered();
     }
 }
 
@@ -184,11 +193,8 @@ ULONG STDMETHODCALLTYPE WasapiAudioPlayer::AddRef() {
 }
 
 ULONG STDMETHODCALLTYPE WasapiAudioPlayer::Release() {
-    ULONG rc = InterlockedDecrement(&mRefCount);
-    if (rc == 0) {
-        delete this;
-    }
-    return rc;
+    // No delete on zero: Audio owns this through a shared_ptr.
+    return InterlockedDecrement(&mRefCount);
 }
 
 HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::QueryInterface(REFIID riid, VOID** ppvInterface) {
