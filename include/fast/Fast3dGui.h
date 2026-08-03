@@ -99,7 +99,7 @@ class Fast3dGui : public Ship::Gui {
      * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
      */
     void LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath = "",
-                        const ImVec4& tint(1.0f, 1.0f, 1.0f, 1.0f));
+                        const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     /**
      * @brief Returns true if a texture with the given name is already cached.
