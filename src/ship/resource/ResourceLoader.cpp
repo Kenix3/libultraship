@@ -213,43 +213,62 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
     return initData;
 }
 
+std::shared_ptr<ResourceInitData> ResourceLoader::ResolveMetaAlias(const ResourceIdentifier& identifier,
+                                                                   const std::string& filePath,
+                                                                   std::shared_ptr<File>& fileToLoad) {
+    if (mResourceManager == nullptr || filePath.empty()) {
+        return nullptr;
+    }
+
+    auto metaFileToLoad = mResourceManager->LoadFileProcess(filePath + ".meta");
+    if (metaFileToLoad == nullptr) {
+        return nullptr;
+    }
+
+    auto metaInitData = ReadResourceInitData(filePath, metaFileToLoad);
+
+    auto targetIdentifier = metaInitData->Identifier;
+    targetIdentifier.SetOwner(identifier.GetOwner());
+    targetIdentifier.SetParent(identifier.GetParent());
+    metaInitData->Identifier = targetIdentifier;
+
+    auto targetFileToLoad = mResourceManager->LoadFileProcess(targetIdentifier);
+    if (targetFileToLoad == nullptr) {
+        return nullptr;
+    }
+
+    auto archiveManager = mResourceManager->GetArchiveManager();
+    if (archiveManager == nullptr) {
+        return nullptr;
+    }
+
+    // Both candidates are ranked by the archive holding them, and the higher one loads. A tie
+    // means one archive supplies both, and there its `.meta` is the more specific instruction.
+    // Nothing at filePath reports -1, so any reachable target outranks it.
+    const auto targetPath = ResolveIdentifierPath(targetIdentifier, mResourceManager);
+    const int32_t targetPriority = archiveManager->GetFilePriority(targetPath);
+    const int32_t basePriority = archiveManager->GetFilePriority(filePath);
+    if (targetPriority < basePriority) {
+        SPDLOG_TRACE("Alias {} -> {} not taken: target ranks {} against {} at the requested path", filePath, targetPath,
+                     targetPriority, basePriority);
+        return nullptr;
+    }
+
+    fileToLoad = targetFileToLoad;
+    return metaInitData;
+}
+
 std::shared_ptr<IResource> ResourceLoader::LoadResource(const ResourceIdentifier& identifier,
                                                         std::shared_ptr<File> fileToLoad,
                                                         std::shared_ptr<ResourceInitData> initData) {
     const auto filePath = ResolveIdentifierPath(identifier, mResourceManager);
 
-    if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File not loaded");
-        return nullptr;
-    }
-
+    // fileToLoad is the file at filePath, or null when only a `.meta` names this path.
     if (initData == nullptr) {
-        auto resourceManager = mResourceManager;
-        if (resourceManager == nullptr) {
-            SPDLOG_ERROR("Failed to load resource {}: no ResourceManager available", filePath);
-            return nullptr;
-        }
-
-        if (!filePath.empty()) {
-            auto metaFilePath = filePath + ".meta";
-            auto metaFileToLoad = resourceManager->LoadFileProcess(metaFilePath);
-
-            if (metaFileToLoad != nullptr) {
-                auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-
-                auto metadataIdentifier = initDataFromMetaFile->Identifier;
-                metadataIdentifier.SetOwner(identifier.GetOwner());
-                metadataIdentifier.SetParent(identifier.GetParent());
-                initDataFromMetaFile->Identifier = metadataIdentifier;
-
-                fileToLoad = resourceManager->LoadFileProcess(metadataIdentifier);
-                initData = initDataFromMetaFile;
-            } else {
-                initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-            }
-        } else {
-            initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-        }
+        initData = ResolveMetaAlias(identifier, filePath, fileToLoad);
+    }
+    if (initData == nullptr && fileToLoad != nullptr) {
+        initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
     }
 
     if (initData == nullptr) {

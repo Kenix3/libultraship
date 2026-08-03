@@ -118,6 +118,17 @@ class ResourceLoader {
     std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
                                                            std::shared_ptr<File> metaFileToLoad);
 
+    /**
+     * @brief Resolves a `.meta` at filePath, deciding whether it or filePath itself should load.
+     * @param identifier The requesting identifier; its owner and parent carry over to the result.
+     * @param filePath   Virtual path being loaded.
+     * @param fileToLoad In/out: the file at filePath, null when only a `.meta` is there. Set to
+     *                   the `.meta`'s target when the target is the one chosen.
+     * @return Init data parsed from the `.meta`, or nullptr to keep loading filePath as-is.
+     */
+    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const ResourceIdentifier& identifier,
+                                                       const std::string& filePath, std::shared_ptr<File>& fileToLoad);
+
     /** @brief Creates a ResourceInitData with default/zeroed fields. */
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
 

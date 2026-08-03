@@ -101,6 +101,13 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(uint64_t hash) {
     return file;
 }
 
+bool ResourceManager::HasMetaAlias(const ResourceIdentifier& identifier) {
+    const std::string* basePath =
+        identifier.IsPath() ? &identifier.GetPath() : mArchiveManager->HashToString(identifier.GetPathHash());
+
+    return basePath != nullptr && !basePath->empty() && mArchiveManager->HasFile(*basePath + ".meta");
+}
+
 std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact,
                                                                 std::shared_ptr<ResourceInitData> initData) {
     if (initData != nullptr) {
@@ -156,9 +163,10 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         }
     }
 
-    // Get the file from the OTR
+    // Get the file from the OTR. Finding nothing is not fatal by itself, since a `.meta` here can
+    // name a target elsewhere for the loader to load instead. Give up only when there is neither.
     auto file = LoadFileProcess(identifier);
-    if (file == nullptr) {
+    if (file == nullptr && !HasMetaAlias(identifier)) {
         if (identifier.IsPath()) {
             SPDLOG_TRACE("Failed to load resource file at path {}", identifier.GetPath());
         } else {
