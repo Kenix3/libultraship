@@ -638,8 +638,7 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex
                     return;
                 }
 
-                auto paletteRes = std::static_pointer_cast<Fast::Texture>(
-                    mResourceManager->LoadResource(palettePath));
+                auto paletteRes = std::static_pointer_cast<Fast::Texture>(mResourceManager->LoadResource(palettePath));
 
                 if (!paletteRes || !paletteRes->ImageData) {
                     SPDLOG_WARN("ImGui::ResourceLoad: Failed to load palette asset from path: {}", palettePath);
@@ -774,8 +773,8 @@ void Fast3dGui::LoadGuiTexture(const std::string& name, const Fast::Texture& tex
     mGuiTextures[name] = asset;
 }
 
-void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path,
-                               const std::string& palettePath, const ImVec4& tint) {
+void Fast3dGui::LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath,
+                               const ImVec4& tint) {
     const auto res = static_cast<Fast::Texture*>(mResourceManager->LoadResource(path, true).get());
 
     LoadGuiTexture(name, *res, palettePath, tint);
