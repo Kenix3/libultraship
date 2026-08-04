@@ -27,7 +27,7 @@ float SDLAxisDirectionToAxisDirectionMapping::GetNormalizedAxisDirectionValue() 
     std::vector<float> normalizedValues = {};
     for (const auto& [instanceId, gamepad] :
          mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        const auto axisValue = SDL_GameControllerGetAxis(gamepad, mControllerAxis);
+        const auto axisValue = SDL_GetGamepadAxis(gamepad, mControllerAxis);
 
         if ((mAxisDirection == POSITIVE && axisValue < 0) || (mAxisDirection == NEGATIVE && axisValue > 0)) {
             normalizedValues.push_back(0.0f);

@@ -176,8 +176,8 @@ void Fast3dWindow::InitWindowManager() {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
             mWindowManagerApi =
-                new GfxWindowBackendSDL2(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
-                                         GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
+                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
+                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
             mRenderingApi = new GfxRenderingAPIOGL(GetConsoleVariables(),
                                                    GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
             break;
@@ -185,8 +185,8 @@ void Fast3dWindow::InitWindowManager() {
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             mWindowManagerApi =
-                new GfxWindowBackendSDL2(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
-                                         GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
+                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
+                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
             mRenderingApi = new GfxRenderingAPIMetal(GetConsoleVariables(),
                                                      GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
             break;

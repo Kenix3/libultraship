@@ -63,15 +63,15 @@ Date: Sat, 17 May 2025 04:42:41 -0400
 Subject: [PATCH 2/3] gamepad fix
 
 ---
- backends/imgui_impl_sdl2.cpp | 3 ---
+ backends/imgui_impl_sdl3.cpp | 3 ---
  1 file changed, 3 deletions(-)
 
-diff --git a/backends/imgui_impl_sdl2.cpp b/backends/imgui_impl_sdl2.cpp
+diff --git a/backends/imgui_impl_sdl3.cpp b/backends/imgui_impl_sdl3.cpp
 index f3a31c5c3c5e..2e6a1ad9d1f1 100644
---- a/backends/imgui_impl_sdl2.cpp
-+++ b/backends/imgui_impl_sdl2.cpp
-@@ -845,9 +845,6 @@ static void ImGui_ImplSDL2_UpdateGamepads()
-         bd->WantUpdateGamepadsList = false;
+--- a/backends/imgui_impl_sdl3.cpp
++++ b/backends/imgui_impl_sdl3.cpp
+@@ -809,9 +809,6 @@ static void ImGui_ImplSDL3_UpdateGamepads()
+         SDL_free(sdl_gamepads);
      }
  
 -    // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.

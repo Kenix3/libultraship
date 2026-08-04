@@ -14,13 +14,13 @@
 #include "ship/resource/File.h"
 
 #ifdef __APPLE__
-#include <SDL_hints.h>
-#include <SDL_video.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 #include <imgui_impl_metal.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #else
-#include <SDL2/SDL_hints.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_video.h>
 #endif
 
 #if defined(__ANDROID__) || defined(__IOS__)
@@ -29,7 +29,7 @@
 
 #ifdef ENABLE_OPENGL
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -91,12 +91,16 @@ void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
 
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
-        case WindowBackend::FAST3D_SDL_METAL:
-            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+        case WindowBackend::FAST3D_SDL_METAL: {
+            ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 #if defined(__ANDROID__) || defined(__IOS__)
-            Ship::Mobile::ImGuiProcessEvent(ImGui::GetIO().WantTextInput);
+            SDL_Window* sdlWindow = window->GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL
+                                        ? static_cast<SDL_Window*>(mImpl.Opengl.Window)
+                                        : static_cast<SDL_Window*>(mImpl.Metal.Window);
+            Ship::Mobile::ImGuiProcessEvent(sdlWindow, ImGui::GetIO().WantTextInput);
 #endif
             break;
+        }
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
             ImGui_ImplWin32_WndProcHandler(static_cast<HWND>(event.Win32.Handle), event.Win32.Msg, event.Win32.Param1,
@@ -118,7 +122,7 @@ void Fast3dGui::ImGuiWMInit() {
             if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
@@ -126,7 +130,7 @@ void Fast3dGui::ImGuiWMInit() {
             if (mConsoleVariables->GetInteger(CVAR_ALLOW_BACKGROUND_INPUTS, 1)) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
             }
-            ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
+            ImGui_ImplSDL3_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -138,7 +142,7 @@ void Fast3dGui::ImGuiWMInit() {
             break;
     }
 
-    // Initial gamepad bind once the SDL2 backend exists (no-op for DX/Metal).
+    // Initial gamepad bind once the SDL3 backend exists (no-op for DX/Metal).
     RefreshImGuiGamepads();
 }
 
@@ -147,12 +151,12 @@ void Fast3dGui::ImGuiWMShutdown() {
     switch (window->GetWindowBackend()) {
 #ifdef ENABLE_OPENGL
         case WindowBackend::FAST3D_SDL_OPENGL:
-            ImGui_ImplSDL2_Shutdown();
+            ImGui_ImplSDL3_Shutdown();
             break;
 #endif
 #if __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
-            ImGui_ImplSDL2_Shutdown();
+            ImGui_ImplSDL3_Shutdown();
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -254,7 +258,7 @@ void Fast3dGui::ImGuiWMNewFrame() {
     switch (window->GetWindowBackend()) {
         case WindowBackend::FAST3D_SDL_OPENGL:
         case WindowBackend::FAST3D_SDL_METAL:
-            ImGui_ImplSDL2_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
             break;
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
@@ -266,7 +270,7 @@ void Fast3dGui::ImGuiWMNewFrame() {
     }
 }
 
-// Bind ImGui's SDL2 gamepad backend to the controller(s) the
+// Bind ImGui's SDL3 gamepad backend to the controller(s) the
 // ControlDeck has already opened
 void Fast3dGui::RefreshImGuiGamepads() {
     auto window = mWindow;
@@ -275,7 +279,7 @@ void Fast3dGui::RefreshImGuiGamepads() {
         return;
     }
 
-    ImGui_ImplSDL2_SetGamepadMode(ImGui_ImplSDL2_GamepadMode_AutoAll, nullptr, 0);
+    ImGui_ImplSDL3_SetGamepadMode(ImGui_ImplSDL3_GamepadMode_AutoAll, nullptr, 0);
 }
 
 void Fast3dGui::ImGuiRenderDrawData(ImDrawData* data) {

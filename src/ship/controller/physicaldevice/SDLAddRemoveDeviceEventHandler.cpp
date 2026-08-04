@@ -1,5 +1,5 @@
 #include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
@@ -26,20 +26,16 @@ void SDLAddRemoveDeviceEventHandler::UpdateElement() {
     SDL_PumpEvents();
     SDL_Event event;
     bool changed = false;
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEADDED, SDL_CONTROLLERDEVICEADDED) > 0) {
-        // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the joystick device index for
-        // the SDL_CONTROLLERDEVICEADDED event
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_ADDED, SDL_EVENT_GAMEPAD_ADDED) > 0) {
         if (mControlDeck) {
-            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceConnect(event.cdevice.which);
+            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceConnect(event.gdevice.which);
             changed = true;
         }
     }
 
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED, SDL_CONTROLLERDEVICEREMOVED) > 0) {
-        // from https://wiki.libsdl.org/SDL2/SDL_ControllerDeviceEvent: which - the [...] instance id for the
-        // SDL_CONTROLLERDEVICEREMOVED [...] event
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED, SDL_EVENT_GAMEPAD_REMOVED) > 0) {
         if (mControlDeck) {
-            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceDisconnect(event.cdevice.which);
+            mControlDeck->GetConnectedPhysicalDeviceManager()->HandlePhysicalDeviceDisconnect(event.gdevice.which);
             changed = true;
         }
     }
