@@ -46,7 +46,7 @@ class RumbleMappingFactory {
 
     /**
      * @brief Creates default SDL rumble mappings for a specific physical device type.
-     * @param portIndex Controller port index (0-based).
+     * @param physicalDeviceType Type of physical device receiving the mapping.
      * @param portIndex Controller port index (0-based).
      * @param consoleVariable    ConsoleVariable for persisting mappings.
      * @param controlDeck        ControlDeck for physical device access.
