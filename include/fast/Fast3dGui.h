@@ -77,10 +77,8 @@ class Fast3dGui : public Ship::Gui {
     /**
      * @brief Forwards a platform window event to the active ImGui backend.
      *
-     * Only Fast3D backends (gfx_sdl,
-     * gfx_dxgi) construct and dispatch WindowEvents.
-     * Callers retrieve the Gui via Window::GetGui() and
-     * dynamic_cast to Fast3dGui.
+     * Only Fast3D backends (gfx_sdl, gfx_dxgi) construct and dispatch WindowEvents.
+     * Callers retrieve the Gui via Window::GetGui() and dynamic_cast to Fast3dGui.
      * @param event Platform event (SDL or Win32) wrapped in a Fast::WindowEvent.
      */
     void HandleWindowEvents(Fast::WindowEvent event);
