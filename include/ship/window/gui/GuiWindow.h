@@ -103,13 +103,6 @@ class GuiWindow : public GuiElement {
      */
     void Draw() override;
 
-   /**
-    * @brief Sets a windows initial size
-    */
-    void SetOriginalSize(ImVec2 size) {
-        mOriginalSize = size;
-    }
-
   protected:
     /**
      * @brief Overrides SetVisibility to also write the new state to the backing CVar.
