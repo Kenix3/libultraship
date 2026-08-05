@@ -38,7 +38,7 @@ class AudioPlayer {
      */
     AudioPlayer(AudioSettings settings) : mAudioSettings(settings) {
     }
-    ~AudioPlayer();
+    virtual ~AudioPlayer();
 
     /**
      * @brief Calls DoInit() and sets the initialised flag on success.
