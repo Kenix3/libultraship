@@ -157,9 +157,12 @@ prism::ContextTypes* p_append_formula(prism::ContextTypes* _, prism::ContextType
     return new prism::ContextTypes{ out };
 }
 
-static int vertex_index;
-static size_t raw_numFloats = 0;
-static MTL::VertexDescriptor* vertex_descriptor;
+// thread_local: shader builds can run concurrently (render thread + shader
+// prewarm); shared statics let one thread's autorelease pool free the
+// descriptor another thread is still validating a pipeline against.
+static thread_local int vertex_index;
+static thread_local size_t raw_numFloats = 0;
+static thread_local MTL::VertexDescriptor* vertex_descriptor;
 
 prism::ContextTypes* update_raw_floats(prism::ContextTypes* _, prism::ContextTypes* num) {
     MTL::VertexFormat format;

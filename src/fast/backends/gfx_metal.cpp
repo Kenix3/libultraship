@@ -10,6 +10,9 @@
 #include "fast/backends/gfx_metal.h"
 
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <array>
 #include <algorithm>
 #include <unordered_map>
 #include <queue>
@@ -305,6 +308,58 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
     autorelease_pool->release();
 
     return (struct ShaderProgram*)prg;
+}
+
+void GfxRenderingAPIMetal::PrewarmShaders(const uint64_t (*idPairs)[2], size_t pairCount) {
+    // Compile the known shader set on a background thread and discard the
+    // results. Metal source compilation is what stalls the render path on
+    // first use of a shader combination (~70 ms per combination on Apple
+    // Silicon, visible as frame hitches + audio dropouts); macOS caches
+    // compiled source per app by source hash, so compiling here makes the
+    // render thread's own CreateAndLoadNewShader a sub-millisecond cache hit.
+    // MTL::Device is documented thread-safe for library creation, and nothing
+    // here touches the shader-program pool, so no synchronization with the
+    // render thread is needed.
+    if (idPairs == nullptr || pairCount == 0 || mDevice == nullptr) {
+        return;
+    }
+
+    std::vector<std::array<uint64_t, 2>> ids(pairCount);
+    for (size_t i = 0; i < pairCount; i++) {
+        ids[i] = { idPairs[i][0], idPairs[i][1] };
+    }
+
+    MTL::Device* device = mDevice;
+    bool threePoint = mCurrentFilterMode == FILTER_THREE_POINT;
+
+    std::thread([device, threePoint, ids = std::move(ids)]() {
+        auto t0 = std::chrono::steady_clock::now();
+        size_t compiled = 0;
+        for (const auto& id : ids) {
+            NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
+            CCFeatures cc_features;
+            gfx_cc_get_features(id[0], id[1], &cc_features);
+
+            // Seed both filter variants: the user can toggle three-point
+            // filtering, which changes the generated source.
+            for (int filter = 0; filter < 2; filter++) {
+                size_t numFloats = 0;
+                std::string buf;
+                gfx_metal_build_shader(buf, numFloats, cc_features, filter != 0 ? !threePoint : threePoint);
+
+                NS::Error* error = nullptr;
+                MTL::Library* library =
+                    device->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
+                if (library != nullptr) {
+                    library->release();
+                    compiled++;
+                }
+            }
+            pool->release();
+        }
+        double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        SPDLOG_INFO("PrewarmShaders: seeded {} shader libraries in {:.0f} ms (background)", compiled, ms);
+    }).detach();
 }
 
 struct ShaderProgram* GfxRenderingAPIMetal::LookupShader(uint64_t shader_id0, uint64_t shader_id1) {
