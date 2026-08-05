@@ -160,7 +160,11 @@ uint16_t Fast3dWindow::GetPixelDepth(float x, float y) {
 }
 
 void Fast3dWindow::InitWindowManager() {
-    SetWindowBackend(GetSavedWindowBackend());
+    // Resolve without persisting: launching must never rewrite the saved
+    // choice, or a resolution bug destroys the config it misread (the
+    // ID-renumbering incident overwrote saved Metal configs with OpenGL on
+    // first launch). GetSavedWindowBackend still heals a stale ID by name.
+    SetWindowBackend(GetSavedWindowBackend(), false);
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
@@ -467,6 +471,19 @@ std::string Fast3dWindow::GetWindowBackendName() {
         default:
             return "";
     }
+}
+
+int32_t Fast3dWindow::GetWindowBackendIdByName(const std::string& name) {
+    if (name == "DirectX 11") {
+        return WindowBackend::FAST3D_DXGI_DX11;
+    }
+    if (name == "OpenGL") {
+        return WindowBackend::FAST3D_SDL_OPENGL;
+    }
+    if (name == "Metal") {
+        return WindowBackend::FAST3D_SDL_METAL;
+    }
+    return -1;
 }
 
 void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
