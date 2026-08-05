@@ -217,7 +217,9 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
 }
 
 static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
-    exit(1);
+    SDL_Event event;
+    event.type = SDL_QUIT;
+    SDL_PushEvent(&event);
 }
 
 #elif _WIN32
