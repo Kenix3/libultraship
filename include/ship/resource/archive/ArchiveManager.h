@@ -6,6 +6,7 @@
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <shared_mutex>
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
@@ -226,6 +227,9 @@ class ArchiveManager : public Component {
     std::vector<std::shared_ptr<Archive>> mArchives;
     std::vector<uint32_t> mGameVersions;
     std::unordered_set<uint32_t> mValidGameVersions;
+    // Guards the virtual-filesystem index below: lookups run concurrently on
+    // worker threads while WriteFile/AddArchive can mutate the maps at runtime.
+    mutable std::shared_mutex mIndexMutex;
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
