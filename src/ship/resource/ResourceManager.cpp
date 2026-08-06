@@ -117,7 +117,6 @@ std::shared_ptr<ResourceInitData> ResourceManager::ResolveMetaAlias(const Resour
 
     auto targetIdentifier = metaInitData->Identifier;
     targetIdentifier.SetOwner(identifier.GetOwner());
-    targetIdentifier.SetParent(identifier.GetParent());
     metaInitData->Identifier = targetIdentifier;
 
     // Both candidates are ranked by the archive holding them, and the higher one loads. A tie
