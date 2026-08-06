@@ -158,13 +158,24 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
+void ArchiveManager::AddFile(const std::string& filePath, const std::shared_ptr<Archive>& archive) {
+    const uint64_t hash = CRC64(filePath.c_str());
+    mHashes[hash] = filePath;
+    mFileToArchive[hash] = archive;
+
+    // add foo hash to mHashes for foo.meta, but don't add it to mFileToArchive because we
+    // don't know this archive has foo
+    if (filePath.ends_with(".meta")) {
+        const std::string basePath = filePath.substr(0, filePath.size() - 5);
+        mHashes[CRC64(basePath.c_str())] = basePath;
+    }
+}
+
 bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filePath,
                                const std::vector<uint8_t>& data) {
     if (archive) {
         if (archive->WriteFile(filePath, data)) {
-            auto hash = CRC64(filePath.c_str());
-            mHashes[hash] = filePath;
-            mFileToArchive[hash] = archive;
+            AddFile(filePath, archive);
             return true; // Successfully wrote file
         }
     }
@@ -290,8 +301,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     }
     const auto fileList = archive->ListFiles();
     for (auto& [hash, filename] : *fileList.get()) {
-        mHashes[hash] = filename;
-        mFileToArchive[hash] = archive;
+        AddFile(filename, archive);
 
         size_t lastSlash = filename.find_last_of('/');
         if (lastSlash != std::string::npos) {

@@ -417,13 +417,6 @@ void ResourceManager::UnloadResourcesProcess(const ResourceFilter& filter) {
 
     for (const auto& key : *list.get()) {
         UnloadResource({ key, mDefaultCacheOwner, mDefaultCacheArchive });
-
-        // A resource reached through a `.meta` is cached under the path the `.meta` sits at, and
-        // nothing is listed under that path for this loop to reach. Evict it alongside the `.meta`
-        // so it cannot outlive the target it was built from.
-        if (key.ends_with(".meta")) {
-            UnloadResource({ key.substr(0, key.size() - 5), mDefaultCacheOwner, mDefaultCacheArchive });
-        }
     }
 }
 

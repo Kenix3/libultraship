@@ -230,6 +230,13 @@ class ArchiveManager : public Component {
     /** @brief Rebuilds the hash-to-path and path-to-archive lookup tables from the current archive list. */
     void ResetVirtualFileSystem();
 
+    /**
+     * @brief Records a file in the hash-to-path and path-to-archive lookup tables.
+     * @param filePath Virtual path of the file.
+     * @param archive  Archive serving the file.
+     */
+    void AddFile(const std::string& filePath, const std::shared_ptr<Archive>& archive);
+
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;
     std::vector<uint32_t> mGameVersions;
