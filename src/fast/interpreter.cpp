@@ -1061,6 +1061,14 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     mRapi->UploadTexture(mTexUploadBuffer, width, height);
 }
 
+/**
+ * Retrieves the current palette in the rdp.
+ * For the gfx debugger to display CI8 palettes as a texture
+ */
+const uint8_t* Interpreter::GetRdpPaletteData() {
+    return mRdp->palette_staging[0];
+}
+
 void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
     const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
     const uint8_t* addr =
