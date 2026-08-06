@@ -226,7 +226,7 @@ void GfxWindowBackendSDL::SetFullscreenImpl(bool on, bool call_callback) {
     SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
     if (display_in_use == 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
-        SPDLOG_WARN(SDL_GetError());
+        SPDLOG_WARN("{}", SDL_GetError());
     }
 
     if (on) {
@@ -241,7 +241,7 @@ void GfxWindowBackendSDL::SetFullscreenImpl(bool on, bool call_callback) {
                 !SDL_GetClosestFullscreenDisplayMode(display_in_use, desktopMode->w, desktopMode->h,
                                                      desktopMode->refresh_rate, true, &fullscreenMode)) {
                 SPDLOG_ERROR("Failed to find an exclusive fullscreen mode.");
-                SPDLOG_ERROR(SDL_GetError());
+                SPDLOG_ERROR("{}", SDL_GetError());
             } else {
                 mode = &fullscreenMode;
             }
@@ -249,7 +249,7 @@ void GfxWindowBackendSDL::SetFullscreenImpl(bool on, bool call_callback) {
 
         if (!SDL_SetWindowFullscreenMode(mWnd, mode)) {
             SPDLOG_ERROR("Failed to set the fullscreen display mode.");
-            SPDLOG_ERROR(SDL_GetError());
+            SPDLOG_ERROR("{}", SDL_GetError());
         }
     }
 
@@ -264,7 +264,7 @@ void GfxWindowBackendSDL::SetFullscreenImpl(bool on, bool call_callback) {
         mFullScreen = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
-        SPDLOG_ERROR(SDL_GetError());
+        SPDLOG_ERROR("{}", SDL_GetError());
     }
 #endif
 
