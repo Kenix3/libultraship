@@ -442,12 +442,45 @@ ColorCombiner* Interpreter::LookupOrCreateColorCombiner(const ColorCombinerKey& 
     return &mPrevCombiner->second;
 }
 
+void Interpreter::SetResolvedResourceCacheEnabled(bool enabled) {
+    mResolvedResourceCacheEnabled = enabled;
+    if (!enabled) {
+        mResolvedResourceCache.clear();
+    }
+}
+
+/**
+ * Texture binds resolve the same paths every frame; skip the resource
+ * manager's string/hash/mutex work by memoizing on the pointer.
+ */
+std::shared_ptr<Ship::IResource> Interpreter::ResolveResourceCached(const char* path) {
+    if (path == nullptr) {
+        return nullptr;
+    }
+    if (!mResolvedResourceCacheEnabled) {
+        return mResourceManager->LoadResourceProcess(path);
+    }
+    auto it = mResolvedResourceCache.find(path);
+    if (it != mResolvedResourceCache.end()) {
+        return it->second;
+    }
+    auto res = mResourceManager->LoadResourceProcess(path);
+    // Only memoize a hit. The resource manager caches its own misses, so re-asking
+    // for one is cheap, and CacheExternalResource can turn a path that missed into a
+    // valid resource at runtime. A memoized null would outlive the resource itself.
+    if (res != nullptr) {
+        mResolvedResourceCache[path] = res;
+    }
+    return res;
+}
+
 void Interpreter::TextureCacheClear() {
     for (const auto& entry : mTextureCache.map) {
         mTextureCache.free_texture_ids.push_back(entry.second.texture_id);
     }
     mTextureCache.map.clear();
     mTextureCache.lru.clear();
+    mResolvedResourceCache.clear();
     // Pre-allocate buckets so the map never rehashes during normal operation.
     // Rehashing invalidates all iterators, including those stored in LRU entries.
     mTextureCache.map.reserve(TEXTURE_CACHE_MAX_SIZE);
@@ -3862,7 +3895,7 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
     if ((i & 1) != 1) {
         if (gfx_check_image_signature(imgData) == 1) {
             std::shared_ptr<Fast::Texture> tex =
-                std::static_pointer_cast<Fast::Texture>(sResourceManager->LoadResourceProcess(imgData));
+                std::static_pointer_cast<Fast::Texture>(gfx->ResolveResourceCached(imgData));
 
             if (tex == nullptr) {
                 (*cmd0)++;
