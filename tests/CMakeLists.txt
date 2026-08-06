@@ -32,9 +32,12 @@ add_executable(libultraship_tests
     splittext_tests.cpp
     path_diskfile_tests.cpp
     resource_type_tests.cpp
+    resource_manager_lifecycle_tests.cpp
     archive_self_tests.cpp
     connected_physical_device_manager_tests.cpp
+    control_deck_tests.cpp
     gfx_sdl_window_tests.cpp
+    gui_lifecycle_tests.cpp
     rumble_mapping_factory_tests.cpp
 )
 

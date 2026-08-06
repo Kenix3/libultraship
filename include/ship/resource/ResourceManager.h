@@ -407,6 +407,7 @@ class ResourceManager : public Component {
      * - "validHashes"  (array of uint32): acceptable game-version hashes; empty = all accepted.
      */
     void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+    void OnRemoved(bool forced) override;
 
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     void UnloadResourcesProcess(const ResourceFilter& filter);
