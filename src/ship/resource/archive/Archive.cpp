@@ -167,16 +167,20 @@ void Archive::SetInitialized(bool isInitialized) {
     mIsInitialized = isInitialized;
 }
 
+int32_t Archive::GetPriority() {
+    return mPriority;
+}
+
+void Archive::SetPriority(int32_t priority) {
+    mPriority = priority;
+}
+
 void Archive::SetGameVersion(uint32_t gameVersion) {
     mGameVersion = gameVersion;
 }
 
 void Archive::IndexFile(const std::string& filePath) {
-    if (filePath.length() > 5 && filePath.substr(filePath.length() - 5) == ".meta") {
-        IndexFile(filePath.substr(0, filePath.length() - 5));
-        return;
-    }
-
+    // Indexed under the literal name, so a `foo.meta` alias stays distinct from the `foo` it redirects.
     (*mHashes)[CRC64(filePath.c_str())] = filePath;
 }
 
