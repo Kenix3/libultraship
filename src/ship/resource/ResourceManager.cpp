@@ -44,6 +44,12 @@ void ResourceManager::OnInit(const nlohmann::json& initArgs) {
     }
 }
 
+void ResourceManager::OnRemoved(bool forced) {
+    Component::OnRemoved(forced);
+    mResourceLoader.reset();
+    mArchiveManager.reset();
+}
+
 ResourceManager::~ResourceManager() {
     // Guard against logging after the Logger component (and spdlog) has shut down
     // during Context teardown.
