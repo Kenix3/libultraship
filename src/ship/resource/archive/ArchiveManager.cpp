@@ -160,8 +160,7 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
-void ArchiveManager::AddFile(const std::string& filePath, const std::shared_ptr<Archive>& archive) {
-    const uint64_t hash = CRC64(filePath.c_str());
+void ArchiveManager::AddFile(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive) {
     mHashes[hash] = filePath;
     mFileToArchive[hash] = archive;
 
@@ -177,7 +176,8 @@ bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::stri
                                const std::vector<uint8_t>& data) {
     if (archive) {
         if (archive->WriteFile(filePath, data)) {
-            AddFile(filePath, archive);
+            auto hash = CRC64(filePath.c_str());
+            AddFile(hash, filePath, archive);
             return true; // Successfully wrote file
         }
     }
@@ -303,7 +303,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     }
     const auto fileList = archive->ListFiles();
     for (auto& [hash, filename] : *fileList.get()) {
-        AddFile(filename, archive);
+        AddFile(hash, filename, archive);
 
         size_t lastSlash = filename.find_last_of('/');
         if (lastSlash != std::string::npos) {

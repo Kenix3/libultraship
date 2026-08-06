@@ -233,10 +233,11 @@ class ArchiveManager : public Component {
 
     /**
      * @brief Records a file in the hash-to-path and path-to-archive lookup tables.
+     * @param hash     CRC64 of the virtual path.
      * @param filePath Virtual path of the file.
      * @param archive  Archive serving the file.
      */
-    void AddFile(const std::string& filePath, const std::shared_ptr<Archive>& archive);
+    void AddFile(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive);
 
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;
