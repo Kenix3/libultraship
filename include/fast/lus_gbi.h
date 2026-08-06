@@ -134,6 +134,9 @@ constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
 
 /* macros for command parsing: */
 #define GDMACMD(x) (x)
+#ifdef GIMMCMD
+#undef GIMMCMD
+#endif
 #define GIMMCMD(x) = OPCODE(G_IMMFIRST - (x))
 #define GRDPCMD(x) (0xff - (x))
 
