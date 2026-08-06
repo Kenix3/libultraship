@@ -237,63 +237,12 @@ static void SetBufferOffset(const std::shared_ptr<File>& file, const std::shared
     }
 }
 
-std::shared_ptr<ResourceInitData> ResourceLoader::ResolveMetaAlias(const ResourceIdentifier& identifier,
-                                                                   const std::string& filePath,
-                                                                   std::shared_ptr<File>& fileToLoad) {
-    if (mResourceManager == nullptr || filePath.empty()) {
-        return nullptr;
-    }
-
-    auto metaFileToLoad = mResourceManager->LoadFileProcess(filePath + ".meta");
-    if (metaFileToLoad == nullptr) {
-        return nullptr;
-    }
-
-    auto metaInitData = ReadResourceInitData(filePath, metaFileToLoad);
-
-    auto targetIdentifier = metaInitData->Identifier;
-    targetIdentifier.SetOwner(identifier.GetOwner());
-    targetIdentifier.SetParent(identifier.GetParent());
-    metaInitData->Identifier = targetIdentifier;
-
-    auto targetFileToLoad = mResourceManager->LoadFileProcess(targetIdentifier);
-    if (targetFileToLoad == nullptr) {
-        return nullptr;
-    }
-
-    auto archiveManager = mResourceManager->GetArchiveManager();
-    if (archiveManager == nullptr) {
-        return nullptr;
-    }
-
-    // Both candidates are ranked by the archive holding them, and the higher one loads. A tie
-    // means one archive supplies both, and there its `.meta` is the more specific instruction.
-    // Nothing at filePath reports -1, so any reachable target outranks it.
-    const auto targetPath = ResolveIdentifierPath(targetIdentifier, mResourceManager);
-    const int32_t targetPriority = archiveManager->GetFilePriority(targetPath);
-    const int32_t basePriority = archiveManager->GetFilePriority(filePath);
-    if (targetPriority < basePriority) {
-        SPDLOG_TRACE("Alias {} -> {} not taken: target ranks {} against {} at the requested path", filePath, targetPath,
-                     targetPriority, basePriority);
-        return nullptr;
-    }
-
-    fileToLoad = targetFileToLoad;
-    return metaInitData;
-}
-
 std::shared_ptr<IResource> ResourceLoader::LoadResource(const ResourceIdentifier& identifier,
                                                         std::shared_ptr<File> fileToLoad,
                                                         std::shared_ptr<ResourceInitData> initData) {
-    const auto filePath = ResolveIdentifierPath(identifier, mResourceManager);
-
-    // fileToLoad is the file at filePath, or null when only a `.meta` names this path.
     bool legacyInitData = false;
-    if (initData == nullptr) {
-        initData = ResolveMetaAlias(identifier, filePath, fileToLoad);
-    }
     if (initData == nullptr && fileToLoad != nullptr) {
-        initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
+        initData = ReadResourceInitDataLegacy(ResolveIdentifierPath(identifier, mResourceManager), fileToLoad);
         legacyInitData = true;
     }
 

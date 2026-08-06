@@ -68,8 +68,10 @@ std::shared_ptr<Archive> ArchiveManager::GetArchiveFromFile(const std::string& f
     return mFileToArchive[CRC64(filePath.c_str())];
 }
 
-int32_t ArchiveManager::GetFilePriority(const std::string& filePath) {
-    auto it = mFileToArchive.find(CRC64(filePath.c_str()));
+int32_t ArchiveManager::GetFilePriority(const ResourceIdentifier& identifier) {
+    const uint64_t hash = identifier.IsPath() ? CRC64(identifier.GetPath().c_str()) : identifier.GetPathHash();
+
+    auto it = mFileToArchive.find(hash);
     if (it == mFileToArchive.end() || it->second == nullptr) {
         return -1;
     }

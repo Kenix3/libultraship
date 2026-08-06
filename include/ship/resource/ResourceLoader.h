@@ -93,6 +93,15 @@ class ResourceLoader {
      */
     uint32_t GetResourceType(const std::string& type);
 
+    /**
+     * @brief Reads and parses the resource header from the meta-file to produce ResourceInitData.
+     * @param filePath       Virtual path (for error messages).
+     * @param metaFileToLoad File containing the header (may be a separate ".meta" sidecar).
+     * @return Populated ResourceInitData, or nullptr if the header is invalid.
+     */
+    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                           std::shared_ptr<File> metaFileToLoad);
+
   protected:
     /** @brief Registers the built-in factories (Blob, JSON, Shader). Called during construction. */
     void RegisterGlobalResourceFactories();
@@ -108,26 +117,6 @@ class ResourceLoader {
      * @return Matching factory, or nullptr if none is registered.
      */
     std::shared_ptr<ResourceFactory> GetFactory(uint32_t format, std::string typeName, uint32_t version);
-
-    /**
-     * @brief Reads and parses the resource header from the meta-file to produce ResourceInitData.
-     * @param filePath       Virtual path (for error messages).
-     * @param metaFileToLoad File containing the header (may be a separate ".meta" sidecar).
-     * @return Populated ResourceInitData, or nullptr if the header is invalid.
-     */
-    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
-                                                           std::shared_ptr<File> metaFileToLoad);
-
-    /**
-     * @brief Resolves a `.meta` at filePath, deciding whether it or filePath itself should load.
-     * @param identifier The requesting identifier; its owner and parent carry over to the result.
-     * @param filePath   Virtual path being loaded.
-     * @param fileToLoad In/out: the file at filePath, null when only a `.meta` is there. Set to
-     *                   the `.meta`'s target when the target is the one chosen.
-     * @return Init data parsed from the `.meta`, or nullptr to keep loading filePath as-is.
-     */
-    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const ResourceIdentifier& identifier,
-                                                       const std::string& filePath, std::shared_ptr<File>& fileToLoad);
 
     /** @brief Creates a ResourceInitData with default/zeroed fields. */
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();

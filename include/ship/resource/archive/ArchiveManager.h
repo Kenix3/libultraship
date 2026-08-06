@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#include "ship/resource/ResourceIdentifier.h"
 #include "ship/core/Component.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
@@ -151,10 +152,10 @@ class ArchiveManager : public Component {
     /**
      * @brief Load-order priority of the archive that owns the given file (higher = higher
      * priority; the last-loaded archive wins). Used to rank a real asset against an alias target.
-     * @param filePath Virtual path of the file.
+     * @param identifier Identifier of the file.
      * @return Priority index, or -1 if no loaded archive has the file.
      */
-    int32_t GetFilePriority(const std::string& filePath);
+    int32_t GetFilePriority(const ResourceIdentifier& identifier);
 
     /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.
