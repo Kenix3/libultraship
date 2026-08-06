@@ -120,8 +120,18 @@ void GfxRenderingAPIMetal::RenderDrawData(ImDrawData* drawData) {
     MTL::Texture* screen_texture = mTextures[framebuffer.mTextureId].texture;
     int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
     int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
-    if (screen_texture->width() != fb_width || screen_texture->height() != fb_height)
+    if (screen_texture->width() != fb_width || screen_texture->height() != fb_height) {
+        // Dropping the frame hides the entire GUI with no other symptom, so say so once.
+        static bool sMismatchReported = false;
+        if (!sMismatchReported) {
+            sMismatchReported = true;
+            SPDLOG_WARN("Metal: skipping ImGui draw, screen texture {}x{} != draw data {}x{} "
+                        "(DisplaySize {}x{} * FramebufferScale {}x{})",
+                        screen_texture->width(), screen_texture->height(), fb_width, fb_height, drawData->DisplaySize.x,
+                        drawData->DisplaySize.y, drawData->FramebufferScale.x, drawData->FramebufferScale.y);
+        }
         return;
+    }
 
     ImGui_ImplMetal_RenderDrawData(drawData, framebuffer.mCommandBuffer, framebuffer.mCommandEncoder);
 }
