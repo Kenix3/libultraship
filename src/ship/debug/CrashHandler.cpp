@@ -79,7 +79,7 @@ void CrashHandler::PrintCommon() {
         mCallback(mOutBuffer.get(), &mOutBuffersize);
     }
 
-    SPDLOG_CRITICAL(mOutBuffer.get());
+    SPDLOG_CRITICAL("{}", mOutBuffer.get());
 }
 
 #if defined(__linux__) && !defined(__ANDROID__)

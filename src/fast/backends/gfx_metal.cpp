@@ -30,7 +30,6 @@
 #include <SDL3/SDL_render.h>
 #include <imgui_impl_metal.h>
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/fmt.h>
 
 #include "fast/backends/gfx_metal_shader.h"
 
@@ -897,7 +896,7 @@ void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) 
         // commit+waitUntilCompleted doesn't deadlock on enqueue ordering.
         MTL::CommandQueue* queue = fb.mUseReadbackQueue ? mReadbackQueue : mCommandQueue;
         fb.mCommandBuffer = queue->commandBuffer();
-        std::string fbcb_label = fmt::format("FrameBuffer {} Command Buffer", fb_id);
+        std::string fbcb_label = spdlog::fmt_lib::format("FrameBuffer {} Command Buffer", fb_id);
         fb.mCommandBuffer->setLabel(NS::String::string(fbcb_label.c_str(), NS::UTF8StringEncoding));
 
         if (!fb.mUseReadbackQueue) {
@@ -906,7 +905,7 @@ void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale) 
         }
 
         fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
-        std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
+        std::string fbce_label = spdlog::fmt_lib::format("FrameBuffer {} Command Encoder", fb_id);
         fb.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
         fb.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
     }
@@ -946,7 +945,7 @@ void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
     // Create a new render encoder back onto the framebuffer
     framebuffer.mCommandEncoder = framebuffer.mCommandBuffer->renderCommandEncoder(framebuffer.mRenderPassDescriptor);
 
-    std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
+    std::string fbce_label = spdlog::fmt_lib::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
     framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
     framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
     framebuffer.mCommandEncoder->setViewport(*framebuffer.mViewport);
@@ -1019,7 +1018,8 @@ void GfxRenderingAPIMetal::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_so
         target_framebuffer.mCommandEncoder =
             target_framebuffer.mCommandBuffer->renderCommandEncoder(target_framebuffer.mRenderPassDescriptor);
 
-        std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After MSAA Resolve", fb_id_target);
+        std::string fbce_label =
+            spdlog::fmt_lib::format("FrameBuffer {} Command Encoder After MSAA Resolve", fb_id_target);
         target_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
     }
 }
@@ -1157,7 +1157,7 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
     source_framebuffer.mCommandEncoder =
         source_framebuffer.mCommandBuffer->renderCommandEncoder(source_framebuffer.mRenderPassDescriptor);
 
-    std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
+    std::string fbce_label = spdlog::fmt_lib::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
     source_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
     source_framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
     source_framebuffer.mCommandEncoder->setViewport(*source_framebuffer.mViewport);

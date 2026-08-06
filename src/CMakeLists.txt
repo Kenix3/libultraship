@@ -132,7 +132,7 @@ target_link_libraries(libultraship PUBLIC nlohmann_json::nlohmann_json)
 find_package(tinyxml2 REQUIRED)
 target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
 
-find_package(spdlog REQUIRED)
+find_package(spdlog 1.10 REQUIRED)
 target_link_libraries(libultraship PUBLIC spdlog::spdlog)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
