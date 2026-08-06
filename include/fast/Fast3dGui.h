@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include "ship/window/gui/Gui.h"
+#include "fast/Fast3dWindow.h"
 #include "fast/WindowEvent.h"
 #include "fast/resource/type/Texture.h"
 #include "ship/window/gui/resource/GuiTexture.h"
@@ -48,6 +49,7 @@ typedef struct {
             uint32_t Height; ///< Framebuffer height in pixels.
         } Gx2;
     };
+    WindowBackend Backend;
 } GuiWindowInitData;
 
 /**
