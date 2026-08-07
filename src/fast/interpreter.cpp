@@ -2370,7 +2370,7 @@ void Interpreter::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* dat
             break;
         case F3DEX_G_MV_LOOKATY:
         case F3DEX_G_MV_LOOKATX:
-            memcpy(mRsp->lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->lookat + (F3DEX_G_MV_LOOKATX - index) / 2, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
@@ -4942,11 +4942,11 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
-    mRsp->lookat[0].dir[0] = 0;
-    mRsp->lookat[0].dir[1] = 127;
+    mRsp->lookat[0].dir[0] = 127;
+    mRsp->lookat[0].dir[1] = 0;
     mRsp->lookat[0].dir[2] = 0;
-    mRsp->lookat[1].dir[0] = 127;
-    mRsp->lookat[1].dir[1] = 0;
+    mRsp->lookat[1].dir[0] = 0;
+    mRsp->lookat[1].dir[1] = 127;
     mRsp->lookat[1].dir[2] = 0;
     CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
     CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
