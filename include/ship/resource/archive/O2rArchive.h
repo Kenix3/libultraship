@@ -33,7 +33,7 @@ class O2rArchive final : virtual public Archive {
      * @brief Constructs an O2rArchive for the given ZIP file path.
      * @param archivePath Absolute or relative filesystem path to the ".o2r" file.
      */
-    O2rArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+    O2rArchive(const std::string& archivePath, std::shared_ptr<ResourceManager> resourceManager,
                std::shared_ptr<Keystore> keystore = nullptr);
     ~O2rArchive();
 
