@@ -28,6 +28,7 @@ add_executable(libultraship_tests
     sound_matrix_decoder_tests.cpp
     path_file_helper_tests.cpp
     archive_resource_tests.cpp
+    archive_resource_meta_resolution_tests.cpp
     glob_tests.cpp
     splittext_tests.cpp
     path_diskfile_tests.cpp

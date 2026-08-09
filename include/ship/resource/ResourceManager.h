@@ -417,6 +417,16 @@ class ResourceManager : public Component {
 
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
+    /**
+     * @brief Resolves the `.meta` beside this identifier, if its target should load instead.
+     *
+     * The real asset at the identifier and the `.meta`'s target are both ranked by the archive
+     * holding them, and the higher one loads. A tie goes to the `.meta`.
+     *
+     * @return Init data whose Identifier names the file to load, or nullptr if no `.meta` wins.
+     */
+    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const ResourceIdentifier& identifier);
+
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
                        ResourceIdentifierHash>
