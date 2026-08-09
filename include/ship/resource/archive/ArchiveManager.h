@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#include "ship/resource/ResourceIdentifier.h"
 #include "ship/core/Component.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
@@ -149,6 +150,14 @@ class ArchiveManager : public Component {
     std::shared_ptr<Archive> GetArchiveFromFile(const std::string& filePath);
 
     /**
+     * @brief Load-order priority of the archive that owns the given file (higher = higher
+     * priority; the last-loaded archive wins). Used to rank a real asset against an alias target.
+     * @param identifier Identifier of the file.
+     * @return Priority index, or -1 if no loaded archive has the file.
+     */
+    int32_t GetFilePriority(const ResourceIdentifier& identifier);
+
+    /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.
      * @param searchMask Glob pattern (empty = list everything).
      * @return Sorted, deduplicated list of matching paths.
@@ -221,6 +230,14 @@ class ArchiveManager : public Component {
 
     /** @brief Rebuilds the hash-to-path and path-to-archive lookup tables from the current archive list. */
     void ResetVirtualFileSystem();
+
+    /**
+     * @brief Records a file in the hash-to-path and path-to-archive lookup tables.
+     * @param hash     CRC64 of the virtual path.
+     * @param filePath Virtual path of the file.
+     * @param archive  Archive serving the file.
+     */
+    void AddFileToVfs(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive);
 
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;

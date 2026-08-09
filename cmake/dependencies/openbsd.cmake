@@ -1,15 +1,13 @@
 #=================== ImGui ===================
 
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3)
 
-# XXX sdl2-config.cmake doesn't include /usr/X11R6/include but sdl2-config does
-# ideally this could be fixed from sdl2 port
-# set(SDL2_INCLUDE_DIRS "${SDL2_INCLUDE_DIRS};/usr/X11R6/include")
+# The OpenBSD SDL package does not propagate /usr/X11R6/include.
 # note this is a central place to bundle such hacks for libultraship consumers
 # otherwise each game may need its own fix as we are not in the same scope
 include_directories("/usr/X11R6/include")
 
-target_link_libraries(ImGui PUBLIC SDL2::SDL2)
+target_link_libraries(ImGui PUBLIC SDL3::SDL3)
 
 if (USE_OPENGLES)
     # XXX copy linux.cmake but maybe this actually need gles3_LIBRARY

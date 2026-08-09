@@ -1,15 +1,17 @@
 include(FetchContent)
 
-#=================== SDL2 ===================
-find_package(SDL2 QUIET)
-if (NOT ${SDL2_FOUND})
+#=================== SDL3 ===================
+find_package(SDL3 QUIET)
+if (NOT ${SDL3_FOUND})
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
     FetchContent_Declare(
-        SDL2
+        SDL3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-2.32.10
+        GIT_TAG release-3.4.12
         OVERRIDE_FIND_PACKAGE
     )
-    FetchContent_MakeAvailable(SDL2)
+    FetchContent_MakeAvailable(SDL3)
 endif()
 
 #=================== nlohmann-json ===================
@@ -87,4 +89,4 @@ target_sources(ImGui
 target_include_directories(ImGui PRIVATE ${metalcpp_SOURCE_DIR})
 target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 
-target_link_libraries(ImGui PUBLIC SDL2::SDL2-static SDL2::SDL2main)
+target_link_libraries(ImGui PUBLIC SDL3::SDL3)

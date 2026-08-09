@@ -20,14 +20,14 @@ SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntens
 void SDLRumbleMapping::StartRumble() {
     for (const auto& [instanceId, gamepad] :
          mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        SDL_GameControllerRumble(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+        SDL_RumbleGamepad(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
     }
 }
 
 void SDLRumbleMapping::StopRumble() {
     for (const auto& [instanceId, gamepad] :
          mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        SDL_GameControllerRumble(gamepad, 0, 0, 0);
+        SDL_RumbleGamepad(gamepad, 0, 0, 0);
     }
 }
 
