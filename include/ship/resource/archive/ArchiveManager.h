@@ -237,7 +237,7 @@ class ArchiveManager : public Component {
      * @param filePath Virtual path of the file.
      * @param archive  Archive serving the file.
      */
-    void AddFile(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive);
+    void AddFileToVfs(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive);
 
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;
