@@ -126,6 +126,7 @@ Interpreter::~Interpreter() {
 }
 
 static std::weak_ptr<Interpreter> mInstance;
+extern "C" int32_t GfxGetCurrentGameTick();
 // Set a cached pointer to the instance so we don't need to go through the window every time
 void GfxSetInstance(std::shared_ptr<Interpreter> gfx) {
     mInstance = gfx;
@@ -586,6 +587,48 @@ static uint32_t GetTileSizeFromCoordinates(float low, float high) {
         return 0;
     }
     return static_cast<uint32_t>(lroundf((high - low + 4.0f) / 4.0f));
+}
+
+static int32_t GetRepeatPeriodFromTile(const RDP* rdp, uint8_t tile, bool isS, uint32_t tileSize) {
+    const auto& textureTile = rdp->texture_tile[tile];
+    const uint8_t mask = isS ? textureTile.masks : textureTile.maskt;
+    const uint8_t mode = isS ? textureTile.cms : textureTile.cmt;
+    const uint8_t shift = isS ? textureTile.shifts : textureTile.shiftt;
+
+    uint32_t period = tileSize;
+    if (mask != 0) {
+        period = 1u << mask;
+    }
+    if ((mode & G_TX_MIRROR) != 0) {
+        period *= 2;
+    }
+
+    int32_t shiftedPeriod = static_cast<int32_t>(period) << 2;
+    if (shift != 0) {
+        if (shift <= 10) {
+            shiftedPeriod <<= shift;
+        } else {
+            shiftedPeriod >>= (16 - shift);
+            if (shiftedPeriod <= 0) {
+                shiftedPeriod = 1;
+            }
+        }
+    }
+
+    return shiftedPeriod;
+}
+
+static float WrapScrollCoordinate(int32_t value, int32_t period) {
+    if (period <= 0) {
+        return 0.0f;
+    }
+
+    int32_t wrapped = value % period;
+    if (wrapped < 0) {
+        wrapped += period;
+    }
+
+    return static_cast<float>(wrapped);
 }
 
 void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
@@ -4348,6 +4391,45 @@ bool gfx_set_tile_size_lerp_handler_rdp(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_scroll_texture_handler_custom(F3DGfx** cmd0) {
+    F3DGfx* cmd = *cmd0;
+    Interpreter* gfx = mInstance.lock().get();
+
+    const uint8_t tile = cmd->words.w0 & 0x7;
+    const int16_t speedX = static_cast<int16_t>(cmd->words.w1 >> 16);
+    const int16_t speedY = static_cast<int16_t>(cmd->words.w1 & 0xFFFF);
+
+    auto& textureTile = gfx->mRdp->texture_tile[tile];
+    const uint32_t tileWidth = GetTileSizeFromCoordinates(textureTile.uls, textureTile.lrs);
+    const uint32_t tileHeight = GetTileSizeFromCoordinates(textureTile.ult, textureTile.lrt);
+    const float tileSpanX = textureTile.lrs - textureTile.uls;
+    const float tileSpanY = textureTile.lrt - textureTile.ult;
+
+    const int32_t periodX = GetRepeatPeriodFromTile(gfx->mRdp, tile, true, tileWidth);
+    const int32_t periodY = GetRepeatPeriodFromTile(gfx->mRdp, tile, false, tileHeight);
+    const int32_t tick = GfxGetCurrentGameTick();
+
+    const float uls0 = WrapScrollCoordinate(static_cast<int32_t>(lroundf(textureTile.uls)) + tick * speedX, periodX);
+    const float ult0 = WrapScrollCoordinate(static_cast<int32_t>(lroundf(textureTile.ult)) + tick * speedY, periodY);
+    const float lrs0 = uls0 + tileSpanX;
+    const float lrt0 = ult0 + tileSpanY;
+
+    const float uls1 = uls0 + speedX;
+    const float ult1 = ult0 + speedY;
+    const float lrs1 = lrs0 + speedX;
+    const float lrt1 = lrt0 + speedY;
+
+    const float t = gfx->mInterpolationT;
+    textureTile.uls = uls0 + t * (uls1 - uls0);
+    textureTile.ult = ult0 + t * (ult1 - ult0);
+    textureTile.lrs = lrs0 + t * (lrs1 - lrs0);
+    textureTile.lrt = lrt0 + t * (lrt1 - lrt0);
+    gfx->mRdp->textures_changed[0] = true;
+    gfx->mRdp->textures_changed[1] = true;
+
+    return false;
+}
+
 bool gfx_set_interpolation_index_target(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     Interpreter* gfx = mInstance.lock().get();
@@ -4732,6 +4814,7 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
+    { OTR_G_SCROLL_TEXTURE, { "G_SCROLL_TEXTURE", gfx_scroll_texture_handler_custom } },
     { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
     { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
     { RDP_G_TRI1_WIDE, { "G_TRI1_WIDE", gfx_tri1_handler_f3dex2 } },                   // RDP_G_TRI1_WIDE (-17)
