@@ -21,7 +21,7 @@ class TestRamArchive : public Ship::Archive {
     explicit TestRamArchive(const std::string& path = "ram://test",
                             const std::unordered_map<std::string, std::string>& files = {},
                             const std::string& manifest = R"({"name":"TestArchive","code_version":1})")
-        : Ship::Archive(path), mTestFiles(files), mManifestJson(manifest) {
+        : Ship::Archive(path, nullptr), mTestFiles(files), mManifestJson(manifest) {
     }
 
     bool Open() override {
