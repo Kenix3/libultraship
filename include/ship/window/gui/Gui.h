@@ -200,8 +200,9 @@ class Gui : public Component {
      *  The base implementation is a no-op. */
     virtual void ImGuiBackendNewFrame();
 
-    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent.
-     *  The base implementation is a no-op. */
+    /** @brief Calls ImGui_ImplSDL3_NewFrame() or the platform equivalent.
+     *  The base implementation is a no-op.
+     */
     virtual void ImGuiWMNewFrame();
 
     /** @brief Initialises the platform/window-manager ImGui backend.

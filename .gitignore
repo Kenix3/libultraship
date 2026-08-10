@@ -373,9 +373,9 @@ extern/nlohmann-json/*_jsonConfig*
 *.xcsettings
 build*
 doxygen_out/
-docs/_site/
-docs/.jekyll-cache/
-docs/Gemfile.lock
+docs/doxygen/_site/
+docs/doxygen/.jekyll-cache/
+docs/doxygen/Gemfile.lock
 # Debian packages should never be checked in
 *.deb
 *.dir/**

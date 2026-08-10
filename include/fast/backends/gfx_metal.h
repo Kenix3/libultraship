@@ -11,7 +11,7 @@
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
 
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #include <simd/simd.h>
 
 namespace Ship {

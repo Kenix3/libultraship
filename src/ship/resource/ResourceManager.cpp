@@ -101,6 +101,38 @@ std::shared_ptr<File> ResourceManager::LoadFileProcess(uint64_t hash) {
     return file;
 }
 
+std::shared_ptr<ResourceInitData> ResourceManager::ResolveMetaAlias(const ResourceIdentifier& identifier) {
+    const std::string* basePath =
+        identifier.IsPath() ? &identifier.GetPath() : mArchiveManager->HashToString(identifier.GetPathHash());
+    if (basePath == nullptr || basePath->empty()) {
+        return nullptr;
+    }
+
+    auto metaFile = LoadFileProcess({ *basePath + ".meta", identifier.GetOwner(), identifier.GetParent() });
+    if (metaFile == nullptr) {
+        return nullptr;
+    }
+
+    auto metaInitData = GetResourceLoader()->ReadResourceInitData(*basePath, metaFile);
+
+    auto targetIdentifier = metaInitData->Identifier;
+    targetIdentifier.SetOwner(identifier.GetOwner());
+    metaInitData->Identifier = targetIdentifier;
+
+    // Both candidates are ranked by the archive holding them, and the higher one loads. A tie
+    // means one archive supplies both, and there its `.meta` is the more specific instruction.
+    // Nothing at the requested path reports -1, so any reachable target outranks it.
+    const int32_t targetPriority = mArchiveManager->GetFilePriority(targetIdentifier);
+    const int32_t basePriority = mArchiveManager->GetFilePriority(identifier);
+    if (targetPriority < basePriority) {
+        SPDLOG_TRACE("Alias {} -> {} not taken: target ranks {} against {} at the requested path", *basePath,
+                     targetIdentifier.GetPath(), targetPriority, basePriority);
+        return nullptr;
+    }
+
+    return metaInitData;
+}
+
 std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceIdentifier& identifier, bool loadExact,
                                                                 std::shared_ptr<ResourceInitData> initData) {
     if (initData != nullptr) {
@@ -156,8 +188,22 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         }
     }
 
+    // A `.meta` beside this path can name a different file to load in its place
+    std::shared_ptr<File> file = nullptr;
+    if (initData == nullptr) {
+        if (auto metaInitData = ResolveMetaAlias(identifier)) {
+            file = LoadFileProcess(metaInitData->Identifier);
+            if (file != nullptr) {
+                initData = metaInitData;
+            }
+        }
+    }
+
     // Get the file from the OTR
-    auto file = LoadFileProcess(identifier);
+    if (file == nullptr) {
+        file = LoadFileProcess(identifier);
+    }
+
     if (file == nullptr) {
         if (identifier.IsPath()) {
             SPDLOG_TRACE("Failed to load resource file at path {}", identifier.GetPath());
