@@ -1,0 +1,33 @@
+diff --git a/include/BS_thread_pool.hpp b/include/BS_thread_pool.hpp
+index 984fc36..b3608fc 100644
+--- a/include/BS_thread_pool.hpp
++++ b/include/BS_thread_pool.hpp
+@@ -151,12 +151,22 @@ namespace this_thread {
++#if defined(__WIIU__)
++    // WUT's elf2rpl cannot encode PPC TLS relocations. This optional
++    // introspection API is unused by libultraship and SoH on CaféOS.
++    inline const thread_info_index get_index;
++#else
+    inline thread_local thread_info_index get_index;
++#endif
+@@ -161,6 +171,10 @@ namespace this_thread {
++#if defined(__WIIU__)
++    inline const thread_info_pool get_pool;
++#else
+    inline thread_local thread_info_pool get_pool;
++#endif
+@@ -906,8 +916,10 @@ private:
+    void worker(const concurrency_t idx, const std::function<void()>& init_task)
+    {
++#if !defined(__WIIU__)
+        this_thread::get_index.index = idx;
+        this_thread::get_pool.pool = this;
++#endif
+        init_task();
+@@ -938,8 +950,10 @@ private:
+        }
++#if !defined(__WIIU__)
+        this_thread::get_index.index = std::nullopt;
+        this_thread::get_pool.pool = std::nullopt;
++#endif
+    }

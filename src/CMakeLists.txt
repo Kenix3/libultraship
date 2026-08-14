@@ -201,6 +201,20 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
         )
     endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    # CafeOS uses the GX2 Fast3D backend. It must not compile the SDL/OpenGL
+    # implementation selected by the generic desktop path.
+    target_compile_definitions(libultraship PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+        SPDLOG_ACTIVE_LEVEL=${SPDLOG_MIN_CUTOFF}
+    )
+    # CaféOS has no process shell; keep ImGui from emitting its POSIX URL launcher.
+    target_compile_definitions(ImGui PRIVATE IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+    # elf2rpl cannot encode PPC TLS relocations. These libraries provide
+    # supported single-threaded/no-TLS configurations for this platform.
+    target_compile_definitions(stb PRIVATE STBI_NO_THREAD_LOCALS)
+    target_compile_definitions(spdlog PRIVATE SPDLOG_NO_TLS SPDLOG_NO_THREAD_ID)
 else()
     target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
@@ -258,4 +272,3 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU|Clang")
     )
     endif()
 endif()
-

@@ -60,6 +60,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(cmake/dependencies/ios.cmake)
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    include(cmake/dependencies/wiiu.cmake)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include(cmake/dependencies/linux.cmake)
 endif()

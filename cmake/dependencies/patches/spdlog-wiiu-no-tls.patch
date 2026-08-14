@@ -1,0 +1,14 @@
+diff --git a/include/spdlog/mdc.h b/include/spdlog/mdc.h
+index 41f0c1f3..8baf3e39 100644
+--- a/include/spdlog/mdc.h
++++ b/include/spdlog/mdc.h
+@@ -38,7 +38,13 @@ public:
+    static mdc_map_t &get_context() {
++#if defined(__WIIU__)
++        // elf2rpl cannot encode PPC TLS relocations. SoH does not use MDC;
++        // a process-wide context preserves this optional API on CaféOS.
++        static mdc_map_t context;
++#else
+        static thread_local mdc_map_t context;
++#endif
+        return context;
