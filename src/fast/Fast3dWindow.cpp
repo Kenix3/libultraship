@@ -12,6 +12,10 @@
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
+#ifdef __WIIU__
+#include "fast/backends/gfx_gx2.h"
+#include "fast/backends/gfx_wiiu.h"
+#endif
 
 #include "fast/Fast3dGui.h"
 
@@ -36,7 +40,11 @@ Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastM
         AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_METAL);
     }
 #endif
+#ifdef __WIIU__
+    AddAvailableWindowBackend(WindowBackend::FAST3D_WIIU_GX2);
+#else
     AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_OPENGL);
+#endif
 }
 
 Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
@@ -52,6 +60,11 @@ Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::Gu
 
 Fast3dWindow::~Fast3dWindow() {
     SPDLOG_DEBUG("destruct fast3dwindow");
+#ifdef __WIIU__
+    // GX2-backed ImGui resources must be released while the GX2 renderer and
+    // context still exist. Window's base destructor will safely no-op later.
+    GetGui()->ShutDownImGui(this);
+#endif
     mInterpreter->Destroy();
     delete mRenderingApi;
     delete mWindowManagerApi;
@@ -137,6 +150,12 @@ void Fast3dWindow::InitWindowManager() {
     SetWindowBackend(GetSavedWindowBackend());
 
     switch (GetWindowBackend()) {
+#ifdef __WIIU__
+        case WindowBackend::FAST3D_WIIU_GX2:
+            mWindowManagerApi = new GfxWindowBackendWiiU();
+            mRenderingApi = new GfxRenderingAPIGX2();
+            break;
+#endif
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
             mWindowManagerApi = new GfxWindowBackendDXGI();
@@ -401,6 +420,8 @@ std::string Fast3dWindow::GetWindowBackendName() {
             return "OpenGL";
         case WindowBackend::FAST3D_SDL_METAL:
             return "Metal";
+        case WindowBackend::FAST3D_WIIU_GX2:
+            return "GX2";
         default:
             return "";
     }

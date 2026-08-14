@@ -23,6 +23,7 @@ enum WindowBackend {
     FAST3D_DXGI_DX11 = 1,
     FAST3D_SDL_OPENGL = 2,
     FAST3D_SDL_METAL = 3,
+    FAST3D_WIIU_GX2 = 4,
 };
 
 class Fast3dWindow : public Ship::Window {

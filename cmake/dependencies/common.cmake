@@ -27,11 +27,13 @@ target_sources(ImGui
     ${imgui_SOURCE_DIR}/imgui.cpp
 )
 
-target_sources(ImGui
-    PRIVATE
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
-)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    target_sources(ImGui
+        PRIVATE
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+    )
+endif()
 
 target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
 
@@ -94,10 +96,17 @@ if (GFX_DEBUG_DISASSEMBLER)
 endif()
 
 #======== thread-pool ========
+set(threadpool_fetch_options)
+if (CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    set(threadpool_wiiu_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/thread-pool-wiiu-no-tls.patch)
+    set(threadpool_wiiu_apply_patch_command ${CMAKE_COMMAND} -Dpatch_file=${threadpool_wiiu_patch_file} -Dwith_reset=FALSE -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/git-patch.cmake)
+    list(APPEND threadpool_fetch_options PATCH_COMMAND ${threadpool_wiiu_apply_patch_command})
+endif()
 FetchContent_Declare(
     ThreadPool
     GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
     GIT_TAG v4.1.0
+    ${threadpool_fetch_options}
 )
 FetchContent_MakeAvailable(ThreadPool)
 

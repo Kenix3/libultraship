@@ -100,6 +100,7 @@ void GfxWindowBackendWiiU::Init(const char*, const char*, bool, uint32_t, uint32
     GX2SetSwapInterval(mFrameDivisor);
     Ship::GuiWindowInitData guiWindow{};
     guiWindow.Gx2 = { WIIU_DEFAULT_FB_WIDTH, WIIU_DEFAULT_FB_HEIGHT };
+    guiWindow.Backend = WindowBackend::FAST3D_WIIU_GX2;
     Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(guiWindow);
     Ship::Context::GetInstance()->GetControlDeck()->GetConnectedPhysicalDeviceManager()->RefreshConnectedSDLGamepads();
     mInitialized = true;
