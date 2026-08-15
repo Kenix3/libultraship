@@ -18,11 +18,7 @@ LUS accepts any and all contributions. You can interact with the project via PRs
 Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CONTRIBUTING.md) file for more information.
 
 ## Versioning
-We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
-
-Epochs allow us to maintain stability during major architectural refactors. When LUS undergoes a large refactor, `main` moves to a new epoch (e.g., `2.x.x.x`) where breaking changes land incrementally. The previous epoch (e.g., `1.x.x.x`) continues as a maintained branch with backported fixes and selected features, providing a stable baseline for ports not yet ready to migrate.
-
-For detailed rationale and migration guidance, see the [Versioning documentation](https://kenix3.github.io/libultraship/VERSIONING.html).
+We use epoch semantic versioning. [Please see our versioning page for more information.](https://kenix3.github.io/libultraship/VERSIONING.html).
 
 ## Building
 

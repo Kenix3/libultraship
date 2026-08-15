@@ -10,7 +10,9 @@ libultraship (LUS) uses [epoch semantic versioning](https://antfu.me/posts/epoch
 
 ## API definition
 
-For LUS, the public API is every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
+For the new epoch, versioning scope includes everything that is public within the `Ship` namespace.
+
+This replaces the previous epoch rule that treated every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h` as part of the versioned API.
 
 ## Why epochs
 

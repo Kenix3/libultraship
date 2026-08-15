@@ -20,7 +20,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 | [Code of Conduct](code-of-conduct) | Community standards for contributors. |
 | [Versioning](versioning) | Epoch semantic versioning policy and epoch maintenance strategy. |
 | [API Reference](api/) | Doxygen-generated documentation for all public classes and functions. |
-| [Epoch 2 Migration Plan](migration-epoch-2) | Migration checklist and architecture notes for upgrading ports to epoch 2. |
+| [Epoch 2 Migration Plan](migration/EPOCH-2) | Migration checklist and architecture notes for upgrading ports to epoch 2. |
 
 ## Contributing
 
