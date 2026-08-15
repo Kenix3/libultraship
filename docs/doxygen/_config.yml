@@ -20,8 +20,6 @@ nav_external_links:
 
 # Exclude source files Jekyll should not process
 exclude:
-  - doxygen/
   - Gemfile
   - Gemfile.lock
   - "*.gemspec"
-  - README.md

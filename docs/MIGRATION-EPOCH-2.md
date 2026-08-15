@@ -1,6 +1,7 @@
-﻿---
+---
 title: Epoch 2 Migration Plan
-nav_order: 8
+parent: Versioning
+nav_order: 1
 ---
 
 # Epoch 2 Migration Plan
