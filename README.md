@@ -18,7 +18,7 @@ LUS accepts any and all contributions. You can interact with the project via PRs
 Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CONTRIBUTING.md) file for more information.
 
 ## Versioning
-We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h.
+We use epoch semantic versioning. [Please see our versioning page for more information.](https://kenix3.github.io/libultraship/VERSIONING.html).
 
 ## Building
 
