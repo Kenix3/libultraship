@@ -2368,9 +2368,11 @@ void Interpreter::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* dat
         case F3DEX_G_MV_VIEWPORT:
             CalcAndSetViewport((const F3DVp_t*)data);
             break;
-        case F3DEX_G_MV_LOOKATY:
         case F3DEX_G_MV_LOOKATX:
-            memcpy(mRsp->lookat + (F3DEX_G_MV_LOOKATX - index) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->lookat + 0, data, sizeof(F3DLight_t));
+            break;
+        case F3DEX_G_MV_LOOKATY:
+            memcpy(mRsp->lookat + 1, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
