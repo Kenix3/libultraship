@@ -2175,11 +2175,15 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g.words.w0 = child->Unsigned64Attribute("MaskAddress");
             g.words.w1 = child->Unsigned64Attribute("ReplacementAddress");
         } else if (childName == "PushShader") {
-            std::string shader = child->Attribute("Shader");
-            char* str = static_cast<char*>(malloc(shader.size() + 1));
-            strcpy(str, shader.c_str());
-            dl->Strings.push_back(str);
-            g = GsSPPushShader(str);
+            const char* shader = child->Attribute("Shader", nullptr);
+            if (shader == nullptr) {
+                printf("DisplayListXML: PushShader is missing its Shader attribute\n");
+            } else {
+                char* shaderCopy = (char*)malloc(strlen(shader) + 1);
+                dl->Strings.push_back(shaderCopy);
+                strcpy(shaderCopy, shader);
+                g = GsSPPushShader(shaderCopy);
+            }
         } else if (childName == "PopShader") {
             g = GsSPPopShader();
         } else {
