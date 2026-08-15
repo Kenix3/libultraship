@@ -45,11 +45,8 @@ std::unordered_map<std::string, uint32_t> renderModes = {
 };
 
 const std::unordered_map<std::string, uint32_t> imageFormats = {
-    { "G_IM_FMT_RGBA", G_IM_FMT_RGBA },
-    { "G_IM_FMT_YUV", G_IM_FMT_YUV },
-    { "G_IM_FMT_CI", G_IM_FMT_CI },
-    { "G_IM_FMT_IA", G_IM_FMT_IA },
-    { "G_IM_FMT_I", G_IM_FMT_I },
+    { "G_IM_FMT_RGBA", G_IM_FMT_RGBA }, { "G_IM_FMT_YUV", G_IM_FMT_YUV }, { "G_IM_FMT_CI", G_IM_FMT_CI },
+    { "G_IM_FMT_IA", G_IM_FMT_IA },     { "G_IM_FMT_I", G_IM_FMT_I },
 };
 
 const std::unordered_map<std::string, uint32_t> imageSizes = {
@@ -78,11 +75,8 @@ const std::unordered_map<std::string, uint32_t> alphaDitherModes = {
 };
 
 const std::unordered_map<std::string, uint32_t> colorDitherModes = {
-    { "G_CD_MAGICSQ", G_CD_MAGICSQ },
-    { "G_CD_BAYER", G_CD_BAYER },
-    { "G_CD_NOISE", G_CD_NOISE },
-    { "G_CD_ENABLE", G_CD_ENABLE },
-    { "G_CD_DISABLE", G_CD_DISABLE },
+    { "G_CD_MAGICSQ", G_CD_MAGICSQ }, { "G_CD_BAYER", G_CD_BAYER },     { "G_CD_NOISE", G_CD_NOISE },
+    { "G_CD_ENABLE", G_CD_ENABLE },   { "G_CD_DISABLE", G_CD_DISABLE },
 };
 
 const std::unordered_map<std::string, uint32_t> combineKeyModes = {
