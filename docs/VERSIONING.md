@@ -20,32 +20,34 @@ LUS is a library undergoing active architectural improvements. From time to time
 
 ### The problem with traditional semver
 
-With standard semantic versioning, a breaking change forces a major version bump (for example, `1.x.x` to `2.0.0`). This creates a dilemma:
+With standard semantic versioning, major refactors create difficult tradeoffs:
 
-- **Option A**: Keep breaking changes on `main`, making it unstable for months while the refactor lands incrementally.
-  - **Result**: Port maintainers cannot safely pull fixes or features during the refactor period.
+- **Option A**: Land breaking changes on `main` and hold off tagging a new major release until the refactor is complete.
+  - **Problem**: Commits landing on `main` mid-refactor are not production-ready. They may change again, lack clear migration paths, and have not been fully tested. Ports cannot safely use these commits.
+  - **Additional issue**: If only the latest major version is maintained, ports cannot land small breaking changes during the refactor period (which may span years).
 
 - **Option B**: Hold all refactor work on a long-lived feature branch.
-  - **Result**: The branch diverges significantly, merge conflicts accumulate, and collaboration becomes difficult.
+  - **Problem**: The branch diverges significantly, merge conflicts accumulate, and collaboration becomes difficult. This happens regardless of versioning strategy.
 
-- **Option C**: Release frequent major versions (`1.0` to `2.0` to `3.0` in quick succession).
-  - **Result**: Version numbers become less meaningful, and users face constant migration churn.
+- **Option C**: Release each breaking change as a new major version during refactor.
+  - **Problem**: A major version bump does not clearly communicate whether it is one argument change or a complete architectural overhaul. Mid-refactor releases lack clear migration paths and stable foundations.
 
 ### How epochs solve this
 
 Epochs add a leading number to the version: `epoch.major.minor.patch` (for example, `1.2.3.4` or `2.0.0.0`).
 
-- **During a major refactor**: `main` moves to a new epoch (for example, `2.x.x.x`), where breaking changes land incrementally.
+- **During a major refactor**: `main` moves to a new epoch (for example, `2.x.x.x`). This signals that `main` is not production-ready and commits may change during the refactor.
 - **The previous epoch** (for example, `1.x.x.x`) continues as a maintained branch:
   - Critical fixes backported
-  - Selected features may be cherry-picked
+  - **Small breaking changes can land** (incrementing major within that epoch)
   - Stable baseline for ports not yet ready to migrate
+  - Production-ready releases continue
 
 This approach:
-- Keeps `main` moving forward without long-lived feature branches
-- Provides a stable baseline for ports during transition periods
-- Avoids rapid major version churn
-- Clearly signals architectural dividing lines
+- Provides a clear place to land breaking changes without releasing/supporting mid-refactor code
+- Allows small breaking changes on the stable epoch while the refactor progresses
+- When the refactor completes, the new epoch becomes the supported production line
+- Version numbers clearly distinguish architectural overhauls from targeted changes
 
 ### When to expect a new epoch
 
@@ -54,4 +56,4 @@ A new epoch typically begins when:
 - Multiple subsystems require coordinated breaking changes
 - The refactor is expected to span several months of incremental work
 
-Minor breaking changes within an epoch still follow semantic versioning rules (bump `major` within that epoch).
+Small or targeted breaking changes within an epoch still follow semantic versioning rules (bump `major` within that epoch). For example, `2.23.0.1` is valid if 23 targeted breaking changes landed in the `2.x.x.x` epoch, each with a clear migration path and production-ready code.
