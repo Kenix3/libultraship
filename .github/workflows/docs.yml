@@ -46,8 +46,8 @@ jobs:
         run: doxygen Doxyfile
 
       - name: Build Jekyll site
+        working-directory: docs/doxygen
         run: |
-          cd docs/doxygen
           bundle exec jekyll build \
             --source .. \
             --config _config.yml \
