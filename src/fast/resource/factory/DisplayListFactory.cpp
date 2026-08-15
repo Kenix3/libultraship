@@ -44,6 +44,90 @@ std::unordered_map<std::string, uint32_t> renderModes = {
     { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 },
 };
 
+const std::unordered_map<std::string, uint32_t> imageFormats = {
+    { "G_IM_FMT_RGBA", G_IM_FMT_RGBA },
+    { "G_IM_FMT_YUV", G_IM_FMT_YUV },
+    { "G_IM_FMT_CI", G_IM_FMT_CI },
+    { "G_IM_FMT_IA", G_IM_FMT_IA },
+    { "G_IM_FMT_I", G_IM_FMT_I },
+};
+
+const std::unordered_map<std::string, uint32_t> imageSizes = {
+    { "G_IM_SIZ_4b", G_IM_SIZ_4b },
+    { "G_IM_SIZ_8b", G_IM_SIZ_8b },
+    { "G_IM_SIZ_16b", G_IM_SIZ_16b },
+    { "G_IM_SIZ_32b", G_IM_SIZ_32b },
+};
+
+const std::unordered_map<std::string, uint32_t> depthSourceModes = {
+    { "G_ZS_PIXEL", G_ZS_PIXEL },
+    { "G_ZS_PRIM", G_ZS_PRIM },
+};
+
+const std::unordered_map<std::string, uint32_t> alphaCompareModes = {
+    { "G_AC_NONE", G_AC_NONE },
+    { "G_AC_THRESHOLD", G_AC_THRESHOLD },
+    { "G_AC_DITHER", G_AC_DITHER },
+};
+
+const std::unordered_map<std::string, uint32_t> alphaDitherModes = {
+    { "G_AD_PATTERN", G_AD_PATTERN },
+    { "G_AD_NOTPATTERN", G_AD_NOTPATTERN },
+    { "G_AD_NOISE", G_AD_NOISE },
+    { "G_AD_DISABLE", G_AD_DISABLE },
+};
+
+const std::unordered_map<std::string, uint32_t> colorDitherModes = {
+    { "G_CD_MAGICSQ", G_CD_MAGICSQ },
+    { "G_CD_BAYER", G_CD_BAYER },
+    { "G_CD_NOISE", G_CD_NOISE },
+    { "G_CD_ENABLE", G_CD_ENABLE },
+    { "G_CD_DISABLE", G_CD_DISABLE },
+};
+
+const std::unordered_map<std::string, uint32_t> combineKeyModes = {
+    { "G_CK_NONE", G_CK_NONE },
+    { "G_CK_KEY", G_CK_KEY },
+};
+
+const std::unordered_map<std::string, uint32_t> textureFilterModes = {
+    { "G_TF_POINT", G_TF_POINT },
+    { "G_TF_AVERAGE", G_TF_AVERAGE },
+    { "G_TF_BILERP", G_TF_BILERP },
+};
+
+const std::unordered_map<std::string, uint32_t> textureLodModes = {
+    { "G_TL_TILE", G_TL_TILE },
+    { "G_TL_LOD", G_TL_LOD },
+};
+
+const std::unordered_map<std::string, uint32_t> textureDetailModes = {
+    { "G_TD_CLAMP", G_TD_CLAMP },
+    { "G_TD_SHARPEN", G_TD_SHARPEN },
+    { "G_TD_DETAIL", G_TD_DETAIL },
+};
+
+const std::unordered_map<std::string, uint32_t> texturePerspModes = {
+    { "G_TP_NONE", G_TP_NONE },
+    { "G_TP_PERSP", G_TP_PERSP },
+};
+
+const std::unordered_map<std::string, uint32_t> scissorModes = {
+    { "G_SC_NON_INTERLACE", G_SC_NON_INTERLACE },
+    { "G_SC_ODD_INTERLACE", G_SC_ODD_INTERLACE },
+    { "G_SC_EVEN_INTERLACE", G_SC_EVEN_INTERLACE },
+};
+
+const std::unordered_map<std::string, uint32_t> objectRenderModes = {
+    { "G_OBJRM_NOTXCLAMP", G_OBJRM_NOTXCLAMP },
+    { "G_OBJRM_XLU", G_OBJRM_XLU },
+    { "G_OBJRM_ANTIALIAS", G_OBJRM_ANTIALIAS },
+    { "G_OBJRM_BILERP", G_OBJRM_BILERP },
+    { "G_OBJRM_SHRINKSIZE_1", G_OBJRM_SHRINKSIZE_1 },
+    { "G_OBJRM_SHRINKSIZE_2", G_OBJRM_SHRINKSIZE_2 },
+    { "G_OBJRM_WIDEN", G_OBJRM_WIDEN },
+};
+
 static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
     Gfx g;
     g.words.w0 = G_VTX_OTR_FILEPATH << 24;
@@ -260,8 +344,14 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
         } else if (childName == "SetPrimDepth") {
             g = gsDPSetPrimDepth(child->IntAttribute("Z"), child->IntAttribute("DZ"));
         } else if (childName == "SetColorImage") {
-            g = gsDPSetColorImage(child->UnsignedAttribute("Format"), child->UnsignedAttribute("Size"),
-                                  child->UnsignedAttribute("Width"), child->UnsignedAttribute("Address"));
+            std::string fmt = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string siz = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmt);
+            auto sizEntry = imageSizes.find(siz);
+            uint32_t fmtVal = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmt, nullptr, 0);
+            uint32_t sizVal = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(siz, nullptr, 0);
+            g = gsDPSetColorImage(fmtVal, sizVal, child->UnsignedAttribute("Width"),
+                                  child->UnsignedAttribute("Address"));
         } else if (childName == "SetDepthImage" || childName == "SetMaskImage") {
             g = gsDPSetDepthImage(child->UnsignedAttribute("Address"));
         } else if (childName == "SetFillColor") {
@@ -281,23 +371,41 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g = gsDPSetGrayscaleColor(child->IntAttribute("R"), child->IntAttribute("G"), child->IntAttribute("B"),
                                       child->IntAttribute("A"));
         } else if (childName == "SetDepthSource") {
-            g = gsDPSetDepthSource(child->IntAttribute("Mode"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = depthSourceModes.find(value);
+            g = gsDPSetDepthSource(entry != depthSourceModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetAlphaCompare") {
-            g = gsDPSetAlphaCompare(child->IntAttribute("Mode"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = alphaCompareModes.find(value);
+            g = gsDPSetAlphaCompare(entry != alphaCompareModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetAlphaDither") {
-            g = gsDPSetAlphaDither(child->IntAttribute("Type"));
+            std::string value = child->Attribute("Type") != nullptr ? child->Attribute("Type") : "0";
+            auto entry = alphaDitherModes.find(value);
+            g = gsDPSetAlphaDither(entry != alphaDitherModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetColorDither") {
-            g = gsDPSetColorDither(child->IntAttribute("Type"));
+            std::string value = child->Attribute("Type") != nullptr ? child->Attribute("Type") : "0";
+            auto entry = colorDitherModes.find(value);
+            g = gsDPSetColorDither(entry != colorDitherModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetCombineKey") {
-            g = gsDPSetCombineKey(child->IntAttribute("Type"));
+            std::string value = child->Attribute("Type") != nullptr ? child->Attribute("Type") : "0";
+            auto entry = combineKeyModes.find(value);
+            g = gsDPSetCombineKey(entry != combineKeyModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetTextureFilter") {
-            g = gsDPSetTextureFilter(child->IntAttribute("Mode"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = textureFilterModes.find(value);
+            g = gsDPSetTextureFilter(entry != textureFilterModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetTextureLOD") {
-            g = gsDPSetTextureLOD(child->IntAttribute("Mode"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = textureLodModes.find(value);
+            g = gsDPSetTextureLOD(entry != textureLodModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetTextureDetail") {
-            g = gsDPSetTextureDetail(child->IntAttribute("Type"));
+            std::string value = child->Attribute("Type") != nullptr ? child->Attribute("Type") : "0";
+            auto entry = textureDetailModes.find(value);
+            g = gsDPSetTextureDetail(entry != textureDetailModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "SetTexturePersp") {
-            g = gsDPSetTexturePersp(child->IntAttribute("Enable"));
+            std::string value = child->Attribute("Enable") != nullptr ? child->Attribute("Enable") : "0";
+            auto entry = texturePerspModes.find(value);
+            g = gsDPSetTexturePersp(entry != texturePerspModes.end() ? entry->second : std::stoul(value, nullptr, 0));
         } else if (childName == "PerspNormalize") {
             g = gsSPPerspNormalize(child->IntAttribute("S"));
         } else if (childName == "FogPosition") {
@@ -478,13 +586,17 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g = gsDPFillRectangle(child->UnsignedAttribute("Ulx"), child->UnsignedAttribute("Uly"),
                                   child->UnsignedAttribute("Lrx"), child->UnsignedAttribute("Lry"));
         } else if (childName == "SetScissor") {
-            g = gsDPSetScissor(child->UnsignedAttribute("Mode"), child->UnsignedAttribute("Ulx"),
-                               child->UnsignedAttribute("Uly"), child->UnsignedAttribute("Lrx"),
-                               child->UnsignedAttribute("Lry"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = scissorModes.find(value);
+            uint32_t mode = entry != scissorModes.end() ? entry->second : std::stoul(value, nullptr, 0);
+            g = gsDPSetScissor(mode, child->UnsignedAttribute("Ulx"), child->UnsignedAttribute("Uly"),
+                               child->UnsignedAttribute("Lrx"), child->UnsignedAttribute("Lry"));
         } else if (childName == "SetScissorFrac") {
-            g = gsDPSetScissorFrac(child->UnsignedAttribute("Mode"), child->UnsignedAttribute("Ulx"),
-                                   child->UnsignedAttribute("Uly"), child->UnsignedAttribute("Lrx"),
-                                   child->UnsignedAttribute("Lry"));
+            std::string value = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            auto entry = scissorModes.find(value);
+            uint32_t mode = entry != scissorModes.end() ? entry->second : std::stoul(value, nullptr, 0);
+            g = gsDPSetScissorFrac(mode, child->UnsignedAttribute("Ulx"), child->UnsignedAttribute("Uly"),
+                                   child->UnsignedAttribute("Lrx"), child->UnsignedAttribute("Lry"));
         } else if (childName == "SetConvert") {
             g = gsDPSetConvert(child->IntAttribute("K0"), child->IntAttribute("K1"), child->IntAttribute("K2"),
                                child->IntAttribute("K3"), child->IntAttribute("K4"), child->IntAttribute("K5"));
@@ -1100,8 +1212,40 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
         } else if (childName == "SetRDPOtherMode") {
             g = gsDPSetOtherMode(child->UnsignedAttribute("Mode0"), child->UnsignedAttribute("Mode1"));
         } else if (childName == "LoadTextureBlock") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            const char* fmtAttribute = child->Attribute("Format");
+            std::string fmt = fmtAttribute != nullptr ? fmtAttribute : "0";
+            uint32_t fmtVal = G_IM_FMT_RGBA;
+
+            if (fmt == "G_IM_FMT_I") {
+                fmtVal = G_IM_FMT_I;
+            } else if (fmt == "G_IM_FMT_IA") {
+                fmtVal = G_IM_FMT_IA;
+            } else if (fmt == "G_IM_FMT_CI") {
+                fmtVal = G_IM_FMT_CI;
+            } else if (fmt == "G_IM_FMT_YUV") {
+                fmtVal = G_IM_FMT_YUV;
+            } else if (fmt == "G_IM_FMT_RGBA") {
+                fmtVal = G_IM_FMT_RGBA;
+            } else {
+                fmtVal = std::stoul(fmt, nullptr, 0);
+            }
+
+            const char* sizAttribute = child->Attribute("Size");
+            std::string siz = sizAttribute != nullptr ? sizAttribute : "0";
+            uint32_t sizVal = G_IM_SIZ_32b;
+
+            if (siz == "G_IM_SIZ_4b") {
+                sizVal = G_IM_SIZ_4b;
+            } else if (siz == "G_IM_SIZ_8b") {
+                sizVal = G_IM_SIZ_8b;
+            } else if (siz == "G_IM_SIZ_16b") {
+                sizVal = G_IM_SIZ_16b;
+            } else if (siz == "G_IM_SIZ_32b") {
+                sizVal = G_IM_SIZ_32b;
+            } else {
+                sizVal = std::stoul(siz, nullptr, 0);
+            }
+
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t maskS = child->IntAttribute("MaskS");
@@ -1145,20 +1289,20 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
 
             Gfx g2[7];
 
-            if (siz == 0) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_4b, width, height, 0, cms, cmt, maskS, maskT,
+            if (sizVal == G_IM_SIZ_4b) {
+                Gfx g3[7] = { gsDPLoadTextureBlock_4b(0, fmtVal, width, height, 0, cms, cmt, maskS, maskT, shiftS,
+                                                      shiftT) };
+                memcpy(g2, g3, 7 * sizeof(Gfx));
+            } else if (sizVal == G_IM_SIZ_8b) {
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmtVal, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
-            } else if (siz == 1) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_8b, width, height, 0, cms, cmt, maskS, maskT,
+            } else if (sizVal == G_IM_SIZ_16b) {
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmtVal, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
-            } else if (siz == 2) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_16b, width, height, 0, cms, cmt, maskS, maskT,
-                                                   shiftS, shiftT) };
-                memcpy(g2, g3, 7 * sizeof(Gfx));
-            } else if (siz == 3) {
-                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmt, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
+            } else if (sizVal == G_IM_SIZ_32b) {
+                Gfx g3[7] = { gsDPLoadTextureBlock(0, fmtVal, G_IM_SIZ_32b, width, height, 0, cms, cmt, maskS, maskT,
                                                    shiftS, shiftT) };
                 memcpy(g2, g3, 7 * sizeof(Gfx));
             }
@@ -1177,8 +1321,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
 
             g = g2[6];
         } else if (childName == "LoadTextureBlockS") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1221,7 +1369,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadTextureBlock4bS") {
-            uint32_t fmt = child->IntAttribute("Format");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1251,8 +1401,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiBlock") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1297,8 +1451,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiBlockS") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1343,7 +1501,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiBlock4b") {
-            uint32_t fmt = child->IntAttribute("Format");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1375,7 +1535,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiBlock4bS") {
-            uint32_t fmt = child->IntAttribute("Format");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1407,8 +1569,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadTextureTile") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t uls = child->UnsignedAttribute("Uls");
@@ -1455,7 +1621,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadTextureTile4b") {
-            uint32_t fmt = child->IntAttribute("Format");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t uls = child->UnsignedAttribute("Uls");
@@ -1489,8 +1657,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiTile") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t uls = child->UnsignedAttribute("Uls");
@@ -1539,7 +1711,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadMultiTile4b") {
-            uint32_t fmt = child->IntAttribute("Format");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t uls = child->UnsignedAttribute("Uls");
@@ -1575,8 +1749,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadTextureBlockYuv") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1617,8 +1795,12 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             }
             g = commands[6];
         } else if (childName == "LoadTextureBlockYuvS") {
-            uint32_t fmt = child->IntAttribute("Format");
-            uint32_t siz = child->IntAttribute("Size");
+            std::string fmtName = child->Attribute("Format") != nullptr ? child->Attribute("Format") : "0";
+            std::string sizName = child->Attribute("Size") != nullptr ? child->Attribute("Size") : "0";
+            auto fmtEntry = imageFormats.find(fmtName);
+            auto sizEntry = imageSizes.find(sizName);
+            uint32_t fmt = fmtEntry != imageFormats.end() ? fmtEntry->second : std::stoul(fmtName, nullptr, 0);
+            uint32_t siz = sizEntry != imageSizes.end() ? sizEntry->second : std::stoul(sizName, nullptr, 0);
             uint32_t width = child->IntAttribute("Width");
             uint32_t height = child->IntAttribute("Height");
             uint32_t palette = child->UnsignedAttribute("Palette");
@@ -1917,7 +2099,26 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 g = gsSPObjRectangleR(address);
             }
         } else if (childName == "ObjectRenderMode") {
-            g = gsSPObjRenderMode(child->UnsignedAttribute("Mode"));
+            std::string modes = child->Attribute("Mode") != nullptr ? child->Attribute("Mode") : "0";
+            uint32_t modeValue = 0;
+            size_t position = 0;
+
+            while (position <= modes.size()) {
+                size_t separator = modes.find('|', position);
+                std::string mode = modes.substr(position, separator - position);
+                size_t first = mode.find_first_not_of(" \t");
+                size_t last = mode.find_last_not_of(" \t");
+                mode = first == std::string::npos ? "0" : mode.substr(first, last - first + 1);
+                auto entry = objectRenderModes.find(mode);
+                modeValue |= entry != objectRenderModes.end() ? entry->second : std::stoul(mode, nullptr, 0);
+
+                if (separator == std::string::npos) {
+                    break;
+                }
+                position = separator + 1;
+            }
+
+            g = gsSPObjRenderMode(modeValue);
         } else if (childName == "LoadVerticesWide") {
             const uint32_t count = child->UnsignedAttribute("Count");
             const uint32_t v0 = child->UnsignedAttribute("VertexBufferIndex");
