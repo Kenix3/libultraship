@@ -20,7 +20,9 @@ Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CO
 ## Versioning
 We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
 
-When LUS goes through major refactors, `main` may be unstable while work progresses in a new epoch. The previous epoch then enters maintenance mode so fixes and selected features can continue to land there until the new epoch stabilizes.
+Epochs allow us to maintain stability during major architectural refactors. When LUS undergoes a large refactor, `main` moves to a new epoch (e.g., `2.x.x.x`) where breaking changes land incrementally. The previous epoch (e.g., `1.x.x.x`) continues as a maintained branch with backported fixes and selected features, providing a stable baseline for ports not yet ready to migrate.
+
+For detailed rationale and migration guidance, see the [Versioning documentation](https://kenix3.github.io/libultraship/VERSIONING.html).
 
 ## Building
 
