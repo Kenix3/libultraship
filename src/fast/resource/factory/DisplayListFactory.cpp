@@ -490,11 +490,9 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
             g = gsSPNumLights(child->IntAttribute("Lites"));
         } else if (childName == "Segment") {
             g = gsSPSegment(child->IntAttribute("Seg"), child->IntAttribute("Base"));
-            /*else if (childName == "Line3D")
-            {
-                    g = gsSPLine3D(child->IntAttribute("V0"), child->IntAttribute("V1"), child->IntAttribute("Flag"));
-            }
-            */
+        } else if (childName == "Line3D") {
+            g = gsSPLineW3D(child->IntAttribute("V0"), child->IntAttribute("V1"), child->IntAttribute("Width"),
+                            child->IntAttribute("Flag"));
             /*else if (childName == "Hilite2Tile")
             {
                     g = gsDPSetHilite2Tile(child->IntAttribute("Tile"), child->IntAttribute("Hilite"),

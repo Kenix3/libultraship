@@ -1690,6 +1690,60 @@ void Interpreter::GfxSpModifyVertex(uint16_t vtx_idx, uint8_t where, uint32_t va
     v->v = t;
 }
 
+void Interpreter::GfxSpLine3D(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t width) {
+    LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
+    LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
+
+    if ((v1->clip_rej & v2->clip_rej) != 0 || fabsf(v1->w) < 0.001f || fabsf(v2->w) < 0.001f) {
+        return;
+    }
+
+    const float viewport_width = mRdp->viewport.width > 0 ? static_cast<float>(mRdp->viewport.width) : 1.0f;
+    const float viewport_height = mRdp->viewport.height > 0 ? static_cast<float>(mRdp->viewport.height) : 1.0f;
+    const float dx = (v2->x / v2->w - v1->x / v1->w) * viewport_width * 0.5f;
+    const float dy = (v2->y / v2->w - v1->y / v1->w) * viewport_height * 0.5f;
+    const float length = sqrtf(dx * dx + dy * dy);
+
+    if (length < 0.001f) {
+        return;
+    }
+
+    // Line width is specified in half-pixel units on top of the 1.5-pixel minimum width.
+    const float half_width = (1.5f + static_cast<float>(width) * 0.5f) * 0.5f;
+    const float offset_x = (-dy / length) * half_width * 2.0f / viewport_width;
+    const float offset_y = (dx / length) * half_width * 2.0f / viewport_height;
+
+    LoadedVertex* v1_positive = &mRsp->loaded_vertices[MAX_VERTICES + 0];
+    LoadedVertex* v1_negative = &mRsp->loaded_vertices[MAX_VERTICES + 1];
+    LoadedVertex* v2_positive = &mRsp->loaded_vertices[MAX_VERTICES + 2];
+    LoadedVertex* v2_negative = &mRsp->loaded_vertices[MAX_VERTICES + 3];
+
+    *v1_positive = *v1;
+    *v1_negative = *v1;
+    *v2_positive = *v2;
+    *v2_negative = *v2;
+
+    v1_positive->x += offset_x * v1->w;
+    v1_positive->y += offset_y * v1->w;
+    v1_negative->x -= offset_x * v1->w;
+    v1_negative->y -= offset_y * v1->w;
+    v2_positive->x += offset_x * v2->w;
+    v2_positive->y += offset_y * v2->w;
+    v2_negative->x -= offset_x * v2->w;
+    v2_negative->y -= offset_y * v2->w;
+
+    v1_positive->clip_rej = 0;
+    v1_negative->clip_rej = 0;
+    v2_positive->clip_rej = 0;
+    v2_negative->clip_rej = 0;
+
+    const uint32_t geometry_mode = mRsp->geometry_mode;
+    mRsp->geometry_mode &= ~get_attr(CULL_BOTH);
+    GfxSpTri1(MAX_VERTICES + 0, MAX_VERTICES + 1, MAX_VERTICES + 2, false);
+    GfxSpTri1(MAX_VERTICES + 1, MAX_VERTICES + 3, MAX_VERTICES + 2, false);
+    mRsp->geometry_mode = geometry_mode;
+}
+
 void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool is_rect) {
     struct LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
     struct LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
@@ -3764,6 +3818,30 @@ bool gfx_tri1_handler_f3d(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_line3d_handler_f3dex2(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->GfxSpLine3D(C0(16, 8) / 2, C0(8, 8) / 2, C0(0, 8));
+    return false;
+}
+
+bool gfx_line3d_handler_f3dex(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->GfxSpLine3D(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8));
+    return false;
+}
+
+bool gfx_line3d_handler_f3d(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    gfx->GfxSpLine3D(C1(16, 8) / 10, C1(8, 8) / 10, C1(0, 8));
+    return false;
+}
+
 // F3DEX, and F3DEX2 share a tri2 function, however F3DEX has a different quad function.
 bool gfx_tri2_handler_f3dex(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
@@ -3790,6 +3868,14 @@ bool gfx_quad_handler_f3dex(F3DGfx** cmd0) {
     gfx->GfxSpTri1(C1(16, 8) / 2, C1(8, 8) / 2, C1(0, 8) / 2, false);
     gfx->GfxSpTri1(C1(16, 8) / 2, C1(0, 8) / 2, C1(24, 8) / 2, false);
     return false;
+}
+
+bool gfx_line3d_or_quad_handler_f3dex(F3DGfx** cmd0) {
+    if (((*cmd0)->words.w0 & 0x00FFFFFF) == 0) {
+        return gfx_line3d_handler_f3dex(cmd0);
+    }
+
+    return gfx_quad_handler_f3dex(cmd0);
 }
 
 bool gfx_othermode_l_handler_f3dex2(F3DGfx** cmd0) {
@@ -4597,6 +4683,7 @@ static constexpr UcodeHandler f3dex2Handlers = {
     { F3DEX2_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3dex2 } },
     { F3DEX2_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX2_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex2 } },
+    { F3DEX2_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_L, { "G_SETOTHERMODE_L", gfx_othermode_l_handler_f3dex2 } },
     { F3DEX2_G_SETOTHERMODE_H, { "G_SETOTHERMODE_H", gfx_othermode_h_handler_f3dex2 } },
 };
@@ -4621,7 +4708,7 @@ static constexpr UcodeHandler f3dexHandlers = {
     { F3DEX_G_TRI2, { "G_TRI2", gfx_tri2_handler_f3dex } },
     { F3DEX_G_SPNOOP, { "G_SPNOOP", gfx_spnoop_command_handler_f3dex2 } },
     { F3DEX_G_RDPHALF_1, { "mRdpHALF_1", gfx_stubbed_command_handler } },
-    { F3DEX_G_QUAD, { "G_QUAD", gfx_quad_handler_f3dex } },
+    { F3DEX_G_QUAD, { "G_QUAD/G_LINE3D", gfx_line3d_or_quad_handler_f3dex } },
 };
 
 static constexpr UcodeHandler f3dHandlers = {
@@ -4638,6 +4725,7 @@ static constexpr UcodeHandler f3dHandlers = {
     { F3DEX_G_CLEARGEOMETRYMODE, { "G_CLEARGEOMETRYMODE", gfx_clear_geometry_mode_handler_f3dex } },
     { F3DEX_G_VTX, { "G_VTX", gfx_vtx_handler_f3d } },
     { F3DEX_G_TRI1, { "G_TRI1", gfx_tri1_handler_f3d } },
+    { F3DEX_G_LINE3D, { "G_LINE3D", gfx_line3d_handler_f3d } },
     { F3DEX_G_MODIFYVTX, { "G_MODIFYVTX", gfx_modify_vtx_handler_f3dex2 } },
     { F3DEX_G_DL, { "G_DL", gfx_dl_handler_common } },
     { F3DEX_G_ENDDL, { "G_ENDDL", gfx_end_dl_handler_common } },
