@@ -3,29 +3,30 @@
 #include "ship/utils/StringHelper.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #define MAX_SDL_RANGE (float)INT16_MAX
 
 namespace Ship {
 SDLButtonToAxisDirectionMapping::SDLButtonToAxisDirectionMapping(uint8_t portIndex, StickIndex stickIndex,
-                                                                 Direction direction, int32_t sdlControllerButton)
+                                                                 Direction direction, int32_t sdlControllerButton,
+                                                                 std::shared_ptr<ControlDeck> controlDeck,
+                                                                 std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerInputMapping(PhysicalDeviceType::SDLGamepad),
-      ControllerAxisDirectionMapping(PhysicalDeviceType::SDLGamepad, portIndex, stickIndex, direction),
+      ControllerAxisDirectionMapping(PhysicalDeviceType::SDLGamepad, portIndex, stickIndex, direction, controlDeck),
       SDLButtonToAnyMapping(sdlControllerButton) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
 }
 
 float SDLButtonToAxisDirectionMapping::GetNormalizedAxisDirectionValue() {
-    if (Context::GetRawInstance()->GetControlDeck()->GamepadGameInputBlocked()) {
+    if (mControlDeck->GamepadGameInputBlocked()) {
         return 0.0f;
     }
 
-    for (const auto& [instanceId, gamepad] : Context::GetRawInstance()
-                                                 ->GetControlDeck()
-                                                 ->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        if (SDL_GameControllerGetButton(gamepad, mControllerButton)) {
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        if (SDL_GetGamepadButton(gamepad, mControllerButton)) {
             return MAX_AXIS_RANGE;
         }
     }
@@ -39,29 +40,23 @@ std::string SDLButtonToAxisDirectionMapping::GetAxisDirectionMappingId() {
 
 void SDLButtonToAxisDirectionMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetString(
-        StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
-        "SDLButtonToAxisDirectionMapping");
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(), mControllerButton);
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLButtonToAxisDirectionMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str(), mStickIndex);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str(), mDirection);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str(),
+                                 mControllerButton);
+    mConsoleVariable->Save();
 }
 
 void SDLButtonToAxisDirectionMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".AxisDirectionMappings." + GetAxisDirectionMappingId();
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Stick", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.Direction", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(
         StringHelper::Sprintf("%s.AxisDirectionMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.SDLControllerButton", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->Save();
 }
 
 int8_t SDLButtonToAxisDirectionMapping::GetMappingType() {

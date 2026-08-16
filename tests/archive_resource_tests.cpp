@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <functional>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -14,79 +16,26 @@
 #include "ship/resource/type/Blob.h"
 #include "ship/utils/StrHash64.h"
 
-// ============================================================
-// TestRamArchive — in-memory archive that does not require Context
-// ============================================================
+#include "archive_resource_fixtures.h"
 
 namespace {
 
-class TestRamArchive final : public Ship::Archive {
-  public:
-    explicit TestRamArchive(const std::string& path = "ram://test",
-                            const std::unordered_map<std::string, std::string>& files = {},
-                            const std::string& manifest = R"({"name":"TestArchive","code_version":1})")
-        : Ship::Archive(path), mTestFiles(files), mManifestJson(manifest) {
+using LusTest::LoadedArchive;
+using LusTest::TempDirectoryArchive;
+using LusTest::TestRamArchive;
+
+struct ResourceManagerHarness {
+    explicit ResourceManagerHarness(const std::unordered_map<std::string, std::string>& files = {})
+        : archive(files), threadPool(std::make_shared<Ship::ThreadPool>(1)),
+          manager(std::make_shared<Ship::ResourceManager>(threadPool)) {
+        manager->Init({ { "archivePaths", std::vector<std::string>{ archive.GetPath().string() } },
+                        { "validHashes", std::vector<uint32_t>{} } });
     }
 
-    bool Open() override {
-        for (const auto& [path, _] : mTestFiles) {
-            IndexFile(path);
-        }
-        return true;
-    }
-
-    bool Close() override {
-        return true;
-    }
-
-    bool WriteFile(const std::string& path, const std::vector<uint8_t>& data) override {
-        std::string content(data.begin(), data.end());
-        mTestFiles[path] = content;
-        IndexFile(path);
-        return true;
-    }
-
-    std::shared_ptr<Ship::File> LoadFile(const std::string& filePath) override {
-        // Serve manifest.json so Archive::Load() can parse it without Context
-        if (filePath == "manifest.json") {
-            return MakeFile(mManifestJson);
-        }
-        auto it = mTestFiles.find(filePath);
-        if (it == mTestFiles.end()) {
-            return nullptr;
-        }
-        return MakeFile(it->second);
-    }
-
-    // Resolve hash → path locally so we don't need Context::GetRawInstance()
-    std::shared_ptr<Ship::File> LoadFile(uint64_t hash) override {
-        for (const auto& [path, _] : mTestFiles) {
-            if (CRC64(path.c_str()) == hash) {
-                return LoadFile(path);
-            }
-        }
-        return nullptr;
-    }
-
-  private:
-    std::unordered_map<std::string, std::string> mTestFiles;
-    std::string mManifestJson;
-
-    static std::shared_ptr<Ship::File> MakeFile(const std::string& content) {
-        auto file = std::make_shared<Ship::File>();
-        file->Buffer = std::make_shared<std::vector<char>>(content.begin(), content.end());
-        file->IsLoaded = true;
-        return file;
-    }
+    TempDirectoryArchive archive;
+    std::shared_ptr<Ship::ThreadPool> threadPool;
+    std::shared_ptr<Ship::ResourceManager> manager;
 };
-
-// Helper: build and load a TestRamArchive with given files
-std::shared_ptr<TestRamArchive> LoadedArchive(const std::string& path,
-                                              const std::unordered_map<std::string, std::string>& files) {
-    auto archive = std::make_shared<TestRamArchive>(path, files);
-    archive->Load();
-    return archive;
-}
 
 } // anonymous namespace
 
@@ -96,7 +45,7 @@ std::shared_ptr<TestRamArchive> LoadedArchive(const std::string& path,
 
 TEST(ArchiveManager, FreshManagerIsNotLoaded) {
     Ship::ArchiveManager am;
-    EXPECT_FALSE(am.IsLoaded());
+    EXPECT_FALSE(am.IsInitialized());
 }
 
 TEST(ArchiveManager, FreshManagerHasNoArchives) {
@@ -121,22 +70,23 @@ TEST(ArchiveManager, FreshManagerListFilesReturnsEmpty) {
 
 TEST(ArchiveManager, AddLoadedArchiveSucceeds) {
     auto archive = LoadedArchive("ram://a", { { "file.dat", "hello" } });
-    ASSERT_TRUE(archive->IsLoaded());
+    ASSERT_TRUE(archive->IsInitialized());
 
     Ship::ArchiveManager am;
     auto result = am.AddArchive(archive);
     EXPECT_NE(result, nullptr);
-    EXPECT_TRUE(am.IsLoaded());
+    EXPECT_EQ(am.GetArchives()->size(), 1u);
+    EXPECT_TRUE(am.HasFile("file.dat"));
 }
 
 TEST(ArchiveManager, AddUnloadedArchiveReturnsNull) {
     auto archive = std::make_shared<TestRamArchive>("ram://unloaded", std::unordered_map<std::string, std::string>{});
-    // Do NOT call archive->Load() — IsLoaded() == false
+    // Do NOT call archive->Load() — IsInitialized() == false
 
     Ship::ArchiveManager am;
     auto result = am.AddArchive(archive);
     EXPECT_EQ(result, nullptr);
-    EXPECT_FALSE(am.IsLoaded());
+    EXPECT_TRUE(am.GetArchives()->empty());
 }
 
 TEST(ArchiveManager, AddTwoArchivesCountsCorrectly) {
@@ -323,11 +273,11 @@ TEST(ArchiveManager, RemoveArchiveByPointerRemovesIt) {
     auto archive = LoadedArchive("ram://test", { { "file.bin", "data" } });
     Ship::ArchiveManager am;
     am.AddArchive(archive);
-    ASSERT_TRUE(am.IsLoaded());
+    ASSERT_EQ(am.GetArchives()->size(), 1u);
 
     size_t removed = am.RemoveArchive(archive);
     EXPECT_EQ(removed, 1u);
-    EXPECT_FALSE(am.IsLoaded());
+    EXPECT_TRUE(am.GetArchives()->empty());
 }
 
 TEST(ArchiveManager, RemoveArchiveByPathRemovesIt) {
@@ -337,7 +287,7 @@ TEST(ArchiveManager, RemoveArchiveByPathRemovesIt) {
 
     size_t removed = am.RemoveArchive("ram://test");
     EXPECT_EQ(removed, 1u);
-    EXPECT_FALSE(am.IsLoaded());
+    EXPECT_TRUE(am.GetArchives()->empty());
 }
 
 TEST(ArchiveManager, RemoveNonExistentArchiveReturnsZero) {
@@ -457,37 +407,57 @@ TEST(ResourceIdentifier, HasherGivesDifferentValuesForDifferentPaths) {
     EXPECT_NE(hasher(a), hasher(b));
 }
 
+TEST(ResourceIdentifier, HashIdentifiersCompareEqualWhenHashOwnerAndParentMatch) {
+    constexpr uint64_t hash = 0x12345678ULL;
+    Ship::ResourceIdentifier a(hash, 0, nullptr);
+    Ship::ResourceIdentifier b(hash, 0, nullptr);
+    EXPECT_EQ(a, b);
+}
+
+TEST(ResourceIdentifier, PathAndHashIdentifiersDoNotCompareEqual) {
+    Ship::ResourceIdentifier pathId("305419896", 0, nullptr);
+    Ship::ResourceIdentifier hashId(static_cast<uint64_t>(305419896ULL), 0, nullptr);
+    EXPECT_NE(pathId, hashId);
+}
+
+TEST(ResourceIdentifier, HasherDiffersBetweenPathAndHashIdentifierKinds) {
+    Ship::ResourceIdentifier pathId("305419896", 0, nullptr);
+    Ship::ResourceIdentifier hashId(static_cast<uint64_t>(305419896ULL), 0, nullptr);
+    Ship::ResourceIdentifierHash hasher;
+    EXPECT_NE(hasher(pathId), hasher(hashId));
+}
+
 // ============================================================
-// ResourceManager — Init and IsLoaded
+// ResourceManager — Init and IsInitialized
 // ============================================================
 
 TEST(ResourceManager, NotLoadedWithNoArchives) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
-    EXPECT_FALSE(rm.IsLoaded());
+    auto rm = std::make_shared<Ship::ResourceManager>(std::make_shared<Ship::ThreadPool>(1));
+    EXPECT_THROW(rm->Init(nlohmann::json::object()), std::runtime_error);
+    EXPECT_FALSE(rm->IsInitialized());
 }
 
 TEST(ResourceManager, GetArchiveManagerNonNullAfterInit) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     EXPECT_NE(rm.GetArchiveManager(), nullptr);
 }
 
 TEST(ResourceManager, GetResourceLoaderNonNullAfterInit) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     EXPECT_NE(rm.GetResourceLoader(), nullptr);
 }
 
 TEST(ResourceManager, IsLoadedAfterAddingValidArchive) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", { { "data/hero.bin", "payload" } });
     auto added = rm.GetArchiveManager()->AddArchive(archive);
     ASSERT_NE(added, nullptr);
 
-    EXPECT_TRUE(rm.IsLoaded());
+    EXPECT_TRUE(rm.IsInitialized());
 }
 
 // ============================================================
@@ -495,8 +465,8 @@ TEST(ResourceManager, IsLoadedAfterAddingValidArchive) {
 // ============================================================
 
 TEST(ResourceManager, LoadFileProcessReturnsFileForKnownPath) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", { { "audio/bgm.bin", "musicdata" } });
     rm.GetArchiveManager()->AddArchive(archive);
@@ -509,8 +479,8 @@ TEST(ResourceManager, LoadFileProcessReturnsFileForKnownPath) {
 }
 
 TEST(ResourceManager, LoadFileProcessReturnsNullForMissingFile) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", {});
     rm.GetArchiveManager()->AddArchive(archive);
@@ -520,8 +490,8 @@ TEST(ResourceManager, LoadFileProcessReturnsNullForMissingFile) {
 }
 
 TEST(ResourceManager, LoadFileProcessViaIdentifier) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", { { "sprites/link.bin", "spritedata" } });
     rm.GetArchiveManager()->AddArchive(archive);
@@ -534,8 +504,8 @@ TEST(ResourceManager, LoadFileProcessViaIdentifier) {
 }
 
 TEST(ResourceManager, LoadFileProcessViaIdentifierWithParentArchive) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", { { "map/world.bin", "mapdata" } });
     rm.GetArchiveManager()->AddArchive(archive);
@@ -553,14 +523,14 @@ TEST(ResourceManager, LoadFileProcessViaIdentifierWithParentArchive) {
 // ============================================================
 
 TEST(ResourceManager, AltAssetsDisabledByDefault) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     EXPECT_FALSE(rm.IsAltAssetsEnabled());
 }
 
 TEST(ResourceManager, SetAltAssetsEnabledToggles) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     rm.SetAltAssetsEnabled(true);
     EXPECT_TRUE(rm.IsAltAssetsEnabled());
@@ -574,14 +544,14 @@ TEST(ResourceManager, SetAltAssetsEnabledToggles) {
 // ============================================================
 
 TEST(ResourceManager, GetCachedResourceReturnNullForUncachedPath) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     EXPECT_EQ(rm.GetCachedResource("not/cached"), nullptr);
 }
 
 TEST(ResourceManager, GetCachedResourceByIdentifierReturnNullForUncached) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     Ship::ResourceIdentifier id("not/cached", 0, nullptr);
     EXPECT_EQ(rm.GetCachedResource(id), nullptr);
@@ -592,8 +562,8 @@ TEST(ResourceManager, GetCachedResourceByIdentifierReturnNullForUncached) {
 // ============================================================
 
 TEST(ResourceManager, OtrSignatureCheckDetectsPrefix) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     EXPECT_TRUE(rm.OtrSignatureCheck("__OTR__path/to/file"));
     EXPECT_TRUE(rm.OtrSignatureCheck("__OTR__"));
@@ -608,16 +578,16 @@ TEST(ResourceManager, OtrSignatureCheckDetectsPrefix) {
 // ============================================================
 
 TEST(ResourceManager, GetResourceSizeNullReturnsZero) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     // Use explicit typed nullptr to avoid ambiguity with the const char* overload
     std::shared_ptr<Ship::IResource> nullRes;
     EXPECT_EQ(rm.GetResourceSize(nullRes), 0u);
 }
 
 TEST(ResourceManager, GetResourceSizeBlobWithData) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto blob = std::make_shared<Ship::Blob>();
     blob->Data = { 1, 2, 3, 4, 5 };
@@ -625,8 +595,8 @@ TEST(ResourceManager, GetResourceSizeBlobWithData) {
 }
 
 TEST(ResourceManager, GetResourceSizeBlobEmpty) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto blob = std::make_shared<Ship::Blob>();
     EXPECT_EQ(rm.GetResourceSize(blob), 0u);
@@ -637,15 +607,15 @@ TEST(ResourceManager, GetResourceSizeBlobEmpty) {
 // ============================================================
 
 TEST(ResourceManager, GetResourceIsCustomNullReturnsFalse) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     std::shared_ptr<Ship::IResource> nullRes;
     EXPECT_FALSE(rm.GetResourceIsCustom(nullRes));
 }
 
 TEST(ResourceManager, GetResourceIsCustomFalseWhenNotCustom) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto initData = std::make_shared<Ship::ResourceInitData>();
     initData->IsCustom = false;
@@ -654,8 +624,8 @@ TEST(ResourceManager, GetResourceIsCustomFalseWhenNotCustom) {
 }
 
 TEST(ResourceManager, GetResourceIsCustomTrueWhenCustom) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto initData = std::make_shared<Ship::ResourceInitData>();
     initData->IsCustom = true;
@@ -668,15 +638,15 @@ TEST(ResourceManager, GetResourceIsCustomTrueWhenCustom) {
 // ============================================================
 
 TEST(ResourceManager, GetResourceRawPointerNullReturnsNull) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     std::shared_ptr<Ship::IResource> nullRes;
     EXPECT_EQ(rm.GetResourceRawPointer(nullRes), nullptr);
 }
 
 TEST(ResourceManager, GetResourceRawPointerBlobReturnsDataPtr) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto blob = std::make_shared<Ship::Blob>();
     blob->Data = { 0xAB, 0xCD };
@@ -689,8 +659,8 @@ TEST(ResourceManager, GetResourceRawPointerBlobReturnsDataPtr) {
 // ============================================================
 
 TEST(ResourceManager, WriteResourceWithNoArchiveReturnsFalse) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     // No archive registered, no Parent in identifier
     Ship::ResourceIdentifier id("file.bin", 0, nullptr);
@@ -699,8 +669,8 @@ TEST(ResourceManager, WriteResourceWithNoArchiveReturnsFalse) {
 }
 
 TEST(ResourceManager, WriteResourceWithParentArchiveSucceeds) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
 
     auto archive = LoadedArchive("ram://test", { { "existing.bin", "old" } });
     rm.GetArchiveManager()->AddArchive(archive);
@@ -717,15 +687,15 @@ TEST(ResourceManager, WriteResourceWithParentArchiveSucceeds) {
 // ============================================================
 
 TEST(ResourceManager, UnloadResourceNotCachedIsNoOp) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     // Unloading a path that was never cached should not crash
     EXPECT_NO_THROW(rm.UnloadResource("path/that/was/never/loaded"));
 }
 
 TEST(ResourceManager, UnloadResourceByIdentifierIsNoOp) {
-    Ship::ResourceManager rm;
-    rm.Init({}, {});
+    ResourceManagerHarness harness;
+    auto& rm = *harness.manager;
     Ship::ResourceIdentifier id("never/loaded", 0, nullptr);
     EXPECT_NO_THROW(rm.UnloadResource(id));
 }

@@ -21,6 +21,11 @@
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
 
+namespace Ship {
+class ResourceManager;
+class ConsoleVariable;
+} // namespace Ship
+
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -133,6 +138,7 @@ namespace Fast {
 
 class GfxRenderingAPI;
 class GfxWindowBackend;
+class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
 constexpr size_t SHADER_ID_SHIFT = 17;
@@ -289,7 +295,6 @@ struct RDP {
         uint8_t fmt;
         uint8_t siz;
         uint8_t cms, cmt;
-        uint8_t masks, maskt; // mask exponents from SetTile; 2^mask is the WRAP/MIRROR period
         uint8_t shifts, shiftt;
         float uls, ult, lrs, lrt;
         uint16_t tmem; // 0-511, in 64-bit word units
@@ -376,10 +381,14 @@ class Interpreter {
     ~Interpreter();
 
     void Init(GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name, bool start_in_fullscreen,
-              uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
+              uint32_t width, uint32_t height, uint32_t posX, uint32_t posY,
+              std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+              std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
     void Destroy();
     void SetGfxDebugger(std::shared_ptr<GfxDebugger> debugger);
     std::shared_ptr<GfxDebugger> GetGfxDebugger() const;
+    void SetFast3dWindow(std::shared_ptr<Fast3dWindow> window);
+    static std::shared_ptr<Fast3dWindow> GetCurrentWindow();
     void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     GfxRenderingAPI* GetCurrentRenderingAPI();
     void StartFrame();
@@ -420,7 +429,6 @@ class Interpreter {
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
     void ShaderCacheClear();
     void TextureCacheClear();
-    std::shared_ptr<Ship::IResource> ResolveResourceCached(const char* path);
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
     void ImportTextureRgba16(int tile, bool importReplacement);
@@ -437,10 +445,6 @@ class Interpreter {
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
-    // Opt-in memoization of OTR texture-path resolution, keyed by display-list
-    // pointer and dropped with the texture cache. Safe for ports whose display
-    // lists carry stable path pointers; off by default.
-    void SetResolvedResourceCacheEnabled(bool enabled);
 
     void GfxSpMatrix(uint8_t params, const int32_t* addr);
     void GfxSpPopMatrix(uint32_t count);
@@ -507,8 +511,6 @@ class Interpreter {
     RenderingState mRenderingState{};
 
     GfxTextureCache mTextureCache{};
-    std::unordered_map<const void*, std::shared_ptr<Ship::IResource>> mResolvedResourceCache;
-    bool mResolvedResourceCacheEnabled = false;
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
     uint8_t* mTexUploadBuffer = nullptr;
@@ -531,6 +533,9 @@ class Interpreter {
     GfxWindowBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager, set in Init().
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable, set in Init().
+    std::weak_ptr<Fast3dWindow> mFast3dWindow;               ///< Cached Fast3dWindow, set in OnInit().
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
 
@@ -556,10 +561,6 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
-    // Interpolation factor for the current rendered frame within a game tick:
-    // 0 = previous tick, 1 = current tick. Set by the port before each
-    // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
-    float mInterpolationT = 1.0f;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

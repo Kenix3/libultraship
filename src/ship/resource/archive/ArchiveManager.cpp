@@ -14,7 +14,8 @@
 #include "ship/utils/StrHash64.h"
 
 namespace Ship {
-ArchiveManager::ArchiveManager() {
+ArchiveManager::ArchiveManager(std::shared_ptr<ResourceManager> resourceManager, std::shared_ptr<Keystore> keystore)
+    : Component("ArchiveManager"), mResourceManager(std::move(resourceManager)), mKeystore(std::move(keystore)) {
 }
 
 void ArchiveManager::Init(const std::vector<std::string>& archivePaths) {
@@ -28,15 +29,14 @@ void ArchiveManager::Init(const std::vector<std::string>& archivePaths,
     for (const auto& archive : archives) {
         AddArchive(archive);
     }
+    if (!mArchives.empty()) {
+        MarkInitialized();
+    }
 }
 
 ArchiveManager::~ArchiveManager() {
     SPDLOG_TRACE("destruct archive manager");
     SetArchives(nullptr);
-}
-
-bool ArchiveManager::IsLoaded() {
-    return !mArchives.empty();
 }
 
 std::shared_ptr<File> ArchiveManager::LoadFile(const std::string& filePath) {
@@ -68,8 +68,10 @@ std::shared_ptr<Archive> ArchiveManager::GetArchiveFromFile(const std::string& f
     return mFileToArchive[CRC64(filePath.c_str())];
 }
 
-int32_t ArchiveManager::GetFilePriority(const std::string& filePath) {
-    auto it = mFileToArchive.find(CRC64(filePath.c_str()));
+int32_t ArchiveManager::GetFilePriority(const ResourceIdentifier& identifier) {
+    const uint64_t hash = identifier.IsPath() ? CRC64(identifier.GetPath().c_str()) : identifier.GetPathHash();
+
+    auto it = mFileToArchive.find(hash);
     if (it == mFileToArchive.end() || it->second == nullptr) {
         return -1;
     }
@@ -158,13 +160,24 @@ void ArchiveManager::ResetVirtualFileSystem() {
     }
 }
 
+void ArchiveManager::AddFileToVfs(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive) {
+    mHashes[hash] = filePath;
+    mFileToArchive[hash] = archive;
+
+    // add foo hash to mHashes for foo.meta, but don't add it to mFileToArchive because we
+    // don't know this archive has foo
+    if (filePath.ends_with(".meta")) {
+        const std::string basePath = filePath.substr(0, filePath.size() - 5);
+        mHashes[CRC64(basePath.c_str())] = basePath;
+    }
+}
+
 bool ArchiveManager::WriteFile(std::shared_ptr<Archive> archive, const std::string& filePath,
                                const std::vector<uint8_t>& data) {
     if (archive) {
         if (archive->WriteFile(filePath, data)) {
             auto hash = CRC64(filePath.c_str());
-            mHashes[hash] = filePath;
-            mFileToArchive[hash] = archive;
+            AddFileToVfs(hash, filePath, archive);
             return true; // Successfully wrote file
         }
     }
@@ -251,17 +264,18 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
     SPDLOG_INFO("Reading archive: {}", path.string());
 
     if (StringHelper::IEquals(extension, ".o2r") || StringHelper::IEquals(extension, ".zip")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath));
+        archive = dynamic_pointer_cast<Archive>(std::make_shared<O2rArchive>(archivePath, mResourceManager, mKeystore));
 #ifdef INCLUDE_MPQ_SUPPORT
     } else if (StringHelper::IEquals(extension, ".otr") || StringHelper::IEquals(extension, ".mpq")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath));
+        archive = dynamic_pointer_cast<Archive>(std::make_shared<OtrArchive>(archivePath, mResourceManager, mKeystore));
 #endif
     } else if (StringHelper::IEquals(extension, "")) {
-        archive = dynamic_pointer_cast<Archive>(std::make_shared<FolderArchive>(archivePath));
+        archive =
+            dynamic_pointer_cast<Archive>(std::make_shared<FolderArchive>(archivePath, mResourceManager, mKeystore));
     } else {
         // Not recognized file extension, trying with o2r
         SPDLOG_WARN("File extension \"{}\" not recognized, trying to create an o2r archive.", extension);
-        archive = std::make_shared<O2rArchive>(archivePath);
+        archive = std::make_shared<O2rArchive>(archivePath, mResourceManager, mKeystore);
     }
 
     archive->Load();
@@ -269,7 +283,7 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(const std::string& archivePa
 }
 
 std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> archive) {
-    if (!archive->IsLoaded()) {
+    if (!archive->IsInitialized()) {
         SPDLOG_WARN("Attempting to add unloaded Archive at {} to Archive Manager", archive->GetPath());
         return nullptr;
     }
@@ -283,15 +297,13 @@ std::shared_ptr<Archive> ArchiveManager::AddArchive(std::shared_ptr<Archive> arc
     SPDLOG_INFO("Adding Archive {} to Archive Manager", archive->GetPath());
 
     mArchives.push_back(archive);
-    // Index in mArchives is the load-order priority (last added = highest, wins conflicts).
     archive->SetPriority(static_cast<int32_t>(mArchives.size() - 1));
     if (archive->HasGameVersion()) {
         mGameVersions.push_back(archive->GetGameVersion());
     }
     const auto fileList = archive->ListFiles();
     for (auto& [hash, filename] : *fileList.get()) {
-        mHashes[hash] = filename;
-        mFileToArchive[hash] = archive;
+        AddFileToVfs(hash, filename, archive);
 
         size_t lastSlash = filename.find_last_of('/');
         if (lastSlash != std::string::npos) {

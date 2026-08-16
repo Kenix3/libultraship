@@ -1,14 +1,24 @@
 # libultraship
+
 libultraship (LUS) is a library meant to provide reimplementations of libultra (n64 sdk) functions that run on modern hardware.
 
 LUS uses an asset loading system where data is stored separately from the executable in an archive file ending in `.otr` or `.o2r`. `.otr` files are [`.mpq`](http://www.zezula.net/en/mpq/main.html) compatible files. `.o2r` files are `.zip` compatible files. This separation of data from executable follows modern design practices which are more mod friendly. All one needs to do is supply a patch `.otr` or `.o2r` and the system will automatically replace the data.
+
+## Documentation
+
+**[Full Documentation](https://kenix3.github.io/libultraship/)** | **[API Reference](https://kenix3.github.io/libultraship/api/)**
+
+- [Porting Guide](https://kenix3.github.io/libultraship/PORTING.html) - How to port an N64 game to PC using LUS
+- [Scripting Guide](https://kenix3.github.io/libultraship/SCRIPTING.html) - Writing and packaging C mods
+- [Fast3D Renderer](https://kenix3.github.io/libultraship/fast-renderer.html) - Overview of the display-list renderer
+- [API Reference](https://kenix3.github.io/libultraship/api/) - Doxygen-generated API documentation
 
 ## Contributing
 LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
 Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CONTRIBUTING.md) file for more information.
 
 ## Versioning
-We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h.
+We use epoch semantic versioning. [Please see our versioning page for more information.](https://kenix3.github.io/libultraship/VERSIONING.html).
 
 ## Building
 
@@ -75,9 +85,6 @@ cmake -S . -Bbuild-android -GNinja \
 cmake --build build-android
 ```
 
-## Sponsors
-Thank you to JetBrains for providing their IDE [CLion](https://www.jetbrains.com/clion/) to me for free!
-
 ## License
 LUS is licensed under the [MIT](https://github.com/Kenix3/libultraship/blob/main/LICENSE) license.
 
@@ -85,7 +92,7 @@ LUS makes use of the following third party libraries and resources:
 - [Fast3D](https://github.com/Kenix3/libultraship/blob/main/src/fast/LICENSE.txt) (MIT) render display lists.
 - [prism-processor](https://github.com/KiritoDv/prism-processor/blob/main/LICENSE) (MIT) shader preprocessor.
 - [ImGui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt) (MIT) display UI.
-  - [SDL2](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) windowing and input backend.
+  - [SDL3](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) windowing and input backend.
   - [glew](https://github.com/nigels-com/glew/blob/master/LICENSE.txt) (modified BSD-3-Clause and MIT) OpenGL extension loading backend (Windows/macOS).
   - [metal-cpp](https://github.com/briaguya-ai/single-header-metal-cpp/blob/macOS13_iOS16/LICENSE) (Apache 2.0) Apple Metal rendering backend (macOS/iOS).
 - [StormLib](https://github.com/ladislav-zezula/StormLib/blob/master/LICENSE) (MIT) create and read `.mpq` compatible archive files.
@@ -100,7 +107,7 @@ LUS makes use of the following third party libraries and resources:
 - [stb](https://github.com/nothings/stb/blob/master/LICENSE) (MIT) image conversion.
 - [thread-pool](https://github.com/bshoshany/thread-pool/blob/master/LICENSE.txt) (MIT) thread pool for the resource manager.
 - [tinyxml2](https://github.com/leethomason/tinyxml2/blob/master/LICENSE.txt) (zlib) parse XML files for resource loaders.
-- [sdl2](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) window manager, controllers, and audio player.
+- [SDL3](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) window manager, controllers, and audio player.
 - [glob_match](https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c) (Dual MIT/GPL) Glob pattern matching.
 - [libgfxd](https://github.com/glankk/libgfxd/blob/master/LICENSE) (MIT) display list disassembler.
 - [libtcc](https://repo.or.cz/tinycc.git/blob/HEAD:/COPYING) (LGPL-2.1) C compiler used for the script system.

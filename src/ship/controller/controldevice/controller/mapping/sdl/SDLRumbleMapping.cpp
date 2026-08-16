@@ -2,33 +2,32 @@
 
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
-#include "ship/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 namespace Ship {
 SDLRumbleMapping::SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
-                                   uint8_t highFrequencyIntensityPercentage)
+                                   uint8_t highFrequencyIntensityPercentage, std::shared_ptr<ControlDeck> controlDeck,
+                                   std::shared_ptr<ConsoleVariable> consoleVariable)
     : ControllerRumbleMapping(PhysicalDeviceType::SDLGamepad, portIndex, lowFrequencyIntensityPercentage,
                               highFrequencyIntensityPercentage) {
+    mConsoleVariable = std::move(consoleVariable);
+    mControlDeck = std::move(controlDeck);
+
     SetLowFrequencyIntensity(lowFrequencyIntensityPercentage);
     SetHighFrequencyIntensity(highFrequencyIntensityPercentage);
 }
 
 void SDLRumbleMapping::StartRumble() {
-    for (const auto& [instanceId, gamepad] : Context::GetRawInstance()
-                                                 ->GetControlDeck()
-                                                 ->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        SDL_GameControllerRumble(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        SDL_RumbleGamepad(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
     }
 }
 
 void SDLRumbleMapping::StopRumble() {
-    for (const auto& [instanceId, gamepad] : Context::GetRawInstance()
-                                                 ->GetControlDeck()
-                                                 ->GetConnectedPhysicalDeviceManager()
-                                                 ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        SDL_GameControllerRumble(gamepad, 0, 0, 0);
+    for (const auto& [instanceId, gamepad] :
+         mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+        SDL_RumbleGamepad(gamepad, 0, 0, 0);
     }
 }
 
@@ -48,28 +47,23 @@ std::string SDLRumbleMapping::GetRumbleMappingId() {
 
 void SDLRumbleMapping::SaveToConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetString(
-        StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(), "SDLRumbleMapping");
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
-        mLowFrequencyIntensityPercentage);
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(
-        StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
-        mHighFrequencyIntensityPercentage);
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->SetString(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str(),
+                                "SDLRumbleMapping");
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                                 mLowFrequencyIntensityPercentage);
+    mConsoleVariable->SetInteger(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str(),
+                                 mHighFrequencyIntensityPercentage);
+    mConsoleVariable->Save();
 }
 
 void SDLRumbleMapping::EraseFromConfig() {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".RumbleMappings." + GetRumbleMappingId();
 
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str());
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(
-        StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.RumbleMappingClass", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.LowFrequencyIntensity", mappingCvarKey.c_str()).c_str());
+    mConsoleVariable->ClearVariable(StringHelper::Sprintf("%s.HighFrequencyIntensity", mappingCvarKey.c_str()).c_str());
 
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+    mConsoleVariable->Save();
 }
 
 std::string SDLRumbleMapping::GetPhysicalDeviceName() {

@@ -1,7 +1,10 @@
 #include "ship/controller/controldevice/controller/mapping/ControllerRumbleMapping.h"
 #include "SDLMapping.h"
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
 
 /**
  * @brief Maps an SDL gamepad's haptic motors to a controller rumble output.
@@ -18,7 +21,8 @@ class SDLRumbleMapping final : public ControllerRumbleMapping {
      * @param highFrequencyIntensityPercentage  Intensity of the high-frequency motor (0–100).
      */
     SDLRumbleMapping(uint8_t portIndex, uint8_t lowFrequencyIntensityPercentage,
-                     uint8_t highFrequencyIntensityPercentage);
+                     uint8_t highFrequencyIntensityPercentage, std::shared_ptr<ControlDeck> controlDeck = nullptr,
+                     std::shared_ptr<ConsoleVariable> consoleVariable = nullptr);
 
     /** @brief Starts the rumble effect with the configured intensities. */
     void StartRumble() override;
@@ -49,6 +53,10 @@ class SDLRumbleMapping final : public ControllerRumbleMapping {
 
     /** @brief Returns the human-readable name of the SDL gamepad device. */
     std::string GetPhysicalDeviceName() override;
+
+  protected:
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<ControlDeck> mControlDeck;
 
   private:
     uint16_t mLowFrequencyIntensity;

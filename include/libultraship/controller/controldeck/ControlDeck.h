@@ -31,13 +31,15 @@ class ControlDeck final : public Ship::ControlDeck {
     /**
      * @brief Constructs a ControlDeck with the standard N64 button set and default mappings.
      */
-    ControlDeck();
+    ControlDeck(std::shared_ptr<Ship::Window> window = nullptr,
+                std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Constructs a ControlDeck with the standard N64 buttons plus extra bitmasks.
      * @param additionalBitmasks Extra button bitmasks beyond the standard N64 set.
      */
-    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks);
+    ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks, std::shared_ptr<Ship::Window> window = nullptr,
+                std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Full constructor: extra bitmasks, custom default mappings, and custom button names.
@@ -47,7 +49,9 @@ class ControlDeck final : public Ship::ControlDeck {
      */
     ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
                 std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings,
-                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames);
+                std::unordered_map<CONTROLLERBUTTONS_T, std::string> buttonNames,
+                std::shared_ptr<Ship::Window> window = nullptr,
+                std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr);
 
     /**
      * @brief Returns a pointer to the OSContPad buffer (one pad per port).

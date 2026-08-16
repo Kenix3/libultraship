@@ -1,88 +1,133 @@
 #include "libultraship/bridge/consolevariablebridge.h"
-#include "ship/Context.h"
+
+static std::shared_ptr<Ship::ConsoleVariable> sConsoleVariable;
+
+void CVarSetConsoleVariable(std::shared_ptr<Ship::ConsoleVariable> consoleVariable) {
+    sConsoleVariable = std::move(consoleVariable);
+}
+
+std::shared_ptr<Ship::ConsoleVariable> CVarGetConsoleVariable() {
+    return sConsoleVariable;
+}
 
 std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->Get(name);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->Get(name) : nullptr;
 }
 
 extern "C" {
 int32_t CVarGetInteger(const char* name, int32_t defaultValue) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(name, defaultValue);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->GetInteger(name, defaultValue) : defaultValue;
 }
 
 float CVarGetFloat(const char* name, float defaultValue) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->GetFloat(name, defaultValue);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->GetFloat(name, defaultValue) : defaultValue;
 }
 
 const char* CVarGetString(const char* name, const char* defaultValue) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->GetString(name, defaultValue);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->GetString(name, defaultValue) : defaultValue;
 }
 
 Color_RGBA8 CVarGetColor(const char* name, Color_RGBA8 defaultValue) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->GetColor(name, defaultValue);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->GetColor(name, defaultValue) : defaultValue;
 }
 
 Color_RGB8 CVarGetColor24(const char* name, Color_RGB8 defaultValue) {
-    return Ship::Context::GetRawInstance()->GetConsoleVariables()->GetColor24(name, defaultValue);
+    auto cvars = CVarGetConsoleVariable();
+    return cvars ? cvars->GetColor24(name, defaultValue) : defaultValue;
 }
 
 void CVarSetInteger(const char* name, int32_t value) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(name, value);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->SetInteger(name, value);
+    }
 }
 
 void CVarSetFloat(const char* name, float value) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetFloat(name, value);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->SetFloat(name, value);
+    }
 }
 
 void CVarSetString(const char* name, const char* value) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetString(name, value);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->SetString(name, value);
+    }
 }
 
 void CVarSetColor(const char* name, Color_RGBA8 value) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetColor(name, value);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->SetColor(name, value);
+    }
 }
 
 void CVarSetColor24(const char* name, Color_RGB8 value) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetColor24(name, value);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->SetColor24(name, value);
+    }
 }
 
 void CVarRegisterInteger(const char* name, int32_t defaultValue) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->RegisterInteger(name, defaultValue);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->RegisterInteger(name, defaultValue);
+    }
 }
 
 void CVarRegisterFloat(const char* name, float defaultValue) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->RegisterFloat(name, defaultValue);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->RegisterFloat(name, defaultValue);
+    }
 }
 
 void CVarRegisterString(const char* name, const char* defaultValue) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->RegisterString(name, defaultValue);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->RegisterString(name, defaultValue);
+    }
 }
 
 void CVarRegisterColor(const char* name, Color_RGBA8 defaultValue) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->RegisterColor(name, defaultValue);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->RegisterColor(name, defaultValue);
+    }
 }
 
 void CVarRegisterColor24(const char* name, Color_RGB8 defaultValue) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->RegisterColor24(name, defaultValue);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->RegisterColor24(name, defaultValue);
+    }
 }
 
 void CVarClear(const char* name) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(name);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->ClearVariable(name);
+    }
 }
 
 void CVarClearBlock(const char* name) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(name);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->ClearBlock(name);
+    }
 }
 
 void CVarCopy(const char* from, const char* to) {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->CopyVariable(from, to);
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->CopyVariable(from, to);
+    }
 }
 
 void CVarLoad() {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Load();
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->Load();
+    }
 }
 
 void CVarSave() {
-    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+    if (auto cvars = CVarGetConsoleVariable()) {
+        cvars->Save();
+    }
 }
 }

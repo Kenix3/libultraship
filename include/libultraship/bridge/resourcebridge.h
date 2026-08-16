@@ -1,12 +1,17 @@
 #pragma once
 
 #include "stdint.h"
-#include "stddef.h"
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
 #include <memory>
+namespace Ship {
+class ResourceManager;
+}
+void ResourceSetResourceManager(std::shared_ptr<Ship::ResourceManager> resourceManager);
+std::shared_ptr<Ship::ResourceManager> ResourceGetResourceManager();
 
 /**
  * @brief Loads a resource by its virtual path and returns a type-erased shared pointer.

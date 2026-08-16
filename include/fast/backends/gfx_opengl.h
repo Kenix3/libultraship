@@ -1,30 +1,42 @@
 #ifdef ENABLE_OPENGL
 #pragma once
 
+#include <memory>
 #include "gfx_rendering_api.h"
 #include "../interpreter.h"
 
+namespace Ship {
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
+
 #ifdef _MSC_VER
-#include <SDL2/SDL.h>
+#define FAST_GFX_OPENGL_USE_GLEW
+#include <SDL3/SDL.h>
 // #define GL_GLEXT_PROTOTYPES 1
 #include <GL/glew.h>
 #elif FOR_WINDOWS
+#define FAST_GFX_OPENGL_USE_GLEW
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
+#include <SDL3/SDL_opengl.h>
 #elif __APPLE__
-#include <SDL2/SDL.h>
+#define FAST_GFX_OPENGL_USE_GLEW
+#include <SDL3/SDL.h>
 #include <GL/glew.h>
 #elif USE_OPENGLES
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <GLES3/gl3.h>
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengl.h>
+#include <SDL3/SDL_opengl.h>
 #endif
 namespace Fast {
+/**
+ * @brief OpenGL shader program metadata cached by the Fast3D renderer.
+ */
 struct ShaderProgram {
     GLuint openglProgramId;
     uint8_t numInputs;
@@ -41,6 +53,9 @@ struct ShaderProgram {
     GLint texture_filtering_location;
 };
 
+/**
+ * @brief OpenGL framebuffer object and associated attachments.
+ */
 struct FramebufferOGL {
     uint32_t width, height;
     bool has_depth_buffer;
@@ -50,15 +65,27 @@ struct FramebufferOGL {
     GLuint fbo, clrbuf, clrbufMsaa, rbo;
 };
 
+/**
+ * @brief Cached texture metadata tracked per texture id.
+ */
 struct TextureInfo {
     uint16_t width;
     uint16_t height;
     uint16_t filtering;
 };
 
+/**
+ * @brief OpenGL/OpenGLES implementation of the Fast3D rendering API.
+ */
 class GfxRenderingAPIOGL final : public GfxRenderingAPI {
   public:
+    /** @brief Constructs the OpenGL renderer with optional shared dependencies. */
+    GfxRenderingAPIOGL(std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                       std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
     ~GfxRenderingAPIOGL() override = default;
+
+    /** @name GfxRenderingAPI implementation */
+    /** @{ */
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
@@ -104,11 +131,14 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     FilteringMode GetTextureFilter() override;
     void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
-
+    /** @} */
   private:
     void SetUniforms(ShaderProgram* prg) const;
     std::string BuildFsShader(const CCFeatures& cc_features);
     void SetPerDrawUniforms();
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager;
 
     std::vector<TextureInfo> textures;
     GLuint mCurrentTextureIds[SHADER_MAX_TEXTURES] = {};

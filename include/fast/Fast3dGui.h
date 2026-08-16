@@ -1,14 +1,18 @@
 #pragma once
-#include <SDL2/SDL.h>
-
-#include "Fast3dWindow.h"
+#include <SDL3/SDL.h>
 #include "ship/window/gui/Gui.h"
 #include "fast/WindowEvent.h"
 #include "fast/resource/type/Texture.h"
 #include "ship/window/gui/resource/GuiTexture.h"
 
+namespace Ship {
+class Window;
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
+
 // Fixes issue #926: HandleWindowEvents is only ever called from Fast3D backend code
-// (gfx_sdl2.cpp, gfx_dxgi.cpp) and must not be a virtual method on Ship::Gui.
+// (gfx_sdl.cpp, gfx_dxgi.cpp) and must not be a virtual method on Ship::Gui.
 // The WindowEvent type has been moved to the Fast namespace so that ship code does
 // not depend on any Fast3D or platform-specific types.
 
@@ -44,7 +48,6 @@ typedef struct {
             uint32_t Height; ///< Framebuffer height in pixels.
         } Gx2;
     };
-    WindowBackend Backend;
 } GuiWindowInitData;
 
 /**
@@ -74,7 +77,7 @@ class Fast3dGui : public Ship::Gui {
     /**
      * @brief Forwards a platform window event to the active ImGui backend.
      *
-     * Only Fast3D backends (gfx_sdl2, gfx_dxgi) construct and dispatch WindowEvents.
+     * Only Fast3D backends (gfx_sdl, gfx_dxgi) construct and dispatch WindowEvents.
      * Callers retrieve the Gui via Window::GetGui() and dynamic_cast to Fast3dGui.
      * @param event Platform event (SDL or Win32) wrapped in a Fast::WindowEvent.
      */
@@ -86,8 +89,7 @@ class Fast3dGui : public Ship::Gui {
      * @param path Virtual resource path of the source image.
      * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
      */
-    void LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath = "",
-                        const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    void LoadGuiTexture(const std::string& name, const std::string& path, const ImVec4& tint);
 
     /**
      * @brief Returns true if a texture with the given name is already cached.
@@ -101,8 +103,7 @@ class Fast3dGui : public Ship::Gui {
      * @param tex  Source texture data.
      * @param tint RGBA tint.
      */
-    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const std::string& palettePath = "",
-                        const ImVec4& tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const ImVec4& tint);
 
     /**
      * @brief Removes the texture with the given name from the cache and frees GPU resources.
@@ -161,6 +162,11 @@ class Fast3dGui : public Ship::Gui {
 
     std::weak_ptr<Interpreter> mInterpreter; ///< Weak reference to the Fast3D scripting interpreter.
     GuiWindowInitData mImpl;                 ///< Backend-specific window/context handles passed to Init().
+    std::shared_ptr<Ship::Window> mWindow;   ///< Cached Window component. @note Requires Window component in Context.
+    std::shared_ptr<Ship::ConsoleVariable>
+        mConsoleVariables; ///< Cached ConsoleVariable component. @note Requires ConsoleVariable component in Context.
+    std::shared_ptr<Ship::ResourceManager>
+        mResourceManager; ///< Cached ResourceManager component. @note Requires ResourceManager component in Context.
 
   private:
     /** @brief Applies any pending resolution or MSAA changes to the render target. */

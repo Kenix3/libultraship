@@ -5,6 +5,12 @@
 #include "ship/Api.h"
 
 #ifdef __cplusplus
+#include <memory>
+namespace Fast {
+class Fast3dWindow;
+}
+void GfxSetFast3dWindow(std::shared_ptr<Fast::Fast3dWindow> window);
+std::shared_ptr<Fast::Fast3dWindow> GfxGetFast3dWindow();
 extern "C" {
 #endif
 

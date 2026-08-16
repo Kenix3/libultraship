@@ -2,18 +2,19 @@
 
 #include "ship/utils/StringHelper.h"
 #include "ship/config/Config.h"
-#include "ship/Context.h"
 #include "ship/DefaultKeys.h"
 
+#include <spdlog/spdlog.h>
 #include <vector>
 
 namespace Ship {
 
-Keystore::Keystore() {
+Keystore::Keystore(std::shared_ptr<Config> config) : Component("Keystore"), mConfig(std::move(config)) {
     Load();
     for (const auto entry : AllDefaultKeys) {
         AddKey(std::string(entry.name), StringHelper::HexToBytes(std::string(entry.data)), KeyOrigin::System);
     }
+    MarkInitialized();
 }
 
 bool Keystore::AddKey(const std::string& keyName, const std::vector<uint8_t>& keyData, KeyOrigin origin) {
@@ -57,10 +58,12 @@ std::vector<KeystoreEntry> Keystore::GetAllKeys() const {
 }
 
 void Keystore::Load() {
-    std::shared_ptr<Config> conf = Context::GetRawInstance()->GetConfig();
-    conf->Reload();
+    if (!mConfig) {
+        return;
+    }
+    mConfig->Reload();
 
-    nlohmann::json rootJson = conf->GetNestedJson();
+    nlohmann::json rootJson = mConfig->GetNestedJson();
 
     if (!rootJson.contains("Keystore") || !rootJson["Keystore"].is_object()) {
         SPDLOG_WARN("Keystore not found in config or is empty.");
@@ -78,12 +81,14 @@ void Keystore::Load() {
 }
 
 void Keystore::Save() {
-    std::shared_ptr<Config> conf = Context::GetRawInstance()->GetConfig();
+    if (!mConfig) {
+        return;
+    }
     for (const auto& [keyName, entry] : mKeys) {
         std::string hexString = StringHelper::BytesToHex(entry.Data);
-        conf->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);
+        mConfig->SetString(StringHelper::Sprintf("Keystore.%s", keyName.c_str()), hexString);
     }
-    conf->Save();
+    mConfig->Save();
 }
 
 } // namespace Ship

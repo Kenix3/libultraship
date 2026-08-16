@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 namespace Ship {
+class ConsoleVariable;
 
 /**
  * @brief Global threshold settings for SDL gamepad analog axes.
@@ -14,7 +16,7 @@ namespace Ship {
 class GlobalSDLDeviceSettings {
   public:
     /** @brief Constructs the settings and loads persisted values from configuration. */
-    GlobalSDLDeviceSettings();
+    GlobalSDLDeviceSettings(std::shared_ptr<ConsoleVariable> consoleVariable);
     ~GlobalSDLDeviceSettings();
 
     /**
@@ -50,5 +52,6 @@ class GlobalSDLDeviceSettings {
   private:
     int32_t mStickAxisThresholdPercentage;
     int32_t mTriggerAxisThresholdPercentage;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
 };
 } // namespace Ship

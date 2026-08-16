@@ -141,6 +141,21 @@ endif()
 
 #=================== Compile Options & Defs ===================
 
+target_compile_definitions(libultraship PUBLIC
+    LUS_VERSION_EPOCH=${LUS_VERSION_EPOCH}
+    LUS_VERSION_MAJOR=${LUS_VERSION_MAJOR}
+    LUS_VERSION_MINOR=${LUS_VERSION_MINOR}
+    LUS_VERSION_PATCH=${LUS_VERSION_PATCH}
+)
+
+if(INCLUDE_PROFILING)
+    target_compile_definitions(libultraship PUBLIC INCLUDE_PROFILING)
+endif()
+
+if(COMPONENT_THREAD_SAFE)
+    target_compile_definitions(libultraship PUBLIC COMPONENT_THREAD_SAFE)
+endif()
+
 target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -189,8 +204,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
         )
 
-        if(TARGET SDL2)
-            set_target_properties(SDL2 PROPERTIES
+        if(TARGET SDL3-static)
+            set_target_properties(SDL3-static PROPERTIES
                 XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
                 XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
             )

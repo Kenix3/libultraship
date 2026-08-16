@@ -1,23 +1,44 @@
 #include "libultraship/bridge/eventsbridge.h"
-#include "ship/events/EventSystem.h"
-#include "ship/Context.h"
+#include "ship/events/Events.h"
+
+static std::shared_ptr<Ship::Events> sEvents;
+
+void EventSystemSetEvents(std::shared_ptr<Ship::Events> events) {
+    sEvents = std::move(events);
+}
+
+std::shared_ptr<Ship::Events> EventSystemGetEvents() {
+    return sEvents;
+}
 
 extern "C" {
 
 EventID EventSystemRegisterEvent(const char* name) {
-    return Ship::Context::GetRawInstance()->GetEventSystem()->RegisterEvent(name);
+    auto events = EventSystemGetEvents();
+    return events ? events->RegisterEvent(name) : -1;
 }
 
 ListenerID EventSystemRegisterListener(EventID id, EventCallback callback, EventPriority priority, const char* file,
                                        int line) {
-    return Ship::Context::GetRawInstance()->GetEventSystem()->RegisterListener(id, callback, priority, file, line);
+    auto events = EventSystemGetEvents();
+    return events ? events->RegisterListener(id, callback, priority, file, line) : -1;
+}
+
+void EventSystemUnregisterEvent(EventID id) {
+    if (auto events = EventSystemGetEvents()) {
+        events->RemoveEvent(id);
+    }
 }
 
 void EventSystemUnregisterListener(EventID ev, ListenerID id) {
-    Ship::Context::GetRawInstance()->GetEventSystem()->UnregisterListener(ev, id);
+    if (auto events = EventSystemGetEvents()) {
+        events->UnregisterListener(ev, id);
+    }
 }
 
 void EventSystemCallEvent(EventID id, void* event, const char* file, int line, const char* key) {
-    Ship::Context::GetRawInstance()->GetEventSystem()->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
+    if (auto events = EventSystemGetEvents()) {
+        events->CallEvent(id, static_cast<IEvent*>(event), file, line, key);
+    }
 }
 }

@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include "ship/Api.h"
 
-/** @brief Numeric identifier for a registered event; -1 is the uninitialized sentinel. */
+/** @brief Numeric identifier for an event. -1 is uninitialized, IDs < -1 are internally registered, and IDs >= 0 are
+ * user defined. */
 typedef int32_t EventID;
 /** @brief Numeric identifier for a registered listener; used to unregister later. */
 typedef int64_t ListenerID;
@@ -11,12 +12,14 @@ typedef int64_t ListenerID;
 /**
  * @brief Priority levels that control listener dispatch order within an event.
  *
- * Listeners with a higher priority value are invoked before those with a lower value.
+ * Listeners with a lower priority value are invoked before those with a higher value.
+ * Use HIGH priority for post-processing or override handlers that should run after
+ * lower-priority handlers have already processed the event.
  */
 typedef enum {
-    EVENT_PRIORITY_LOW,    ///< Invoked last; suitable for fallback or logging handlers.
+    EVENT_PRIORITY_LOW,    ///< Invoked first; suitable for default or early handlers.
     EVENT_PRIORITY_NORMAL, ///< Default priority for most listeners.
-    EVENT_PRIORITY_HIGH,   ///< Invoked first; suitable for interception or override handlers.
+    EVENT_PRIORITY_HIGH,   ///< Invoked last; suitable for override or post-processing handlers.
 } EventPriority;
 
 /**
@@ -177,3 +180,10 @@ typedef struct EventListener {
 #define UNREGISTER_LISTENER(eventType, listenerID) EventSystemUnregisterListener(eventType##ID, listenerID);
 
 /** @} */ // end of EventMacros group
+
+/** @brief Built-in tick phases used by Context::Tick(). */
+typedef enum {
+    TICK_EVENT_UPDATE = 0,
+    TICK_EVENT_LATE_UPDATE = 1,
+    TICK_EVENT_DRAW = 2,
+} TickEvent;

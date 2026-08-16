@@ -19,7 +19,7 @@ class StatsWindow : public GuiWindow {
 
   protected:
     /** @brief Performs one-time setup (no additional initialisation required). */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Renders the stats panel contents via ImGui. */
     void DrawElement() override;

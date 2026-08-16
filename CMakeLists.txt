@@ -8,6 +8,8 @@ if(POLICY CMP0141)
 endif()
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
+option(INCLUDE_PROFILING "Enable action and tickable profiling timers" OFF)
+option(COMPONENT_THREAD_SAFE "Enable thread safety for Component parent/child lists" OFF)
 option(DISABLE_DLL_LOADER "Disable dynamic library loading support" OFF)
 option(ENABLE_SCRIPTING "Enable TCC-based C mod compilation and scripting system" OFF)
 
@@ -18,6 +20,39 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 endif()
 
 project(libultraship LANGUAGES C CXX)
+
+set(_lus_version_epoch_default "2")
+set(_lus_version_major_default "0")
+set(_lus_version_minor_default "0")
+set(_lus_version_patch_default "0")
+
+if(DEFINED ENV{LUS_VERSION_EPOCH} AND NOT "$ENV{LUS_VERSION_EPOCH}" STREQUAL "")
+    set(_lus_version_epoch_default "$ENV{LUS_VERSION_EPOCH}")
+endif()
+if(DEFINED ENV{LUS_VERSION_MAJOR} AND NOT "$ENV{LUS_VERSION_MAJOR}" STREQUAL "")
+    set(_lus_version_major_default "$ENV{LUS_VERSION_MAJOR}")
+endif()
+if(DEFINED ENV{LUS_VERSION_MINOR} AND NOT "$ENV{LUS_VERSION_MINOR}" STREQUAL "")
+    set(_lus_version_minor_default "$ENV{LUS_VERSION_MINOR}")
+endif()
+if(DEFINED ENV{LUS_VERSION_PATCH} AND NOT "$ENV{LUS_VERSION_PATCH}" STREQUAL "")
+    set(_lus_version_patch_default "$ENV{LUS_VERSION_PATCH}")
+endif()
+
+set(LUS_VERSION_EPOCH "${_lus_version_epoch_default}" CACHE STRING "libultraship version epoch (0-255)")
+set(LUS_VERSION_MAJOR "${_lus_version_major_default}" CACHE STRING "libultraship version major (0-255)")
+set(LUS_VERSION_MINOR "${_lus_version_minor_default}" CACHE STRING "libultraship version minor (0-255)")
+set(LUS_VERSION_PATCH "${_lus_version_patch_default}" CACHE STRING "libultraship version patch (0-255)")
+
+foreach(_lus_version_component IN ITEMS LUS_VERSION_EPOCH LUS_VERSION_MAJOR LUS_VERSION_MINOR LUS_VERSION_PATCH)
+    if(NOT ${_lus_version_component} MATCHES "^[0-9]+$")
+        message(FATAL_ERROR "${_lus_version_component} must be an integer between 0 and 255")
+    endif()
+
+    if(${_lus_version_component} GREATER 255)
+        message(FATAL_ERROR "${_lus_version_component} must be between 0 and 255")
+    endif()
+endforeach()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     enable_language(OBJCXX)
@@ -77,11 +112,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(cmake/ios-toolchain-populate.cmake)
 endif()
 
+# =========== Tests (configure-time options) =============
+option(LUS_BUILD_TESTS "Build unit tests" OFF)
+if(LUS_BUILD_TESTS)
+    set(COMPONENT_THREAD_SAFE ON CACHE BOOL "Enable thread safety for Component parent/child lists" FORCE)
+endif()
+
 # =========== Sources =============
 add_subdirectory("src")
 
 # =========== Tests =============
-option(LUS_BUILD_TESTS "Build unit tests" OFF)
 if(LUS_BUILD_TESTS)
     enable_testing()
     add_subdirectory("tests")

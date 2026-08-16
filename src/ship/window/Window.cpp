@@ -1,9 +1,11 @@
 #include "ship/window/Window.h"
+#include "ship/window/gui/Gui.h"
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
-#include "ship/Context.h"
+#include "ship/core/Context.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 
 #ifdef __APPLE__
@@ -12,25 +14,39 @@
 
 namespace Ship {
 
-Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager) {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<MouseStateManager> mouseStateManager,
+               std::shared_ptr<Config> config)
+    : Component("Window"), mConfig(std::move(config)) {
     mGui = gui;
     mMouseStateManager = mouseStateManager;
     mAvailableWindowBackends = std::make_shared<std::vector<int32_t>>();
-    mConfig = Context::GetRawInstance()->GetConfig();
 }
 
-Window::Window(std::shared_ptr<Gui> gui) : Window(gui, std::make_shared<MouseStateManager>()) {
+Window::Window(std::shared_ptr<Gui> gui, std::shared_ptr<Config> config)
+    : Window(gui, std::make_shared<MouseStateManager>(), std::move(config)) {
 }
 
-Window::Window(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : Window(std::make_shared<Gui>(guiWindows)) {
+Window::Window(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Config> config)
+    : Window(std::make_shared<Gui>(guiWindows), std::move(config)) {
 }
 
-Window::Window() : Window(std::vector<std::shared_ptr<GuiWindow>>()) {
+Window::Window(std::shared_ptr<Config> config) : Window(std::vector<std::shared_ptr<GuiWindow>>(), std::move(config)) {
 }
 
 Window::~Window() {
     mGui->ShutDownImGui(this);
     SPDLOG_DEBUG("destruct window");
+}
+
+void Window::OnInit(const nlohmann::json& initArgs) {
+    Component::OnInit(initArgs);
+    // Mark the window as initialized before adding GUI to prevent access during GUI initialization
+    MarkInitialized();
+
+    if (mGui != nullptr && !GetChildren().Has(mGui)) {
+        GetChildren().Add(mGui);
+    }
+    mMouseStateManager->SetWindow(std::dynamic_pointer_cast<Window>(shared_from_this()));
 }
 
 void Window::ToggleFullscreen() {
@@ -55,15 +71,16 @@ std::shared_ptr<Gui> Window::GetGui() {
 
 void Window::SaveWindowToConfig() {
     // This accepts conf in because it can be run in the destruction of LUS.
-    mConfig->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
+    auto config = GetConfig();
+    config->SetBool("Window.Fullscreen.Enabled", IsFullscreen());
     if (IsFullscreen()) {
-        mConfig->SetInt("Window.Fullscreen.Width", (int32_t)GetWidth());
-        mConfig->SetInt("Window.Fullscreen.Height", (int32_t)GetHeight());
+        config->SetInt("Window.Fullscreen.Width", (int32_t)GetWidth());
+        config->SetInt("Window.Fullscreen.Height", (int32_t)GetHeight());
     } else {
-        mConfig->SetInt("Window.Width", (int32_t)GetWidth());
-        mConfig->SetInt("Window.Height", (int32_t)GetHeight());
-        mConfig->SetInt("Window.PositionX", GetPosX());
-        mConfig->SetInt("Window.PositionY", GetPosY());
+        config->SetInt("Window.Width", (int32_t)GetWidth());
+        config->SetInt("Window.Height", (int32_t)GetHeight());
+        config->SetInt("Window.PositionX", GetPosX());
+        config->SetInt("Window.PositionY", GetPosY());
     }
 }
 
@@ -122,9 +139,10 @@ std::shared_ptr<MouseStateManager> Window::GetMouseStateManager() {
 
 void Window::SetWindowBackend(int32_t backend) {
     mWindowBackend = backend;
-    mConfig->SetInt("Window.Backend.Id", GetWindowBackend());
-    mConfig->SetString("Window.Backend.Name", GetWindowBackendName());
-    mConfig->Save();
+    auto config = GetConfig();
+    config->SetInt("Window.Backend.Id", GetWindowBackend());
+    config->SetString("Window.Backend.Name", GetWindowBackendName());
+    config->Save();
 }
 
 void Window::AddAvailableWindowBackend(int32_t backend) {
@@ -132,7 +150,7 @@ void Window::AddAvailableWindowBackend(int32_t backend) {
 }
 
 int32_t Window::GetSavedWindowBackend() {
-    auto backendId = mConfig->GetInt("Window.Backend.Id", -1);
+    auto backendId = GetConfig()->GetInt("Window.Backend.Id", -1);
     if (IsAvailableWindowBackend(backendId)) {
         return backendId;
     }
@@ -149,5 +167,15 @@ int32_t Window::GetSavedWindowBackend() {
 
 std::string Window::GetWindowBackendName() {
     return "";
+}
+
+std::shared_ptr<Config> Window::GetConfig() const {
+    if (!mConfig) {
+        throw std::runtime_error("Window requires Config dependency");
+    }
+    if (!mConfig->IsInitialized()) {
+        throw std::runtime_error("Window requires Config to be initialized");
+    }
+    return mConfig;
 }
 } // namespace Ship

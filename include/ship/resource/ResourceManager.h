@@ -8,10 +8,13 @@
 #include <mutex>
 #include <queue>
 #include <variant>
+#include "ship/resource/ResourceIdentifier.h"
 #include "ship/resource/Resource.h"
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
 #include "ship/resource/archive/ArchiveManager.h"
+#include "ship/core/Component.h"
+#include "ship/thread/ThreadPool.h"
 
 #define BS_THREAD_POOL_ENABLE_PRIORITY
 #define BS_THREAD_POOL_ENABLE_PAUSE
@@ -19,6 +22,7 @@
 
 namespace Ship {
 struct File;
+class Keystore;
 
 /**
  * @brief Specifies which resources to include or exclude when performing a bulk load/unload.
@@ -42,74 +46,26 @@ struct ResourceFilter {
 };
 
 /**
- * @brief Uniquely identifies a cached resource by path, owner, and source archive.
- *
- * Two ResourceIdentifiers compare equal only when all three fields match, which allows
- * the same logical path to be loaded from different archives or by different owners
- * without colliding in the resource cache.
- */
-struct ResourceIdentifier {
-    friend struct ResourceIdentifierHash;
-
-    ResourceIdentifier(const std::string& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
-    ResourceIdentifier(std::string&& path, const uintptr_t owner, const std::shared_ptr<Archive> parent);
-    bool operator==(const ResourceIdentifier& rhs) const;
-
-    // Must be an exact path. Passing a path with a wildcard will return a fail state
-    const std::string Path = "";
-    /** @brief Opaque handle that identifies the owner of this cache entry. */
-    const uintptr_t Owner = 0;
-    /** @brief The archive from which the resource was (or should be) loaded. */
-    const std::shared_ptr<Archive> Parent = nullptr;
-
-  private:
-    size_t GetHash() const;
-    size_t CalculateHash();
-    size_t mHash;
-};
-
-/**
- * @brief std::hash specialization for ResourceIdentifier, used by unordered containers.
- */
-struct ResourceIdentifierHash {
-    size_t operator()(const ResourceIdentifier& rcd) const;
-};
-
-/**
  * @brief Central manager for loading, caching, and unloading game resources.
  *
  * ResourceManager sits between the game code and the archive/file system. It maintains
  * an in-memory cache of loaded IResource objects, dispatches asynchronous load requests
  * to a thread pool, and delegates actual deserialization to ResourceLoader.
  *
- * Typical usage:
- * @code
- * auto rm = Ship::Context::GetRawInstance()->GetResourceManager();
- * auto tex = rm->LoadResource<Ship::Texture>("textures/foo.tex");
- * @endcode
+ * **Required dependencies (constructor-injected):**
+ * - **ThreadPool** — used for all asynchronous resource load/unload operations.
+ * - **Keystore** — optional; passed through to ArchiveManager/Archive for signature validation.
+ *
+ * Obtain the instance from `Context::GetChildren().GetFirst<ResourceManager>()`.
  */
-class ResourceManager {
+class ResourceManager : public Component {
     friend class ResourceLoader;
     typedef enum class ResourceLoadError { None, NotCached, NotFound } ResourceLoadError;
 
   public:
-    ResourceManager();
-
-    /**
-     * @brief Initializes the ResourceManager, mounting archives and starting the thread pool.
-     * @param archivePaths        Paths to OTR/O2R archive files or directories containing them.
-     * @param validHashes         Set of acceptable game-version hash values; empty = all accepted.
-     * @param reservedThreadCount Number of OS threads to reserve outside the resource thread pool.
-     */
-    void Init(const std::vector<std::string>& archivePaths, const std::unordered_set<uint32_t>& validHashes,
-              int32_t reservedThreadCount = 1);
+    explicit ResourceManager(std::shared_ptr<ThreadPool> threadPool = nullptr,
+                             std::shared_ptr<Keystore> keystore = nullptr);
     ~ResourceManager();
-
-    /**
-     * @brief Returns true once Init() has completed successfully.
-     * @return true if the manager is ready to load resources.
-     */
-    bool IsLoaded();
 
     /** @brief Returns the ArchiveManager that manages the mounted archives. */
     std::shared_ptr<ArchiveManager> GetArchiveManager();
@@ -143,14 +99,42 @@ class ResourceManager {
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
 
     /**
+     * @brief Loads a resource synchronously, cast to the concrete type T.
+     * @tparam T        Concrete resource type (must derive from IResource).
+     * @param filePath  Virtual path of the resource.
+     * @param loadExact If true, skips alt-asset path resolution.
+     * @param initData  Optional metadata overrides.
+     * @return Loaded (or cached) resource cast to T, or nullptr on failure.
+     */
+    template <typename T>
+    std::shared_ptr<T> LoadResource(const std::string& filePath, bool loadExact = false,
+                                    std::shared_ptr<ResourceInitData> initData = nullptr) {
+        return std::static_pointer_cast<T>(LoadResource(filePath, loadExact, std::move(initData)));
+    }
+
+    /**
      * @brief Loads a resource synchronously by ResourceIdentifier.
-     * @param identifier Exact identifier (path + owner + parent archive).
+     * @param identifier Exact identifier (path/hash + owner + parent archive).
      * @param loadExact  If true, skips alt-asset path resolution.
      * @param initData   Optional metadata overrides.
      * @return Loaded (or cached) IResource, or nullptr on failure.
      */
     std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
+
+    /**
+     * @brief Loads a resource synchronously by ResourceIdentifier, cast to the concrete type T.
+     * @tparam T         Concrete resource type (must derive from IResource).
+     * @param identifier Exact identifier (path/hash + owner + parent archive).
+     * @param loadExact  If true, skips alt-asset path resolution.
+     * @param initData   Optional metadata overrides.
+     * @return Loaded (or cached) resource cast to T, or nullptr on failure.
+     */
+    template <typename T>
+    std::shared_ptr<T> LoadResource(const ResourceIdentifier& identifier, bool loadExact = false,
+                                    std::shared_ptr<ResourceInitData> initData = nullptr) {
+        return std::static_pointer_cast<T>(LoadResource(identifier, loadExact, std::move(initData)));
+    }
 
     /**
      * @brief Loads a resource synchronously by content-hash CRC.
@@ -224,15 +208,6 @@ class ResourceManager {
     size_t UnloadResource(const std::string& filePath);
 
     /**
-     * @brief Inserts a runtime-built resource into the cache so LoadResource[Process] returns it by
-     *        path, without any backing archive file. Used for textures synthesized at runtime.
-     *        Evict with UnloadResource(filePath).
-     * @param filePath Virtual path the resource will be retrievable under.
-     * @param resource The resource to cache.
-     */
-    void CacheExternalResource(const std::string& filePath, std::shared_ptr<IResource> resource);
-
-    /**
      * @brief Writes raw data into an archive and optionally evicts the stale cache entry.
      * @param identifier Identifier of the resource to write.
      * @param data       Raw bytes to write.
@@ -240,6 +215,15 @@ class ResourceManager {
      * @return true on success.
      */
     bool WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data, bool unloadFile);
+
+    /**
+     * @brief Writes raw data into an archive by hash and optionally evicts the stale cache entry.
+     * @param hash       Virtual-file hash of the resource to write.
+     * @param data       Raw bytes to write.
+     * @param unloadFile If true, removes the old cache entry after writing.
+     * @return true on success.
+     */
+    bool WriteResource(uint64_t hash, const std::vector<uint8_t>& data, bool unloadFile);
 
     /**
      * @brief Loads all resources whose paths match the given glob mask.
@@ -348,6 +332,13 @@ class ResourceManager {
     std::shared_ptr<File> LoadFileProcess(const std::string& filePath);
 
     /**
+     * @brief Loads raw file bytes from the archive by hash.
+     * @param hash Virtual-file hash of the file.
+     * @return Loaded File with raw buffer, or nullptr on failure.
+     */
+    std::shared_ptr<File> LoadFileProcess(uint64_t hash);
+
+    /**
      * @brief Returns the byte size of the payload of a loaded resource.
      * @param resource Shared pointer to the resource.
      * @return Size in bytes, or 0 if the resource is null.
@@ -408,6 +399,15 @@ class ResourceManager {
     void* GetResourceRawPointer(uint64_t crc);
 
   protected:
+    /**
+     * @brief Component initialization hook. Mounts archives and starts the thread pool.
+     *
+     * Expected initArgs keys:
+     * - "archivePaths" (array of strings): paths to OTR/O2R archive files or directories.
+     * - "validHashes"  (array of uint32): acceptable game-version hashes; empty = all accepted.
+     */
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
+
     std::shared_ptr<std::vector<std::shared_ptr<IResource>>> LoadResourcesProcess(const ResourceFilter& filter);
     void UnloadResourcesProcess(const ResourceFilter& filter);
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> CheckCache(const ResourceIdentifier& identifier,
@@ -417,17 +417,30 @@ class ResourceManager {
 
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
 
+    /**
+     * @brief Resolves the `.meta` beside this identifier, if its target should load instead.
+     *
+     * The real asset at the identifier and the `.meta`'s target are both ranked by the archive
+     * holding them, and the higher one loads. A tie goes to the `.meta`.
+     *
+     * @return Init data whose Identifier names the file to load, or nullptr if no `.meta` wins.
+     */
+    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const ResourceIdentifier& identifier);
+
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,
                        ResourceIdentifierHash>
         mResourceCache;
     std::shared_ptr<ResourceLoader> mResourceLoader;
     std::shared_ptr<ArchiveManager> mArchiveManager;
-    std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
     bool mAltAssetsEnabled = false;
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
+    std::shared_ptr<ThreadPool> mThreadPool;
+    std::shared_ptr<Keystore> mKeystore;
+
+    std::shared_ptr<ThreadPool> GetThreadPool();
 };
 } // namespace Ship

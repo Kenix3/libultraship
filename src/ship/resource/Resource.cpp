@@ -6,7 +6,15 @@ IResource::IResource(std::shared_ptr<ResourceInitData> initData) : mInitData(ini
 }
 
 IResource::~IResource() {
-    SPDLOG_TRACE("Resource Unloaded: {}\n", GetInitData()->Path);
+    if (GetInitData() == nullptr) {
+        return;
+    }
+
+    if (GetInitData()->Identifier.IsPath()) {
+        SPDLOG_TRACE("Resource Unloaded: {}\n", GetInitData()->Identifier.GetPath());
+    } else {
+        SPDLOG_TRACE("Resource Unloaded: {}\n", GetInitData()->Identifier.GetPathHash());
+    }
 }
 
 bool IResource::IsDirty() {

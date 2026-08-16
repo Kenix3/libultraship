@@ -13,5 +13,5 @@ elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "arm64")
 endif()
 
 	vcpkg_bootstrap()
-	vcpkg_install_packages(zlib bzip2 sdl2 glew libzip nlohmann-json tinyxml2 spdlog)    
+	vcpkg_install_packages(zlib bzip2 sdl3 glew libzip nlohmann-json tinyxml2 spdlog)
 endif()

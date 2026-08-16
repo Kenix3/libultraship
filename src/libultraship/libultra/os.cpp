@@ -1,11 +1,14 @@
 #include "libultraship/libultraship.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <ratio>
 
 // Establish a chrono duration for the N64 46.875MHz clock rate
 typedef std::ratio<3000, 64> n64ClockRatio;
 typedef std::ratio_divide<std::micro, n64ClockRatio> n64CycleRate;
 typedef std::chrono::duration<long long, n64CycleRate> n64CycleRateDuration;
+
+// Cached ControlDeck pointer; set by osContInit and reused by all other os functions.
+static std::shared_ptr<Ship::ControlDeck> sControlDeck;
 
 extern "C" {
 uint8_t __osMaxControllers = MAXCONTROLLERS;
@@ -15,9 +18,27 @@ int32_t osContInit(OSMesgQueue* mq, uint8_t* controllerBits, OSContStatus* statu
     *controllerBits = 0;
     status->status |= 1;
 
-    // The SDL game-controller subsystem and mappings are brought up earlier, in Context::InitControlDeck,
-    // so controllers work in pre-game UI. ControlDeck::Init stays here as it needs the game's controllerBits.
-    Ship::Context::GetRawInstance()->GetControlDeck()->Init(controllerBits);
+    std::string controllerDb = Ship::Context::LocateFileAcrossAppDirs("gamecontrollerdb.txt");
+    int mappingsAdded = SDL_AddGamepadMappingsFromFile(controllerDb.c_str());
+    if (mappingsAdded >= 0) {
+        SPDLOG_INFO("Added SDL game controllers from \"{}\" ({})", controllerDb, mappingsAdded);
+    } else {
+        SPDLOG_ERROR("Failed add SDL game controller mappings from \"{}\" ({})", controllerDb, SDL_GetError());
+    }
+
+    SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+        SPDLOG_ERROR("Failed to initialize SDL game controllers ({})", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    sControlDeck = ControllerGetControlDeck();
+    if (!sControlDeck) {
+        SPDLOG_ERROR("osContInit: ControlDeck not found in context");
+        return -1;
+    }
+
+    sControlDeck->Init(controllerBits);
 
     return 0;
 }
@@ -28,8 +49,11 @@ int32_t osContStartReadData(OSMesgQueue* mesg) {
 
 void osContGetReadData(OSContPad* pad) {
     memset(pad, 0, sizeof(OSContPad) * __osMaxControllers);
-
-    Ship::Context::GetRawInstance()->GetControlDeck()->WriteToPad(pad);
+    if (!sControlDeck) {
+        SPDLOG_WARN("osContGetReadData: ControlDeck not initialized");
+        return;
+    }
+    sControlDeck->WriteToPad(pad);
 }
 
 void osSetTime(OSTime time) {
@@ -74,7 +98,11 @@ int32_t osAiSetNextBuffer(void* buff, size_t len) {
 }
 
 int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
-    auto io = Ship::Context::GetRawInstance()->GetControlDeck()->GetControllerByPort(pfs->channel)->GetRumble();
+    if (!sControlDeck) {
+        SPDLOG_ERROR("__osMotorAccess: ControlDeck not initialized (call osContInit first)");
+        return -1;
+    }
+    auto io = sControlDeck->GetControllerByPort(pfs->channel)->GetRumble();
     if (vibrate) {
         io->StartRumble();
     } else {

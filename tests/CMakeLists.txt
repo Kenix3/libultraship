@@ -1,4 +1,5 @@
 include(FetchContent)
+include(FetchContent)
 
 FetchContent_Declare(
     googletest
@@ -8,7 +9,15 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(lus_tests
+add_executable(libultraship_tests
+    # Framework / ECS tests (formerly libultraship_tests)
+    part_tests.cpp
+    component_tests.cpp
+    action_tests.cpp
+    tickable_tests.cpp
+    tickable_component_tests.cpp
+    events_tests.cpp
+    # Utility / I/O tests (formerly lus_tests)
     binary_io_tests.cpp
     string_helper_tests.cpp
     crc64_tests.cpp
@@ -19,32 +28,50 @@ add_executable(lus_tests
     sound_matrix_decoder_tests.cpp
     path_file_helper_tests.cpp
     archive_resource_tests.cpp
+    archive_resource_meta_resolution_tests.cpp
     glob_tests.cpp
     splittext_tests.cpp
     path_diskfile_tests.cpp
     resource_type_tests.cpp
     archive_self_tests.cpp
+    connected_physical_device_manager_tests.cpp
+    gfx_sdl_window_tests.cpp
+    rumble_mapping_factory_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)
-    target_sources(lus_tests PRIVATE script_test.cpp)
+    target_sources(libultraship_tests PRIVATE script_test.cpp)
     if(WIN32)
-        add_custom_command(TARGET lus_tests POST_BUILD
+        add_custom_command(TARGET libultraship_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_FILE:libtcc>
-                $<TARGET_FILE_DIR:lus_tests>
+                $<TARGET_FILE_DIR:libultraship_tests>
         )
     endif()
 endif()
 
-set_property(TARGET lus_tests PROPERTY CXX_STANDARD 20)
+set_property(TARGET libultraship_tests PROPERTY CXX_STANDARD 20)
 
-target_link_libraries(lus_tests PRIVATE
+target_link_libraries(libultraship_tests
+    PRIVATE
+    GTest::gtest_main
     libultraship
-    gtest_main
 )
 
-target_compile_definitions(lus_tests PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
+target_include_directories(libultraship_tests
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${ADDITIONAL_LIB_INCLUDES}
+)
+
+# Propagate compile definitions from the main library
+# and suppress noisy spdlog output during test runs
+target_compile_definitions(libultraship_tests PRIVATE
+    $<TARGET_PROPERTY:libultraship,COMPILE_DEFINITIONS>
+    SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF
+)
 
 include(GoogleTest)
-gtest_discover_tests(lus_tests)
+gtest_discover_tests(libultraship_tests)
+

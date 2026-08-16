@@ -2,6 +2,7 @@
 
 #ifdef __cplusplus
 
+#include "ship/core/Component.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <memory>
@@ -14,12 +15,15 @@
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/window/gui/GameOverlay.h"
 #include "ship/window/gui/StatsWindow.h"
-#include "ship/window/gui/FileBrowserWindow.h"
 #include "ship/window/gui/GuiWindow.h"
 #include "ship/window/gui/GuiMenuBar.h"
 
 namespace Ship {
+class Context;
 class Window;
+class ConsoleVariable;
+class Config;
+class ResourceManager;
 
 /**
  * @brief Owns and drives the ImGui context, all registered GuiWindows, and texture management.
@@ -29,9 +33,11 @@ class Window;
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
  * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
  *
+ * GuiWindow children are accessible via `GetChildren().GetFirst<T>()`.
+ *
  * Obtain the instance from Window::GetGui().
  */
-class Gui {
+class Gui : public Component {
   public:
     /** @brief Constructs a Gui with no pre-registered windows. */
     Gui();
@@ -40,13 +46,16 @@ class Gui {
      * @brief Constructs a Gui and pre-registers a list of GuiWindows.
      * @param guiWindows Windows to add before Init() is called.
      */
-    Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows);
+    Gui(const std::vector<std::shared_ptr<GuiWindow>>& guiWindows, std::shared_ptr<Context> context = nullptr,
+        std::shared_ptr<ConsoleVariable> consoleVariable = nullptr, std::shared_ptr<Window> window = nullptr,
+        std::shared_ptr<Config> config = nullptr, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+        std::shared_ptr<GameOverlay> gameOverlay = nullptr);
     virtual ~Gui();
 
     /**
      * @brief Initialises the ImGui context and the appropriate backend renderer.
      */
-    void Init();
+    void OnInit(const nlohmann::json& initArgs) override;
 
     /**
      * @brief Begins a new ImGui frame.
@@ -159,11 +168,6 @@ class Gui {
      *  is not re-evaluated per frame. The base implementation is a no-op. */
     virtual void RefreshImGuiGamepads();
 
-    /** @brief Per-frame recompute of whether ImGui gamepad nav is enabled: on while a menu or any
-     *  popup is open (and controller nav is enabled), off during gameplay so the game keeps the pad.
-     *  Centralised here because popups have no open/close event to hook. */
-    void UpdateGamepadNavigation();
-
     /**
      * @brief Shuts down the ImGui context and releases backend resources.
      * @param window Pointer to the Window whose backend context should be torn down.
@@ -196,8 +200,9 @@ class Gui {
      *  The base implementation is a no-op. */
     virtual void ImGuiBackendNewFrame();
 
-    /** @brief Calls ImGui_ImplSDL2_NewFrame() or the platform equivalent.
-     *  The base implementation is a no-op. */
+    /** @brief Calls ImGui_ImplSDL3_NewFrame() or the platform equivalent.
+     *  The base implementation is a no-op.
+     */
     virtual void ImGuiWMNewFrame();
 
     /** @brief Initialises the platform/window-manager ImGui backend.
@@ -240,6 +245,10 @@ class Gui {
     std::shared_ptr<GameOverlay> mGameOverlay;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
+    std::shared_ptr<ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Window> mWindow;
+    std::shared_ptr<Config> mConfig;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship
 

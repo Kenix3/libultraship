@@ -30,10 +30,10 @@ target_sources(ImGui
 target_sources(ImGui
     PRIVATE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
 )
 
-target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 
 # ========= StormLib =============
 if(INCLUDE_MPQ_SUPPORT)
@@ -167,7 +167,7 @@ if(NOT TARGET libtcc)
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
             execute_process(
-                COMMAND cmd /c build-tcc.bat -c cl
+                COMMAND cmd /c [[.\build-tcc.bat]] -c cl
                 WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
                 RESULT_VARIABLE tcc_config_result
             )

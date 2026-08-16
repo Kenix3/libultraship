@@ -13,6 +13,12 @@
 typedef void (*CrashHandlerCallback)(char*, size_t*);
 
 #ifdef __cplusplus
+#include <memory>
+namespace Ship {
+class CrashHandler;
+}
+void CrashHandlerSetComponent(std::shared_ptr<Ship::CrashHandler> crashHandler);
+std::shared_ptr<Ship::CrashHandler> CrashHandlerGetComponent();
 extern "C" {
 #endif
 

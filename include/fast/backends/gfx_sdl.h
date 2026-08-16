@@ -1,12 +1,34 @@
 #pragma once
 
+#include <memory>
 #include "gfx_window_manager_api.h"
-namespace Fast {
-class GfxWindowBackendSDL2 final : public GfxWindowBackend {
-  public:
-    GfxWindowBackendSDL2() = default;
-    ~GfxWindowBackendSDL2() override;
 
+namespace Ship {
+class ConsoleVariable;
+class Config;
+class FileDrop;
+} // namespace Ship
+
+namespace Fast {
+class Fast3dGui;
+
+/**
+ * @brief SDL implementation of the Fast3D window/input backend.
+ *
+ * Handles window creation, input polling, fullscreen transitions, framerate
+ * pacing, and callback forwarding to the renderer/runtime.
+ */
+class GfxWindowBackendSDL final : public GfxWindowBackend {
+  public:
+    /** @brief Constructs the backend with optional shared engine dependencies. */
+    GfxWindowBackendSDL(std::shared_ptr<Ship::Config> config = nullptr,
+                        std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
+                        std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                        std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
+    ~GfxWindowBackendSDL() override;
+
+    /** @name GfxWindowBackend implementation */
+    /** @{ */
     void Init(const char* gameName, const char* apiName, bool startFullScreen, uint32_t width, uint32_t height,
               int32_t posX, int32_t posY) override;
     void Close() override;
@@ -40,7 +62,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     bool IsRunning() override;
     void Destroy() override;
     bool IsFullscreen() override;
-
+    /** @} */
   private:
     void SetFullscreenImpl(bool on, bool call_callback);
     void HandleSingleEvent(SDL_Event& event);
@@ -52,10 +74,10 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void OnMouseButtonUp(int btn) const;
     void SyncFramerateWithTime() const;
 
-    SDL_Window* mWnd;
-    SDL_Rect mCursorClip;
-    SDL_GLContext mCtx;
-    SDL_Renderer* mRenderer;
+    SDL_Window* mWnd = nullptr;
+    SDL_Rect mCursorClip{};
+    SDL_GLContext mCtx = nullptr;
+    SDL_Renderer* mRenderer = nullptr;
     int mSdlToLusTable[512];
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;
@@ -66,5 +88,10 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     int mWindowWidth = 640;
     int mWindowHeight = 480;
     void (*mOnAllKeysUp)();
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::Config> mConfig;
+    std::shared_ptr<Ship::FileDrop> mFileDrop;
+    std::shared_ptr<Fast::Fast3dGui> mFast3dGui;
 };
 } // namespace Fast

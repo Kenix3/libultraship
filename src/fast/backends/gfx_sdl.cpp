@@ -1,8 +1,7 @@
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
-
+#include <math.h>
 #include <stdio.h>
 
-#include "fast/Fast3dWindow.h"
+#if defined(ENABLE_OPENGL) || defined(__APPLE__)
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -10,10 +9,9 @@
 #define FOR_WINDOWS 0
 #endif
 
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/window/FileDropMgr.h"
+#include "ship/window/FileDrop.h"
 #include "fast/backends/gfx_sdl.h"
 
 #ifdef __OpenBSD__
@@ -23,17 +21,17 @@
 
 #if FOR_WINDOWS
 #include <GL/glew.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include "SDL_opengl.h"
+#include <SDL3/SDL_opengl.h>
 #elif __APPLE__
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "fast/backends/gfx_metal.h"
 #include "ship/utils/macUtils.h"
 #else
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
-#include <SDL2/SDL_opengles2.h>
+#include <SDL3/SDL_opengles2.h>
 #endif
 
 #include "ship/window/gui/Gui.h"
@@ -42,7 +40,6 @@
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
-#include <SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -211,26 +208,47 @@ const SDL_Scancode scancode_rmapping_nonextended[][2] = { { SDL_SCANCODE_KP_7, S
                                                           { SDL_SCANCODE_KP_PERIOD, SDL_SCANCODE_DELETE },
                                                           { SDL_SCANCODE_KP_MULTIPLY, SDL_SCANCODE_PRINTSCREEN } };
 
-GfxWindowBackendSDL2::~GfxWindowBackendSDL2() {
+GfxWindowBackendSDL::GfxWindowBackendSDL(std::shared_ptr<Ship::Config> config, std::shared_ptr<Ship::FileDrop> fileDrop,
+                                         std::shared_ptr<Ship::ConsoleVariable> consoleVariable,
+                                         std::shared_ptr<Fast::Fast3dGui> fast3dGui)
+    : mConsoleVariable(std::move(consoleVariable)), mConfig(std::move(config)), mFileDrop(std::move(fileDrop)),
+      mFast3dGui(std::move(fast3dGui)) {
 }
 
-void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
+GfxWindowBackendSDL::~GfxWindowBackendSDL() {
+}
+
+void GfxWindowBackendSDL::SetFullscreenImpl(bool on, bool call_callback) {
     if (mFullScreen == on) {
         return;
     }
 
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
-    if (display_in_use < 0) {
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
+    if (display_in_use == 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
         SPDLOG_WARN(SDL_GetError());
     }
 
     if (on) {
         // OTRTODO: Get mode from config.
-        SDL_DisplayMode mode;
-        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-            SDL_SetWindowDisplayMode(mWnd, &mode);
-        } else {
+        const bool windowedFullscreen = mConsoleVariable->GetInteger(CVAR_SDL_WINDOWED_FULLSCREEN, 0) != 0;
+        SDL_DisplayMode fullscreenMode{};
+        const SDL_DisplayMode* mode = nullptr;
+
+        if (!windowedFullscreen) {
+            const SDL_DisplayMode* desktopMode = SDL_GetDesktopDisplayMode(display_in_use);
+            if (desktopMode == nullptr ||
+                !SDL_GetClosestFullscreenDisplayMode(display_in_use, desktopMode->w, desktopMode->h,
+                                                     desktopMode->refresh_rate, true, &fullscreenMode)) {
+                SPDLOG_ERROR("Failed to find an exclusive fullscreen mode.");
+                SPDLOG_ERROR(SDL_GetError());
+            } else {
+                mode = &fullscreenMode;
+            }
+        }
+
+        if (!SDL_SetWindowFullscreenMode(mWnd, mode)) {
+            SPDLOG_ERROR("Failed to set the fullscreen display mode.");
             SPDLOG_ERROR(SDL_GetError());
         }
     }
@@ -242,11 +260,7 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     }
     mFullScreen = on;
 #else
-    if (SDL_SetWindowFullscreen(mWnd, on ? (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
-                                                CVAR_SDL_WINDOWED_FULLSCREEN, 0)
-                                                ? SDL_WINDOW_FULLSCREEN_DESKTOP
-                                                : SDL_WINDOW_FULLSCREEN)
-                                         : 0) >= 0) {
+    if (SDL_SetWindowFullscreen(mWnd, on)) {
         mFullScreen = on;
     } else {
         SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
@@ -255,12 +269,11 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
 #endif
 
     if (!on) {
-        auto conf = Ship::Context::GetRawInstance()->GetConfig();
-        mWindowWidth = conf->GetInt("Window.Width", 640);
-        mWindowHeight = conf->GetInt("Window.Height", 480);
-        int32_t posX = conf->GetInt("Window.PositionX", 100);
-        int32_t posY = conf->GetInt("Window.PositionY", 100);
-        if (display_in_use < 0) { // Fallback to default if out of bounds
+        mWindowWidth = mConfig->GetInt("Window.Width", 640);
+        mWindowHeight = mConfig->GetInt("Window.Height", 480);
+        int32_t posX = mConfig->GetInt("Window.PositionX", 100);
+        int32_t posY = mConfig->GetInt("Window.PositionY", 100);
+        if (display_in_use == 0) { // Fallback to default if out of bounds
             posX = 100;
             posY = 100;
         }
@@ -273,12 +286,12 @@ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
     }
 }
 
-void GfxWindowBackendSDL2::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
+void GfxWindowBackendSDL::GetActiveWindowRefreshRate(uint32_t* refresh_rate) {
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
 
-    SDL_DisplayMode mode;
-    SDL_GetCurrentDisplayMode(display_in_use, &mode);
-    *refresh_rate = mode.refresh_rate != 0 ? mode.refresh_rate : 60;
+    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(display_in_use);
+    *refresh_rate =
+        mode != nullptr && mode->refresh_rate > 0.0f ? static_cast<uint32_t>(roundf(mode->refresh_rate)) : 60;
 }
 
 static uint64_t previous_time;
@@ -289,7 +302,7 @@ static HANDLE mTimer;
 #define FRAME_INTERVAL_US_NUMERATOR 1000000
 #define FRAME_INTERVAL_US_DENOMINATOR (mTargetFps)
 
-void GfxWindowBackendSDL2::Close() {
+void GfxWindowBackendSDL::Close() {
     mIsRunning = false;
 }
 
@@ -301,8 +314,7 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
             // system window procedure instead.
             return DefWindowProc(h_wnd, message, w_param, l_param);
         case WM_ENDSESSION: {
-            GfxWindowBackendSDL2* self =
-                reinterpret_cast<GfxWindowBackendSDL2*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
+            GfxWindowBackendSDL* self = reinterpret_cast<GfxWindowBackendSDL*>(GetWindowLongPtr(h_wnd, GWLP_USERDATA));
             // Apparently SDL2 does not handle this
             if (w_param == TRUE) {
                 self->Close();
@@ -317,19 +329,17 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
 };
 #endif
 
-void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bool startFullScreen, uint32_t width,
-                                uint32_t height, int32_t posX, int32_t posY) {
+void GfxWindowBackendSDL::Init(const char* gameName, const char* gfxApiName, bool startFullScreen, uint32_t width,
+                               uint32_t height, int32_t posX, int32_t posY) {
     mWindowWidth = width;
     mWindowHeight = height;
 
-#if SDL_VERSION_ATLEAST(2, 24, 0)
-    /* fix DPI scaling issues on Windows */
-    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
-#endif
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        SPDLOG_ERROR("SDL video initialization failed: {}", SDL_GetError());
+        return;
+    }
 
-    SDL_Init(SDL_INIT_VIDEO);
-
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    SDL_SetEventEnabled(SDL_EVENT_DROP_FILE, true);
 
 #if defined(__APPLE__)
     bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
@@ -374,9 +384,9 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     int len = snprintf(title, sizeof(title), "%s (%s)", gameName, gfxApiName);
 
 #ifdef __IOS__
-    Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN;
+    Uint32 flags = SDL_WINDOW_BORDERLESS;
 #else
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #endif
 
     if (use_opengl) {
@@ -385,27 +395,37 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         flags = flags | SDL_WINDOW_METAL;
     }
 
-    mWnd = SDL_CreateWindow(title, posX, posY, mWindowWidth, mWindowHeight, flags);
+    SDL_PropertiesID windowProperties = SDL_CreateProperties();
+    SDL_SetStringProperty(windowProperties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_X_NUMBER, posX);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_Y_NUMBER, posY);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, mWindowWidth);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, mWindowHeight);
+    SDL_SetNumberProperty(windowProperties, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags);
+    mWnd = SDL_CreateWindowWithProperties(windowProperties);
+    SDL_DestroyProperties(windowProperties);
+    if (mWnd == nullptr) {
+        SPDLOG_ERROR("Error creating SDL window: {}", SDL_GetError());
+        return;
+    }
 #ifdef _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(mWnd, &wmInfo);
-    HWND hwnd = wmInfo.info.win.window;
+    HWND hwnd = static_cast<HWND>(
+        SDL_GetPointerProperty(SDL_GetWindowProperties(mWnd), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 #endif
     Fast::GuiWindowInitData window_impl;
 
-    int display_in_use = SDL_GetWindowDisplayIndex(mWnd);
-    if (display_in_use < 0) { // Fallback to default if out of bounds
+    SDL_DisplayID display_in_use = SDL_GetDisplayForWindow(mWnd);
+    if (display_in_use == 0) { // Fallback to default if out of bounds
         posX = 100;
         posY = 100;
     }
 
     if (use_opengl) {
-        SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+        SDL_GetWindowSizeInPixels(mWnd, &mWindowWidth, &mWindowHeight);
 
         if (startFullScreen) {
             SetFullscreenImpl(true, false);
@@ -417,29 +437,25 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
 
         window_impl.Opengl = { mWnd, mCtx };
-        window_impl.Backend = WindowBackend::FAST3D_SDL_OPENGL;
     } else {
-        uint32_t flags = SDL_RENDERER_ACCELERATED;
-        if (mVsyncEnabled) {
-            flags |= SDL_RENDERER_PRESENTVSYNC;
-        }
-        mRenderer = SDL_CreateRenderer(mWnd, -1, flags);
+        mRenderer = SDL_CreateRenderer(mWnd, nullptr);
         if (mRenderer == nullptr) {
             SPDLOG_ERROR("Error creating renderer: {}", SDL_GetError());
             return;
         }
+        SDL_SetRenderVSync(mRenderer, mVsyncEnabled ? 1 : 0);
 
         if (startFullScreen) {
             SetFullscreenImpl(true, false);
         }
 
-        SDL_GetRendererOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
+        SDL_GetCurrentRenderOutputSize(mRenderer, &mWindowWidth, &mWindowHeight);
         window_impl.Metal = { mWnd, mRenderer };
-        window_impl.Backend = WindowBackend::FAST3D_SDL_METAL;
     }
 
-    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
-        ->Init(window_impl);
+    if (mFast3dGui) {
+        mFast3dGui->Init(window_impl);
+    }
 
     for (size_t i = 0; i < std::size(lus_to_sdl_table); i++) {
         mSdlToLusTable[lus_to_sdl_table[i]] = i;
@@ -455,85 +471,95 @@ void GfxWindowBackendSDL2::Init(const char* gameName, const char* gfxApiName, bo
     }
 }
 
-void GfxWindowBackendSDL2::SetFullscreenChangedCallback(void (*onFullscreenChanged)(bool is_now_fullscreen)) {
+void GfxWindowBackendSDL::SetFullscreenChangedCallback(void (*onFullscreenChanged)(bool is_now_fullscreen)) {
     mOnFullscreenChanged = onFullscreenChanged;
 }
 
-void GfxWindowBackendSDL2::SetFullscreen(bool enable) {
+void GfxWindowBackendSDL::SetFullscreen(bool enable) {
     SetFullscreenImpl(enable, true);
 }
 
-void GfxWindowBackendSDL2::SetCursorVisibility(bool visible) {
+void GfxWindowBackendSDL::SetCursorVisibility(bool visible) {
     if (visible) {
-        SDL_ShowCursor(SDL_ENABLE);
+        SDL_ShowCursor();
     } else {
-        SDL_ShowCursor(SDL_DISABLE);
+        SDL_HideCursor();
     }
 }
 
-void GfxWindowBackendSDL2::SetMousePos(int32_t x, int32_t y) {
-    SDL_WarpMouseInWindow(mWnd, x, y);
+void GfxWindowBackendSDL::SetMousePos(int32_t x, int32_t y) {
+    SDL_WarpMouseInWindow(mWnd, static_cast<float>(x), static_cast<float>(y));
 }
 
-void GfxWindowBackendSDL2::GetMousePos(int32_t* x, int32_t* y) {
-    SDL_GetMouseState(x, y);
+void GfxWindowBackendSDL::GetMousePos(int32_t* x, int32_t* y) {
+    float mouseX = 0.0f;
+    float mouseY = 0.0f;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    *x = static_cast<int32_t>(mouseX);
+    *y = static_cast<int32_t>(mouseY);
 }
 
-void GfxWindowBackendSDL2::GetMouseDelta(int32_t* x, int32_t* y) {
-    SDL_GetRelativeMouseState(x, y);
+void GfxWindowBackendSDL::GetMouseDelta(int32_t* x, int32_t* y) {
+    float deltaX = 0.0f;
+    float deltaY = 0.0f;
+    SDL_GetRelativeMouseState(&deltaX, &deltaY);
+    *x = static_cast<int32_t>(deltaX);
+    *y = static_cast<int32_t>(deltaY);
 }
 
-void GfxWindowBackendSDL2::GetMouseWheel(float* x, float* y) {
+void GfxWindowBackendSDL::GetMouseWheel(float* x, float* y) {
     *x = mMouseWheelX;
     *y = mMouseWheelY;
     mMouseWheelX = 0.0f;
     mMouseWheelY = 0.0f;
 }
 
-bool GfxWindowBackendSDL2::GetMouseState(uint32_t btn) {
+bool GfxWindowBackendSDL::GetMouseState(uint32_t btn) {
     return SDL_GetMouseState(nullptr, nullptr) & (1 << btn);
 }
 
-void GfxWindowBackendSDL2::SetMouseCapture(bool capture) {
-    SDL_SetRelativeMouseMode(static_cast<SDL_bool>(capture));
-    // TODO: Manually setting a clipping rect here because
-    // https://wiki.libsdl.org/SDL2/SDL_HINT_MOUSE_RELATIVE_MODE_CENTER isn't working as epxected.
-    // Revisit on SDL3
-    auto mouse = SDL_GetWindowMouseRect(mWnd);
+void GfxWindowBackendSDL::SetMouseCapture(bool capture) {
+    SDL_SetWindowRelativeMouseMode(mWnd, capture);
+    // Keep the cursor fixed while captured. Relative mode alone constrains it to
+    // the window, but does not preserve the centering behavior expected here.
+    const SDL_Rect* cursorClip = nullptr;
     if (capture) {
-        int w, h;
-        SDL_GetWindowSize(mWnd, &w, &h);
-        mCursorClip = { (w / 2) - 1, (h / 2) - 1, 2, 2 };
+        int width = 0;
+        int height = 0;
+        if (SDL_GetWindowSize(mWnd, &width, &height)) {
+            mCursorClip = { (width / 2) - 1, (height / 2) - 1, 2, 2 };
+            cursorClip = &mCursorClip;
+        }
     }
-    SDL_SetWindowMouseRect(mWnd, capture ? &mCursorClip : NULL);
+    SDL_SetWindowMouseRect(mWnd, cursorClip);
 }
 
-bool GfxWindowBackendSDL2::IsMouseCaptured() {
-    return (SDL_GetRelativeMouseMode() == SDL_TRUE);
+bool GfxWindowBackendSDL::IsMouseCaptured() {
+    return SDL_GetWindowRelativeMouseMode(mWnd);
 }
 
-void GfxWindowBackendSDL2::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
-                                                void (*onAllKeysUp)()) {
+void GfxWindowBackendSDL::SetKeyboardCallbacks(bool (*onKeyDown)(int scancode), bool (*onKeyUp)(int scancode),
+                                               void (*onAllKeysUp)()) {
     mOnKeyDown = onKeyDown;
     mOnKeyUp = onKeyUp;
     mOnAllKeysUp = onAllKeysUp;
 }
 
-void GfxWindowBackendSDL2::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn), bool (*onMouseButtonUp)(int btn)) {
+void GfxWindowBackendSDL::SetMouseCallbacks(bool (*onMouseButtonDown)(int btn), bool (*onMouseButtonUp)(int btn)) {
     mOnMouseButtonDown = onMouseButtonDown;
     mOnMouseButtonUp = onMouseButtonUp;
 }
 
-void GfxWindowBackendSDL2::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
+void GfxWindowBackendSDL::GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY) {
 #ifdef __APPLE__
     SDL_GetWindowSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #else
-    SDL_GL_GetDrawableSize(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
+    SDL_GetWindowSizeInPixels(mWnd, static_cast<int*>((void*)width), static_cast<int*>((void*)height));
 #endif
     SDL_GetWindowPosition(mWnd, static_cast<int*>(posX), static_cast<int*>(posY));
 }
 
-void GfxWindowBackendSDL2::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
+void GfxWindowBackendSDL::SetDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
     mWindowWidth = width;
     mWindowHeight = height;
     if (mWnd) {
@@ -542,28 +568,28 @@ void GfxWindowBackendSDL2::SetDimensions(uint32_t width, uint32_t height, int32_
     }
 }
 
-Ship::WindowRect GfxWindowBackendSDL2::GetPrimaryMonitorRect() {
-    SDL_DisplayMode mode;
-    int display_in_use = mWnd ? SDL_GetWindowDisplayIndex(mWnd) : 0;
-    if (display_in_use < 0) {
+Ship::WindowRect GfxWindowBackendSDL::GetPrimaryMonitorRect() {
+    SDL_DisplayID display_in_use = mWnd ? SDL_GetDisplayForWindow(mWnd) : SDL_GetPrimaryDisplay();
+    if (display_in_use == 0) {
         SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area? ({})", SDL_GetError());
-        display_in_use = 0;
+        display_in_use = SDL_GetPrimaryDisplay();
     }
-    if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
-        return { 0, 0, mode.w, mode.h };
+    const SDL_DisplayMode* mode = SDL_GetDesktopDisplayMode(display_in_use);
+    if (mode != nullptr) {
+        return { 0, 0, mode->w, mode->h };
     }
     SPDLOG_ERROR("Failed to get SDL Desktop Display Mode: ({})", SDL_GetError());
     return { 0, 0, 0, 0 };
 }
 
-int GfxWindowBackendSDL2::TranslateScancode(int scancode) const {
+int GfxWindowBackendSDL::TranslateScancode(int scancode) const {
     if (scancode < 512) {
         return mSdlToLusTable[scancode];
     }
     return 0;
 }
 
-int GfxWindowBackendSDL2::UntranslateScancode(int translatedScancode) const {
+int GfxWindowBackendSDL::UntranslateScancode(int translatedScancode) const {
     for (int i = 0; i < 512; i++) {
         if (mSdlToLusTable[i] == translatedScancode) {
             return i;
@@ -573,21 +599,21 @@ int GfxWindowBackendSDL2::UntranslateScancode(int translatedScancode) const {
     return 0;
 }
 
-void GfxWindowBackendSDL2::OnKeydown(int scancode) const {
+void GfxWindowBackendSDL::OnKeydown(int scancode) const {
     int key = TranslateScancode(scancode);
     if (mOnKeyDown != nullptr) {
         mOnKeyDown(key);
     }
 }
 
-void GfxWindowBackendSDL2::OnKeyup(int scancode) const {
+void GfxWindowBackendSDL::OnKeyup(int scancode) const {
     int key = TranslateScancode(scancode);
     if (mOnKeyUp != nullptr) {
         mOnKeyUp(key);
     }
 }
 
-void GfxWindowBackendSDL2::OnMouseButtonDown(int btn) const {
+void GfxWindowBackendSDL::OnMouseButtonDown(int btn) const {
     if (!(btn >= 0 && btn < 5)) {
         return;
     }
@@ -596,80 +622,70 @@ void GfxWindowBackendSDL2::OnMouseButtonDown(int btn) const {
     }
 }
 
-void GfxWindowBackendSDL2::OnMouseButtonUp(int btn) const {
+void GfxWindowBackendSDL::OnMouseButtonUp(int btn) const {
     if (mOnMouseButtonUp != nullptr) {
         mOnMouseButtonUp(btn);
     }
 }
 
-void GfxWindowBackendSDL2::HandleSingleEvent(SDL_Event& event) {
+void GfxWindowBackendSDL::HandleSingleEvent(SDL_Event& event) {
     Fast::WindowEvent event_impl;
     event_impl.Sdl = { &event };
-    auto gui = Ship::Context::GetRawInstance()->GetWindow()->GetGui();
-    auto fast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(gui);
-    if (fast3dGui) {
-        fast3dGui->HandleWindowEvents(event_impl);
+    if (mFast3dGui) {
+        mFast3dGui->HandleWindowEvents(event_impl);
     } else {
-        static bool sWarnedOnce = false;
-        if (!sWarnedOnce) {
-            SPDLOG_ERROR("gfx_sdl2: Gui is not a Fast3dGui; cannot dispatch window event");
-            sWarnedOnce = true;
-        }
+        SPDLOG_ERROR("gfx_sdl: Gui is not a Fast3dGui; cannot dispatch window event");
     }
     switch (event.type) {
 #ifndef TARGET_WEB
         // Scancodes are broken in Emscripten SDL2: https://bugzilla.libsdl.org/show_bug.cgi?id=3259
-        case SDL_KEYDOWN:
-            OnKeydown(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_DOWN:
+            OnKeydown(event.key.scancode);
             break;
-        case SDL_KEYUP:
-            OnKeyup(event.key.keysym.scancode);
+        case SDL_EVENT_KEY_UP:
+            OnKeyup(event.key.scancode);
             break;
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
             OnMouseButtonDown(event.button.button - 1);
             break;
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
             OnMouseButtonUp(event.button.button - 1);
             break;
-        case SDL_MOUSEWHEEL:
+        case SDL_EVENT_MOUSE_WHEEL:
             mMouseWheelX = event.wheel.x;
             mMouseWheelY = event.wheel.y;
             break;
 #endif
-        case SDL_WINDOWEVENT:
-            switch (event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 #ifdef __APPLE__
-                    SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
+            SDL_GetWindowSize(mWnd, &mWindowWidth, &mWindowHeight);
 #else
-                    SDL_GL_GetDrawableSize(mWnd, &mWindowWidth, &mWindowHeight);
+            SDL_GetWindowSizeInPixels(mWnd, &mWindowWidth, &mWindowHeight);
 #endif
-                    break;
-                case SDL_WINDOWEVENT_CLOSE:
-                    if (event.window.windowID == SDL_GetWindowID(mWnd)) {
-                        // We listen specifically for main window close because closing main window
-                        // on macOS does not trigger SDL_Quit.
-                        Close();
-                    }
-                    break;
+            break;
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            if (event.window.windowID == SDL_GetWindowID(mWnd)) {
+                // We listen specifically for main window close because closing main window
+                // on macOS does not trigger SDL_Quit.
+                Close();
             }
             break;
-        case SDL_DROPFILE:
-            Ship::Context::GetRawInstance()->GetFileDropMgr()->SetDroppedFile(event.drop.file);
+        case SDL_EVENT_DROP_FILE:
+            mFileDrop->SetDroppedFile(event.drop.data);
             break;
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             Close();
             break;
     }
 }
 
-void GfxWindowBackendSDL2::HandleEvents() {
+void GfxWindowBackendSDL::HandleEvents() {
     SDL_Event event;
     SDL_PumpEvents();
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_CONTROLLERDEVICEADDED - 1) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_GAMEPAD_ADDED - 1) > 0) {
         HandleSingleEvent(event);
     }
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_CONTROLLERDEVICEREMOVED + 1, SDL_LASTEVENT) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_GAMEPAD_REMOVED + 1, SDL_EVENT_LAST) > 0) {
         HandleSingleEvent(event);
     }
 
@@ -685,7 +701,7 @@ void GfxWindowBackendSDL2::HandleEvents() {
 #endif
 }
 
-bool GfxWindowBackendSDL2::IsFrameReady() {
+bool GfxWindowBackendSDL::IsFrameReady() {
     return true;
 }
 
@@ -694,7 +710,7 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
     return qpc / qpc_freq * _100NANOSECONDS_IN_SECOND + qpc % qpc_freq * _100NANOSECONDS_IN_SECOND / qpc_freq;
 }
 
-void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
+void GfxWindowBackendSDL::SyncFramerateWithTime() const {
     uint64_t t = qpc_to_100ns(SDL_GetPerformanceCounter());
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
@@ -737,59 +753,67 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
     previous_time = t;
 }
 
-void GfxWindowBackendSDL2::SwapBuffersBegin() {
-    bool nextVsyncEnabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
+void GfxWindowBackendSDL::SwapBuffersBegin() {
+    bool nextVsyncEnabled = mConsoleVariable->GetInteger(CVAR_VSYNC_ENABLED, 1);
 
     if (mVsyncEnabled != nextVsyncEnabled) {
         mVsyncEnabled = nextVsyncEnabled;
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
-        SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+        SDL_SetRenderVSync(mRenderer, mVsyncEnabled ? 1 : 0);
     }
 
     SyncFramerateWithTime();
     SDL_GL_SwapWindow(mWnd);
 }
 
-void GfxWindowBackendSDL2::SwapBuffersEnd() {
+void GfxWindowBackendSDL::SwapBuffersEnd() {
 }
 
-double GfxWindowBackendSDL2::GetTime() {
+double GfxWindowBackendSDL::GetTime() {
     return 0.0;
 }
 
-int GfxWindowBackendSDL2::GetTargetFps() {
+int GfxWindowBackendSDL::GetTargetFps() {
     return mTargetFps;
 }
 
-void GfxWindowBackendSDL2::SetTargetFps(int fps) {
+void GfxWindowBackendSDL::SetTargetFps(int fps) {
     mTargetFps = fps;
 }
 
-void GfxWindowBackendSDL2::SetMaxFrameLatency(int latency) {
+void GfxWindowBackendSDL::SetMaxFrameLatency(int latency) {
     // Not supported by SDL :(
 }
 
-const char* GfxWindowBackendSDL2::GetKeyName(int scancode) {
+const char* GfxWindowBackendSDL::GetKeyName(int scancode) {
     return SDL_GetScancodeName((SDL_Scancode)UntranslateScancode(scancode));
 }
 
-bool GfxWindowBackendSDL2::CanDisableVsync() {
+bool GfxWindowBackendSDL::CanDisableVsync() {
     return true;
 }
 
-bool GfxWindowBackendSDL2::IsRunning() {
+bool GfxWindowBackendSDL::IsRunning() {
     return mIsRunning;
 }
 
-void GfxWindowBackendSDL2::Destroy() {
-    // TODO: destroy _any_ resources used by SDL
-    SDL_GL_DeleteContext(mCtx);
-    SDL_DestroyWindow(mWnd);
-    SDL_DestroyRenderer(mRenderer);
+void GfxWindowBackendSDL::Destroy() {
+    if (mCtx != nullptr) {
+        SDL_GL_DestroyContext(mCtx);
+        mCtx = nullptr;
+    }
+    if (mRenderer != nullptr) {
+        SDL_DestroyRenderer(mRenderer);
+        mRenderer = nullptr;
+    }
+    if (mWnd != nullptr) {
+        SDL_DestroyWindow(mWnd);
+        mWnd = nullptr;
+    }
     SDL_Quit();
 }
 
-bool GfxWindowBackendSDL2::IsFullscreen() {
+bool GfxWindowBackendSDL::IsFullscreen() {
     return mFullScreen;
 }
 } // namespace Fast

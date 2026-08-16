@@ -27,7 +27,7 @@
 #define MTL_PRIVATE_IMPLEMENTATION
 #include <Metal/Metal.hpp>
 
-#include <SDL_render.h>
+#include <SDL3/SDL_render.h>
 #include <imgui_impl_metal.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
@@ -35,15 +35,18 @@
 #include "fast/backends/gfx_metal_shader.h"
 
 #include "libultraship/libultra/abi.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
-
-#include "fast/Fast3dWindow.h"
+#include "ship/resource/ResourceManager.h"
 
 #define ARRAY_COUNT(arr) (int32_t)(sizeof(arr) / sizeof(arr[0]))
 
 // MARK: - Helpers
 namespace Fast {
+
+GfxRenderingAPIMetal::GfxRenderingAPIMetal(std::shared_ptr<Ship::ConsoleVariable> consoleVariable,
+                                           std::shared_ptr<Ship::ResourceManager> resourceManager)
+    : mConsoleVariable(std::move(consoleVariable)), mResourceManager(std::move(resourceManager)) {
+}
 
 static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
     switch (val) {
@@ -76,7 +79,7 @@ bool GfxRenderingAPIMetal::MetalInit(SDL_Renderer* renderer) {
     mRenderer = renderer;
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
 
-    mLayer = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
+    mLayer = (CA::MetalLayer*)SDL_GetRenderMetalLayer(renderer);
     mLayer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
 
     mDevice = mLayer->device();
@@ -98,7 +101,7 @@ static void SetupScreenFramebuffer(uint32_t width, uint32_t height);
 
 void GfxRenderingAPIMetal::NewFrame() {
     int width, height;
-    SDL_GetRendererOutputSize(mRenderer, &width, &height);
+    SDL_GetCurrentRenderOutputSize(mRenderer, &width, &height);
     SetupScreenFramebuffer(width, height);
 
     MTL::RenderPassDescriptor* current_render_pass = mFramebuffers[0].mRenderPassDescriptor;
@@ -195,6 +198,8 @@ void GfxRenderingAPIMetal::Init() {
 
     library->release();
     autorelease_pool->release();
+
+    gfx_metal_shader_set_resource_manager(mResourceManager);
 }
 
 struct GfxClipParameters GfxRenderingAPIMetal::GetClipParameters() {
@@ -482,7 +487,7 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         const int n64modeFactor = 120;
         const int noVanishFactor = 100;
         float SSDB = -2;
-        switch (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+        switch (mConsoleVariable->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mRenderTargetHeight / n64modeFactor;
                 break;
@@ -692,7 +697,7 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
     mCurrentDrawable = nullptr;
     mCurrentDrawable = mLayer->nextDrawable();
 
-    bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
+    bool msaa_enabled = mConsoleVariable->GetInteger("gMSAAValue", 1) > 1;
 
     FramebufferMetal& fb = mFramebuffers[0];
     TextureDataMetal& tex = mTextures[fb.mTextureId];
@@ -753,7 +758,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
     // see `SetupScreenFramebuffer`.
     if (fb_id == 0) {
         int width, height;
-        SDL_GetRendererOutputSize(mRenderer, &width, &height);
+        SDL_GetCurrentRenderOutputSize(mRenderer, &width, &height);
         mLayer->setDrawableSize({ CGFloat(width), CGFloat(height) });
 
         return;
@@ -802,8 +807,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
             MTL::RenderPassDescriptor* render_pass_descriptor = MTL::RenderPassDescriptor::renderPassDescriptor();
 
             bool fb_msaa_enabled = (msaa_level > 1);
-            bool game_msaa_enabled =
-                Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
+            bool game_msaa_enabled = mConsoleVariable->GetInteger("gMSAAValue", 1) > 1;
 
             if (fb_msaa_enabled) {
                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);

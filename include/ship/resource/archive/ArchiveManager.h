@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <functional>
 #include "ship/resource/File.h"
+#include "ship/resource/ResourceIdentifier.h"
+#include "ship/core/Component.h"
 #ifdef ENABLE_SCRIPTING
 #include "ship/security/Keystore.h"
 #endif
@@ -16,6 +18,8 @@
 namespace Ship {
 struct File;
 class Archive;
+class ResourceManager;
+class Keystore;
 
 #ifdef ENABLE_SCRIPTING
 /**
@@ -37,10 +41,18 @@ using UntrustedArchiveHandler = std::function<bool(Archive& archive, KeystoreEnt
  *
  * File lookups, directory listings, and game-version validation are all delegated
  * here from the ResourceManager layer.
+ *
+ * **Required dependencies (constructor-injected):**
+ * - **ResourceManager** — used by Archive objects during mount validation.
+ * - **Keystore** — used by Archive objects for signature validation.
+ *
+ * Obtain the instance from
+ * `Context::GetChildren().GetFirst<ResourceManager>()->GetArchiveManager()`.
  */
-class ArchiveManager {
+class ArchiveManager : public Component {
   public:
-    ArchiveManager();
+    explicit ArchiveManager(std::shared_ptr<ResourceManager> resourceManager = nullptr,
+                            std::shared_ptr<Keystore> keystore = nullptr);
 
     /**
      * @brief Discovers and mounts all archives found under the given paths.
@@ -94,11 +106,6 @@ class ArchiveManager {
     size_t RemoveArchive(const std::string& path);
 
     /**
-     * @brief Returns true if at least one archive has been successfully loaded.
-     */
-    bool IsLoaded();
-
-    /**
      * @brief Loads raw file bytes from the highest-priority archive that contains the path.
      * @param filePath Virtual path of the file.
      * @return Loaded File, or nullptr if no mounted archive contains the file.
@@ -140,16 +147,15 @@ class ArchiveManager {
      * @param filePath Virtual path of the file.
      * @return Shared pointer to the owning Archive, or nullptr if not found.
      */
-    std::shared_ptr<Archive>
-    GetArchiveFromFile(const std::string& filePath); // Retrieves a ptr to the archive that the asset is inside of
+    std::shared_ptr<Archive> GetArchiveFromFile(const std::string& filePath);
 
     /**
      * @brief Load-order priority of the archive that owns the given file (higher = higher
      * priority; the last-loaded archive wins). Used to rank a real asset against an alias target.
-     * @param filePath Virtual path of the file.
+     * @param identifier Identifier of the file.
      * @return Priority index, or -1 if no loaded archive has the file.
      */
-    int32_t GetFilePriority(const std::string& filePath);
+    int32_t GetFilePriority(const ResourceIdentifier& identifier);
 
     /**
      * @brief Lists virtual paths of all files matching the given search mask across all archives.
@@ -207,9 +213,7 @@ class ArchiveManager {
      */
     void SetUntrustedArchiveHandler(const UntrustedArchiveHandler& handler);
 
-    /**
-     * @brief Returns the current untrusted-archive handler.
-     */
+    /** @brief Returns the current untrusted-archive handler. */
     UntrustedArchiveHandler GetUntrustedArchiveHandler() const;
 #endif
 
@@ -224,8 +228,16 @@ class ArchiveManager {
     /** @brief Adds a game-version value to the internal version set. */
     void AddGameVersion(uint32_t newGameVersion);
 
-    /** @brief Rebuilds the hash→path and path→archive lookup tables from the current archive list. */
+    /** @brief Rebuilds the hash-to-path and path-to-archive lookup tables from the current archive list. */
     void ResetVirtualFileSystem();
+
+    /**
+     * @brief Records a file in the hash-to-path and path-to-archive lookup tables.
+     * @param hash     CRC64 of the virtual path.
+     * @param filePath Virtual path of the file.
+     * @param archive  Archive serving the file.
+     */
+    void AddFileToVfs(uint64_t hash, const std::string& filePath, const std::shared_ptr<Archive>& archive);
 
   private:
     std::vector<std::shared_ptr<Archive>> mArchives;
@@ -234,6 +246,8 @@ class ArchiveManager {
     std::unordered_map<uint64_t, std::string> mHashes;
     std::unordered_set<std::string> mDirectories;
     std::unordered_map<uint64_t, std::shared_ptr<Archive>> mFileToArchive;
+    std::shared_ptr<ResourceManager> mResourceManager;
+    std::shared_ptr<Keystore> mKeystore;
 #ifdef ENABLE_SCRIPTING
     UntrustedArchiveHandler mUntrustedArchiveHandler;
 #endif

@@ -12,6 +12,8 @@
 
 namespace Ship {
 
+class ConsoleVariable;
+
 /**
  * @brief An ImGui window that provides an in-game developer console.
  *
@@ -29,6 +31,19 @@ namespace Ship {
  */
 class ConsoleWindow : public GuiWindow {
   public:
+    /**
+     * @brief Constructs a ConsoleWindow with constructor-injected dependencies.
+     * @param consoleVariable  ConsoleVariable dependency (threaded from GuiWindow).
+     * @param window           Window dependency (threaded from GuiWindow).
+     * @param console          Console subsystem for command dispatch.
+     * @param visibilityCvar   CVar name for window visibility.
+     * @param name             Window title.
+     * @param originalSize     Default window size.
+     * @param windowFlags      ImGui window flags.
+     */
+    ConsoleWindow(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                  std::shared_ptr<Console> console, const std::string& visibilityCvar, const std::string& name,
+                  ImVec2 originalSize, uint32_t windowFlags);
     using GuiWindow::GuiWindow;
     virtual ~ConsoleWindow();
 
@@ -106,7 +121,7 @@ class ConsoleWindow : public GuiWindow {
     void Append(const std::string& channel, spdlog::level::level_enum priority, const char* fmt, va_list args);
 
     /** @brief Registers built-in console commands (clear, help, bind, set, get, …). */
-    void InitElement() override;
+    void OnInit(const nlohmann::json& initArgs = nlohmann::json::object()) override;
 
     /** @brief Processes key bindings and clears expired auto-complete state. */
     void UpdateElement() override;
@@ -120,20 +135,13 @@ class ConsoleWindow : public GuiWindow {
     };
 
     static int CallbackStub(ImGuiInputTextCallbackData* data);
-    static int32_t ClearCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                std::string* output);
-    static int32_t HelpCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output);
-    static int32_t UnbindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                 std::string* output);
-    static int32_t BindCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                               std::string* output);
-    static int32_t BindToggleCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                                     std::string* output);
-    static int32_t SetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                              std::string* output);
-    static int32_t GetCommand(std::shared_ptr<Console> console, const std::vector<std::string>& args,
-                              std::string* output);
+    int32_t ClearCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t HelpCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t UnbindCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t BindCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t BindToggleCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t SetCommand(const std::vector<std::string>& args, std::string* output);
+    int32_t GetCommand(const std::vector<std::string>& args, std::string* output);
     static int32_t CheckVarType(const std::string& input);
 
     int32_t mSelectedId = -1;
@@ -166,5 +174,8 @@ class ConsoleWindow : public GuiWindow {
         ImVec4(0.0f, 0.0f, 0.0f, 0.0f)      // OFF
     };
     static constexpr size_t gMaxBufferSize = 255;
+
+    std::shared_ptr<Console> mConsole;
+    std::shared_ptr<ConsoleVariable> mConsoleVariables;
 };
 } // namespace Ship

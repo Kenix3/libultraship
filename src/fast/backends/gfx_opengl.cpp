@@ -22,12 +22,21 @@
 #include "ship/window/gui/Gui.h"
 #include <prism/processor.h>
 #include <fstream>
-#include "ship/Context.h"
 #include "ship/resource/factory/ShaderFactory.h"
 #include "fast/interpreter.h"
 #include "ship/config/ConsoleVariable.h"
 
 namespace Fast {
+
+// Cached for free-function include-loader callbacks passed to the prism processor via a raw
+// function pointer (prism::IncludeFunc); lambdas with captures cannot be used there.
+static std::shared_ptr<Ship::ResourceManager> sOGLResourceManager;
+
+GfxRenderingAPIOGL::GfxRenderingAPIOGL(std::shared_ptr<Ship::ConsoleVariable> consoleVariable,
+                                       std::shared_ptr<Ship::ResourceManager> resourceManager)
+    : mConsoleVariable(std::move(consoleVariable)), mResourceManager(std::move(resourceManager)) {
+}
+
 int GfxRenderingAPIOGL::GetMaxTextureSize() {
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
@@ -227,8 +236,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -315,8 +323,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(mResourceManager->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -381,8 +388,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -672,7 +678,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
             const int n64modeFactor = 120;
             const int noVanishFactor = 100;
             GLfloat SSDB = -2;
-            switch (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+            switch (mConsoleVariable->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
                 // scaled z-fighting (N64 mode like)
                 case 1:
                     if (mFrameBuffers.size() >
@@ -708,7 +714,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 }
 
 void GfxRenderingAPIOGL::Init() {
-#if !defined(__linux__) && !defined(__OpenBSD__)
+#ifdef FAST_GFX_OPENGL_USE_GLEW
     glewInit();
 #endif
 
@@ -741,6 +747,8 @@ void GfxRenderingAPIOGL::Init() {
     mPixelDepthRbSize = 1;
 
     glGetIntegerv(GL_MAX_SAMPLES, &mMaxMsaaLevel);
+
+    sOGLResourceManager = mResourceManager;
 }
 
 void GfxRenderingAPIOGL::OnResize() {

@@ -16,9 +16,7 @@ void NullAudioPlayer::DoClose() {
 }
 
 int NullAudioPlayer::Buffered() {
-    // Report the device as always full; it discards all audio, so returning the
-    // true count (0) makes the producer spin feeding it forever and hang.
-    return GetDesiredBuffered();
+    return 0;
 }
 
 void NullAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {

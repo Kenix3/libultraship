@@ -3,48 +3,50 @@
 #include "ship/config/ConsoleVariable.h"
 #include "ship/utils/StringHelper.h"
 #include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/Context.h"
 
 namespace Ship {
-std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id) {
+std::shared_ptr<ControllerLEDMapping>
+LEDMappingFactory::CreateLEDMappingFromConfig(uint8_t portIndex, std::string id,
+                                              std::shared_ptr<ConsoleVariable> consoleVariable,
+                                              std::shared_ptr<ControlDeck> controlDeck) {
     const std::string mappingCvarKey = CVAR_PREFIX_CONTROLLERS ".LEDMappings." + id;
-    const std::string mappingClass = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetString(
-        StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
+    const std::string mappingClass =
+        consoleVariable->GetString(StringHelper::Sprintf("%s.LEDMappingClass", mappingCvarKey.c_str()).c_str(), "");
 
-    int32_t colorSource = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
-        StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
-    Color_RGB8 savedColor = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetColor24(
+    int32_t colorSource =
+        consoleVariable->GetInteger(StringHelper::Sprintf("%s.ColorSource", mappingCvarKey.c_str()).c_str(), -1);
+    Color_RGB8 savedColor = consoleVariable->GetColor24(
         StringHelper::Sprintf("%s.SavedColor", mappingCvarKey.c_str()).c_str(), { 0, 0, 0 });
 
     if (colorSource != LED_COLOR_SOURCE_OFF && colorSource != LED_COLOR_SOURCE_SET &&
         colorSource != LED_COLOR_SOURCE_GAME) {
-        // something about this mapping is invalid
-        Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(mappingCvarKey.c_str());
-        Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+        consoleVariable->ClearVariable(mappingCvarKey.c_str());
+        consoleVariable->Save();
         return nullptr;
     }
 
     if (mappingClass == "SDLLEDMapping") {
-        return std::make_shared<SDLLEDMapping>(portIndex, colorSource, savedColor);
+        return std::make_shared<SDLLEDMapping>(portIndex, colorSource, savedColor, controlDeck, consoleVariable);
     }
 
     return nullptr;
 }
 
-std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex) {
+std::shared_ptr<ControllerLEDMapping>
+LEDMappingFactory::CreateLEDMappingFromSDLInput(uint8_t portIndex, std::shared_ptr<ConsoleVariable> consoleVariable,
+                                                std::shared_ptr<ControlDeck> controlDeck) {
     std::shared_ptr<ControllerLEDMapping> mapping = nullptr;
 
-    for (auto [instanceId, gamepad] : Context::GetRawInstance()
-                                          ->GetControlDeck()
-                                          ->GetConnectedPhysicalDeviceManager()
-                                          ->GetConnectedSDLGamepadsForPort(portIndex)) {
-        if (!SDL_GameControllerHasLED(gamepad)) {
+    for (auto [instanceId, gamepad] :
+         controlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(portIndex)) {
+        if (!SDL_GetBooleanProperty(SDL_GetGamepadProperties(gamepad), SDL_PROP_GAMEPAD_CAP_RGB_LED_BOOLEAN, false)) {
             continue;
         }
 
-        for (int32_t button = SDL_CONTROLLER_BUTTON_A; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
-            if (SDL_GameControllerGetButton(gamepad, static_cast<SDL_GameControllerButton>(button))) {
-                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }));
+        for (int32_t button = SDL_GAMEPAD_BUTTON_SOUTH; button < SDL_GAMEPAD_BUTTON_COUNT; button++) {
+            if (SDL_GetGamepadButton(gamepad, static_cast<SDL_GamepadButton>(button))) {
+                mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controlDeck,
+                                                          consoleVariable);
                 break;
             }
         }
@@ -53,9 +55,9 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
             break;
         }
 
-        for (int32_t i = SDL_CONTROLLER_AXIS_LEFTX; i < SDL_CONTROLLER_AXIS_MAX; i++) {
-            const auto axis = static_cast<SDL_GameControllerAxis>(i);
-            const auto axisValue = SDL_GameControllerGetAxis(gamepad, axis) / 32767.0f;
+        for (int32_t i = SDL_GAMEPAD_AXIS_LEFTX; i < SDL_GAMEPAD_AXIS_COUNT; i++) {
+            const auto axis = static_cast<SDL_GamepadAxis>(i);
+            const auto axisValue = SDL_GetGamepadAxis(gamepad, axis) / 32767.0f;
             int32_t axisDirection = 0;
             if (axisValue < -0.7f) {
                 axisDirection = NEGATIVE;
@@ -67,7 +69,8 @@ std::shared_ptr<ControllerLEDMapping> LEDMappingFactory::CreateLEDMappingFromSDL
                 continue;
             }
 
-            mapping = std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }));
+            mapping =
+                std::make_shared<SDLLEDMapping>(portIndex, 0, Color_RGB8({ 0, 0, 0 }), controlDeck, consoleVariable);
             break;
         }
     }

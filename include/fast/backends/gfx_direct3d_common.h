@@ -3,6 +3,7 @@
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 
 #ifdef __cplusplus
+#include <memory>
 #include "../interpreter.h"
 #include <cstdint>
 #include <string>
@@ -10,14 +11,24 @@
 #include "d3d11.h"
 #include "d3dcompiler.h"
 
-namespace Fast {
+namespace Ship {
+class ConsoleVariable;
+class ResourceManager;
+} // namespace Ship
 
+namespace Fast {
+/**
+ * @brief Per-frame shader constants shared across draw calls.
+ */
 struct PerFrameCB {
     uint32_t noise_frame;
     float noise_scale;
     uint32_t padding[2]; // constant buffers must be multiples of 16 bytes in size
 };
 
+/**
+ * @brief Per-draw shader constants describing bound texture metadata.
+ */
 struct PerDrawCB {
     struct Texture {
         uint32_t width;
@@ -27,15 +38,24 @@ struct PerDrawCB {
     } mTextures[SHADER_MAX_TEXTURES];
 };
 
+/**
+ * @brief Per-draw depth constants used by primitive-depth rendering paths.
+ */
 struct PerPrimDepthCB {
     float prim_depth;
     float _pad[3]; // 16-byte CB alignment
 };
 
+/**
+ * @brief Integer 2D coordinate used for depth sampling requests.
+ */
 struct Coord {
     int x, y;
 };
 
+/**
+ * @brief Runtime Direct3D 11 texture state tracked by the renderer.
+ */
 struct TextureData {
     Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> resource_view;
@@ -45,6 +65,9 @@ struct TextureData {
     bool linear_filtering;
 };
 
+/**
+ * @brief Direct3D 11 framebuffer attachments and metadata.
+ */
 struct FramebufferDX11 {
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> render_target_view;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depth_stencil_view;
@@ -54,6 +77,9 @@ struct FramebufferDX11 {
     uint32_t msaa_level;
 };
 
+/**
+ * @brief Compiled D3D11 shader program and pipeline-state cache entry.
+ */
 struct ShaderProgramD3D11 {
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vertex_shader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader> pixel_shader;
@@ -69,11 +95,27 @@ struct ShaderProgramD3D11 {
 
 class GfxWindowBackendDXGI;
 
+/**
+ * @brief Direct3D 11 implementation of the Fast3D rendering backend.
+ *
+ * This class implements the `GfxRenderingAPI` contract for D3D11, including
+ * shader management, texture upload/caching, framebuffer operations, and depth
+ * query support.
+ */
 class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
   public:
+    /** @brief Constructs an uninitialized D3D11 renderer instance. */
     GfxRenderingAPIDX11() = default;
     ~GfxRenderingAPIDX11() override;
-    GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend);
+
+    /**
+     * @brief Constructs a D3D11 renderer bound to an existing DXGI window backend.
+     */
+    GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend, std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                        std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
+
+    /** @name GfxRenderingAPI implementation */
+    /** @{ */
     const char* GetName() override;
     int GetMaxTextureSize() override;
     GfxClipParameters GetClipParameters() override;
@@ -118,12 +160,16 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     FilteringMode GetTextureFilter() override;
     void SetSrgbMode() override;
     ImTextureID GetTextureById(int id) override;
+    /** @} */
 
     PFN_D3D11_CREATE_DEVICE mDX11CreateDevice;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> mContext;
     Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
     GfxWindowBackendDXGI* mWindowBackend = nullptr;
     D3D_FEATURE_LEVEL mFeatureLevel;
+
+    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable;
+    std::shared_ptr<Ship::ResourceManager> mResourceManager;
 
   private:
     void CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count, ID3D11DepthStencilView** view,
@@ -192,6 +238,9 @@ class GfxRenderingAPIDX11 final : public GfxRenderingAPI {
     uint32_t mReadbackStagingH = 0;
 };
 
+/**
+ * @brief Builds the HLSL shader source for the requested combiner features.
+ */
 std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures& cc_features,
                                              bool include_root_signature, bool three_point_filtering, bool use_srgb);
 } // namespace Fast

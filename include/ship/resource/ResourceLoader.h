@@ -8,6 +8,7 @@
 
 namespace Ship {
 struct File;
+class ResourceManager;
 
 /**
  * @brief Cache key that uniquely identifies a ResourceFactory by format, type, and version.
@@ -49,7 +50,7 @@ struct ResourceFactoryKeyHash {
  */
 class ResourceLoader {
   public:
-    ResourceLoader();
+    explicit ResourceLoader(std::shared_ptr<ResourceManager> resourceManager = nullptr);
     virtual ~ResourceLoader();
 
     /**
@@ -58,10 +59,16 @@ class ResourceLoader {
      * Reads the resource header from @p fileToLoad, selects the matching factory,
      * and calls ResourceFactory::ReadResource().
      *
-     * @param filePath   Virtual path (used for logging and to populate ResourceInitData).
+     * @param identifier Resource identifier (path/hash + owner + archive context).
      * @param fileToLoad Raw file buffer as returned by the archive layer.
      * @param initData   Optional metadata overrides; pass nullptr to infer from the header.
      * @return Deserialized IResource, or nullptr if no matching factory was found or parsing failed.
+     */
+    std::shared_ptr<IResource> LoadResource(const ResourceIdentifier& identifier, std::shared_ptr<File> fileToLoad,
+                                            std::shared_ptr<ResourceInitData> initData = nullptr);
+
+    /**
+     * @brief Compatibility overload that loads a resource by virtual path.
      */
     std::shared_ptr<IResource> LoadResource(std::string filePath, std::shared_ptr<File> fileToLoad,
                                             std::shared_ptr<ResourceInitData> initData = nullptr);
@@ -86,6 +93,15 @@ class ResourceLoader {
      */
     uint32_t GetResourceType(const std::string& type);
 
+    /**
+     * @brief Reads and parses the resource header from the meta-file to produce ResourceInitData.
+     * @param filePath       Virtual path (for error messages).
+     * @param metaFileToLoad File containing the header (may be a separate ".meta" sidecar).
+     * @return Populated ResourceInitData, or nullptr if the header is invalid.
+     */
+    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
+                                                           std::shared_ptr<File> metaFileToLoad);
+
   protected:
     /** @brief Registers the built-in factories (Blob, JSON, Shader). Called during construction. */
     void RegisterGlobalResourceFactories();
@@ -101,25 +117,6 @@ class ResourceLoader {
      * @return Matching factory, or nullptr if none is registered.
      */
     std::shared_ptr<ResourceFactory> GetFactory(uint32_t format, std::string typeName, uint32_t version);
-
-    /**
-     * @brief Reads and parses the resource header from the meta-file to produce ResourceInitData.
-     * @param filePath       Virtual path (for error messages).
-     * @param metaFileToLoad File containing the header (may be a separate ".meta" sidecar).
-     * @return Populated ResourceInitData, or nullptr if the header is invalid.
-     */
-    std::shared_ptr<ResourceInitData> ReadResourceInitData(const std::string& filePath,
-                                                           std::shared_ptr<File> metaFileToLoad);
-
-    /**
-     * @brief Resolves a `.meta` alias at filePath, if one wins over the real asset.
-     * @param filePath   Virtual path being loaded.
-     * @param fileToLoad In/out: the highest-priority real asset at filePath (may be null). On a
-     *                   successful alias, this is replaced with the aliased target's file.
-     * @return The alias target's init data if its archive is equal-or-higher priority than the
-     *         real asset's; otherwise nullptr (fileToLoad left unchanged).
-     */
-    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const std::string& filePath, std::shared_ptr<File>& fileToLoad);
 
     /** @brief Creates a ResourceInitData with default/zeroed fields. */
     static std::shared_ptr<ResourceInitData> CreateDefaultResourceInitData();
@@ -148,8 +145,8 @@ class ResourceLoader {
      * @param document Parsed XML document containing the header.
      * @return Populated ResourceInitData, or nullptr on failure.
      */
-    static std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
-                                                                     std::shared_ptr<tinyxml2::XMLDocument> document);
+    std::shared_ptr<ResourceInitData> ReadResourceInitDataXml(const std::string& filePath,
+                                                              std::shared_ptr<tinyxml2::XMLDocument> document);
 
     /**
      * @brief Reads a PNG image header to produce ResourceInitData.
@@ -182,5 +179,6 @@ class ResourceLoader {
     std::string DecodeASCII(uint32_t value);
     std::unordered_map<std::string, uint32_t> mResourceTypes;
     std::unordered_map<ResourceFactoryKey, std::shared_ptr<ResourceFactory>, ResourceFactoryKeyHash> mFactories;
+    std::shared_ptr<ResourceManager> mResourceManager;
 };
 } // namespace Ship

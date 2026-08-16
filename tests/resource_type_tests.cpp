@@ -30,7 +30,7 @@ static std::shared_ptr<Ship::ResourceInitData> MakeBinaryInitData(bool isCustom 
     id->ResourceVersion = 0;
     id->IsCustom = isCustom;
     id->Id = 0xDEADBEEFDEADBEEFULL;
-    id->Path = "test/path";
+    id->Identifier = Ship::ResourceIdentifier("test/path", 0, nullptr);
     return id;
 }
 
@@ -87,7 +87,7 @@ TEST(IResource, GetInitDataReturnsSuppliedInitData) {
     auto initData = MakeBinaryInitData();
     Ship::Blob blob(initData);
     ASSERT_NE(blob.GetInitData(), nullptr);
-    EXPECT_EQ(blob.GetInitData()->Path, "test/path");
+    EXPECT_EQ(blob.GetInitData()->Identifier.GetPath(), "test/path");
     EXPECT_EQ(blob.GetInitData()->IsCustom, false);
 }
 

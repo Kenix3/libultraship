@@ -28,9 +28,7 @@
 #include "fast/backends/gfx_screen_config.h"
 #include "ship/window/gui/Gui.h"
 #include "fast/Fast3dGui.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/window/Window.h"
 
 #include "fast/backends/gfx_rendering_api.h"
 #include "fast/interpreter.h"
@@ -42,19 +40,24 @@
 #include "spdlog/spdlog.h"
 #include "nlohmann/json.hpp"
 
-#include "fast/Fast3dWindow.h"
-
 #define DEBUG_D3D 0
 
 using namespace Microsoft::WRL; // For ComPtr
 
 namespace Fast {
 
+// Cached for free-function include-loader callbacks passed to the prism processor via a raw
+// function pointer (prism::IncludeFunc); lambdas with captures cannot be used there.
+static std::shared_ptr<Ship::ResourceManager> sDX11ResourceManager;
+
 GfxRenderingAPIDX11::~GfxRenderingAPIDX11() {
 }
 
-GfxRenderingAPIDX11::GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend) {
-    mWindowBackend = backend;
+GfxRenderingAPIDX11::GfxRenderingAPIDX11(GfxWindowBackendDXGI* backend,
+                                         std::shared_ptr<Ship::ConsoleVariable> consoleVariable,
+                                         std::shared_ptr<Ship::ResourceManager> resourceManager)
+    : mWindowBackend(backend), mConsoleVariable(std::move(consoleVariable)),
+      mResourceManager(std::move(resourceManager)) {
 }
 
 void GfxRenderingAPIDX11::CreateDepthStencilObjects(uint32_t width, uint32_t height, uint32_t msaa_count,
@@ -359,9 +362,10 @@ void CSMain(uint3 DTid : SV_DispatchThreadID) {
 
     Fast::GuiWindowInitData window_impl;
     window_impl.Dx11 = { mWindowBackend->GetWindowHandle(), mContext.Get(), mDevice.Get() };
-    window_impl.Backend = WindowBackend::FAST3D_DXGI_DX11;
-    std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
-        ->Init(window_impl);
+    if (mWindowBackend->mFast3dGui) {
+        mWindowBackend->mFast3dGui->Init(window_impl);
+    }
+    sDX11ResourceManager = mResourceManager;
 }
 
 int GfxRenderingAPIDX11::GetMaxTextureSize() {
@@ -708,7 +712,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         const int noVanishFactor = 100;
         float SSDB = -2;
 
-        switch (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
+        switch (mConsoleVariable->GetInteger(CVAR_Z_FIGHTING_MODE, 0)) {
             case 1: // scaled z-fighting (N64 mode like)
                 SSDB = -1.0f * (float)mRenderTargetHeight / n64modeFactor;
                 break;
@@ -1379,8 +1383,7 @@ std::optional<std::string> dx_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = static_pointer_cast<Ship::Shader>(
-        Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(path, true, init));
+    auto res = static_pointer_cast<Ship::Shader>(sDX11ResourceManager->LoadResource(path, true, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -1447,8 +1450,8 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         path = std::string(shaderName) + ".hlsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(
-        "shaders/directx/default.shader.hlsl", true, init));
+    auto res = static_pointer_cast<Ship::Shader>(
+        sDX11ResourceManager->LoadResource("shaders/directx/default.shader.hlsl", true, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default directx shader, missing f3d.o2r?");

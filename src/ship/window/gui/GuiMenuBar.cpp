@@ -1,20 +1,29 @@
 #include "ship/window/gui/GuiMenuBar.h"
-#include "ship/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #include "ship/window/Window.h"
 #include "ship/window/gui/Gui.h"
 
 namespace Ship {
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
-    : GuiElement(isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable) {
-    if (!mVisibilityConsoleVariable.empty()) {
-        mIsVisible = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
-            mVisibilityConsoleVariable.c_str(), mIsVisible);
-        SyncVisibilityConsoleVariable();
-    }
+GuiMenuBar::GuiMenuBar(std::shared_ptr<ConsoleVariable> consoleVariable, std::shared_ptr<Window> window,
+                       const std::string& visibilityConsoleVariable, bool isVisible)
+    : GuiElement(visibilityConsoleVariable, isVisible), mVisibilityConsoleVariable(visibilityConsoleVariable),
+      mConsoleVariable(std::move(consoleVariable)), mWindow(std::move(window)) {
 }
 
-GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable) : GuiMenuBar(visibilityConsoleVariable, false) {
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable, bool isVisible)
+    : GuiMenuBar(nullptr, nullptr, visibilityConsoleVariable, isVisible) {
+}
+
+GuiMenuBar::GuiMenuBar(const std::string& visibilityConsoleVariable)
+    : GuiMenuBar(nullptr, nullptr, visibilityConsoleVariable, false) {
+}
+
+void GuiMenuBar::OnInit(const nlohmann::json& initArgs) {
+    GuiElement::OnInit(initArgs);
+    if (mConsoleVariable && !mVisibilityConsoleVariable.empty()) {
+        mIsVisible = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), mIsVisible);
+        SyncVisibilityConsoleVariable();
+    }
 }
 
 void GuiMenuBar::Draw() {
@@ -28,22 +37,20 @@ void GuiMenuBar::Draw() {
 }
 
 void GuiMenuBar::SyncVisibilityConsoleVariable() {
-    if (mVisibilityConsoleVariable.empty()) {
+    if (mVisibilityConsoleVariable.empty() || !mConsoleVariable || !mWindow) {
         return;
     }
 
-    bool shouldSave = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
-                          mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
+    bool shouldSave = mConsoleVariable->GetInteger(mVisibilityConsoleVariable.c_str(), 0) != IsVisible();
 
     if (IsVisible()) {
-        Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(mVisibilityConsoleVariable.c_str(),
-                                                                           IsVisible());
+        mConsoleVariable->SetInteger(mVisibilityConsoleVariable.c_str(), IsVisible());
     } else {
-        Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearVariable(mVisibilityConsoleVariable.c_str());
+        mConsoleVariable->ClearVariable(mVisibilityConsoleVariable.c_str());
     }
 
     if (shouldSave) {
-        Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+        mWindow->GetGui()->SaveConsoleVariablesNextFrame();
     }
 }
 

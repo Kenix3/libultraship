@@ -11,7 +11,13 @@ bool ResourceFactoryBinary::FileHasValidFormatAndReader(std::shared_ptr<File> fi
     }
 
     if (!std::holds_alternative<std::shared_ptr<BinaryReader>>(file->Reader)) {
-        SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", initData->Type, initData->Path);
+        if (initData->Identifier.IsPath()) {
+            SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", initData->Type,
+                         initData->Identifier.GetPath());
+        } else {
+            SPDLOG_ERROR("Failed to load resource: File has Reader ({} - {})", initData->Type,
+                         initData->Identifier.GetPathHash());
+        }
         return false;
     }
 

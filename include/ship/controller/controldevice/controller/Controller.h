@@ -17,6 +17,9 @@
 #include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 
 namespace Ship {
+class ConsoleVariable;
+class ControlDeck;
+class Window;
 
 /**
  * @brief Represents a single logical controller connected to a ControlPort.
@@ -34,12 +37,17 @@ namespace Ship {
  */
 class Controller : public ControlDevice {
   public:
+    /** @brief Injects the owning ControlDeck into this controller and all of its subsystems. */
+    void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck);
     /**
      * @brief Constructs a Controller for the given port with a set of button bitmasks.
-     * @param portIndex Zero-based port index.
-     * @param bitmasks  All button bitmasks this controller should track (one ControllerButton per entry).
+     * @param portIndex       Zero-based port index.
+     * @param bitmasks        All button bitmasks this controller should track (one ControllerButton per entry).
+     * @param consoleVariable Optional ConsoleVariable dependency; falls back to Context lookup if nullptr.
      */
-    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks);
+    Controller(uint8_t portIndex, std::vector<CONTROLLERBUTTONS_T> bitmasks,
+               std::shared_ptr<ConsoleVariable> consoleVariable = nullptr,
+               std::shared_ptr<ControlDeck> controlDeck = nullptr, std::shared_ptr<Window> window = nullptr);
 
     /** @brief Destroys the Controller and releases all mapping resources. */
     ~Controller();
@@ -153,7 +161,10 @@ class Controller : public ControlDevice {
 
   protected:
     std::unordered_map<CONTROLLERBUTTONS_T, std::shared_ptr<ControllerButton>>
-        mButtons; ///< Button subsystems keyed by bitmask.
+        mButtons;                                      ///< Button subsystems keyed by bitmask.
+    std::shared_ptr<ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable component.
+    std::shared_ptr<ControlDeck> mControlDeck;
+    std::shared_ptr<Window> mWindow;
 
   private:
     void LoadButtonMappingFromConfig(std::string id);
