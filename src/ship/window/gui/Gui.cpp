@@ -95,8 +95,16 @@ void Gui::OnInit(const nlohmann::json& initArgs) {
     mImGuiIo = &ImGui::GetIO();
     mImGuiIo->ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange;
 
+    // On a HiDPI display the ImGui overlay is rendered into a scaled framebuffer, but the glyph atlas
+    // is rasterized at the logical point size and then stretched up, so the text looks fuzzy.
+    // RasterizerDensity rasterizes glyphs at the display's real backing scale without changing any
+    // logical sizes, metrics, or layout. 1.0 on standard-DPI displays leaves this a no-op.
+    mDpiScale = ComputeDpiScale();
+
     // Add Font Awesome and merge it into the default font.
-    mImGuiIo->Fonts->AddFontDefault();
+    ImFontConfig defaultFontCfg;
+    defaultFontCfg.RasterizerDensity = mDpiScale;
+    mImGuiIo->Fonts->AddFontDefault(&defaultFontCfg);
     // This must match the default font size, which is 13.0f.
     float baseFontSize = 13.0f;
     // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
@@ -106,6 +114,7 @@ void Gui::OnInit(const nlohmann::json& initArgs) {
     iconsConfig.MergeMode = true;
     iconsConfig.PixelSnapH = true;
     iconsConfig.GlyphMinAdvanceX = iconFontSize;
+    iconsConfig.RasterizerDensity = mDpiScale;
     mImGuiIo->Fonts->AddFontFromMemoryCompressedBase85TTF(fontawesome_compressed_data_base85, iconFontSize,
                                                           &iconsConfig, sIconsRanges);
 
@@ -148,6 +157,10 @@ void Gui::OnInit(const nlohmann::json& initArgs) {
 }
 
 void Gui::ImGuiWMInit() {
+}
+
+float Gui::ComputeDpiScale() {
+    return 1.0f;
 }
 
 void Gui::ShutDownImGui(Ship::Window* window) {
