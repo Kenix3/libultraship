@@ -1,0 +1,40 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+      - ".github/workflows/docs-build.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/docs-build.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+      configure_pages: true
+      upload_pages_artifact: true
+
+  deploy:
+    if: github.event.pull_request.merged == true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
