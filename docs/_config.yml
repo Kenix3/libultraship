@@ -1,0 +1,7 @@
+title: libultraship Documentation
+description: Documentation for libultraship (LUS)
+url: "https://libultraship.com"
+baseurl: ""
+
+theme: just-the-docs
+markdown: kramdown

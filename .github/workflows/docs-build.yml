@@ -1,0 +1,47 @@
+name: Docs Build (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      configure_pages:
+        required: false
+        type: boolean
+        default: true
+      upload_pages_artifact:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        if: inputs.ref == ''
+        uses: actions/checkout@v4
+
+      - name: Checkout ref
+        if: inputs.ref != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Pages
+        if: inputs.configure_pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - name: Upload Pages artifact
+        if: inputs.upload_pages_artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
