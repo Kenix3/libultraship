@@ -34,6 +34,9 @@ jobs:
         if: inputs.configure_pages
         uses: actions/configure-pages@v5
 
+      - name: Use shared docs config
+        run: cp ./docs/doxygen/_config.yml ./docs/_config.yml
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:

@@ -1,12 +1,14 @@
-title: libultraship
+title: libultraship Documentation
 description: >-
   A library providing reimplementations of libultra (N64 SDK) functions
   for modern hardware. Enables PC ports of N64 games.
 
-theme: just-the-docs
+url: "https://libultraship.com"
+baseurl: ""
 
-url: "https://kenix3.github.io"
-baseurl: "/libultraship"
+remote_theme: just-the-docs/just-the-docs
+plugins:
+  - jekyll-remote-theme
 
 aux_links:
   GitHub: "https://github.com/Kenix3/libultraship"
@@ -18,8 +20,9 @@ nav_external_links:
     url: api/index.html
     hide_icon: false
 
-# Exclude source files Jekyll should not process
 exclude:
   - Gemfile
   - Gemfile.lock
   - "*.gemspec"
+
+markdown: kramdown
