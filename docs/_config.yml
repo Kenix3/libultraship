@@ -1,0 +1,10 @@
+title: libultraship Documentation
+description: Documentation for libultraship (LUS)
+url: "https://libultraship.com"
+baseurl: ""
+
+remote_theme: just-the-docs/just-the-docs
+plugins:
+  - jekyll-remote-theme
+
+markdown: kramdown
