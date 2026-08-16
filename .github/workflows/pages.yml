@@ -1,8 +1,7 @@
 name: Deploy Docs to GitHub Pages
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: ["main"]
     paths:
       - "docs/**"
@@ -20,15 +19,11 @@ concurrency:
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
     uses: ./.github/workflows/docs-build.yml
     with:
-      ref: ${{ github.event.pull_request.merge_commit_sha }}
-      configure_pages: true
       upload_pages_artifact: true
 
   deploy:
-    if: github.event.pull_request.merged == true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
