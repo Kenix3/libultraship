@@ -4944,11 +4944,14 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
-    mRsp->lookat[0].dir[0] = 127;
-    mRsp->lookat[0].dir[1] = 0;
+    // Transposed from the SDK basis on purpose: lookat[0] is LOOKATX and drives S.
+    // Only games that never send a lookat see these, and MK64 matches output with them.
+    // TODO: Use ucode DMEM defaults from hardware.
+    mRsp->lookat[0].dir[0] = 0;
+    mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
-    mRsp->lookat[1].dir[0] = 0;
-    mRsp->lookat[1].dir[1] = 127;
+    mRsp->lookat[1].dir[0] = 127;
+    mRsp->lookat[1].dir[1] = 0;
     mRsp->lookat[1].dir[2] = 0;
     CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
     CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
