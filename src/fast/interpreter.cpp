@@ -3548,7 +3548,9 @@ bool gfx_pop_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    gfx->mShaderStack.pop();
+    if (!gfx->mShaderStack.empty()) {
+        gfx->mShaderStack.pop();
+    }
 
     return false;
 }
