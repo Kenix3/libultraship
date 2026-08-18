@@ -629,6 +629,8 @@ static float WrapScrollCoordinate(int32_t value, int32_t period) {
     }
 
     return static_cast<float>(wrapped);
+}
+
 // Loaded size is HD-scaled but the tile region is raw N64 texels; normalize before comparing.
 static bool IsPyramidLike(uint32_t width, uint32_t height, uint32_t tileW, uint32_t tileH, float hByteScale,
                           float vPixelScale) {
