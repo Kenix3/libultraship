@@ -917,9 +917,6 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 strcpy((char*)g.words.w1, fName.data());
             }
 
-            dl->Instructions.push_back(g);
-
-            g = gsDPPipeSync();
         } else if (childName == "SetTile") {
             uint32_t line = child->IntAttribute("Line");
             uint32_t tmem = child->IntAttribute("TMem");
