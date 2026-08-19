@@ -12,7 +12,9 @@ namespace Ship {
  *
  * SDLAudioPlayer opens the platform output with `SDL_OpenAudioDeviceStream` and lets SDL pull from it:
  * SDL owns the audio thread and calls AudioStreamCallback() whenever the device needs more samples.
- * DoPlay() only writes into a ring buffer, which decouples the game thread's timing from the device's.
+ * DoPlay() only writes into a ring buffer, which decouples the game thread's timing from the device's
+ * and keeps the whole latency budget in one place. If the ring runs dry the callback replays the last
+ * burst faded out, which covers a load spike far less audibly than a hole in the stream.
  * It supports stereo and 6-channel output according to the configured AudioChannelsSetting.
  * This backend is available on all platforms that Ship supports.
  */
@@ -78,5 +80,9 @@ class SDLAudioPlayer final : public AudioPlayer {
     std::vector<uint8_t> mScratch;       ///< Pre-sized so the audio thread never allocates in steady state.
     std::mutex mMutex;                   ///< Serialises ring access between DoPlay() and the audio thread.
     std::atomic<bool> mRunning{ false }; ///< False once the device is closing; stops the callback working.
+
+    std::vector<uint8_t> mLastChunk; ///< Last burst played, replayed faded out to cover an underrun.
+    bool mLastChunkValid = false;    ///< False until a burst has actually been played.
+    bool mUnderrunFaded = false;     ///< True once faded, so a sustained underrun does not loop the chunk.
 };
 } // namespace Ship

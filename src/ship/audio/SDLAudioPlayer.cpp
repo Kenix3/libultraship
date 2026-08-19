@@ -81,6 +81,11 @@ void SDLAudioPlayer::DoClose() {
 
     mScratch.clear();
     mScratch.shrink_to_fit();
+
+    mLastChunk.clear();
+    mLastChunk.shrink_to_fit();
+    mLastChunkValid = false;
+    mUnderrunFaded = false;
 }
 
 bool SDLAudioPlayer::DoInit() {
@@ -101,6 +106,9 @@ bool SDLAudioPlayer::DoInit() {
 
     // Sized for a whole producer chunk; a single device burst is much smaller than that.
     mScratch.assign(desiredBuffered * bytesPerFrame, 0);
+    mLastChunk.assign(desiredBuffered * bytesPerFrame, 0);
+    mLastChunkValid = false;
+    mUnderrunFaded = false;
 
     const SDL_AudioSpec spec = { SDL_AUDIO_S16, mNumChannels, this->GetSampleRate() };
     mStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, AudioStreamCallback, this);
@@ -165,10 +173,41 @@ void SDLCALL SDLAudioPlayer::AudioStreamCallback(void* userdata, SDL_AudioStream
         return;
     }
 
+    const int32_t lastChunkSize = static_cast<int32_t>(self->mLastChunk.size());
+
     if (self->RingAvailable() >= bytes) {
         self->RingRead(dst, bytes);
+        self->mUnderrunFaded = false;
+
+        // Keep it for the underrun path below.
+        if (bytes <= lastChunkSize) {
+            std::memcpy(self->mLastChunk.data(), dst, static_cast<size_t>(bytes));
+            self->mLastChunkValid = true;
+        }
+    } else if (self->mLastChunkValid && !self->mUnderrunFaded) {
+        // Underrun: the game thread has not kept up. Replay the last burst faded to zero, which the ear
+        // reads as the sound tailing off rather than as the click a hole in the stream produces.
+        const int32_t copy = std::min(bytes, lastChunkSize);
+        std::memcpy(dst, self->mLastChunk.data(), static_cast<size_t>(copy));
+        if (copy < bytes) {
+            std::memset(dst + copy, 0, static_cast<size_t>(bytes - copy));
+        }
+
+        // SoH always produces S16, which SDL_AUDIO_S16 in DoInit() matches.
+        const int32_t frames = bytes / stride;
+        auto* samples = reinterpret_cast<int16_t*>(dst);
+        for (int32_t frame = 0; frame < frames; ++frame) {
+            const float gain = 1.0f - static_cast<float>(frame) / static_cast<float>(frames);
+            for (int32_t channel = 0; channel < self->mNumChannels; ++channel) {
+                auto& sample = samples[frame * self->mNumChannels + channel];
+                sample = static_cast<int16_t>(static_cast<float>(sample) * gain);
+            }
+        }
+
+        // Only the first burst fades; repeating it would turn a stall into a stutter.
+        self->mUnderrunFaded = true;
     } else {
-        // Underrun: the game thread has not kept up, so fill the gap with silence.
+        // Nothing played yet, or the fade already ran: stay quiet until the game thread catches up.
         std::memset(dst, 0, static_cast<size_t>(bytes));
     }
 
