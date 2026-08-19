@@ -47,9 +47,6 @@ int SDLAudioPlayer::Buffered() {
 }
 
 void SDLAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
-    if (Buffered() < 6000) {
-        // Don't fill the audio buffer too much in case this happens
-        SDL_PutAudioStreamData(mStream, buf, static_cast<int>(len));
-    }
+    SDL_PutAudioStreamData(mStream, buf, static_cast<int>(len));
 }
 } // namespace Ship
