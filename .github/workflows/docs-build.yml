@@ -35,7 +35,9 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Use shared docs config
-        run: cp ./docs/doxygen/_config.yml ./docs/_config.yml
+        run: |
+          cp ./docs/doxygen/_config.yml ./docs/_config.yml
+          cp ./docs/doxygen/Gemfile ./docs/Gemfile
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
