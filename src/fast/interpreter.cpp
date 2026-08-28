@@ -778,7 +778,7 @@ void Interpreter::ShaderCacheClear() {
 }
 
 std::shared_ptr<Ship::IResource> Interpreter::AcquireDrawTexture(const char* name) {
-    auto rm = Ship::Context::GetInstance()->GetResourceManager();
+    auto rm = mResourceManager;
 
     // Resolve vanilla vs HD by EXPLICIT path (loadExact) rather than the ResourceManager's
     // internal alt resolution. This means vanilla ("name") and HD ("alt/name") live under
@@ -2007,7 +2007,7 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
 
     // Debug: tint each generated level a distinct color so mip selection is
     // visible in-game (distant surfaces change color as lower levels are picked).
-    const bool mipDebug = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gMipDebug", 0) != 0;
+    const bool mipDebug = mConsoleVariable->GetInteger("gMipDebug", 0) != 0;
     static const uint8_t kMipDebugColors[][3] = {
         { 255, 0, 0 },   { 0, 255, 0 },   { 0, 128, 255 }, { 255, 255, 0 },
         { 255, 0, 255 }, { 0, 255, 255 }, { 255, 255, 255 },
@@ -6837,19 +6837,15 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
 
     // Per-frame budget for new HD-replacement texture uploads (0 = unlimited / original
     // behavior). Spreads big 4K uploads across frames; the base renders until ready.
-    mReplacementUploadBudget =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.TextureUploadBudget", 1);
+    mReplacementUploadBudget = mConsoleVariable->GetInteger("gEnhancements.Graphics.TextureUploadBudget", 1);
     mFrameReplacementUploads = 0;
 
     // Debug visualization of HD-replacement state (per-draw fragment tint).
     mTextureReplacementDebug =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.TextureReplacementDebug",
-                                                                        0) != 0;
+        mConsoleVariable->GetInteger("gEnhancements.Graphics.TextureReplacementDebug", 0) != 0;
 
     // Async texture loading: decode HD/replacement textures off-thread, render vanilla until ready.
-    mAsyncTextureLoad =
-        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger("gEnhancements.Graphics.AsyncTextureLoad", 0) !=
-        0;
+    mAsyncTextureLoad = mConsoleVariable->GetInteger("gEnhancements.Graphics.AsyncTextureLoad", 0) != 0;
 
     // Engine built-in custom uniform registers (see CustomUniforms):
     // [0] = frame count / elapsed seconds / delta seconds, [1] = fb dimensions
