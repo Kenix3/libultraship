@@ -135,8 +135,12 @@ endif()
 target_link_libraries(libultraship PUBLIC prism monocypher)
 
 if(ENABLE_SCRIPTING)
-    target_link_libraries(libultraship PUBLIC libtcc libtcc1)
     target_compile_definitions(libultraship PUBLIC ENABLE_SCRIPTING)
+    if(ENABLE_TCC_COMPILER)
+        target_link_libraries(libultraship PUBLIC libtcc libtcc1)
+    else()
+        target_compile_definitions(libultraship PUBLIC DISABLE_TCC_COMPILER)
+    endif()
 endif()
 
 #=================== Compile Options & Defs ===================

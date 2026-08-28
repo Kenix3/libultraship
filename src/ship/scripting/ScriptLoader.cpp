@@ -9,10 +9,14 @@
 #include <optional>
 #include <sstream>
 #include <string_view>
+#ifndef DISABLE_TCC_COMPILER
 #include <libtcc.h>
+#endif
 #include <memory>
 #include <queue>
 #include <unordered_map>
+#include <fstream>
+#include <iomanip>
 
 namespace Ship {
 std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
@@ -75,6 +79,60 @@ constexpr std::string_view GetPlatform() {
 #endif
 }
 
+void ScriptLoader::SetCacheDir(const std::filesystem::path& dir) {
+    mCacheDir = dir;
+}
+
+std::filesystem::path ScriptLoader::GetCachePath(const ArchiveManifest& manifest) const {
+    if (mCacheDir.empty() || manifest.Checksum.empty()) {
+        return {};
+    }
+
+    // Build a cache key from content identity + compiler configuration.
+    // Any change to the archive bytes, code version, or build flags will
+    // produce a different key and force a recompile.
+    std::string raw = manifest.Checksum + ":" + std::to_string(mCodeVersion) + ":" + mBuildOptions;
+
+    // Fold the string into a 64-bit hash (platform-independent hex string).
+    std::size_t h = 0;
+    for (unsigned char c : raw) {
+        h = h * 31 + c;
+    }
+
+    std::ostringstream oss;
+    oss << std::hex << std::setw(16) << std::setfill('0') << h;
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+    return mCacheDir / (oss.str() + ".dll");
+#elif defined(__APPLE__)
+    return mCacheDir / (oss.str() + ".dylib");
+#else
+    return mCacheDir / (oss.str() + ".so");
+#endif
+}
+
+void ScriptLoader::StoreInCache(const ArchiveManifest& manifest, const std::string& srcPath) const {
+    const auto cachePath = GetCachePath(manifest);
+    if (cachePath.empty()) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(cachePath.parent_path(), ec);
+    if (ec) {
+        SPDLOG_WARN("ScriptLoader: failed to create cache directory {}: {}", cachePath.parent_path().string(),
+                    ec.message());
+        return;
+    }
+
+    std::filesystem::copy_file(srcPath, cachePath, std::filesystem::copy_options::overwrite_existing, ec);
+    if (ec) {
+        SPDLOG_WARN("ScriptLoader: failed to write cache entry {}: {}", cachePath.string(), ec.message());
+    } else {
+        SPDLOG_INFO("ScriptLoader: cached compiled script to {}", cachePath.string());
+    }
+}
+
 void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
     const ArchiveManifest& info = archive->GetManifest();
     constexpr std::string_view platform = GetPlatform();
@@ -121,6 +179,23 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
     const auto& binaries = info.Binaries;
     const std::string temp = loader.GenerateTempFile();
 
+#ifndef DISABLE_TCC_COMPILER
+    if (info.Binaries.find(std::string(platform)) == info.Binaries.end() && !info.Main.empty()) {
+        const auto cachePath = GetCachePath(info);
+        if (!cachePath.empty() && std::filesystem::exists(cachePath)) {
+            SPDLOG_INFO("ScriptLoader: cache hit for '{}', skipping recompile ({})", info.Name, cachePath.string());
+            std::error_code ec;
+            std::filesystem::copy_file(cachePath, temp, std::filesystem::copy_options::overwrite_existing, ec);
+            if (!ec) {
+                loader.Init(temp);
+                mLoadedScripts[info.Name] = loader;
+                return;
+            }
+            SPDLOG_WARN("ScriptLoader: failed to restore cache entry, recompiling: {}", ec.message());
+        }
+    }
+#endif
+
     if (binaries.contains(std::string(platform))) {
         const std::string& path = binaries.at(std::string(platform));
         auto data = LoadFromO2R(path, archive);
@@ -130,6 +205,12 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
 
         loader.WriteToTempFile(*data);
     } else if (!info.Main.empty()) {
+#ifdef DISABLE_TCC_COMPILER
+        SPDLOG_WARN("ScriptLoader: '{}' ships C sources but the TCC compiler is disabled; provide a prebuilt "
+                    "binary for this platform",
+                    info.Name);
+        return;
+#else
         const auto data = LoadFromO2R(info.Main, archive);
         if (!data.has_value()) {
             throw std::runtime_error("Failed to load main script: " + info.Main);
@@ -140,12 +221,19 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to create TCCState");
         }
 
-        tcc_set_error_func(s, nullptr, [](void* opaque, const char* msg) {
+        std::string errorLog;
+
+        tcc_set_error_func(s, &errorLog, [](void* opaque, const char* msg) {
             std::string_view sv(msg);
             if (sv.find("warning") != std::string_view::npos) {
                 SPDLOG_WARN("Compiler: {}", msg);
             } else if (sv.find("error") != std::string_view::npos || sv.find("fatal") != std::string_view::npos) {
                 SPDLOG_ERROR("Compiler: {}", msg);
+                auto* log = static_cast<std::string*>(opaque);
+                if (!log->empty()) {
+                    log->push_back('\n');
+                }
+                *log += msg;
             } else {
                 SPDLOG_INFO("Compiler: {}", msg);
             }
@@ -158,6 +246,18 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
         }
 
         tcc_set_options(s, mBuildOptions.c_str());
+
+        // Tell TCC where its own includes and libtcc1.a live.
+        // We look for a library path whose parent has an "include" sibling
+        // (the canonical .tcc/ root layout).
+        for (const auto& libPath : mLibraryPaths) {
+            auto tccRoot = std::filesystem::path(libPath).parent_path();
+            if (std::filesystem::exists(tccRoot / "include")) {
+                tcc_set_lib_path(s, tccRoot.string().c_str());
+                break;
+            }
+        }
+
         tcc_set_output_type(s, TCC_OUTPUT_DLL);
 
         for (const std::string& includePath : mIncludePaths) {
@@ -221,14 +321,17 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             std::string sourceCode = lineFixer + std::string(buf->begin(), buf->end());
             if (tcc_compile_string(s, sourceCode.c_str()) == -1) {
                 tcc_delete(s);
-                throw std::runtime_error("TCC Error in " + safePath);
+                throw std::runtime_error(errorLog.empty() ? "TCC Error in " + safePath : errorLog);
             }
         }
 
         if (tcc_output_file(s, temp.c_str()) == -1) {
             tcc_delete(s);
-            throw std::runtime_error("Failed to output compiled code for " + temp);
+            throw std::runtime_error(errorLog.empty() ? "Failed to output compiled code for " + temp : errorLog);
         }
+
+        StoreInCache(info, temp);
+#endif // DISABLE_TCC_COMPILER
     }
 
     loader.Init(temp);
