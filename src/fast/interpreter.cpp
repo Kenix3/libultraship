@@ -1367,6 +1367,12 @@ void Interpreter::ImportTextureMask(int i, int tile) {
 
 void Interpreter::NormalizeVector(float v[3]) {
     float s = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if (s == 0.0f) {
+        // A zero-length normal has no direction to preserve, and dividing by it would put NaN into
+        // the lighting maths downstream.
+        v[0] = v[1] = v[2] = 0.0f;
+        return;
+    }
     v[0] /= s;
     v[1] /= s;
     v[2] /= s;
@@ -2041,8 +2047,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 }
             }
 
-            mBufVbo[mBufVboLen++] = u / tex_width[t];
-            mBufVbo[mBufVboLen++] = v / tex_height[t];
+            // A tile that was never loaded reports a zero size; normalising against it would put
+            // inf or NaN into the vertex buffer.
+            mBufVbo[mBufVboLen++] = tex_width[t] != 0 ? u / tex_width[t] : 0.0f;
+            mBufVbo[mBufVboLen++] = tex_height[t] != 0 ? v / tex_height[t] : 0.0f;
 
             bool clampS = tm & (1 << 2 * t);
             bool clampT = tm & (1 << 2 * t + 1);
