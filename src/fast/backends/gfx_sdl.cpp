@@ -339,6 +339,12 @@ void GfxWindowBackendSDL::Init(const char* gameName, const char* gfxApiName, boo
         return;
     }
 
+#if defined(__APPLE__) && !defined(__IOS__)
+    // Keep running at full speed (and audio playing) while unfocused/hidden by opting
+    // out of App Nap, which otherwise throttles the whole process in the background.
+    disableMacOSAppNap();
+#endif
+
     SDL_SetEventEnabled(SDL_EVENT_DROP_FILE, true);
 
 #if defined(__APPLE__)
@@ -699,6 +705,13 @@ void GfxWindowBackendSDL::HandleEvents() {
         }
     }
 #endif
+}
+
+bool GfxWindowBackendSDL::IsWindowVisible() {
+    // A fully-covered window stops being composited, which stalls Metal's drawable
+    // acquisition; SDL3 tracks that state in SDL_WINDOW_OCCLUDED.
+    const SDL_WindowFlags flags = SDL_GetWindowFlags(mWnd);
+    return (flags & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN | SDL_WINDOW_OCCLUDED)) == 0;
 }
 
 bool GfxWindowBackendSDL::IsFrameReady() {

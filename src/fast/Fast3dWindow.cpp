@@ -1,5 +1,8 @@
 #include "fast/Fast3dWindow.h"
 
+#include <thread>
+#include <chrono>
+
 #include "ship/core/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
@@ -234,6 +237,16 @@ bool Fast3dWindow::IsFrameReady() {
 bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
     // Skip dropped frames
     if (!IsFrameReady()) {
+        return false;
+    }
+
+    // When the window isn't being displayed (minimized/occluded), skip the entire
+    // render + present. Otherwise acquiring a backend drawable can block on the
+    // compositor (Metal's nextDrawable stalls ~1s per frame while occluded), which
+    // looks like the game lagging in the background. Game logic has already run for
+    // this tick; we just don't draw. Yield briefly so the loop doesn't busy-spin.
+    if (!mWindowManagerApi->IsWindowVisible()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(8));
         return false;
     }
 

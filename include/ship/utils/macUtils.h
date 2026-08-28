@@ -18,6 +18,12 @@ void toggleNativeMacOSFullscreen(SDL_Window* window);
  */
 bool isNativeMacOSFullscreenActive(SDL_Window* window);
 
+/**
+ * @brief Opts the process out of App Nap so it keeps running at full speed (and keeps
+ *        audio playing without stutter) while unfocused or hidden. Call once at startup.
+ */
+void disableMacOSAppNap(void);
+
 #ifdef __cplusplus
 }
 #endif

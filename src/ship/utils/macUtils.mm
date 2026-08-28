@@ -22,4 +22,18 @@ bool isNativeMacOSFullscreenActive(SDL_Window *window) {
     }
     return false;
 }
+
+// Opt out of App Nap. When the app isn't frontmost (unfocused or hidden) macOS
+// otherwise throttles its timers and CPU scheduling across *all* threads, which
+// slows the game loop and starves the audio thread (stutter). Registering a
+// latency-critical activity keeps the process running at full speed in the
+// background. The token is held for the app's lifetime via a strong static (ARC).
+void disableMacOSAppNap(void) {
+    static id<NSObject> sAppNapActivity = nil;
+    if (sAppNapActivity == nil) {
+        sAppNapActivity = [[NSProcessInfo processInfo]
+            beginActivityWithOptions:(NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityLatencyCritical)
+                              reason:@"libultraship keeps simulating and outputs audio while unfocused"];
+    }
+}
 #endif
