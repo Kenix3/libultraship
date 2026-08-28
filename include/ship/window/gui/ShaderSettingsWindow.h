@@ -21,7 +21,6 @@ class ShaderSettingsWindow final : public GuiWindow {
     using GuiWindow::GuiWindow;
     ~ShaderSettingsWindow() override = default;
 
-    void InitElement() override{};
     void DrawElement() override;
     void UpdateElement() override{};
 };

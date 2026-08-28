@@ -1,6 +1,5 @@
 #include "ship/window/gui/ShaderSettingsWindow.h"
 
-#include "ship/Context.h"
 #include "fast/Fast3dWindow.h"
 #include "fast/interpreter.h"
 #include <imgui.h>
@@ -9,7 +8,7 @@
 namespace Ship {
 
 void ShaderSettingsWindow::DrawElement() {
-    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow());
+    auto wnd = std::dynamic_pointer_cast<Fast::Fast3dWindow>(GetWindow());
     if (wnd == nullptr) {
         return;
     }
