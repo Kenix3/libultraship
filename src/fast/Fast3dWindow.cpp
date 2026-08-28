@@ -11,6 +11,7 @@
 #include "fast/backends/gfx_dxgi.h"
 #include "fast/backends/gfx_opengl.h"
 #include "fast/backends/gfx_metal.h"
+#include "fast/backends/gfx_vulkan.h"
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
@@ -189,6 +190,15 @@ void Fast3dWindow::InitWindowManager() {
                                         GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
             mRenderingApi = new GfxRenderingAPIMetal(GetConsoleVariables(),
                                                      GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+            break;
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            mWindowManagerApi =
+                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
+                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
+            mRenderingApi = new GfxRenderingAPIVK(GetConsoleVariables(),
+                                                  GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
             break;
 #endif
         default:
@@ -460,6 +470,10 @@ std::string Fast3dWindow::GetWindowBackendName() {
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             return "Metal";
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            return "Vulkan";
 #endif
         default:
             return "";

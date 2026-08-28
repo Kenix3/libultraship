@@ -351,10 +351,15 @@ void GfxWindowBackendSDL::Init(const char* gameName, const char* gfxApiName, boo
 
     SDL_SetEventEnabled(SDL_EVENT_DROP_FILE, true);
 
-#if defined(__APPLE__)
-    bool use_opengl = strcmp(gfxApiName, "OpenGL") == 0;
+#ifdef ENABLE_VULKAN
+    bool use_vulkan = strcmp(gfxApiName, "Vulkan") == 0;
 #else
-    constexpr bool use_opengl = true;
+    constexpr bool use_vulkan = false;
+#endif
+#if defined(__APPLE__)
+    bool use_opengl = !use_vulkan && strcmp(gfxApiName, "OpenGL") == 0;
+#else
+    bool use_opengl = !use_vulkan;
 #endif
 
     if (use_opengl) {
@@ -405,6 +410,8 @@ void GfxWindowBackendSDL::Init(const char* gameName, const char* gfxApiName, boo
 
     if (use_opengl) {
         flags = flags | SDL_WINDOW_OPENGL;
+    } else if (use_vulkan) {
+        flags = flags | SDL_WINDOW_VULKAN;
     } else {
         flags = flags | SDL_WINDOW_METAL;
     }
@@ -472,6 +479,14 @@ void GfxWindowBackendSDL::Init(const char* gameName, const char* gfxApiName, boo
         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
 
         window_impl.Opengl = { mWnd, mCtx };
+    } else if (use_vulkan) {
+#ifdef ENABLE_VULKAN
+        if (startFullScreen) {
+            SetFullscreenImpl(true, false);
+        }
+        SDL_GetWindowSizeInPixels(mWnd, &mWindowWidth, &mWindowHeight);
+        window_impl.Vulkan = { mWnd };
+#endif
     } else {
         mRenderer = SDL_CreateRenderer(mWnd, nullptr);
         if (mRenderer == nullptr) {
