@@ -2810,40 +2810,38 @@ typedef union Gfx {
         _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                      \
     }
 
-#define gDPReadFBToI8(pkt, src, buf, ulx, uly, width, height, bswap)                          \
-    {                                                                                         \
-        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                                           \
-                                                                                              \
-        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(1, 9, 1) |                         \
-                        _SHIFTL(bswap, 8, 1) | _SHIFTL(src, 0, 8);                            \
-        _g0->words.w1 = (uintptr_t)(buf);                                                     \
-        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);                           \
-        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                      \
+#define gDPReadFBToI8(pkt, src, buf, ulx, uly, width, height, bswap)                                             \
+    {                                                                                                            \
+        Gfx *_g0 = (Gfx*)(pkt), *_g1 = (Gfx*)(pkt);                                                              \
+                                                                                                                 \
+        _g0->words.w0 = _SHIFTL(G_READFB, 24, 8) | _SHIFTL(1, 9, 1) | _SHIFTL(bswap, 8, 1) | _SHIFTL(src, 0, 8); \
+        _g0->words.w1 = (uintptr_t)(buf);                                                                        \
+        _g1->words.w0 = _SHIFTL(uly, 16, 16) | _SHIFTL(ulx, 0, 16);                                              \
+        _g1->words.w1 = _SHIFTL(height, 16, 16) | _SHIFTL(width, 0, 16);                                         \
     }
 
-#define gDPSetTextureImagePal(pkt, tile, palSlot)                                \
-    {                                                                            \
-        Gfx* _g = (Gfx*)(pkt);                                                  \
-                                                                                 \
-        _g->words.w0 = _SHIFTL(G_SETTIMG_PAL, 24, 8) | _SHIFTL(tile, 8, 8) |   \
-                       _SHIFTL(palSlot, 0, 8);                                   \
-        _g->words.w1 = 0;                                                        \
+#define gDPSetTextureImagePal(pkt, tile, palSlot)                                                    \
+    {                                                                                                \
+        Gfx* _g = (Gfx*)(pkt);                                                                       \
+                                                                                                     \
+        _g->words.w0 = _SHIFTL(G_SETTIMG_PAL, 24, 8) | _SHIFTL(tile, 8, 8) | _SHIFTL(palSlot, 0, 8); \
+        _g->words.w1 = 0;                                                                            \
     }
 
-#define gDPInvalTexByPalette(pkt, palAddr)                                       \
-    {                                                                            \
-        Gfx* _g = (Gfx*)(pkt);                                                  \
-        _g->words.w0 = _SHIFTL(G_INVAL_TEX_BY_PAL, 24, 8);                     \
-        _g->words.w1 = (uintptr_t)(palAddr);                                    \
+#define gDPInvalTexByPalette(pkt, palAddr)                 \
+    {                                                      \
+        Gfx* _g = (Gfx*)(pkt);                             \
+        _g->words.w0 = _SHIFTL(G_INVAL_TEX_BY_PAL, 24, 8); \
+        _g->words.w1 = (uintptr_t)(palAddr);               \
     }
 
 // Toggles strict (depth-equal) decal compare for subsequent ZMODE_DEC draws,
 // restoring N64 coverage semantics. Reset to 0 after the affected draws.
-#define gSPSetStrictDecal(pkt, on)                                               \
-    {                                                                            \
-        Gfx* _g = (Gfx*)(pkt);                                                  \
-        _g->words.w0 = _SHIFTL(G_SET_STRICT_DECAL, 24, 8);                     \
-        _g->words.w1 = (uintptr_t)(on);                                         \
+#define gSPSetStrictDecal(pkt, on)                         \
+    {                                                      \
+        Gfx* _g = (Gfx*)(pkt);                             \
+        _g->words.w0 = _SHIFTL(G_SET_STRICT_DECAL, 24, 8); \
+        _g->words.w1 = (uintptr_t)(on);                    \
     }
 
 #define gDPImageRectangle(pkt, x0, y0, s0, t0, x1, y1, s1, t1, tile, iw, ih) \
