@@ -27,9 +27,17 @@ float fogFactor : FOG;
 @if(o_shade)
     @if(o_alpha)
         float4 shade : SHADE;
-        @{update_floats(4)}
     @else
         float3 shade : SHADE;
+    @end
+@end
+@if(o_shade || o_lighting)
+    // The SHADE vertex attribute is packed whenever shade is used OR lighting is
+    // enabled (normals travel in the shade slot) — mirror that in the stride, or
+    // the input layout reads past the real vertex (exploded triangles on D3D).
+    @if(o_alpha)
+        @{update_floats(4)}
+    @else
         @{update_floats(3)}
     @end
 @end
