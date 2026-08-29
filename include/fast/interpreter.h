@@ -128,8 +128,8 @@ struct CCFeatures {
     bool opt_invisible;
     bool opt_grayscale;
     bool opt_prim_depth;
-    bool opt_tex_lod;  // LOD_FRACTION computed from per-pixel UV derivatives
-    bool opt_mip_lod;  // TEXEL0 carries a real mip pyramid; TEXEL1 = next mip level
+    bool opt_tex_lod;   // LOD_FRACTION computed from per-pixel UV derivatives
+    bool opt_mip_lod;   // TEXEL0 carries a real mip pyramid; TEXEL1 = next mip level
     bool uses_lod_frac; // any combiner slot references SHADER_LOD_FRAC
     bool opt_shade;     // combiner reads the per-vertex shade color (SHADER_INPUT_7)
     bool opt_lighting;  // shade computed in the vertex shader from normals + lights

@@ -61,15 +61,15 @@ struct LightingUniforms {
     //            [1] = model-space direction coefficients + w = kc (linear atten);
     //            [2] = world-space position + w = kq (quadratic atten)
     float lights[GFX_MAX_GPU_LIGHTS][3][4];
-    float ambient[4];     // rgb ambient light (0..1)
-    float lookat_x[4];    // model-space lookat coefficients for texgen
+    float ambient[4];  // rgb ambient light (0..1)
+    float lookat_x[4]; // model-space lookat coefficients for texgen
     float lookat_y[4];
-    float texgen[2][4];   // per texture: (scaleS, offsetS, scaleT, offsetT)
-    float mv_rows[3][4];  // top modelview rows for point lighting transpose-multiply
+    float texgen[2][4];  // per texture: (scaleS, offsetS, scaleT, offsetT)
+    float mv_rows[3][4]; // top modelview rows for point lighting transpose-multiply
     // Modelview columns (incl. translation): world[j] = dot(vec4(obj,1), mv_cols[j]).
     // Used to derive the world-space position for point lighting in the VS.
     float mv_cols[3][4];
-    int32_t num_lights;   // excluding ambient
+    int32_t num_lights; // excluding ambient
     int32_t padding[3];
 };
 

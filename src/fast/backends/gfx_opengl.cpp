@@ -744,10 +744,9 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
     // Mip chains are sampled with explicit integer LODs (textureLod) in the shader;
     // MIPMAP_NEAREST picks the exact level while still filtering within it.
     const bool hasMips = textures[mCurrentTextureIds[tile]].mip_levels > 1;
-    const GLint minFilter =
-        hasMips ? (linear_filter && mCurrentFilterMode != FILTER_NONE ? GL_LINEAR_MIPMAP_NEAREST
-                                                                      : GL_NEAREST_MIPMAP_NEAREST)
-                : filter;
+    const GLint minFilter = hasMips ? (linear_filter && mCurrentFilterMode != FILTER_NONE ? GL_LINEAR_MIPMAP_NEAREST
+                                                                                          : GL_NEAREST_MIPMAP_NEAREST)
+                                    : filter;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     textures[mCurrentTextureIds[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
@@ -800,8 +799,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
     // to rasterizer winding via the VS y flip: signed area A = (yFlipped ? C : -C),
     // and GL's default front face is CCW (A > 0). keepSign > 0 keeps C > 0.
     const bool yFlipped = mTransformUniforms.y_scale[0] < 0.0f;
-    if (mCurrentCullKeepSign != mLastCullKeepSign ||
-        (mCurrentCullKeepSign != 0 && yFlipped != mLastCullYFlipped)) {
+    if (mCurrentCullKeepSign != mLastCullKeepSign || (mCurrentCullKeepSign != 0 && yFlipped != mLastCullYFlipped)) {
         mLastCullKeepSign = mCurrentCullKeepSign;
         mLastCullYFlipped = yFlipped;
         if (mCurrentCullKeepSign == 0) {

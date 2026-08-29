@@ -821,8 +821,7 @@ void GfxRenderingAPIDX11::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, siz
         memcpy(mPerDrawCbData.uv_transform, mCombinerUniforms.uv_transform, sizeof(mPerDrawCbData.uv_transform));
         memcpy(mPerDrawCbData.texture_clamp, mCombinerUniforms.texture_clamp, sizeof(mPerDrawCbData.texture_clamp));
         memcpy(mPerDrawCbData.fog_params, mCombinerUniforms.fog_params, sizeof(mPerDrawCbData.fog_params));
-        memcpy(mPerDrawCbData.palette_params, mCombinerUniforms.palette_params,
-               sizeof(mPerDrawCbData.palette_params));
+        memcpy(mPerDrawCbData.palette_params, mCombinerUniforms.palette_params, sizeof(mPerDrawCbData.palette_params));
         memcpy(mPerDrawCbData.lod_params, mCombinerUniforms.lod_params, sizeof(mPerDrawCbData.lod_params));
         D3D11_MAPPED_SUBRESOURCE ms;
         ZeroMemory(&ms, sizeof(D3D11_MAPPED_SUBRESOURCE));

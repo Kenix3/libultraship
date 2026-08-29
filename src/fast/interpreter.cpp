@@ -182,9 +182,7 @@ uint8_t Interpreter::AppendMtxHistory(const float m[4][4], float aspectScale) {
 // passes them through unchanged.
 uint8_t Interpreter::GetIdentityMtxSlot() {
     if (!mMtxIdentityValid) {
-        static const float identity[4][4] = {
-            { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 }
-        };
+        static const float identity[4][4] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
         mMtxIdentityEntry = AppendMtxHistory(identity, 1.0f);
         mMtxIdentityValid = true;
     }
@@ -2734,7 +2732,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             lu.lights[i][1][1] = mRsp->current_lights_coeffs[i][1];
             lu.lights[i][1][2] = mRsp->current_lights_coeffs[i][2];
             if (is_point) {
-                lu.lights[i][1][3] = (float)mRsp->current_lights[i].p.unk7;  // kc
+                lu.lights[i][1][3] = (float)mRsp->current_lights[i].p.unk7; // kc
                 lu.lights[i][2][0] = (float)mRsp->current_lights[i].p.pos[0];
                 lu.lights[i][2][1] = (float)mRsp->current_lights[i].p.pos[1];
                 lu.lights[i][2][2] = (float)mRsp->current_lights[i].p.pos[2];
@@ -2753,8 +2751,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             // Fold the entire CPU UV pipeline (gsSPTexture scale, tile shift, tile
             // origin, bilerp half-texel, texture size normalize) into a linear
             // transform per texture: uv = dot * scale + offset.
-            const bool bilerp_half =
-                (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
+            const bool bilerp_half = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
             for (int t = 0; t < 2; t++) {
                 if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
                     continue;
@@ -5258,8 +5255,7 @@ bool gfx_set_key_r_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    if (gfx->mBufVboNumTris > 0 &&
-        (gfx->mRdp->key_center.r != C1(8, 8) || gfx->mRdp->key_scale.r != C1(0, 8))) {
+    if (gfx->mBufVboNumTris > 0 && (gfx->mRdp->key_center.r != C1(8, 8) || gfx->mRdp->key_scale.r != C1(0, 8))) {
         gfx->Flush();
     }
     gfx->mRdp->key_center.r = C1(8, 8);
@@ -5272,9 +5268,8 @@ bool gfx_set_key_gb_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    if (gfx->mBufVboNumTris > 0 &&
-        (gfx->mRdp->key_center.g != C1(24, 8) || gfx->mRdp->key_scale.g != C1(16, 8) ||
-         gfx->mRdp->key_center.b != C1(8, 8) || gfx->mRdp->key_scale.b != C1(0, 8))) {
+    if (gfx->mBufVboNumTris > 0 && (gfx->mRdp->key_center.g != C1(24, 8) || gfx->mRdp->key_scale.g != C1(16, 8) ||
+                                    gfx->mRdp->key_center.b != C1(8, 8) || gfx->mRdp->key_scale.b != C1(0, 8))) {
         gfx->Flush();
     }
     gfx->mRdp->key_center.g = C1(24, 8);
