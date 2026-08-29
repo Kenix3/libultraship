@@ -5653,15 +5653,18 @@ bool gfx_set_tile_scroll_interp_handler_rdp(F3DGfx** cmd0) {
 
     float uls, ult, span_s, span_t, delta_uls, delta_ult;
 
-    ++(*cmd0); cmd = *cmd0;
+    ++(*cmd0);
+    cmd = *cmd0;
     memcpy(&uls, &cmd->words.w0, sizeof(float));
     memcpy(&ult, &cmd->words.w1, sizeof(float));
 
-    ++(*cmd0); cmd = *cmd0;
+    ++(*cmd0);
+    cmd = *cmd0;
     memcpy(&span_s, &cmd->words.w0, sizeof(float));
     memcpy(&span_t, &cmd->words.w1, sizeof(float));
 
-    ++(*cmd0); cmd = *cmd0;
+    ++(*cmd0);
+    cmd = *cmd0;
     memcpy(&delta_uls, &cmd->words.w0, sizeof(float));
     memcpy(&delta_ult, &cmd->words.w1, sizeof(float));
 
@@ -5998,9 +6001,9 @@ static constexpr UcodeHandler rdpHandlers = {
     { RDP_G_SETTARGETINTERPINDEX,
       { "G_SETTARGETINTERPINDEX", gfx_set_interpolation_index_target } }, // G_SETTARGETINTERPINDEX
     { RDP_G_SETTILESIZE_INTERP,
-      { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } },                     // G_SETTILESIZE_INTERP
+      { "G_SETTILESIZE_INTERP", gfx_set_tile_size_interp_handler_rdp } }, // G_SETTILESIZE_INTERP
     { RDP_G_SETTILESCROLL_INTERP,
-      { "G_SETTILESCROLL_INTERP", gfx_set_tile_scroll_interp_handler_rdp } },        // G_SETTILESCROLL_INTERP
+      { "G_SETTILESCROLL_INTERP", gfx_set_tile_scroll_interp_handler_rdp } },                 // G_SETTILESCROLL_INTERP
     { RDP_G_SETTILESIZE_LERP, { "G_SETTILESIZE_LERP", gfx_set_tile_size_lerp_handler_rdp } }, // G_SETTILESIZE_LERP
     { RDP_G_TEXRECT, { "G_TEXRECT", gfx_tex_rect_and_flip_handler_rdp } },                    // G_TEXRECT (-28)
     { RDP_G_TEXRECTFLIP, { "G_TEXRECTFLIP", gfx_tex_rect_and_flip_handler_rdp } },            // G_TEXRECTFLIP (-27)

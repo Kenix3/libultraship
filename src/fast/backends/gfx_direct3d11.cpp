@@ -410,8 +410,8 @@ struct ShaderProgram* GfxRenderingAPIDX11::CreateAndLoadNewShader(uint64_t shade
     char* buf;
     size_t len, numFloats;
 
-    auto shader = gfx_direct3d_common_build_shader(numFloats, cc_features, false,
-                                                   mCurrentFilterMode == FILTER_THREE_POINT);
+    auto shader =
+        gfx_direct3d_common_build_shader(numFloats, cc_features, false, mCurrentFilterMode == FILTER_THREE_POINT);
 
     buf = shader.data();
     len = shader.size();
@@ -1331,7 +1331,6 @@ ImTextureID GfxRenderingAPIDX11::GetTextureById(int id) {
     return mTextures[id].resource_view.Get();
 }
 
-
 #define RAND_NOISE "((random(float3(floor(screenSpace.xy * noise_scale), noise_frame)) + 1.0) / 2.0)"
 
 static const char* prism_shader_item_to_str(uint32_t item, bool with_alpha, bool only_alpha, bool inputs_have_alpha,
@@ -1577,8 +1576,7 @@ std::string gfx_direct3d_common_build_shader(size_t& numFloats, const CCFeatures
         path = std::string(shaderName) + ".hlsl";
     }
 
-    auto res = static_pointer_cast<Ship::Shader>(
-        sDX11ResourceManager->LoadResource(path, false, init));
+    auto res = static_pointer_cast<Ship::Shader>(sDX11ResourceManager->LoadResource(path, false, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load directx shader '{}', missing f3d.o2r?", path);

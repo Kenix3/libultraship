@@ -236,7 +236,8 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
 
     if (library == nullptr || error != nullptr) {
         SPDLOG_ERROR("Failed to compile shader library, error {}",
-                     error ? error->localizedDescription()->cString(NS::UTF8StringEncoding) : "(null library, no error)");
+                     error ? error->localizedDescription()->cString(NS::UTF8StringEncoding)
+                           : "(null library, no error)");
         autorelease_pool->release();
         return nullptr;
     }
