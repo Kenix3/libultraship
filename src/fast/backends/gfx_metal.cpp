@@ -593,8 +593,8 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
         static bool warned = false;
         if (!warned) {
             warned = true;
-            SPDLOG_WARN("metal: vertex batch ({} B) exceeds buffer ({} B); dropping this frame, growing next",
-                        needed, mVertexBufferCapacity[mCurrentVertexBufferPoolIndex]);
+            SPDLOG_WARN("metal: vertex batch ({} B) exceeds buffer ({} B); dropping this frame, growing next", needed,
+                        mVertexBufferCapacity[mCurrentVertexBufferPoolIndex]);
         }
         return;
     }

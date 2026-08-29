@@ -786,8 +786,8 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
     if (hasMips && tex.auto_mipmaps) {
         minFilter = (filter == GL_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_LINEAR;
     } else if (hasMips) {
-        minFilter = (linear_filter && mCurrentFilterMode != FILTER_NONE) ? GL_LINEAR_MIPMAP_NEAREST
-                                                                         : GL_NEAREST_MIPMAP_NEAREST;
+        minFilter =
+            (linear_filter && mCurrentFilterMode != FILTER_NONE) ? GL_LINEAR_MIPMAP_NEAREST : GL_NEAREST_MIPMAP_NEAREST;
     } else {
         minFilter = filter;
     }

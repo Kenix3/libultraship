@@ -1963,8 +1963,8 @@ void Interpreter::BoxDownsampleRgba32(const uint8_t* src, uint32_t srcW, uint32_
                 }
             } else {
                 for (int c = 0; c < 3; c++) {
-                    uint32_t w = (uint32_t)p00[c] * p00[3] + (uint32_t)p01[c] * p01[3] +
-                                 (uint32_t)p10[c] * p10[3] + (uint32_t)p11[c] * p11[3];
+                    uint32_t w = (uint32_t)p00[c] * p00[3] + (uint32_t)p01[c] * p01[3] + (uint32_t)p10[c] * p10[3] +
+                                 (uint32_t)p11[c] * p11[3];
                     d[c] = (uint8_t)((w + aSum / 2) / aSum);
                 }
             }
@@ -2009,7 +2009,7 @@ void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, ui
     // visible in-game (distant surfaces change color as lower levels are picked).
     const bool mipDebug = mConsoleVariable->GetInteger("gMipDebug", 0) != 0;
     static const uint8_t kMipDebugColors[][3] = {
-        { 255, 0, 0 },   { 0, 255, 0 },   { 0, 128, 255 }, { 255, 255, 0 },
+        { 255, 0, 0 },   { 0, 255, 0 },   { 0, 128, 255 },   { 255, 255, 0 },
         { 255, 0, 255 }, { 0, 255, 255 }, { 255, 255, 255 },
     };
 
@@ -2847,8 +2847,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                         // slot so the blend reproduces the base (no pop-in / no garbage).
                         mRapi->SelectTexture(SHADER_FIRST_REPLACEMENT_TEXTURE + i,
                                              mRenderingState.mTextures[i]->second.texture_id);
-                        mRenderingState.mTextures[SHADER_FIRST_REPLACEMENT_TEXTURE + i] =
-                            mRenderingState.mTextures[i];
+                        mRenderingState.mTextures[SHADER_FIRST_REPLACEMENT_TEXTURE + i] = mRenderingState.mTextures[i];
                     }
                     if (mTextureReplacementDebug) {
                         // Highest-priority state wins across the two tiles (red > green > blue).
@@ -6841,8 +6840,7 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     mFrameReplacementUploads = 0;
 
     // Debug visualization of HD-replacement state (per-draw fragment tint).
-    mTextureReplacementDebug =
-        mConsoleVariable->GetInteger("gEnhancements.Graphics.TextureReplacementDebug", 0) != 0;
+    mTextureReplacementDebug = mConsoleVariable->GetInteger("gEnhancements.Graphics.TextureReplacementDebug", 0) != 0;
 
     // Async texture loading: decode HD/replacement textures off-thread, render vanilla until ready.
     mAsyncTextureLoad = mConsoleVariable->GetInteger("gEnhancements.Graphics.AsyncTextureLoad", 0) != 0;
