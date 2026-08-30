@@ -30,9 +30,15 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     }
 
     /**
+     * @brief Closes the stream and unregisters the endpoint notification callback.
+     */
+    ~WasapiAudioPlayer();
+
+    /**
      * @brief Returns the number of frames currently queued in the WASAPI render buffer.
      *
-     * Used by the audio subsystem to pace audio production.
+     * Used by the audio subsystem to pace audio production. While the device cannot
+     * be opened, reports the buffer as full so the producer backs off.
      */
     int Buffered() override;
 
@@ -44,7 +50,7 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     bool DoInit() override;
 
     /**
-     * @brief Stops playback, unregisters device notifications, and releases COM objects.
+     * @brief Stops playback and releases the stream's COM objects.
      */
     void DoClose() override;
 
