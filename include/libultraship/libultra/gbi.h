@@ -1064,7 +1064,7 @@ typedef struct {
     short SourceImageOffsetT;
     /* 20 bytes for above */
 
-    /* padding to bring structure size to 64 bit allignment */
+    /* padding to bring structure size to 64 bit alignment */
     char dummy[4];
 
 } uSprite_t;
@@ -1073,7 +1073,7 @@ typedef union {
     uSprite_t s;
 
     /* Need to make sure this is 64 bit aligned */
-    long long int force_structure_allignment[3];
+    long long int force_structure_alignment[3];
 } uSprite;
 
 /*
@@ -1109,7 +1109,7 @@ typedef struct {
 
 /*
  * The viewport structure elements have 2 bits of fraction, necessary
- * to accomodate the sub-pixel positioning scaling for the hardware.
+ * to accommodate the sub-pixel positioning scaling for the hardware.
  * This can also be exploited to handle odd-sized viewports.
  *
  * Accounting for these fractional bits, using the default projection

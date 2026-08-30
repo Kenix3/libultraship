@@ -99,7 +99,7 @@
 #define SR_ITS 0x01000000 // Instruction trace support
 #define SR_BEV 0x00400000 // Use boot exception vectors
 #define SR_TS 0x00200000  // TLB shutdown
-#define SR_SR 0x00100000  // Soft reset occured
+#define SR_SR 0x00100000  // Soft reset occurred
 #define SR_CH 0x00040000  // Cache hit for last 'cache' op
 #define SR_CE 0x00020000  // Create ECC
 #define SR_DE 0x00010000  // ECC of parity does not cause error
