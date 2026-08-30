@@ -75,6 +75,7 @@ namespace Fast {
 
 static UcodeHandlers ucode_handler_index = ucode_f3dex2;
 
+static float sScreenXOffset = 0.0f;
 const static uint32_t f3dex2AttrHandler[] = {
     F3DEX2_G_MTX_PROJECTION, F3DEX2_G_MTX_LOAD,  F3DEX2_G_MTX_PUSH,  F3DEX_G_MTX_NOPUSH,
     F3DEX2_G_CULL_FRONT,     F3DEX2_G_CULL_BACK, F3DEX2_G_CULL_BOTH,
@@ -1606,6 +1607,11 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
 
         x = AdjXForAspectRatio(x);
 
+        if (sScreenXOffset != 0.0f && mNativeDimensions.width > 0) {
+            const float aspectScale = AdjXForAspectRatio(1.0f);
+            const float clipShift = (2.0f * sScreenXOffset / (float)mNativeDimensions.width) * aspectScale;
+            x += w * clipShift;
+        }
         short U = v->tc[0] * mRsp->texture_scaling_factor.s >> 16;
         short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
 
@@ -4613,6 +4619,13 @@ bool gfx_obj_rectangle_handler_s2dex(F3DGfx** cmd0) {
     return false;
 }
 
+bool gfx_set_screen_x_offset_handler_custom(F3DGfx** cmd0) {
+    F3DGfx* cmd = *(cmd0);
+    const int32_t shiftQ4 = (int32_t)(uint32_t)cmd->words.w1;
+    sScreenXOffset = (float)shiftQ4 / 4.0f;
+    return false;
+}
+
 bool gfx_extra_geometry_mode_handler_custom(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *(cmd0);
@@ -4721,7 +4734,8 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
-    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
+    { OTR_G_SETSCREENXOFFSET, { "G_SETSCREENXOFFSET", gfx_set_screen_x_offset_handler_custom } },
+    { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } }, // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
     { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
@@ -4928,6 +4942,7 @@ static void gfx_step() {
 }
 
 void Interpreter::SpReset() {
+    sScreenXOffset = 0.0f;
     while (!mShaderStack.empty()) {
         mShaderStack.pop();
     }
