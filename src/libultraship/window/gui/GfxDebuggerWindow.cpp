@@ -32,6 +32,19 @@ GfxDebuggerWindow::GfxDebuggerWindow(const std::string& consoleVariable, const s
     mResourceManager = std::move(resourceManager);
 }
 
+GfxDebuggerWindow::GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name, ImVec2 size,
+                                     std::shared_ptr<Fast::Fast3dWindow> fast3dWindow,
+                                     std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                                     std::shared_ptr<Ship::ResourceManager> resourceManager)
+    : GuiWindow(nullptr, nullptr, consoleVariable, false, name, size, ImGuiWindowFlags_None) {
+    if (fast3dWindow) {
+        mInterpreter = fast3dWindow->GetInterpreterWeak();
+        mFast3dGui = std::dynamic_pointer_cast<Fast::Fast3dGui>(fast3dWindow->GetGui());
+    }
+    mGfxDebugger = std::move(gfxDebugger);
+    mResourceManager = std::move(resourceManager);
+}
+
 GfxDebuggerWindow::~GfxDebuggerWindow() {
 }
 

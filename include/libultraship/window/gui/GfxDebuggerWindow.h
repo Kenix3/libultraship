@@ -43,6 +43,19 @@ class GfxDebuggerWindow : public Ship::GuiWindow {
     GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name,
                       std::shared_ptr<Fast::Fast3dWindow> fast3dWindow, std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
                       std::shared_ptr<Ship::ResourceManager> resourceManager);
+
+    /**
+     * @brief Constructs a GfxDebuggerWindow with constructor-injected dependencies.
+     * @param consoleVariable  CVar name controlling window visibility.
+     * @param name             Window title.
+     * @param size             Initial window size.
+     * @param fast3dWindow     Fast3dWindow whose interpreter and GUI are used.
+     * @param gfxDebugger      GfxDebugger used to capture/inspect display lists.
+     * @param resourceManager  ResourceManager for archive lookups.
+     */
+    GfxDebuggerWindow(const std::string& consoleVariable, const std::string& name, ImVec2 size,
+                      std::shared_ptr<Fast::Fast3dWindow> fast3dWindow, std::shared_ptr<Fast::GfxDebugger> gfxDebugger,
+                      std::shared_ptr<Ship::ResourceManager> resourceManager);
     virtual ~GfxDebuggerWindow();
 
   protected:
