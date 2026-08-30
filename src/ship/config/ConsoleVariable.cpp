@@ -23,11 +23,13 @@ ConsoleVariable::~ConsoleVariable() {
 }
 
 std::shared_ptr<CVar> ConsoleVariable::Get(const char* name) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto it = mVariables.find(name);
     return it != mVariables.end() ? it->second : nullptr;
 }
 
 int32_t ConsoleVariable::GetInteger(const char* name, int32_t defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Integer) {
@@ -38,6 +40,7 @@ int32_t ConsoleVariable::GetInteger(const char* name, int32_t defaultValue) {
 }
 
 float ConsoleVariable::GetFloat(const char* name, float defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Float) {
@@ -48,6 +51,7 @@ float ConsoleVariable::GetFloat(const char* name, float defaultValue) {
 }
 
 const char* ConsoleVariable::GetString(const char* name, const char* defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::String) {
@@ -58,6 +62,7 @@ const char* ConsoleVariable::GetString(const char* name, const char* defaultValu
 }
 
 Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color) {
@@ -75,6 +80,7 @@ Color_RGBA8 ConsoleVariable::GetColor(const char* name, Color_RGBA8 defaultValue
 }
 
 Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto variable = Get(name);
 
     if (variable != nullptr && variable->Type == ConsoleVariableType::Color24) {
@@ -91,6 +97,7 @@ Color_RGB8 ConsoleVariable::GetColor24(const char* name, Color_RGB8 defaultValue
 }
 
 void ConsoleVariable::SetInteger(const char* name, int32_t value) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
@@ -101,6 +108,7 @@ void ConsoleVariable::SetInteger(const char* name, int32_t value) {
 }
 
 void ConsoleVariable::SetFloat(const char* name, float value) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
@@ -111,6 +119,7 @@ void ConsoleVariable::SetFloat(const char* name, float value) {
 }
 
 void ConsoleVariable::SetString(const char* name, const char* value) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variable = mVariables[name];
     if (variable == nullptr) {
         variable = std::make_shared<CVar>();
@@ -124,6 +133,7 @@ void ConsoleVariable::SetString(const char* name, const char* value) {
 }
 
 void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variable = mVariables[name];
     if (!variable) {
         variable = std::make_shared<CVar>();
@@ -134,6 +144,7 @@ void ConsoleVariable::SetColor(const char* name, Color_RGBA8 value) {
 }
 
 void ConsoleVariable::SetColor24(const char* name, Color_RGB8 value) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variable = mVariables[name];
     if (!variable) {
         variable = std::make_shared<CVar>();
@@ -144,36 +155,42 @@ void ConsoleVariable::SetColor24(const char* name, Color_RGB8 value) {
 }
 
 void ConsoleVariable::RegisterInteger(const char* name, int32_t defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     if (Get(name) == nullptr) {
         SetInteger(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterFloat(const char* name, float defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     if (Get(name) == nullptr) {
         SetFloat(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterString(const char* name, const char* defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     if (Get(name) == nullptr) {
         SetString(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterColor(const char* name, Color_RGBA8 defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     if (Get(name) == nullptr) {
         SetColor(name, defaultValue);
     }
 }
 
 void ConsoleVariable::RegisterColor24(const char* name, Color_RGB8 defaultValue) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     if (Get(name) == nullptr) {
         SetColor24(name, defaultValue);
     }
 }
 
 void ConsoleVariable::ClearVariable(const char* name) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
@@ -207,6 +224,7 @@ void ConsoleVariable::ClearVariable(const char* name) {
 }
 
 void ConsoleVariable::ClearBlock(const char* name) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
@@ -216,6 +234,7 @@ void ConsoleVariable::ClearBlock(const char* name) {
 }
 
 void ConsoleVariable::CopyVariable(const char* from, const char* to) {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     auto& variableFrom = mVariables[from];
     if (!variableFrom) {
         return;
@@ -249,6 +268,7 @@ void ConsoleVariable::CopyVariable(const char* from, const char* to) {
 }
 
 void ConsoleVariable::Save() {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
@@ -288,6 +308,7 @@ void ConsoleVariable::Save() {
 }
 
 void ConsoleVariable::Load() {
+    std::lock_guard<std::recursive_mutex> lock(mVariablesMutex);
     std::shared_ptr<Config> conf = mConfig;
     if (!conf) {
         return;
