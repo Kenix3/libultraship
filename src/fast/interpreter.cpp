@@ -5340,7 +5340,9 @@ int32_t gfx_check_image_signature(const char* imgData) {
 #if UINTPTR_MAX > 0xFFFFFFFFu
     // On 64-bit: filter kernel/sentinel addresses. Upper bound covers all
     // user-space layouts (x86_64 47-bit canonical, ARM64 48-bit VA, etc.).
-    if (i > 0x0000FFFFFFFFFFFFull) {
+    // ARM64 Android heap pointers can carry a top-byte memory tag; the CPU
+    // ignores it when dereferencing, but the user-space range check must too.
+    if ((i & 0x00FFFFFFFFFFFFFFull) > 0x0000FFFFFFFFFFFFull) {
         return 0;
     }
 #endif
