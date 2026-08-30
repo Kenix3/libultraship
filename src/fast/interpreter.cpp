@@ -1247,92 +1247,131 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
-void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
-    uint8_t fmt = mRdp->texture_tile[tile].fmt;
-    uint8_t siz = mRdp->texture_tile[tile].siz;
-    uint32_t texFlags = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags;
-    uint32_t tmemIdex = mRdp->texture_tile[tile].tmem_index;
-    uint8_t paletteIndex = mRdp->texture_tile[tile].palette;
-    uint32_t origSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].orig_size_bytes;
+bool Interpreter::BuildTextureBinding(int tile, bool importReplacement, TextureBinding& binding) {
+    const uint32_t tileTmem = mRdp->texture_tile[tile].tmem_index;
+    const uint8_t paletteIndex = mRdp->texture_tile[tile].palette;
+    uint32_t origSizeBytes = mRdp->loaded_texture[tileTmem].orig_size_bytes;
 
-    const RawTexMetadata* metadata = &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
-    const uint8_t* origAddr =
+    binding.fmt = mRdp->texture_tile[tile].fmt;
+    binding.siz = mRdp->texture_tile[tile].siz;
+    binding.tmemIndex = tileTmem;
+    binding.texFlags = mRdp->loaded_texture[tileTmem].tex_flags;
+    binding.fellBackToOtherTmem = false;
+
+    const RawTexMetadata* metadata = &mRdp->loaded_texture[tileTmem].raw_tex_metadata;
+    binding.origAddr =
         importReplacement && (metadata->resource != nullptr)
             ? mMaskedTextures.find(GetBaseTexturePath(metadata->resource->GetInitData()->Path))->second.replacementData
-            : mRdp->loaded_texture[tmemIdex].addr;
+            : mRdp->loaded_texture[tileTmem].addr;
 
-    // Check if this texture address is a registered GPU framebuffer mirror.
-    // If so, bind the GPU FB directly — full resolution, no CPU readback needed.
-    if (origAddr != nullptr && !importReplacement) {
-        auto fbIt = mFbTextures.find((uintptr_t)origAddr);
-        if (fbIt != mFbTextures.end()) {
-            Flush();
-            mRapi->SelectTextureFb(fbIt->second);
-            mRdp->textures_changed[i] = false;
-            return;
-        }
-    }
+    binding.fbAddr = importReplacement ? nullptr : binding.origAddr;
 
-    if (origAddr == nullptr) {
+    if (binding.origAddr == nullptr) {
         // Try the other TMEM slot -- some multi-tile setups only load one slot
         // and expect both tiles to reference it.
-        uint32_t otherTmem = tmemIdex ^ 1;
-        origAddr = mRdp->loaded_texture[otherTmem].addr;
-        if (origAddr == nullptr) {
-            SPDLOG_WARN("ImportTexture: null texture address for tile {} (both TMEM slots empty)", tile);
-            return;
+        const uint32_t otherTmem = tileTmem ^ 1;
+        binding.origAddr = mRdp->loaded_texture[otherTmem].addr;
+        if (binding.origAddr == nullptr) {
+            return false;
         }
-        SPDLOG_WARN("ImportTexture: tile {} TMEM slot {} empty, falling back to slot {}", tile, tmemIdex, otherTmem);
-        tmemIdex = otherTmem;
+        binding.fellBackToOtherTmem = true;
+        binding.tmemIndex = otherTmem;
         origSizeBytes = mRdp->loaded_texture[otherTmem].orig_size_bytes;
-        texFlags = mRdp->loaded_texture[otherTmem].tex_flags;
+        binding.texFlags = mRdp->loaded_texture[otherTmem].tex_flags;
     }
 
     // Use palette_dram_addr (the original DRAM source) instead of palettes[]
     // (which always points to the staging buffer) so the same texture drawn
     // with different palettes gets distinct cache entries.
-    TextureCacheKey key;
-    if (fmt == G_IM_FMT_CI) {
-        if (siz == G_IM_SIZ_4b) {
+    if (binding.fmt == G_IM_FMT_CI) {
+        if (binding.siz == G_IM_SIZ_4b) {
             uint8_t palSlot = paletteIndex / 8;
-            key = { origAddr,
-                    { palSlot == 0 ? mRdp->palette_dram_addr[0] : nullptr,
-                      palSlot == 1 ? mRdp->palette_dram_addr[1] : nullptr },
-                    fmt,
-                    siz,
-                    paletteIndex,
-                    origSizeBytes };
+            binding.key = { binding.origAddr,
+                            { palSlot == 0 ? mRdp->palette_dram_addr[0] : nullptr,
+                              palSlot == 1 ? mRdp->palette_dram_addr[1] : nullptr },
+                            binding.fmt,
+                            binding.siz,
+                            paletteIndex,
+                            origSizeBytes };
         } else {
             // CI8 uses both palette halves
-            key = { origAddr,     { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] }, fmt, siz, paletteIndex,
-                    origSizeBytes };
+            binding.key = { binding.origAddr, { mRdp->palette_dram_addr[0], mRdp->palette_dram_addr[1] },
+                            binding.fmt,      binding.siz,
+                            paletteIndex,     origSizeBytes };
         }
     } else {
-        key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
+        binding.key = { binding.origAddr, {}, binding.fmt, binding.siz, paletteIndex, origSizeBytes };
+    }
+    return true;
+}
+
+// True when slot i already holds exactly the texture this tile names, so the draw needs neither a
+// re-bind nor the batch break that goes with it.
+bool Interpreter::TextureBindingUnchanged(int i, int tile) {
+    if (mRenderingState.mTextures[i] == nullptr || mRdp->loaded_texture[i].masked || mRdp->loaded_texture[i].blended) {
+        return false;
     }
 
-    if (TextureCacheLookup(i, key)) {
+    TextureBinding binding;
+    if (!BuildTextureBinding(tile, false, binding)) {
+        return false;
+    }
+    if (binding.fbAddr != nullptr && mFbTextures.find((uintptr_t)binding.fbAddr) != mFbTextures.end()) {
+        return false;
+    }
+    // Cache keys are unique, so an equal key is the same node the map would have returned.
+    return mRenderingState.mTextures[i]->first == binding.key;
+}
+
+void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
+    TextureBinding binding;
+    if (!BuildTextureBinding(tile, importReplacement, binding)) {
+        SPDLOG_WARN("ImportTexture: null texture address for tile {} (both TMEM slots empty)", tile);
+        return;
+    }
+
+    // Check if this texture address is a registered GPU framebuffer mirror.
+    // If so, bind the GPU FB directly — full resolution, no CPU readback needed.
+    if (binding.fbAddr != nullptr) {
+        auto fbIt = mFbTextures.find((uintptr_t)binding.fbAddr);
+        if (fbIt != mFbTextures.end()) {
+            Flush();
+            mRapi->SelectTextureFb(fbIt->second);
+            // SelectTextureFb binds outside the texture cache, so the slot no longer holds a node.
+            mRenderingState.mTextures[0] = nullptr;
+            mRdp->textures_changed[i] = false;
+            return;
+        }
+    }
+
+    if (binding.fellBackToOtherTmem) {
+        SPDLOG_WARN("ImportTexture: tile {} TMEM slot {} empty, falling back to slot {}", tile,
+                    mRdp->texture_tile[tile].tmem_index, binding.tmemIndex);
+    }
+
+    if (TextureCacheLookup(i, binding.key)) {
         return;
     }
 
     // Guard against zero-sized textures that would cause divide-by-zero
     // or GPU API errors in UploadTexture.
-    if (mRdp->texture_tile[tile].line_size_bytes == 0 || mRdp->loaded_texture[tmemIdex].size_bytes == 0 ||
-        origAddr == nullptr) {
+    if (mRdp->texture_tile[tile].line_size_bytes == 0 || mRdp->loaded_texture[binding.tmemIndex].size_bytes == 0) {
         return;
     }
 
-    if ((texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
+    if ((binding.texFlags & TEX_FLAG_LOAD_AS_IMG) != 0) {
         ImportTextureImg(tile, importReplacement);
         return;
     }
 
     // if load as raw is set then we load_raw();
-    if ((texFlags & TEX_FLAG_LOAD_AS_RAW) != 0) {
+    if ((binding.texFlags & TEX_FLAG_LOAD_AS_RAW) != 0) {
         ImportTextureRaw(tile, importReplacement);
         return;
     }
 
+    const uint8_t fmt = binding.fmt;
+    const uint8_t siz = binding.siz;
     switch (fmt) {
         case G_IM_FMT_RGBA:
             if (siz == G_IM_SIZ_16b) {
@@ -1955,7 +1994,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         effective_tile[i] = tile;
 
         if (comb->usedTextures[i]) {
-            if (mRdp->textures_changed[i]) {
+            // The dirty flag only says a tile command ran, not that the binding moved. A sprite
+            // re-loads the same texture for every copy it draws, so a flush here would end the
+            // batch on every one of them.
+            if (mRdp->textures_changed[i] && !TextureBindingUnchanged(i, tile)) {
                 Flush();
                 ImportTexture(i, tile, false);
                 if (mRdp->loaded_texture[i].masked) {
@@ -1964,8 +2006,8 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 if (mRdp->loaded_texture[i].blended) {
                     ImportTexture(SHADER_FIRST_REPLACEMENT_TEXTURE + i, tile, true);
                 }
-                mRdp->textures_changed[i] = false;
             }
+            mRdp->textures_changed[i] = false;
 
             uint8_t cms = mRdp->texture_tile[tile].cms;
             uint8_t cmt = mRdp->texture_tile[tile].cmt;
@@ -4232,6 +4274,8 @@ bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
 
     gfx->Flush();
     gfx->mRapi->SelectTextureFb((uint32_t)cmd->words.w1);
+    // SelectTextureFb binds outside the texture cache, so the slot no longer holds a node.
+    gfx->mRenderingState.mTextures[0] = nullptr;
     gfx->mRdp->textures_changed[0] = false;
     gfx->mRdp->textures_changed[1] = false;
     return false;
