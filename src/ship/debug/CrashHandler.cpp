@@ -218,7 +218,7 @@ static void ErrorHandler(int sig, siginfo_t* sigInfo, void* data) {
 
 static void ShutdownHandler(int sig, siginfo_t* sigInfo, void* data) {
     SDL_Event event;
-    event.type = SDL_QUIT;
+    event.type = SDL_EVENT_QUIT;
     SDL_PushEvent(&event);
 }
 
