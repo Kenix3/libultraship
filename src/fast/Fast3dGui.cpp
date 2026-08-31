@@ -1,5 +1,7 @@
 #include "fast/Fast3dGui.h"
 
+#include <algorithm>
+
 #include "fast/Fast3dWindow.h"
 #include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
@@ -356,8 +358,32 @@ void Fast3dGui::CalculateGameViewport() {
     mainPos.x -= mTemporaryWindowPos.x;
     mainPos.y -= mTemporaryWindowPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
-    mInterpreter.lock()->mCurDimensions.width = (uint32_t)(size.x * mInterpreter.lock()->mCurDimensions.internal_mul);
-    mInterpreter.lock()->mCurDimensions.height = (uint32_t)(size.y * mInterpreter.lock()->mCurDimensions.internal_mul);
+    // ImGui coordinates are logical points, but the render framebuffer is measured in
+    // physical pixels. On macOS window geometry is point-based, so on a HiDPI/Retina
+    // display the internal render size would come out at half the display's true pixels
+    // (100% internal resolution = a soft image; users need 200% for native). Scale the
+    // render size by the window's backing scale so 100% means true native pixels. The
+    // viewport rectangle deliberately stays in points. Windows and Linux report window
+    // sizes in pixels already, so the scale stays 1.0 there.
+    float dpiScale = 1.0f;
+#ifdef __APPLE__
+    {
+        // Opengl.Window and Metal.Window alias the same union slot (both are the SDL_Window*).
+        auto* sdlWindow = static_cast<SDL_Window*>(mImpl.Opengl.Window);
+        if (sdlWindow != nullptr) {
+            int logicalW = 0, logicalH = 0, pixelW = 0, pixelH = 0;
+            SDL_GetWindowSize(sdlWindow, &logicalW, &logicalH);
+            SDL_GetWindowSizeInPixels(sdlWindow, &pixelW, &pixelH);
+            if (logicalW > 0 && pixelW > 0) {
+                dpiScale = std::clamp(static_cast<float>(pixelW) / static_cast<float>(logicalW), 1.0f, 4.0f);
+            }
+        }
+    }
+#endif
+    mInterpreter.lock()->mCurDimensions.width =
+        (uint32_t)(size.x * dpiScale * mInterpreter.lock()->mCurDimensions.internal_mul);
+    mInterpreter.lock()->mCurDimensions.height =
+        (uint32_t)(size.y * dpiScale * mInterpreter.lock()->mCurDimensions.internal_mul);
     mInterpreter.lock()->mGameWindowViewport.x = (int16_t)mainPos.x;
     mInterpreter.lock()->mGameWindowViewport.y = (int16_t)mainPos.y;
     mInterpreter.lock()->mGameWindowViewport.width = (int16_t)size.x;
