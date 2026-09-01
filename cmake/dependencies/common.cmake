@@ -189,6 +189,19 @@ if(NOT TARGET libtcc)
         endif()
     endif()
 
+    # config.h (included before tcc.h's per-arch auto-detect) hardcodes the host
+    # codegen target, so it applies to every -arch slice. On a universal build that
+    # leaves the non-host slice a non-native cross-compiler with no runtime
+    # (tcc_relocate is compiled out), which breaks linking. Strip the codegen target
+    # so each slice selects its own from __x86_64__/__aarch64__; TCC_TARGET_MACHO and
+    # the CONFIG_* defines are kept.
+    if(APPLE AND EXISTS "${tinycc_SOURCE_DIR}/config.h")
+        file(READ "${tinycc_SOURCE_DIR}/config.h" _tcc_cfg)
+        string(REGEX REPLACE "#define TCC_TARGET_(I386|X86_64|ARM64|ARM|RISCV64|C67) [^\n]*\n" "" _tcc_cfg "${_tcc_cfg}")
+        file(WRITE "${tinycc_SOURCE_DIR}/config.h" "${_tcc_cfg}")
+        unset(_tcc_cfg)
+    endif()
+
     if(CMAKE_CROSSCOMPILING)
         find_program(HOST_C_COMPILER NAMES cc clang gcc REQUIRED)
         set(C2STR_EXE "${tinycc_BINARY_DIR}/tcc_c2str_host")
