@@ -112,6 +112,25 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     include(cmake/ios-toolchain-populate.cmake)
 endif()
 
+# =========== Optional graphics backends =============
+option(LUS_BUILD_LLGL "Build with LLGL (Low Level Graphics Library) rendering backend" OFF)
+option(LUS_BUILD_VULKAN_PRDP "Build with Vulkan/ParallelRDP rendering backend" OFF)
+option(LUS_BUILD_PRDP_TESTS "Build ParallelRDP comparison tests (requires Vulkan)" OFF)
+
+if(LUS_BUILD_LLGL AND (LUS_BUILD_PRDP_TESTS OR LUS_BUILD_VULKAN_PRDP))
+    message(FATAL_ERROR
+        "LUS_BUILD_LLGL and ParallelRDP cannot both be enabled in the same target")
+endif()
+
+if(LUS_BUILD_LLGL)
+    include(cmake/dependencies/llgl.cmake)
+endif()
+
+if(LUS_BUILD_VULKAN_PRDP OR LUS_BUILD_PRDP_TESTS)
+    find_package(Threads REQUIRED)
+    include(cmake/dependencies/parallel-rdp.cmake)
+endif()
+
 # =========== Tests (configure-time options) =============
 option(LUS_BUILD_TESTS "Build unit tests" OFF)
 if(LUS_BUILD_TESTS)

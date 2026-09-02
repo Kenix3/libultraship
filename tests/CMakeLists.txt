@@ -39,6 +39,10 @@ add_executable(libultraship_tests
     rumble_mapping_factory_tests.cpp
 )
 
+if(LUS_BUILD_PRDP_TESTS)
+    target_sources(libultraship_tests PRIVATE fast3d_parallelrdp_backend_tests.cpp)
+endif()
+
 if(ENABLE_SCRIPTING)
     target_sources(libultraship_tests PRIVATE script_test.cpp)
     if(WIN32)
@@ -48,6 +52,10 @@ if(ENABLE_SCRIPTING)
                 $<TARGET_FILE_DIR:libultraship_tests>
         )
     endif()
+endif()
+
+if(LUS_BUILD_PRDP_TESTS)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../src/fast/tests ${CMAKE_CURRENT_BINARY_DIR}/fast3d_tests)
 endif()
 
 set_property(TARGET libultraship_tests PROPERTY CXX_STANDARD 20)
@@ -74,4 +82,3 @@ target_compile_definitions(libultraship_tests PRIVATE
 
 include(GoogleTest)
 gtest_discover_tests(libultraship_tests)
-
