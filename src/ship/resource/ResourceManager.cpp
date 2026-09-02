@@ -485,6 +485,11 @@ size_t ResourceManager::UnloadResource(const std::string& filePath) {
     return UnloadResource({ filePath, mDefaultCacheOwner, mDefaultCacheArchive });
 }
 
+void ResourceManager::CacheExternalResource(const std::string& filePath, std::shared_ptr<IResource> resource) {
+    const std::lock_guard<std::mutex> lock(mMutex);
+    mResourceCache[{ filePath, mDefaultCacheOwner, mDefaultCacheArchive }] = resource;
+}
+
 bool ResourceManager::WriteResource(const ResourceIdentifier& identifier, const std::vector<uint8_t>& data,
                                     bool unloadFile) {
     std::string path;
