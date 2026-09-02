@@ -25,6 +25,10 @@
 
 #include <fstream>
 
+#ifndef DISABLE_TCC_COMPILER
+#include <libtcc.h>
+#endif
+
 namespace Ship::Scripting {
 
 std::string LibraryLoader::GenerateTempFile() {
@@ -174,7 +178,29 @@ void LibraryLoader::Init(const std::string& path) {
 #endif
 }
 
+void LibraryLoader::InitInMemory(void* tccState) {
+#ifndef DISABLE_TCC_COMPILER
+    TCCState* s = static_cast<TCCState*>(tccState);
+    // Relocate the compiled code into executable memory owned by the TCCState.
+    // TCC maps a read/execute region (W^X) and never writes a shared library to
+    // disk, so there is no on-disk artifact and no dlopen()/LoadLibrary() call.
+    if (tcc_relocate(s) < 0) {
+        throw std::runtime_error("Failed to relocate compiled script into memory");
+    }
+    mTccState = tccState;
+#else
+    (void)tccState;
+    throw std::runtime_error(
+        "In-memory script execution requires the TCC compiler (built without DISABLE_TCC_COMPILER).");
+#endif
+}
+
 void* LibraryLoader::GetFunction(const std::string& name) {
+#ifndef DISABLE_TCC_COMPILER
+    if (mTccState != nullptr) {
+        return tcc_get_symbol(static_cast<TCCState*>(mTccState), name.c_str());
+    }
+#endif
 #ifndef DISABLE_DLL_LOADER
     if (!mHandle) {
         return nullptr;
@@ -185,12 +211,19 @@ void* LibraryLoader::GetFunction(const std::string& name) {
     return (void*)dlsym(mHandle, name.c_str());
 #endif
 #else
-    throw std::runtime_error(
-        "DLL loading is disabled. Recompile without DISABLE_DLL_LOADER defined to enable this feature.");
+    return nullptr;
 #endif
 }
 
 void LibraryLoader::Unload() {
+#ifndef DISABLE_TCC_COMPILER
+    if (mTccState != nullptr) {
+        // Frees the JIT code memory owned by the state.
+        tcc_delete(static_cast<TCCState*>(mTccState));
+        mTccState = nullptr;
+        return;
+    }
+#endif
 #ifndef DISABLE_DLL_LOADER
     if (!mHandle) {
         return;
