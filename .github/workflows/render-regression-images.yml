@@ -1,0 +1,57 @@
+name: render-regression-images
+
+on:
+  push:
+    branches:
+      - "**"
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: ${{ !contains(github.event.head_commit.message, '[render-regression]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y $(cat .github/workflows/apt-deps.txt)
+      - name: Install SDL3
+        run: |
+          wget https://github.com/libsdl-org/SDL/releases/download/release-3.4.12/SDL3-3.4.12.tar.gz
+          tar -xzf SDL3-3.4.12.tar.gz
+          cmake -S SDL3-3.4.12 -B SDL3-3.4.12/build -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build SDL3-3.4.12/build --parallel $(nproc)
+          sudo cmake --install SDL3-3.4.12/build --prefix /usr/local
+      - name: Install tinyxml2
+        run: |
+          wget https://github.com/leethomason/tinyxml2/archive/refs/tags/10.0.0.tar.gz
+          tar -xzf 10.0.0.tar.gz
+          cmake -S tinyxml2-10.0.0 -B tinyxml2-10.0.0/build -GNinja
+          cmake --build tinyxml2-10.0.0/build --parallel $(nproc)
+          sudo cmake --install tinyxml2-10.0.0/build --prefix /usr/local
+      - name: Configure and build
+        run: |
+          cmake -S . -B build-render -GNinja -DCMAKE_BUILD_TYPE=Release \
+            -DLUS_BUILD_TESTS=ON -DLUS_BUILD_PRDP_TESTS=ON
+          cmake --build build-render --parallel $(nproc)
+      - name: Generate regression images
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: ctest --test-dir build-render -R 'RDPSceneStress' --output-on-failure
+      - name: Commit generated images
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/images
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Regenerate rendering regression images [render-regression]"
+          git push

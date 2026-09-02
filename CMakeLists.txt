@@ -13,6 +13,8 @@ option(COMPONENT_THREAD_SAFE "Enable thread safety for Component parent/child li
 option(DISABLE_DLL_LOADER "Disable dynamic library loading support" OFF)
 option(ENABLE_SCRIPTING "Enable TCC-based C mod compilation and scripting system" OFF)
 option(ENABLE_TCC_COMPILER "Build the TCC compiler for compiling mod C sources at runtime (OFF = prebuilt mod binaries only)" ON)
+option(LUS_BUILD_VULKAN_PRDP "Build the Vulkan/ParallelRDP rendering backend" OFF)
+option(LUS_BUILD_PRDP_TESTS "Build deterministic ParallelRDP comparison tests (requires Vulkan)" OFF)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     option(SIGN_LIBRARY "Enable xcode signing" OFF)
@@ -119,17 +121,17 @@ if(LUS_BUILD_TESTS)
     set(COMPONENT_THREAD_SAFE ON CACHE BOOL "Enable thread safety for Component parent/child lists" FORCE)
 endif()
 
+# =========== Optional ParallelRDP backend/tests =============
+if(LUS_BUILD_VULKAN_PRDP OR LUS_BUILD_PRDP_TESTS)
+    find_package(Threads REQUIRED)
+    include(cmake/dependencies/parallel-rdp.cmake)
+endif()
+
 # =========== Sources =============
 add_subdirectory("src")
 
 # =========== Tests =============
-option(LUS_BUILD_TESTS "Build unit tests" OFF)
-option(LUS_BUILD_PRDP_TESTS "Build ParallelRDP comparison tests (requires Vulkan)" OFF)
 if(LUS_BUILD_TESTS)
     enable_testing()
-    if(LUS_BUILD_PRDP_TESTS)
-        find_package(Threads REQUIRED)
-        include(cmake/dependencies/parallel-rdp.cmake)
-    endif()
     add_subdirectory("tests")
 endif()

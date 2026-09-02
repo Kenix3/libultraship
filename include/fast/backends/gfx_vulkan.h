@@ -133,6 +133,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI, public RdpCommandBac
     std::unique_ptr<Vulkan::Device> mDevice;
     std::unique_ptr<RDP::CommandProcessor> mProcessor;
     std::vector<uint8_t> mRdram;
+    uint32_t mColorImageAddress = 0x00100000;
 
     // Dummy shader program returned by CreateAndLoadNewShader.
     struct DummyShaderProgram {

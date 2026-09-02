@@ -8,7 +8,7 @@
 #   Layer 5: Reference RDP implementation comparison (N64 RDP spec + ParallelRDP)
 #   Prism:   Shader template processor tests
 
-target_sources(lus_tests PRIVATE
+target_sources(libultraship_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer1_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer2_tests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_layer3_tests.cpp
@@ -18,16 +18,16 @@ target_sources(lus_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/fast3d_prism_tests.cpp
 )
 
-target_include_directories(lus_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(libultraship_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ParallelRDP comparison tests (optional, requires Vulkan)
 if(LUS_BUILD_PRDP_TESTS)
-    target_link_libraries(lus_tests PRIVATE parallel-rdp)
-    target_compile_definitions(lus_tests PRIVATE LUS_PRDP_TESTS_ENABLED=1)
+    target_link_libraries(libultraship_tests PRIVATE parallel-rdp)
+    target_compile_definitions(libultraship_tests PRIVATE LUS_PRDP_TESTS_ENABLED=1)
 
     # PNG output for three-way texture comparison tests
     find_package(PNG REQUIRED)
-    target_link_libraries(lus_tests PRIVATE PNG::PNG)
+    target_link_libraries(libultraship_tests PRIVATE PNG::PNG)
 
     # Ensure the docs/images directory exists at build time so tests can write
     # reference images without having to create it at runtime.

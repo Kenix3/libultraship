@@ -8,7 +8,16 @@ nav_order: 3
 
 Implementation of a Fast3D renderer for games built originally for the Nintendo 64 platform.
 
-For rendering, OpenGL, Direct3D 11, and Metal are supported.
+For rendering, OpenGL, Direct3D 11, and Metal are supported. Linux builds can
+optionally enable the Vulkan/ParallelRDP backend with
+`-DLUS_BUILD_VULKAN_PRDP=ON`. This backend forwards native RDP commands to
+ParallelRDP and is intended for deterministic, headless rendering as well as
+hardware-accurate output.
+
+The deterministic comparison fixtures are enabled with
+`-DLUS_BUILD_TESTS=ON -DLUS_BUILD_PRDP_TESTS=ON`. They write PPM/PNG captures
+under `docs/images`; regenerate them by running the relevant
+`fast3d_*` tests from the build directory.
 
 Supported windowing systems are DXGI (used on Windows) and SDL (generic).
 

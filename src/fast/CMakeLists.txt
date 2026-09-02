@@ -41,3 +41,9 @@ endif()
 
 source_group("graphic" FILES ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
+
+if(LUS_BUILD_VULKAN_PRDP)
+    target_sources(libultraship PRIVATE backends/gfx_vulkan.cpp)
+    target_link_libraries(libultraship PRIVATE parallel-rdp)
+    target_compile_definitions(libultraship PUBLIC ENABLE_VULKAN_PRDP=1)
+endif()

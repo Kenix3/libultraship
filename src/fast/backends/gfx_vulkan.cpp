@@ -36,6 +36,12 @@ void GfxRenderingAPIVulkan::SubmitCommand(size_t numWords, const uint32_t* words
     if (!mAvailable || !mProcessor || numWords == 0 || words == nullptr)
         return;
 
+    // G_SETCIMG carries the active framebuffer address in its second word.
+    // Keep it in sync so readback follows the display list rather than a
+    // hard-coded framebuffer location.
+    if ((words[0] >> 24) == 0xFF && numWords >= 2)
+        mColorImageAddress = words[1];
+
     // If no frame context is active, start one.  This handles the common case
     // where the interpreter emits RDP commands outside of an explicit
     // StartFrame/EndFrame bracket (e.g. during initialisation).
@@ -219,10 +225,7 @@ void GfxRenderingAPIVulkan::ReadFramebufferToCPU(int, uint32_t width,
     if (!mAvailable || !rgba16Buf)
         return;
 
-    // Read from the default N64 framebuffer address (0x00100000).
-    // The caller should have set up SET_COLOR_IMAGE to point here.
-    constexpr uint32_t kDefaultFbAddr = 0x00100000;
-    auto fb = ReadFramebufferFromRDRAM(kDefaultFbAddr, width, height);
+    auto fb = ReadFramebufferFromRDRAM(mColorImageAddress, width, height);
     std::memcpy(rgba16Buf, fb.data(), fb.size() * sizeof(uint16_t));
 }
 
