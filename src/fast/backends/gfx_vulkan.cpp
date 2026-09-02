@@ -5,6 +5,7 @@
 
 // ParallelRDP / Granite headers
 #include "rdp_device.hpp"
+#include "rdp_renderer.hpp"
 #include "context.hpp"
 
 #include <algorithm>
@@ -167,8 +168,9 @@ void GfxRenderingAPIVulkan::Init() {
 
     mRdram.resize(RDRAM_SIZE, 0);
 
-    mProcessor = std::make_unique<RDP::CommandProcessor>(*mDevice, mRdram.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
-                                                         RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
+    mProcessor = std::make_unique<::RDP::CommandProcessor>(
+        *mDevice, mRdram.data(), 0, RDRAM_SIZE, HIDDEN_RDRAM_SIZE,
+        ::RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT);
 
     if (!mProcessor->device_is_supported()) {
         mProcessor.reset();

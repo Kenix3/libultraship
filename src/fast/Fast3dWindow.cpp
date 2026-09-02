@@ -1,11 +1,9 @@
 #include "fast/Fast3dWindow.h"
 
-#include "ship/core/Context.h"
+#include "ship/Context.h"
 #include "ship/config/Config.h"
 #include "ship/controller/controldeck/ControlDeck.h"
 #include "ship/config/ConsoleVariable.h"
-#include "ship/window/FileDrop.h"
-#include "ship/resource/ResourceManager.h"
 #include "fast/interpreter.h"
 #include "fast/backends/gfx_sdl.h"
 #include "fast/backends/gfx_dxgi.h"
@@ -14,9 +12,12 @@
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
-
-#include "fast/Fast3dGui.h"
-#include "libultraship/window/gui/GfxDebuggerWindow.h"
+#ifdef ENABLE_LLGL
+#include "fast/backends/gfx_llgl.h"
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+#include "fast/backends/gfx_vulkan.h"
+#endif
 
 #include <fstream>
 
@@ -24,48 +25,39 @@ namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager,
-                           std::shared_ptr<Ship::Config> config,
-                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
-                           std::shared_ptr<Ship::ControlDeck> controlDeck)
-    : Ship::Window(gui, mouseStateManager, std::move(config)), mConsoleVariables(std::move(consoleVariables)),
-      mControlDeck(std::move(controlDeck)) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<FastMouseStateManager> mouseStateManager)
+    : Ship::Window(gui, mouseStateManager) {
     mWindowManagerApi = nullptr;
     mRenderingApi = nullptr;
     mInterpreter = std::make_shared<Interpreter>();
     GfxSetInstance(mInterpreter);
 
 #ifdef _WIN32
-    AddAvailableWindowBackend(WindowBackend::FAST3D_DXGI_DX11);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
 #endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
-        AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_METAL);
+        AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_METAL);
     }
 #endif
-    AddAvailableWindowBackend(WindowBackend::FAST3D_SDL_OPENGL);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_OPENGL);
+#ifdef ENABLE_LLGL
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_LLGL);
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_VULKAN);
+#endif
 }
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui, std::shared_ptr<Ship::Config> config,
-                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
-                           std::shared_ptr<Ship::ControlDeck> controlDeck)
-    : Fast3dWindow(gui, std::make_shared<FastMouseStateManager>(), std::move(config), std::move(consoleVariables),
-                   std::move(controlDeck)) {
+Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Gui> gui)
+    : Fast3dWindow(gui, std::make_shared<FastMouseStateManager>()) {
 }
 
-Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows,
-                           std::shared_ptr<Ship::Config> config,
-                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
-                           std::shared_ptr<Ship::ControlDeck> controlDeck)
-    : Fast3dWindow(std::make_shared<Fast3dGui>(guiWindows), std::move(config), std::move(consoleVariables),
-                   std::move(controlDeck)) {
+Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWindows)
+    : Fast3dWindow(std::make_shared<Ship::Gui>(guiWindows)) {
 }
 
-Fast3dWindow::Fast3dWindow(std::shared_ptr<Ship::Config> config,
-                           std::shared_ptr<Ship::ConsoleVariable> consoleVariables,
-                           std::shared_ptr<Ship::ControlDeck> controlDeck)
-    : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>(), std::move(config), std::move(consoleVariables),
-                   std::move(controlDeck)) {
+Fast3dWindow::Fast3dWindow() : Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>>()) {
 }
 
 Fast3dWindow::~Fast3dWindow() {
@@ -75,10 +67,7 @@ Fast3dWindow::~Fast3dWindow() {
     delete mWindowManagerApi;
 }
 
-void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
-    Window::OnInit(initArgs);
-    auto self = std::dynamic_pointer_cast<Fast3dWindow>(GetSharedComponent());
-    mInterpreter->SetFast3dWindow(self);
+void Fast3dWindow::Init() {
     bool gameMode = false;
 
 #ifdef __linux__
@@ -103,40 +92,31 @@ void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
     uint32_t width, height;
     int32_t posX, posY;
 
-    isFullscreen = GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || gameMode;
-    posX = GetConfig()->GetInt("Window.PositionX", 100);
-    posY = GetConfig()->GetInt("Window.PositionY", 100);
+    isFullscreen = Ship::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || gameMode;
+    posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
+    posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
     if (isFullscreen) {
-        width = GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
-        height = GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
+        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
+        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
     } else {
-        width = GetConfig()->GetInt("Window.Width", 640);
-        height = GetConfig()->GetInt("Window.Height", 480);
+        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
+        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
-    SetFullscreenScancode(GetConfig()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11));
-    SetMouseCaptureScancode(GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2));
+    Ship::Context::GetInstance()->GetWindow()->SetFullscreenScancode(
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.Fullscreen", Ship::KbScancode::LUS_KB_F11));
+    Ship::Context::GetInstance()->GetWindow()->SetMouseCaptureScancode(
+        Ship::Context::GetInstance()->GetConfig()->GetInt("Shortcuts.MouseCapture", Ship::KbScancode::LUS_KB_F2));
 
     InitWindowManager();
-    mGfxDebugger = std::make_shared<GfxDebugger>();
-    mInterpreter->SetGfxDebugger(mGfxDebugger);
-    const std::string& windowTitle = GetContext() != nullptr ? GetContext()->GetShortName() : GetName();
-    mInterpreter->Init(mWindowManagerApi, mRenderingApi, windowTitle.c_str(), isFullscreen, width, height, posX, posY,
-                       GetConsoleVariables(), GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+    mInterpreter->Init(mWindowManagerApi, mRenderingApi, Ship::Context::GetInstance()->GetName().c_str(), isFullscreen,
+                       width, height, posX, posY);
     mWindowManagerApi->SetFullscreenChangedCallback(OnFullscreenChanged);
     mWindowManagerApi->SetKeyboardCallbacks(KeyDown, KeyUp, AllKeysUp);
     mWindowManagerApi->SetMouseCallbacks(MouseButtonDown, MouseButtonUp);
 
-    SetTextureFilter((FilteringMode)GetConsoleVariables()->GetInteger(CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
-
-    // Register the GFX Debugger window if not already present.
-    if (GetGui() && GetGui()->GetGuiWindow("Gfx Debugger") == nullptr) {
-        auto gfxDebugger = mGfxDebugger;
-        auto resourceManager =
-            RequireDependency(GetContext()->GetChildren().GetFirst<Ship::ResourceManager>(), "ResourceManager");
-        GetGui()->AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>(CVAR_GFX_DEBUGGER_WINDOW_OPEN, "Gfx Debugger",
-                                                                        self, gfxDebugger, resourceManager));
-    }
+    SetTextureFilter((FilteringMode)Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(
+        CVAR_TEXTURE_FILTER, FILTER_THREE_POINT));
 }
 
 int32_t Fast3dWindow::GetTargetFps() {
@@ -160,36 +140,44 @@ uint16_t Fast3dWindow::GetPixelDepth(float x, float y) {
 }
 
 void Fast3dWindow::InitWindowManager() {
-    SetWindowBackend(GetSavedWindowBackend());
+    SetWindowBackend(Ship::Context::GetInstance()->GetConfig()->GetWindowBackend());
 
     switch (GetWindowBackend()) {
 #ifdef ENABLE_DX11
-        case WindowBackend::FAST3D_DXGI_DX11:
-            mWindowManagerApi =
-                new GfxWindowBackendDXGI(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
-                                         GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
-            mRenderingApi =
-                new GfxRenderingAPIDX11(static_cast<GfxWindowBackendDXGI*>(mWindowManagerApi), GetConsoleVariables(),
-                                        GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+        case Ship::WindowBackend::FAST3D_DXGI_DX11:
+            mWindowManagerApi = new GfxWindowBackendDXGI();
+            mRenderingApi = new GfxRenderingAPIDX11(static_cast<GfxWindowBackendDXGI*>(mWindowManagerApi));
             break;
 #endif
 #ifdef ENABLE_OPENGL
-        case WindowBackend::FAST3D_SDL_OPENGL:
-            mWindowManagerApi =
-                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
-                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
-            mRenderingApi = new GfxRenderingAPIOGL(GetConsoleVariables(),
-                                                   GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+        case Ship::WindowBackend::FAST3D_SDL_OPENGL:
+            mRenderingApi = new GfxRenderingAPIOGL();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
 #endif
 #ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            mWindowManagerApi =
-                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
-                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
-            mRenderingApi = new GfxRenderingAPIMetal(GetConsoleVariables(),
-                                                     GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+        case Ship::WindowBackend::FAST3D_SDL_METAL:
+            mRenderingApi = new GfxRenderingAPIMetal();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
             break;
+#endif
+#ifdef ENABLE_LLGL
+        case Ship::WindowBackend::FAST3D_SDL_LLGL:
+            mRenderingApi = new GfxRenderingAPILLGL();
+            mWindowManagerApi = new GfxWindowBackendSDL2();
+            break;
+#endif
+#ifdef ENABLE_VULKAN_PRDP
+        case Ship::WindowBackend::FAST3D_SDL_VULKAN: {
+            auto* vkApi = new GfxRenderingAPIVulkan();
+            mRenderingApi = vkApi;
+            mWindowManagerApi = new GfxWindowBackendSDL2();
+            // Attach the Vulkan backend as the RDP command receiver so
+            // that RDP commands emitted by the interpreter are forwarded
+            // directly to ParallelRDP.
+            mInterpreter->SetRdpCommandBackend(vkApi);
+            break;
+        }
 #endif
         default:
             SPDLOG_ERROR("Could not load the correct rendering backend");
@@ -230,14 +218,16 @@ bool Fast3dWindow::IsFrameReady() {
 }
 
 bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
+    std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
+
     // Skip dropped frames
-    if (!IsFrameReady()) {
+    if (!wnd->IsFrameReady()) {
         return false;
     }
 
-    auto gui = GetGui();
+    auto gui = wnd->GetGui();
     // Setup mouse state manager
-    GetMouseStateManager()->StartFrame();
+    wnd->GetMouseStateManager()->StartFrame();
     // Setup of the backend frames and draw initial Window and GUI menus
     gui->StartDraw();
     // Setup game framebuffers to match available window space
@@ -337,7 +327,7 @@ bool Fast3dWindow::SupportsWindowedFullscreen() {
     return false;
 #endif
 
-    if (GetWindowBackend() == WindowBackend::FAST3D_SDL_OPENGL) {
+    if (GetWindowBackend() == Ship::WindowBackend::FAST3D_SDL_OPENGL) {
         return true;
     }
 
@@ -379,137 +369,52 @@ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
 }
 
 bool Fast3dWindow::KeyUp(int32_t scancode) {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return false;
+    if (scancode == Ship::Context::GetInstance()->GetWindow()->GetFullscreenScancode()) {
+        Ship::Context::GetInstance()->GetWindow()->ToggleFullscreen();
     }
 
-    if (scancode == wnd->GetFullscreenScancode()) {
-        wnd->ToggleFullscreen();
+    if (scancode == Ship::Context::GetInstance()->GetWindow()->GetMouseCaptureScancode()) {
+        Ship::Context::GetInstance()->GetWindow()->GetMouseStateManager()->ToggleMouseCaptureOverride();
     }
 
-    if (scancode == wnd->GetMouseCaptureScancode()) {
-        wnd->GetMouseStateManager()->ToggleMouseCaptureOverride();
-    }
-
-    wnd->SetLastScancode(-1);
-    return wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_UP,
-                                                       static_cast<Ship::KbScancode>(scancode));
+    Ship::Context::GetInstance()->GetWindow()->SetLastScancode(-1);
+    return Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(
+        Ship::KbEventType::LUS_KB_EVENT_KEY_UP, static_cast<Ship::KbScancode>(scancode));
 }
 
 bool Fast3dWindow::KeyDown(int32_t scancode) {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return false;
-    }
+    bool isProcessed = Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(
+        Ship::KbEventType::LUS_KB_EVENT_KEY_DOWN, static_cast<Ship::KbScancode>(scancode));
+    Ship::Context::GetInstance()->GetWindow()->SetLastScancode(scancode);
 
-    bool isProcessed = wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_KEY_DOWN,
-                                                                   static_cast<Ship::KbScancode>(scancode));
-    wnd->SetLastScancode(scancode);
     return isProcessed;
 }
 
 void Fast3dWindow::AllKeysUp() {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return;
-    }
-
-    wnd->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
-                                                Ship::KbScancode::LUS_KB_UNKNOWN);
+    Ship::Context::GetInstance()->GetControlDeck()->ProcessKeyboardEvent(Ship::KbEventType::LUS_KB_EVENT_ALL_KEYS_UP,
+                                                                         Ship::KbScancode::LUS_KB_UNKNOWN);
 }
 
 bool Fast3dWindow::MouseButtonUp(int button) {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return false;
-    }
-
-    return wnd->GetControlDeck()->ProcessMouseButtonEvent(false, static_cast<Ship::MouseBtn>(button));
+    return Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(false,
+                                                                                   static_cast<Ship::MouseBtn>(button));
 }
 
 bool Fast3dWindow::MouseButtonDown(int button) {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return false;
-    }
-
-    return wnd->GetControlDeck()->ProcessMouseButtonEvent(true, static_cast<Ship::MouseBtn>(button));
+    bool isProcessed = Ship::Context::GetInstance()->GetControlDeck()->ProcessMouseButtonEvent(
+        true, static_cast<Ship::MouseBtn>(button));
+    return isProcessed;
 }
 
 void Fast3dWindow::OnFullscreenChanged(bool isNowFullscreen) {
-    auto wnd = Interpreter::GetCurrentWindow();
-    if (!wnd) {
-        return;
-    }
+    std::shared_ptr<Window> wnd = Ship::Context::GetInstance()->GetWindow();
 
-    wnd->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
-}
-
-std::shared_ptr<GfxDebugger> Fast3dWindow::GetGfxDebugger() const {
-    return mGfxDebugger;
-}
-
-std::string Fast3dWindow::GetWindowBackendName() {
-    switch (GetWindowBackend()) {
-#ifdef ENABLE_DX11
-        case WindowBackend::FAST3D_DXGI_DX11:
-            return "DirectX 11";
-#endif
-#ifdef ENABLE_OPENGL
-        case WindowBackend::FAST3D_SDL_OPENGL:
-            return "OpenGL";
-#endif
-#ifdef __APPLE__
-        case WindowBackend::FAST3D_SDL_METAL:
-            return "Metal";
-#endif
-        default:
-            return "";
-    }
-}
-
-void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height) {
-    mWindowManagerApi->SetDimensions(width, height, GetPosX(), GetPosY());
-}
-
-void Fast3dWindow::SetCurrentDimensions(uint32_t width, uint32_t height, int32_t posX, int32_t posY) {
-    mWindowManagerApi->SetDimensions(width, height, posX, posY);
-}
-
-void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height) {
-    SetFullscreen(isFullscreen);
-    mWindowManagerApi->SetDimensions(width, height, GetPosX(), GetPosY());
-}
-
-void Fast3dWindow::SetCurrentDimensions(bool isFullscreen, uint32_t width, uint32_t height, int32_t posX,
-                                        int32_t posY) {
-    SetFullscreen(isFullscreen);
-    mWindowManagerApi->SetDimensions(width, height, posX, posY);
-}
-
-Ship::WindowRect Fast3dWindow::GetPrimaryMonitorRect() {
-    return mWindowManagerApi->GetPrimaryMonitorRect();
+    // Re-save fullscreen enabled after
+    Ship::Context::GetInstance()->GetConfig()->SetBool("Window.Fullscreen.Enabled", isNowFullscreen);
 }
 
 std::weak_ptr<Interpreter> Fast3dWindow::GetInterpreterWeak() const {
     return mInterpreter;
-}
-
-std::shared_ptr<Ship::ConsoleVariable> Fast3dWindow::GetConsoleVariables() const {
-    return RequireDependency(mConsoleVariables, "ConsoleVariables");
-}
-
-std::shared_ptr<Ship::ControlDeck> Fast3dWindow::GetControlDeck() const {
-    if (mControlDeck == nullptr) {
-        if (auto context = GetContext()) {
-            mControlDeck = context->GetChildren().GetFirst<Ship::ControlDeck>();
-        }
-    }
-    if (mControlDeck == nullptr) {
-        throw std::runtime_error("Component 'Window' requires dependency 'ControlDeck' to exist before use");
-    }
-    return mControlDeck;
 }
 
 } // namespace Fast

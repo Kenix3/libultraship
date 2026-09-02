@@ -127,7 +127,7 @@ class GfxRenderingAPIVulkan final : public GfxRenderingAPI, public RdpCommandBac
 
     std::unique_ptr<Vulkan::Context> mContext;
     std::unique_ptr<Vulkan::Device> mDevice;
-    std::unique_ptr<RDP::CommandProcessor> mProcessor;
+    std::unique_ptr<::RDP::CommandProcessor> mProcessor;
     std::vector<uint8_t> mRdram;
 
     // Dummy shader program returned by CreateAndLoadNewShader.

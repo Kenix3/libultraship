@@ -10,21 +10,15 @@
 #include <stack>
 #include <string>
 #include <string_view>
-#include <memory>
+#include <initializer_list>
 
 #include "fast/lus_gbi.h"
 #include "fast/types.h"
 #include "fast/ucodehandlers.h"
 #include "backends/gfx_rendering_api.h"
-#include "fast/debug/GfxDebugger.h"
 
 #include "fast/resource/type/Texture.h"
 #include "ship/resource/Resource.h"
-
-namespace Ship {
-class ResourceManager;
-class ConsoleVariable;
-} // namespace Ship
 
 // TODO figure out why changing these to 640x480 makes the game only render in a quarter of the window
 #define SCREEN_WIDTH 320
@@ -84,7 +78,6 @@ enum class ShaderOpts {
     TEXEL1_MASK,
     TEXEL0_BLEND,
     TEXEL1_BLEND,
-    PRIM_DEPTH,
     PRISM_SHADER, // 16-bit width
     MAX
 };
@@ -117,7 +110,6 @@ struct CCFeatures {
     bool opt_alpha_threshold;
     bool opt_invisible;
     bool opt_grayscale;
-    bool opt_prim_depth;
     bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
@@ -138,10 +130,15 @@ namespace Fast {
 
 class GfxRenderingAPI;
 class GfxWindowBackend;
-class Fast3dWindow;
+
+class RdpCommandBackend {
+  public:
+    virtual ~RdpCommandBackend() = default;
+    virtual void SubmitCommand(size_t numWords, const uint32_t* words) = 0;
+};
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 17;
+constexpr size_t SHADER_ID_SHIFT = 16;
 constexpr int16_t ShaderIdUnmask(int id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -151,7 +148,7 @@ struct GfxExecStack {
     std::stack<F3DGfx*> cmd_stack = {};
     // This is also a dlist stack but a std::vector is used to make it possible
     // to iterate on the elements.
-    // The purpose of this is to identify an instruction at a point in time
+    // The purpose of this is to identify an instruction at a poin in time
     // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
     // what we do instead is store the call path that leads to the instruction (including branches)
     std::vector<const F3DGfx*> gfx_path = {};
@@ -295,7 +292,6 @@ struct RDP {
         uint8_t fmt;
         uint8_t siz;
         uint8_t cms, cmt;
-        uint8_t masks, maskt; // mask exponents from SetTile; 2^mask is the WRAP/MIRROR period
         uint8_t shifts, shiftt;
         float uls, ult, lrs, lrt;
         uint16_t tmem; // 0-511, in 64-bit word units
@@ -312,14 +308,7 @@ struct RDP {
     bool grayscale;
 
     uint8_t prim_lod_fraction;
-    uint16_t prim_depth;
     struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
-
-    // Chroma key parameters (G_SETKEYR / G_SETKEYGB)
-    struct RGBA key_center;
-    struct RGBA key_scale;
-    int16_t convert_k[6]; // YUV convert coefficients (G_SETCONVERT) — K0-K5
-
     struct XYWidthHeight viewport, scissor;
     bool viewport_or_scissor_changed;
     void* z_buf_address;
@@ -368,7 +357,6 @@ struct FBInfo {
     uint32_t applied_width, applied_height; // Up-scaled for the viewport
     uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
     bool resize;                            // Scale to match the viewport
-    bool forceFixedAspect;                  // Preserve aspect ratio even if resize is true
 };
 
 struct MaskedTextureEntry {
@@ -382,19 +370,15 @@ class Interpreter {
     ~Interpreter();
 
     void Init(GfxWindowBackend* wapi, class GfxRenderingAPI* rapi, const char* game_name, bool start_in_fullscreen,
-              uint32_t width, uint32_t height, uint32_t posX, uint32_t posY,
-              std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
-              std::shared_ptr<Ship::ResourceManager> resourceManager = nullptr);
+              uint32_t width, uint32_t height, uint32_t posX, uint32_t posY);
     void Destroy();
-    void SetGfxDebugger(std::shared_ptr<GfxDebugger> debugger);
-    std::shared_ptr<GfxDebugger> GetGfxDebugger() const;
-    void SetFast3dWindow(std::shared_ptr<Fast3dWindow> window);
-    static std::shared_ptr<Fast3dWindow> GetCurrentWindow();
     void GetDimensions(uint32_t* width, uint32_t* height, int32_t* posX, int32_t* posY);
     GfxRenderingAPI* GetCurrentRenderingAPI();
     void StartFrame();
     void RunGuiOnly();
     void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+    // Lightweight display list execution for testing — no Ship::Context or GfxDebugger needed.
+    void RunDisplayListForTest(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
     void EndFrame();
     void HandleWindowEvents();
     bool IsFrameReady();
@@ -403,7 +387,7 @@ class Interpreter {
     void SetTargetFps(int fps);
     void SetMaxFrameLatency(int latency);
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                          uint8_t resize, bool forceFixedAspect = false);
+                          uint8_t resize);
     void SetFrameBuffer(int fb, float noiseScale);
     void CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
     void ResetFrameBuffer();
@@ -423,6 +407,7 @@ class Interpreter {
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
+    void SetRdpCommandBackend(RdpCommandBackend* backend);
 
     // private: TODO make these private
     void Flush();
@@ -430,7 +415,6 @@ class Interpreter {
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
     void ShaderCacheClear();
     void TextureCacheClear();
-    std::shared_ptr<Ship::IResource> ResolveResourceCached(const char* path);
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
     void ImportTextureRgba16(int tile, bool importReplacement);
@@ -447,13 +431,6 @@ class Interpreter {
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
-
-    /**
-     * Opt-in memoization of OTR texture-path resolution, keyed by display-list
-     * pointer and dropped with the texture cache. Safe for ports whose display
-     * lists carry stable path pointers; off by default.
-     */
-    void SetResolvedResourceCacheEnabled(bool enabled);
 
     void GfxSpMatrix(uint8_t params, const int32_t* addr);
     void GfxSpPopMatrix(uint32_t count);
@@ -514,14 +491,14 @@ class Interpreter {
     static void NormalizeVector(float v[3]);
     static void TransposedMatrixMul(float res[3], const float a[3], const float b[4][4]);
     static void MatrixMul(float res[4][4], const float a[4][4], const float b[4][4]);
+    void EmitRdpCommand(std::initializer_list<uint32_t> words);
+    void EmitRdpCommand(size_t numWords, const uint32_t* words);
 
     RSP* mRsp;
     RDP* mRdp;
     RenderingState mRenderingState{};
 
     GfxTextureCache mTextureCache{};
-    std::unordered_map<const void*, std::shared_ptr<Ship::IResource>> mResolvedResourceCache;
-    bool mResolvedResourceCacheEnabled = false;
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
     uint8_t* mTexUploadBuffer = nullptr;
@@ -543,10 +520,6 @@ class Interpreter {
     size_t mBufVboNumTris{};
     GfxWindowBackend* mWapi = nullptr;
     GfxRenderingAPI* mRapi = nullptr;
-    std::shared_ptr<GfxDebugger> mGfxDebugger;
-    std::shared_ptr<Ship::ResourceManager> mResourceManager; ///< Cached ResourceManager, set in Init().
-    std::shared_ptr<Ship::ConsoleVariable> mConsoleVariable; ///< Cached ConsoleVariable, set in Init().
-    std::weak_ptr<Fast3dWindow> mFast3dWindow;               ///< Cached Fast3dWindow, set in OnInit().
 
     uintptr_t mSegmentPointers[MAX_SEGMENT_POINTERS]{};
 
@@ -572,10 +545,7 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
-    // Interpolation factor for the current rendered frame within a game tick:
-    // 0 = previous tick, 1 = current tick. Set by the port before each
-    // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
-    float mInterpolationT = 1.0f;
+    RdpCommandBackend* mRdpCommandBackend = nullptr;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
@@ -583,10 +553,11 @@ void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);
 const char* GfxGetOpcodeName(int8_t opcode);
+void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
 
 } // namespace Fast
 
 extern "C" void gfx_texture_cache_clear();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
-                                      uint8_t resize, bool forceFixedAspect = false);
+                                      uint8_t resize);
