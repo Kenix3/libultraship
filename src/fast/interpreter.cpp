@@ -39,7 +39,7 @@
 
 #include "libultraship/libultra/os.h"
 
-#include <spdlog/fmt/fmt.h>
+#include <spdlog/common.h>
 
 #ifdef _WIN32
 #include <windows.h>

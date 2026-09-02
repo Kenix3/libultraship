@@ -3,7 +3,7 @@ include(FetchContent)
 #=================== spdlog ===================
 # macports has issues with this because of fmt
 # brew doesn't support building multiarch
-find_package(spdlog QUIET)
+find_package(spdlog 1.10 QUIET)
 if (NOT ${spdlog_FOUND})
     FetchContent_Declare(
         spdlog

@@ -40,7 +40,7 @@ if (NOT ${tinyxml2_FOUND})
 endif()
 
 #=================== spdlog ===================
-find_package(spdlog QUIET)
+find_package(spdlog 1.10 QUIET)
 if (NOT ${spdlog_FOUND})
     FetchContent_Declare(
         spdlog
