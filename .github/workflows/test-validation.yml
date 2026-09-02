@@ -47,7 +47,8 @@ jobs:
         export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
         cmake --no-warn-unused-cli -H. -Bbuild-test -GNinja \
           -DCMAKE_BUILD_TYPE:STRING=Debug \
-          -DLUS_BUILD_TESTS=ON
+          -DLUS_BUILD_TESTS=ON \
+          -DLUS_BUILD_PRDP_TESTS=ON
       env:
         CC: gcc-12
         CXX: g++-12
@@ -58,6 +59,7 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
         SDL_AUDIODRIVER: dummy
+        VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
   test-windows:
     runs-on: windows-latest
     permissions:
