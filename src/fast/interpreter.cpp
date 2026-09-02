@@ -2358,9 +2358,11 @@ void Interpreter::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* dat
         case F3DEX_G_MV_VIEWPORT:
             CalcAndSetViewport((const F3DVp_t*)data);
             break;
-        case F3DEX_G_MV_LOOKATY:
         case F3DEX_G_MV_LOOKATX:
-            memcpy(mRsp->lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->lookat + 0, data, sizeof(F3DLight_t));
+            break;
+        case F3DEX_G_MV_LOOKATY:
+            memcpy(mRsp->lookat + 1, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
@@ -4934,6 +4936,9 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
+    // Transposed from the SDK basis on purpose: lookat[0] is LOOKATX and drives S.
+    // Only games that never send a lookat see these, and MK64 matches output with them.
+    // TODO: Use ucode DMEM defaults from hardware.
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
