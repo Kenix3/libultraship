@@ -261,8 +261,11 @@ std::string Context::GetAppBundlePath() {
 #endif
 
 #ifdef __IOS__
-    const char* home = getenv("HOME");
-    return std::string(home) + "/Documents";
+    // App bundle resources; user files live in Documents (GetAppDirectoryPath).
+    {
+        FolderManager iosBundleFolderManager;
+        return iosBundleFolderManager.getMainBundlePath();
+    }
 #endif
 
 #ifdef NON_PORTABLE
@@ -321,6 +324,10 @@ std::string Context::GetAppDirectoryPath(const std::string& appName) {
     if (externaldir != NULL) {
         return externaldir;
     }
+#endif
+
+#ifdef __EMSCRIPTEN__
+    return "/storage";
 #endif
 
 #ifdef __IOS__

@@ -625,7 +625,9 @@ void GfxRenderingAPIMetal::EndFrame() {
         mScreenReadbackRequested = false;
     }
 
-    screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+    if (mCurrentDrawable != nullptr) {
+        screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+    }
     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
     screen_framebuffer.mCommandBuffer->commit();
 
@@ -694,6 +696,12 @@ int GfxRenderingAPIMetal::CreateFramebuffer() {
 }
 
 void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
+#ifdef __IOS__
+    // Keep the layer's drawable size pinned to the pixel viewport.
+    if (mLayer->drawableSize().width != width || mLayer->drawableSize().height != height) {
+        mLayer->setDrawableSize({ CGFloat(width), CGFloat(height) });
+    }
+#endif
     mCurrentDrawable = nullptr;
     mCurrentDrawable = mLayer->nextDrawable();
 
@@ -703,6 +711,15 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
     TextureDataMetal& tex = mTextures[fb.mTextureId];
 
     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+
+    // Safety net: the visibility gate in Fast3dWindow normally prevents us from
+    // reaching here while occluded, but if the window is occluded mid-frame
+    // nextDrawable can still return null. Don't dereference it (would crash);
+    // keep the previous texture for this frame.
+    if (mCurrentDrawable == nullptr) {
+        autorelease_pool->release();
+        return;
+    }
 
     tex.texture = mCurrentDrawable->texture();
 
