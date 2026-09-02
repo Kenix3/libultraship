@@ -1,5 +1,7 @@
 #include "fast/Fast3dGui.h"
 
+#include <algorithm>
+
 #include "fast/Fast3dWindow.h"
 #include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
@@ -110,6 +112,21 @@ void Fast3dGui::HandleWindowEvents(Fast::WindowEvent event) {
         default:
             break;
     }
+}
+
+float Fast3dGui::ComputeDpiScale() {
+    // Opengl.Window and Metal.Window alias the same union slot (both hold the SDL_Window*).
+    auto* sdlWindow = static_cast<SDL_Window*>(mImpl.Opengl.Window);
+    if (sdlWindow == nullptr) {
+        return 1.0f;
+    }
+    int logicalW = 0, logicalH = 0, pixelW = 0, pixelH = 0;
+    SDL_GetWindowSize(sdlWindow, &logicalW, &logicalH);
+    SDL_GetWindowSizeInPixels(sdlWindow, &pixelW, &pixelH);
+    if (logicalW <= 0 || pixelW <= 0) {
+        return 1.0f;
+    }
+    return std::clamp(static_cast<float>(pixelW) / static_cast<float>(logicalW), 1.0f, 4.0f);
 }
 
 void Fast3dGui::ImGuiWMInit() {

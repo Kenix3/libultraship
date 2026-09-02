@@ -174,7 +174,25 @@ class Gui : public Component {
      */
     void ShutDownImGui(Ship::Window* window);
 
+    /**
+     * @brief Display backing scale (physical pixels per logical point), computed once at Init.
+     *
+     * 1.0 on standard-DPI displays, typically 2.0 on HiDPI/Retina. Ports that load their own
+     * menu fonts should use this as ImFontConfig::RasterizerDensity so their glyphs stay crisp
+     * under a HiDPI framebuffer.
+     */
+    float GetDpiScale() const {
+        return mDpiScale;
+    }
+
   protected:
+    /**
+     * @brief Returns the backing scale of the platform window; 1.0 in the base implementation.
+     *
+     * Overridden by backends that own a window handle (see Fast3dGui).
+     */
+    virtual float ComputeDpiScale();
+
     /** @brief Calls ImGui::NewFrame() after processing backend-specific input. */
     void StartFrame();
 
@@ -239,6 +257,7 @@ class Gui : public Component {
     std::map<std::string, std::shared_ptr<GuiWindow>> mGuiWindows; ///< Registered window map (name → window).
 
   private:
+    float mDpiScale = 1.0f; ///< Physical pixels per logical point, set at Init (see GetDpiScale()).
     bool mNeedsConsoleVariableSave;
     std::string mImGuiIniPath;
     std::string mImGuiLogPath;
