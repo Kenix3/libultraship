@@ -210,6 +210,7 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
         } else {
             SPDLOG_TRACE("Failed to load resource file at hash {}", identifier.GetPathHash());
         }
+        const std::lock_guard<std::mutex> lock(mMutex);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;
     }
