@@ -37,6 +37,12 @@ class GfxRenderingAPI {
     virtual void LoadShader(ShaderProgram* newPrg) = 0;
     virtual void ClearShaderCache() = 0;
     virtual ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) = 0;
+    // Optionally warm the platform shader cache for a known set of shader-id
+    // pairs (e.g. compiled in the background at boot). Backends where shader
+    // compilation is cheap or already async may ignore this. idPairs is an
+    // array of pairCount {shaderId0, shaderId1} pairs.
+    virtual void PrewarmShaders(const uint64_t (*idPairs)[2], size_t pairCount) {
+    }
     virtual ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) = 0;
     virtual void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) = 0;
     virtual uint32_t NewTexture() = 0;

@@ -165,6 +165,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
     void UnloadShader(ShaderProgram* oldPrg) override;
     void LoadShader(ShaderProgram* newPrg) override;
     ShaderProgram* CreateAndLoadNewShader(uint64_t shaderId0, uint64_t shaderId1) override;
+    void PrewarmShaders(const uint64_t (*idPairs)[2], size_t pairCount) override;
     ShaderProgram* LookupShader(uint64_t shaderId0, uint64_t shaderId1) override;
     void ShaderGetInfo(ShaderProgram* prg, uint8_t* numInputs, bool usedTextures[2]) override;
     void ClearShaderCache() override;
