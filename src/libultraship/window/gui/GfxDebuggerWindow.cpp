@@ -681,7 +681,7 @@ void GfxDebuggerWindow::DrawDisas() {
 
                 if (isNew && metadata.resource != nullptr) {
                     gui->UnloadTexture(name);
-                    gui->LoadGuiTexture(name, *metadata.resource, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+                    gui->LoadGuiTexture(name, *metadata.resource, "", ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
                 }
 
                 ImGui::Image(gui->GetTextureByName(name), ImVec2{ 100.0f, 100.0f });
