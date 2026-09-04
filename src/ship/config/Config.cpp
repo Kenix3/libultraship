@@ -218,9 +218,31 @@ void Config::Reload() {
 }
 
 void Config::Save() {
-    std::ofstream file(mPath);
     mNestedJson = mFlattenedJson.unflatten();
-    file << mNestedJson.dump(4);
+    const fs::path configPath(mPath);
+    const fs::path tempPath = configPath.parent_path() / (configPath.filename().string() + ".tmp");
+    std::error_code ec;
+    {
+        std::ofstream file(tempPath, std::ios::binary | std::ios::trunc);
+        if (!file.is_open()) {
+            SPDLOG_ERROR("Could not open \"{}\" to save config", tempPath.string());
+            return;
+        }
+        file << mNestedJson.dump(4);
+        file.flush();
+        if (!file.good()) {
+            SPDLOG_ERROR("Could not write \"{}\"; keeping the existing config", tempPath.string());
+            file.close();
+            fs::remove(tempPath, ec);
+            return;
+        }
+    }
+    fs::rename(tempPath, configPath, ec);
+    if (ec) {
+        SPDLOG_ERROR("Could not replace config \"{}\": {}", mPath, ec.message());
+        std::error_code removeEc;
+        fs::remove(tempPath, removeEc);
+    }
 }
 
 template <typename T> std::vector<T> Config::GetArray(const std::string& key) {
