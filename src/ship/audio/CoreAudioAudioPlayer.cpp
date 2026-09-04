@@ -128,8 +128,7 @@ void CoreAudioAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
     size_t r = mRingBufferReadPos.load(std::memory_order_acquire);
     size_t w = mRingBufferWritePos.load(std::memory_order_relaxed);
     // free space leaves one frame reserved so write can never collide with read
-    size_t freeSpace = (w >= r) ? (mRingBufferSize - (w - r) - bytesPerFrame)
-                                : (r - w - bytesPerFrame);
+    size_t freeSpace = (w >= r) ? (mRingBufferSize - (w - r) - bytesPerFrame) : (r - w - bytesPerFrame);
 
     // Preserve producer chunk boundaries. Splitting an audio-engine buffer here
     // drops the tail of already-generated PCM and creates a discontinuity.
@@ -176,8 +175,7 @@ OSStatus CoreAudioAudioPlayer::CoreAudioRenderCallback(void* inRefCon, AudioUnit
                 memcpy(outputBuffer, player->mRingBuffer + r, firstChunk);
                 memcpy(outputBuffer + firstChunk, player->mRingBuffer, bytesToCopy - firstChunk);
             }
-            player->mRingBufferReadPos.store((r + bytesToCopy) % player->mRingBufferSize,
-                                             std::memory_order_release);
+            player->mRingBufferReadPos.store((r + bytesToCopy) % player->mRingBufferSize, std::memory_order_release);
         }
 
         if (bytesToCopy < bytesToWrite) {
