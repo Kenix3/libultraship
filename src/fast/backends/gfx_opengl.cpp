@@ -72,6 +72,70 @@ void GfxRenderingAPIOGL::SetUniforms(ShaderProgram* prg) const {
 
 void GfxRenderingAPIOGL::SetPerDrawUniforms() {
     glUniform1f(mCurrentShaderProgram->prim_depth_location, mCurrentPrimDepth);
+    glUniform1f(mCurrentShaderProgram->lod_max_location, mCurrentMaxLod);
+
+    // Combiner constants (uniform state is per-program in GL, so upload each draw)
+    if (mCurrentShaderProgram->combiner_inputs_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->combiner_inputs_location, mCurrentShaderProgram->numInputs,
+                     &mCombinerUniforms.inputs[0][0]);
+    }
+    if (mCurrentShaderProgram->fog_color_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->fog_color_location, 1, mCombinerUniforms.fog_color);
+    }
+    if (mCurrentShaderProgram->grayscale_color_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->grayscale_color_location, 1, mCombinerUniforms.grayscale_color);
+    }
+    if (mCurrentShaderProgram->uv_transform_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->uv_transform_location, 2, &mCombinerUniforms.uv_transform[0][0]);
+    }
+    if (mCurrentShaderProgram->tex_clamp_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->tex_clamp_location, 2, &mCombinerUniforms.texture_clamp[0][0]);
+    }
+    if (mCurrentShaderProgram->fog_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->fog_params_location, 1, mCombinerUniforms.fog_params);
+    }
+    if (mCurrentShaderProgram->palette_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->palette_params_location, 2, &mCombinerUniforms.palette_params[0][0]);
+    }
+    if (mCurrentShaderProgram->lod_params_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->lod_params_location, 1, mCombinerUniforms.lod_params);
+    }
+    if (mCurrentShaderProgram->custom_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->custom_location, GFX_NUM_CUSTOM_UNIFORMS, &mCustomUniforms.regs[0][0]);
+    }
+
+    // Vertex transform: matrix palette + y flip
+    if (mCurrentShaderProgram->mtx_palette_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->mtx_palette_location, GFX_MTX_PALETTE_SIZE * 4,
+                     &mTransformUniforms.mtx_palette[0][0][0]);
+        glUniform4fv(mCurrentShaderProgram->y_scale_location, 1, mTransformUniforms.y_scale);
+    }
+    if (mCurrentShaderProgram->mv_cols_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->mv_cols_location, 3, &mLightingUniforms.mv_cols[0][0]);
+    }
+
+    // Lighting/texgen uniforms (vertex shader)
+    if (mCurrentShaderProgram->lights_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->ambient_location, 1, mLightingUniforms.ambient);
+        glUniform1i(mCurrentShaderProgram->num_lights_location, mLightingUniforms.num_lights);
+        if (mLightingUniforms.num_lights > 0) {
+            glUniform4fv(mCurrentShaderProgram->lights_location, mLightingUniforms.num_lights * 3,
+                         &mLightingUniforms.lights[0][0][0]);
+        }
+        if (mCurrentShaderProgram->mv_rows_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->mv_rows_location, 3, &mLightingUniforms.mv_rows[0][0]);
+        }
+    }
+    if (mCurrentShaderProgram->lookat_x_location >= 0) {
+        glUniform4fv(mCurrentShaderProgram->lookat_x_location, 1, mLightingUniforms.lookat_x);
+        glUniform4fv(mCurrentShaderProgram->lookat_y_location, 1, mLightingUniforms.lookat_y);
+        if (mCurrentShaderProgram->texgen0_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->texgen0_location, 1, mLightingUniforms.texgen[0]);
+        }
+        if (mCurrentShaderProgram->texgen1_location >= 0) {
+            glUniform4fv(mCurrentShaderProgram->texgen1_location, 1, mLightingUniforms.texgen[1]);
+        }
+    }
 
     if (mCurrentShaderProgram->usedTextures[0] || mCurrentShaderProgram->usedTextures[1]) {
         GLint filtering[2] = { textures[mCurrentTextureIds[0]].filtering, textures[mCurrentTextureIds[1]].filtering };
@@ -118,13 +182,20 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_1:
                 return with_alpha ? "vec4(1.0, 1.0, 1.0, 1.0)" : "vec3(1.0, 1.0, 1.0)";
             case SHADER_INPUT_1:
-                return with_alpha || !inputs_have_alpha ? "vInput1" : "vInput1.rgb";
+                return with_alpha ? "uInputs[0]" : "uInputs[0].rgb";
             case SHADER_INPUT_2:
-                return with_alpha || !inputs_have_alpha ? "vInput2" : "vInput2.rgb";
+                return with_alpha ? "uInputs[1]" : "uInputs[1].rgb";
             case SHADER_INPUT_3:
-                return with_alpha || !inputs_have_alpha ? "vInput3" : "vInput3.rgb";
+                return with_alpha ? "uInputs[2]" : "uInputs[2].rgb";
             case SHADER_INPUT_4:
-                return with_alpha || !inputs_have_alpha ? "vInput4" : "vInput4.rgb";
+                return with_alpha ? "uInputs[3]" : "uInputs[3].rgb";
+            case SHADER_INPUT_5:
+                return with_alpha ? "uInputs[4]" : "uInputs[4].rgb";
+            case SHADER_INPUT_6:
+                return with_alpha ? "uInputs[5]" : "uInputs[5].rgb";
+            case SHADER_INPUT_7:
+                // Per-vertex shade color
+                return with_alpha || !inputs_have_alpha ? "vShade" : "vShade.rgb";
             case SHADER_TEXEL0:
                 return first_cycle ? (with_alpha ? "texVal0" : "texVal0.rgb")
                                    : (with_alpha ? "texVal1" : "texVal1.rgb");
@@ -152,6 +223,10 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_NOISE:
                 return with_alpha ? "vec4(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")"
                                   : "vec3(" RAND_NOISE ", " RAND_NOISE ", " RAND_NOISE ")";
+            case SHADER_LOD_FRAC:
+                return hint_single_element ? "lodFrac"
+                                           : (with_alpha ? "vec4(lodFrac, lodFrac, lodFrac, lodFrac)"
+                                                         : "vec3(lodFrac, lodFrac, lodFrac)");
         }
     } else {
         switch (item) {
@@ -160,13 +235,19 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
             case SHADER_1:
                 return "1.0";
             case SHADER_INPUT_1:
-                return "vInput1.a";
+                return "uInputs[0].a";
             case SHADER_INPUT_2:
-                return "vInput2.a";
+                return "uInputs[1].a";
             case SHADER_INPUT_3:
-                return "vInput3.a";
+                return "uInputs[2].a";
             case SHADER_INPUT_4:
-                return "vInput4.a";
+                return "uInputs[3].a";
+            case SHADER_INPUT_5:
+                return "uInputs[4].a";
+            case SHADER_INPUT_6:
+                return "uInputs[5].a";
+            case SHADER_INPUT_7:
+                return "vShade.a";
             case SHADER_TEXEL0:
                 return first_cycle ? "texVal0.a" : "texVal1.a";
             case SHADER_TEXEL0A:
@@ -179,6 +260,8 @@ static const char* shader_item_to_str(uint32_t item, bool with_alpha, bool only_
                 return "texel.a";
             case SHADER_NOISE:
                 return RAND_NOISE;
+            case SHADER_LOD_FRAC:
+                return "lodFrac";
         }
     }
     return "";
@@ -236,7 +319,7 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
     init->Type = (uint32_t)Ship::ResourceType::Shader;
     init->ByteOrder = Ship::Endianness::Native;
     init->Format = RESOURCE_FORMAT_BINARY;
-    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, false, init));
     if (res == nullptr) {
         return std::nullopt;
     }
@@ -247,6 +330,11 @@ std::optional<std::string> opengl_include_fs(const std::string& path) {
 std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     prism::Processor processor;
     prism::ContextItems mContext = {
+        { "BACKEND", "opengl" },
+        { "BACKEND_OPENGL", true },
+        { "BACKEND_VULKAN", false },
+        { "BACKEND_METAL", false },
+        { "BACKEND_DIRECTX", false },
         { "VERTEX_SHADER", false },
         { "o_c", M_ARRAY(cc_features.c, int, 2, 2, 4) },
         { "o_alpha", cc_features.opt_alpha },
@@ -258,11 +346,19 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "o_invisible", cc_features.opt_invisible },
         { "o_grayscale", cc_features.opt_grayscale },
         { "o_prim_depth", cc_features.opt_prim_depth },
+        { "o_mip_lod", cc_features.opt_mip_lod },
+        { "o_uses_lod", cc_features.opt_mip_lod || cc_features.uses_lod_frac ||
+                            (cc_features.opt_tex_lod && cc_features.usedTextures[0] && cc_features.usedTextures[1]) },
+        { "o_two_tile_lod", cc_features.opt_tex_lod && !cc_features.opt_mip_lod && cc_features.usedTextures[0] &&
+                                cc_features.usedTextures[1] },
+        { "o_shade", cc_features.opt_shade },
         { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
+        { "o_palette", M_ARRAY(cc_features.used_palette, bool, 2) },
         { "o_masks", M_ARRAY(cc_features.used_masks, bool, 2) },
         { "o_blend", M_ARRAY(cc_features.used_blend, bool, 2) },
         { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
         { "o_inputs", cc_features.numInputs },
+        { "o_has_inputs", cc_features.numInputs > 0 },
         { "o_do_mix", M_ARRAY(cc_features.do_mix, bool, 2, 2) },
         { "o_do_single", M_ARRAY(cc_features.do_single, bool, 2, 2) },
         { "o_do_multiply", M_ARRAY(cc_features.do_multiply, bool, 2, 2) },
@@ -270,7 +366,6 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "FILTER_THREE_POINT", FILTER_THREE_POINT },
         { "FILTER_LINEAR", FILTER_LINEAR },
         { "FILTER_NONE", FILTER_NONE },
-        { "srgb_mode", mSrgbMode },
         { "SHADER_0", SHADER_0 },
         { "SHADER_INPUT_1", SHADER_INPUT_1 },
         { "SHADER_INPUT_2", SHADER_INPUT_2 },
@@ -311,6 +406,10 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "vOutColor", "gl_FragColor" },
 #endif
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
+    }
     processor.populate(mContext);
     auto init = std::make_shared<Ship::ResourceInitData>();
     init->Type = (uint32_t)Ship::ResourceType::Shader;
@@ -323,7 +422,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = std::static_pointer_cast<Ship::Shader>(mResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(mResourceManager->LoadResource(path, false, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default fragment shader, missing f3d.o2r?");
@@ -334,6 +433,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
     processor.load(*shader);
     processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== FRAGMENT SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");
@@ -350,13 +450,24 @@ static prism::ContextTypes* UpdateFloats(prism::ContextTypes* _, prism::ContextT
 static std::string BuildVsShader(const CCFeatures& cc_features) {
     numFloats = 4;
     prism::Processor processor;
-    prism::ContextItems mContext = { { "VERTEX_SHADER", true },
+    prism::ContextItems mContext = { { "BACKEND", "opengl" },
+                                     { "BACKEND_OPENGL", true },
+                                     { "BACKEND_VULKAN", false },
+                                     { "BACKEND_METAL", false },
+                                     { "BACKEND_DIRECTX", false },
+                                     { "VERTEX_SHADER", true },
                                      { "o_textures", M_ARRAY(cc_features.usedTextures, bool, 2) },
                                      { "o_clamp", M_ARRAY(cc_features.clamp, bool, 2, 2) },
                                      { "o_fog", cc_features.opt_fog },
                                      { "o_grayscale", cc_features.opt_grayscale },
                                      { "o_alpha", cc_features.opt_alpha },
                                      { "o_inputs", cc_features.numInputs },
+                                     { "o_has_inputs", cc_features.numInputs > 0 },
+                                     { "o_shade", cc_features.opt_shade },
+                                     { "o_lighting", cc_features.opt_lighting },
+                                     { "o_point_lighting", cc_features.opt_point_lighting },
+                                     { "o_texgen", cc_features.opt_texgen },
+                                     { "o_texgen_linear", cc_features.opt_texgen_linear },
                                      { "update_floats", (InvokeFunc)UpdateFloats },
 #ifdef __APPLE__
                                      { "GLSL_VERSION", "#version 410 core" },
@@ -375,6 +486,10 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
                                      { "opengles", false }
 #endif
     };
+    // Inject current values for @setting-declared tweakables (compile-time)
+    for (const auto& [var, value] : Fast::gfx_get_shader_setting_values(cc_features.shader_id)) {
+        mContext[var] = value;
+    }
     processor.populate(mContext);
 
     auto init = std::make_shared<Ship::ResourceInitData>();
@@ -388,7 +503,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
         path = std::string(shaderName) + ".glsl";
     }
 
-    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, true, init));
+    auto res = std::static_pointer_cast<Ship::Shader>(sOGLResourceManager->LoadResource(path, false, init));
 
     if (res == nullptr) {
         SPDLOG_ERROR("Failed to load default vertex shader, missing f3d.o2r?");
@@ -399,6 +514,7 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
     processor.load(*shader);
     processor.bind_include_loader(opengl_include_fs);
     auto result = processor.process();
+    Fast::gfx_register_shader_settings(cc_features.shader_id, processor.settings());
     // SPDLOG_INFO("=========== VERTEX SHADER ============");
     // SPDLOG_INFO(result);
     // SPDLOG_INFO("========================================");
@@ -458,6 +574,10 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->attribSizes[cnt] = 4;
     ++cnt;
 
+    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aMtxSlot");
+    prg->attribSizes[cnt] = 1;
+    ++cnt;
+
     for (int i = 0; i < 2; i++) {
         if (cc_features.usedTextures[i]) {
             char name[32];
@@ -465,37 +585,17 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
             prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
             prg->attribSizes[cnt] = 2;
             ++cnt;
-
-            for (int j = 0; j < 2; j++) {
-                if (cc_features.clamp[i][j]) {
-                    snprintf(name, sizeof(name), "aTexClamp%s%d", j == 0 ? "S" : "T", i);
-                    prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
-                    prg->attribSizes[cnt] = 1;
-                    ++cnt;
-                }
-            }
         }
     }
 
-    if (cc_features.opt_fog) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aFog");
-        prg->attribSizes[cnt] = 4;
-        ++cnt;
-    }
-
-    if (cc_features.opt_grayscale) {
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aGrayscaleColor");
-        prg->attribSizes[cnt] = 4;
-        ++cnt;
-    }
-
-    for (int i = 0; i < cc_features.numInputs; i++) {
-        char name[16];
-        snprintf(name, sizeof(name), "aInput%d", i + 1);
-        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, name);
+    if (cc_features.opt_shade || cc_features.opt_lighting) {
+        prg->attribLocations[cnt] = glGetAttribLocation(shader_program, "aShade");
         prg->attribSizes[cnt] = cc_features.opt_alpha ? 4 : 3;
         ++cnt;
     }
+
+    // (world position for point lighting is derived in the VS from the
+    // object-space position and the modelview columns — no extra attribute)
 
     prg->openglProgramId = shader_program;
     prg->numInputs = cc_features.numInputs;
@@ -505,6 +605,7 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->usedTextures[3] = cc_features.used_masks[1];
     prg->usedTextures[4] = cc_features.used_blend[0];
     prg->usedTextures[5] = cc_features.used_blend[1];
+    prg->usedTextures[SHADER_PALETTE_TEXTURE] = cc_features.used_palette[0] || cc_features.used_palette[1];
     prg->numFloats = numFloats;
     prg->numAttribs = cnt;
 
@@ -514,6 +615,27 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->texture_width_location = glGetUniformLocation(shader_program, "texture_width");
     prg->texture_height_location = glGetUniformLocation(shader_program, "texture_height");
     prg->texture_filtering_location = glGetUniformLocation(shader_program, "texture_filtering");
+    prg->lod_max_location = glGetUniformLocation(shader_program, "lod_max");
+    prg->combiner_inputs_location = glGetUniformLocation(shader_program, "uInputs");
+    prg->fog_color_location = glGetUniformLocation(shader_program, "uFogColor");
+    prg->grayscale_color_location = glGetUniformLocation(shader_program, "uGrayscaleColor");
+    prg->ambient_location = glGetUniformLocation(shader_program, "uAmbient");
+    prg->num_lights_location = glGetUniformLocation(shader_program, "uNumLights");
+    prg->lights_location = glGetUniformLocation(shader_program, "uLights");
+    prg->mv_rows_location = glGetUniformLocation(shader_program, "uMvRows");
+    prg->lookat_x_location = glGetUniformLocation(shader_program, "uLookatX");
+    prg->lookat_y_location = glGetUniformLocation(shader_program, "uLookatY");
+    prg->texgen0_location = glGetUniformLocation(shader_program, "uTexgen0");
+    prg->texgen1_location = glGetUniformLocation(shader_program, "uTexgen1");
+    prg->uv_transform_location = glGetUniformLocation(shader_program, "uUvTransform");
+    prg->tex_clamp_location = glGetUniformLocation(shader_program, "uTexClamp");
+    prg->fog_params_location = glGetUniformLocation(shader_program, "uFogParams");
+    prg->mtx_palette_location = glGetUniformLocation(shader_program, "uMtxPalette");
+    prg->y_scale_location = glGetUniformLocation(shader_program, "uYScale");
+    prg->mv_cols_location = glGetUniformLocation(shader_program, "uMvCols");
+    prg->palette_params_location = glGetUniformLocation(shader_program, "uPaletteParams");
+    prg->lod_params_location = glGetUniformLocation(shader_program, "uLodParams");
+    prg->custom_location = glGetUniformLocation(shader_program, "uCustom");
 
     LoadShader(prg);
 
@@ -540,6 +662,10 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     if (cc_features.used_blend[1]) {
         GLint sampler_location = glGetUniformLocation(shader_program, "uTexBlend1");
         glUniform1i(sampler_location, 5);
+    }
+    if (cc_features.used_palette[0] || cc_features.used_palette[1]) {
+        GLint sampler_location = glGetUniformLocation(shader_program, "uTexPal");
+        glUniform1i(sampler_location, SHADER_PALETTE_TEXTURE);
     }
 
     return prg;
@@ -585,8 +711,33 @@ void GfxRenderingAPIOGL::UploadTexture(const uint8_t* rgba32_buf, uint32_t width
         return;
     }
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
-    textures[mCurrentTextureIds[mCurrentTile]].width = width;
-    textures[mCurrentTextureIds[mCurrentTile]].height = height;
+    TextureInfo& info = textures[mCurrentTextureIds[mCurrentTile]];
+    info.width = width;
+    info.height = height;
+    if (info.mip_levels > 1) {
+        // Recycled texture id previously held a mip chain; restrict sampling to
+        // the base level so the texture stays complete.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+    }
+    info.mip_levels = 1;
+}
+
+void GfxRenderingAPIOGL::UploadTextureMip(const uint8_t* rgba32_buf, uint32_t width, uint32_t height, uint32_t level,
+                                          uint32_t totalLevels) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+    glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
+    if (level == 0) {
+        TextureInfo& info = textures[mCurrentTextureIds[mCurrentTile]];
+        info.width = width;
+        info.height = height;
+        info.mip_levels = totalLevels;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (GLint)totalLevels - 1);
+        // Make the min filter mip-aware immediately; SetSamplerParameters may not
+        // run again when the wrap/filter state happens to match its defaults.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    }
 }
 
 #ifdef USE_OPENGLES
@@ -613,7 +764,13 @@ void GfxRenderingAPIOGL::SetSamplerParameters(int tile, bool linear_filter, uint
         glActiveTexture(GL_TEXTURE0 + tile);
     }
     const GLint filter = linear_filter && mCurrentFilterMode == FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    // Mip chains are sampled with explicit integer LODs (textureLod) in the shader;
+    // MIPMAP_NEAREST picks the exact level while still filtering within it.
+    const bool hasMips = textures[mCurrentTextureIds[tile]].mip_levels > 1;
+    const GLint minFilter = hasMips ? (linear_filter && mCurrentFilterMode != FILTER_NONE ? GL_LINEAR_MIPMAP_NEAREST
+                                                                                          : GL_NEAREST_MIPMAP_NEAREST)
+                                    : filter;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     textures[mCurrentTextureIds[tile]].filtering = !linear_filter ? FILTER_LINEAR : FILTER_THREE_POINT;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gfx_cm_to_opengl(cms));
@@ -634,6 +791,10 @@ void GfxRenderingAPIOGL::SetCurrentPrimDepth(float depth) {
 
 void GfxRenderingAPIOGL::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
+}
+
+void GfxRenderingAPIOGL::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
 }
 
 void GfxRenderingAPIOGL::SetViewport(int x, int y, int width, int height) {
@@ -657,14 +818,34 @@ void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
 }
 
 void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
-    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
+    // N64 backface culling. The RSP cross product C = (v1-v2) x (v3-v2) relates
+    // to rasterizer winding via the VS y flip: signed area A = (yFlipped ? C : -C),
+    // and GL's default front face is CCW (A > 0). keepSign > 0 keeps C > 0.
+    const bool yFlipped = mTransformUniforms.y_scale[0] < 0.0f;
+    if (mCurrentCullKeepSign != mLastCullKeepSign || (mCurrentCullKeepSign != 0 && yFlipped != mLastCullYFlipped)) {
+        mLastCullKeepSign = mCurrentCullKeepSign;
+        mLastCullYFlipped = yFlipped;
+        if (mCurrentCullKeepSign == 0) {
+            glDisable(GL_CULL_FACE);
+        } else {
+            glEnable(GL_CULL_FACE);
+            const bool keepCCW = (mCurrentCullKeepSign > 0) == yFlipped;
+            glCullFace(keepCCW ? GL_BACK : GL_FRONT);
+        }
+    }
+
+    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask ||
+        mCurrentStrictDecal != mLastStrictDecal || mCurrentZmodeDecal != mLastZmodeDecal) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;
+        mLastStrictDecal = mCurrentStrictDecal;
 
         if (mCurrentDepthTest || mLastDepthMask) {
             glEnable(GL_DEPTH_TEST);
             glDepthMask(mLastDepthMask ? GL_TRUE : GL_FALSE);
-            glDepthFunc(mCurrentDepthTest ? (mCurrentZmodeDecal ? GL_LEQUAL : GL_LESS) : GL_ALWAYS);
+            glDepthFunc(mCurrentDepthTest
+                            ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? GL_EQUAL : GL_LEQUAL) : GL_LESS)
+                            : GL_ALWAYS);
         } else {
             glDisable(GL_DEPTH_TEST);
         }
@@ -672,7 +853,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 
     if (mCurrentZmodeDecal != mLastZmodeDecal) {
         mLastZmodeDecal = mCurrentZmodeDecal;
-        if (mCurrentZmodeDecal) {
+        if (mCurrentZmodeDecal && !mCurrentStrictDecal) {
             // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
             // fighting
             const int n64modeFactor = 120;
@@ -1104,10 +1285,6 @@ void GfxRenderingAPIOGL::SetTextureFilter(FilteringMode mode) {
 
 FilteringMode GfxRenderingAPIOGL::GetTextureFilter() {
     return mCurrentFilterMode;
-}
-
-void GfxRenderingAPIOGL::SetSrgbMode() {
-    mSrgbMode = true;
 }
 
 ImTextureID GfxRenderingAPIOGL::GetTextureById(int id) {

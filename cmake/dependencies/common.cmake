@@ -108,7 +108,7 @@ option(PRISM_STANDALONE "Build prism as a standalone library" OFF)
 FetchContent_Declare(
     prism
     GIT_REPOSITORY https://github.com/KiritoDv/prism-processor.git
-    GIT_TAG 1de054450e7b3c5f777d2e3dfcb228ad120c329d
+    GIT_TAG aa8370981b2cf57c46172e6aa639d720137f9a92
 )
 FetchContent_MakeAvailable(prism)
 
