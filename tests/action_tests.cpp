@@ -14,8 +14,7 @@ static constexpr EventID kDrawDebugMenuEvent = 3;
 // A concrete Action for testing (without EventID).
 class TestAction : public Action {
   public:
-    TestAction(std::shared_ptr<Tickable> tickable)
-        : Action(tickable), mRunCount(0) {
+    TestAction(std::shared_ptr<Tickable> tickable) : Action(tickable), mRunCount(0) {
     }
 
     int mRunCount;
@@ -44,8 +43,7 @@ class TestEventAction : public EventAction {
 };
 
 // A simple Tickable for testing.
-class TestTickable : public Tickable {
-};
+class TestTickable : public Tickable {};
 
 // ---- Action lifecycle tests ----
 
@@ -137,8 +135,7 @@ TEST(ActionTest, TickableWeakReference) {
 
 class RestrictiveAction : public Action {
   public:
-    RestrictiveAction(std::shared_ptr<Tickable> tickable)
-        : Action(tickable), mCanStart(true), mCanStop(true) {
+    RestrictiveAction(std::shared_ptr<Tickable> tickable) : Action(tickable), mCanStart(true), mCanStop(true) {
     }
 
     bool mCanStart;
@@ -201,8 +198,7 @@ TEST(ActionTest, ForceStopBypassesCanStop) {
 class InstrumentedAction : public Action {
   public:
     InstrumentedAction(std::shared_ptr<Tickable> tickable)
-        : Action(tickable), mStartedCalls(0), mStoppedCalls(0), mLastStartedForced(false),
-          mLastStoppedForced(false) {
+        : Action(tickable), mStartedCalls(0), mStoppedCalls(0), mLastStartedForced(false), mLastStoppedForced(false) {
     }
 
     int mStartedCalls;

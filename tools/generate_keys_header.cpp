@@ -19,13 +19,19 @@
 // ─── Base-64 ─────────────────────────────────────────────────────────────────
 
 static int B64Val(char c) {
-    if (c >= 'A' && c <= 'Z') return c - 'A';
-    if (c >= 'a' && c <= 'z') return c - 'a' + 26;
-    if (c >= '0' && c <= '9') return c - '0' + 52;
-    if (c == '+') return 62;
-    if (c == '/') return 63;
-    if (c == '=') return -2; // padding
-    return -1;               // whitespace / ignore
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A';
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + 26;
+    if (c >= '0' && c <= '9')
+        return c - '0' + 52;
+    if (c == '+')
+        return 62;
+    if (c == '/')
+        return 63;
+    if (c == '=')
+        return -2; // padding
+    return -1;     // whitespace / ignore
 }
 
 static std::vector<uint8_t> Base64Decode(const std::string& s) {
@@ -35,8 +41,10 @@ static std::vector<uint8_t> Base64Decode(const std::string& s) {
     int bits = 0;
     for (char c : s) {
         int v = B64Val(c);
-        if (v == -1) continue;
-        if (v == -2) break;
+        if (v == -1)
+            continue;
+        if (v == -2)
+            break;
         acc = (acc << 6) | static_cast<uint32_t>(v);
         bits += 6;
         if (bits >= 8) {
@@ -58,22 +66,27 @@ static std::vector<uint8_t> ReadPemDer(const std::string& path) {
     std::string line, b64;
     bool inBody = false;
     while (std::getline(f, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
 
         if (line.compare(0, 11, "-----BEGIN ") == 0) {
             if (line.find("PRIVATE") != std::string::npos) {
-                throw std::runtime_error(
-                    path + ": private key PEM is not supported.\n"
-                    "  Extract the public key first, e.g.:\n"
-                    "  openssl pkey -in " + path + " -pubout -out public.pem");
+                throw std::runtime_error(path +
+                                         ": private key PEM is not supported.\n"
+                                         "  Extract the public key first, e.g.:\n"
+                                         "  openssl pkey -in " +
+                                         path + " -pubout -out public.pem");
             }
             inBody = true;
             continue;
         }
-        if (line.compare(0, 9, "-----END ") == 0) break;
-        if (inBody) b64 += line;
+        if (line.compare(0, 9, "-----END ") == 0)
+            break;
+        if (inBody)
+            b64 += line;
     }
-    if (b64.empty()) throw std::runtime_error("No PEM body found in: " + path);
+    if (b64.empty())
+        throw std::runtime_error("No PEM body found in: " + path);
     return Base64Decode(b64);
 }
 
@@ -86,11 +99,10 @@ static std::vector<uint8_t> ReadPemDer(const std::string& path) {
 //   <32 bytes>       raw public key
 //
 // This pattern is unique and deterministic for Ed25519 SPKI blobs.
-static std::array<uint8_t, 32> ExtractEd25519PublicKey(const std::vector<uint8_t>& der,
-                                                        const std::string& path) {
+static std::array<uint8_t, 32> ExtractEd25519PublicKey(const std::vector<uint8_t>& der, const std::string& path) {
     static const uint8_t kPattern[] = {
         0x06, 0x03, 0x2b, 0x65, 0x70, // OID id-Ed25519
-        0x03, 0x21, 0x00               // BIT STRING header
+        0x03, 0x21, 0x00              // BIT STRING header
     };
     constexpr size_t kKeyLen = 32;
 
@@ -110,7 +122,7 @@ static std::string ToHex(const std::array<uint8_t, 32>& b) {
     static const char kDigits[] = "0123456789abcdef";
     std::string s(64, '\0');
     for (int i = 0; i < 32; ++i) {
-        s[i * 2]     = kDigits[b[i] >> 4];
+        s[i * 2] = kDigits[b[i] >> 4];
         s[i * 2 + 1] = kDigits[b[i] & 0xf];
     }
     return s;

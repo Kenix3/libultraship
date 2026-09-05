@@ -293,10 +293,9 @@ TEST_F(TickableComponentTest, TryGetSharedComponentAvailableAfterInit) {
 
 class ConcreteTickableWithPendingActions : public TickableComponent {
   public:
-    ConcreteTickableWithPendingActions(std::shared_ptr<Context> ctx,
-                                       std::vector<std::shared_ptr<Action>> actions)
-        : TickableComponent("TCPendingActions", ctx, TickGroup::TickGroupDefault,
-                            TickPriority::TickPriorityDefault, std::move(actions)) {
+    ConcreteTickableWithPendingActions(std::shared_ptr<Context> ctx, std::vector<std::shared_ptr<Action>> actions)
+        : TickableComponent("TCPendingActions", ctx, TickGroup::TickGroupDefault, TickPriority::TickPriorityDefault,
+                            std::move(actions)) {
     }
     bool ActionRan(EventID /*eventId*/) {
         return true;
@@ -305,15 +304,13 @@ class ConcreteTickableWithPendingActions : public TickableComponent {
 
 // Before RegisterWithContext() the component must not be ticking.
 TEST_F(TickableComponentTest, ActionsConstructorStartsNotTicking) {
-    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(
-        mContext, std::vector<std::shared_ptr<Action>>{});
+    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(mContext, std::vector<std::shared_ptr<Action>>{});
     EXPECT_FALSE(tc->IsTicking());
 }
 
 // After RegisterWithContext() the component is in the tickable list.
 TEST_F(TickableComponentTest, ActionsConstructorRegistersWithContext) {
-    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(
-        mContext, std::vector<std::shared_ptr<Action>>{});
+    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(mContext, std::vector<std::shared_ptr<Action>>{});
     mContext->GetChildren().Add(tc);
     ASSERT_TRUE(tc->RegisterWithContext());
     EXPECT_TRUE(mContext->GetTickableComponents().Has(tc));
@@ -325,16 +322,20 @@ TEST_F(TickableComponentTest, ActionsConstructorStartsAfterRegisterWhenActionsPr
     // A minimal concrete Action subclass.
     class NoopEventAction : public EventAction {
       public:
-        NoopEventAction(EventID id, std::shared_ptr<Tickable> t) : EventAction(id, t) {}
+        NoopEventAction(EventID id, std::shared_ptr<Tickable> t) : EventAction(id, t) {
+        }
+
       protected:
-        bool ActionRan() { return true; }
+        bool ActionRan() {
+            return true;
+        }
     };
 
     auto owner = std::make_shared<ConcreteTickable>(mContext);
     auto action = std::make_shared<NoopEventAction>(0, owner);
 
-    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(
-        mContext, std::vector<std::shared_ptr<Action>>{ action });
+    auto tc =
+        std::make_shared<ConcreteTickableWithPendingActions>(mContext, std::vector<std::shared_ptr<Action>>{ action });
     mContext->GetChildren().Add(tc);
     ASSERT_TRUE(tc->RegisterWithContext());
 
@@ -346,8 +347,7 @@ TEST_F(TickableComponentTest, ActionsConstructorStartsAfterRegisterWhenActionsPr
 
 // An empty pending-actions list must not trigger Start().
 TEST_F(TickableComponentTest, ActionsConstructorDoesNotStartWhenActionsEmpty) {
-    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(
-        mContext, std::vector<std::shared_ptr<Action>>{});
+    auto tc = std::make_shared<ConcreteTickableWithPendingActions>(mContext, std::vector<std::shared_ptr<Action>>{});
     mContext->GetChildren().Add(tc);
     ASSERT_TRUE(tc->RegisterWithContext());
     EXPECT_FALSE(tc->IsTicking());
@@ -372,4 +372,3 @@ TEST_F(TickableComponentTest, ForceStartOnComponentTickableDoesNotCrash) {
     tc->Stop();
     EXPECT_NO_THROW(tc->Start(true));
 }
-
