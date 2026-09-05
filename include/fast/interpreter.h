@@ -151,7 +151,7 @@ struct GfxExecStack {
     std::stack<F3DGfx*> cmd_stack = {};
     // This is also a dlist stack but a std::vector is used to make it possible
     // to iterate on the elements.
-    // The purpose of this is to identify an instruction at a poin in time
+    // The purpose of this is to identify an instruction at a point in time
     // which would not be possible with just a F3DGfx* because a dlist can be called multiple times
     // what we do instead is store the call path that leads to the instruction (including branches)
     std::vector<const F3DGfx*> gfx_path = {};
@@ -295,6 +295,7 @@ struct RDP {
         uint8_t fmt;
         uint8_t siz;
         uint8_t cms, cmt;
+        uint8_t masks, maskt; // mask exponents from SetTile; 2^mask is the WRAP/MIRROR period
         uint8_t shifts, shiftt;
         float uls, ult, lrs, lrt;
         uint16_t tmem; // 0-511, in 64-bit word units
@@ -429,6 +430,7 @@ class Interpreter {
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
     void ShaderCacheClear();
     void TextureCacheClear();
+    std::shared_ptr<Ship::IResource> ResolveResourceCached(const char* path);
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
     void ImportTextureRgba16(int tile, bool importReplacement);
@@ -445,6 +447,13 @@ class Interpreter {
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
+
+    /**
+     * Opt-in memoization of OTR texture-path resolution, keyed by display-list
+     * pointer and dropped with the texture cache. Safe for ports whose display
+     * lists carry stable path pointers; off by default.
+     */
+    void SetResolvedResourceCacheEnabled(bool enabled);
 
     void GfxSpMatrix(uint8_t params, const int32_t* addr);
     void GfxSpPopMatrix(uint32_t count);
@@ -512,6 +521,8 @@ class Interpreter {
     RenderingState mRenderingState{};
 
     GfxTextureCache mTextureCache{};
+    std::unordered_map<const void*, std::shared_ptr<Ship::IResource>> mResolvedResourceCache;
+    bool mResolvedResourceCacheEnabled = false;
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
     uint8_t* mTexUploadBuffer = nullptr;
@@ -562,6 +573,10 @@ class Interpreter {
     size_t mShadersIndex;
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
+    // Interpolation factor for the current rendered frame within a game tick:
+    // 0 = previous tick, 1 = current tick. Set by the port before each
+    // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
+    float mInterpolationT = 1.0f;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);

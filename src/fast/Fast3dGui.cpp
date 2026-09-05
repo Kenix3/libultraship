@@ -36,6 +36,8 @@
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
+#include <cmath>
+
 // NOLINTNEXTLINE
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
@@ -475,9 +477,9 @@ void Fast3dGui::ApplyResolutionChanges() {
 
     if (verticalResolutionToggle) { // Use fixed vertical resolution
         if (aspectRatioIsEnabled) {
-            newWidth = uint32_t(float(verticalPixelCount / aspectRatioY) * aspectRatioX);
+            newWidth = std::lround(verticalPixelCount * aspectRatioX / aspectRatioY);
         } else {
-            newWidth = uint32_t(float(verticalPixelCount * size.x / size.y));
+            newWidth = std::lround(verticalPixelCount * size.x / size.y);
         }
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
@@ -485,9 +487,9 @@ void Fast3dGui::ApplyResolutionChanges() {
             if (((float)mInterpreter.lock()->mGameWindowViewport.height /
                  mInterpreter.lock()->mGameWindowViewport.width) < (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
-                newWidth = uint32_t(float(mInterpreter.lock()->mCurDimensions.height / aspectRatioY) * aspectRatioX);
+                newWidth = std::lround(mInterpreter.lock()->mCurDimensions.height * aspectRatioX / aspectRatioY);
             } else { // when letterboxed
-                newHeight = uint32_t(float(mInterpreter.lock()->mCurDimensions.width / aspectRatioX) * aspectRatioY);
+                newHeight = std::lround(mInterpreter.lock()->mCurDimensions.width * aspectRatioY / aspectRatioX);
             }
         } // else, having both options turned off does nothing.
     }

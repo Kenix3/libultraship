@@ -1,6 +1,7 @@
 ---
 title: Overview
 nav_order: 1
+permalink: /
 ---
 
 # libultraship
@@ -29,9 +30,9 @@ Please see the [Contributing](contributing) page for more information.
 
 ## Versioning
 
-We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
+We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). For the new epoch, versioning scope includes everything that is public within the Ship namespace.
 
-When LUS goes through major refactors, `main` may not be in a production-ready state while work progresses in a new epoch. Commits landing during the refactor may lack clear migration paths and are not intended for immediate port adoption. The previous epoch continues as a maintained, production-ready branch where fixes and small breaking changes can land until the new epoch is complete.
+This replaces the previous epoch rule that treated every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h as part of the versioned API.
 
 See [Versioning](versioning) for details.
 

@@ -196,6 +196,7 @@
 #define G_POP_SHADER 0x44
 #define G_SETTILESIZE_INTERP 0x45
 #define G_SETTARGETINTERPINDEX 0x46
+#define G_SETTILESIZE_LERP 0x4a
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1064,7 +1065,7 @@ typedef struct {
     short SourceImageOffsetT;
     /* 20 bytes for above */
 
-    /* padding to bring structure size to 64 bit allignment */
+    /* padding to bring structure size to 64 bit alignment */
     char dummy[4];
 
 } uSprite_t;
@@ -1073,7 +1074,7 @@ typedef union {
     uSprite_t s;
 
     /* Need to make sure this is 64 bit aligned */
-    long long int force_structure_allignment[3];
+    long long int force_structure_alignment[3];
 } uSprite;
 
 /*
@@ -1109,7 +1110,7 @@ typedef struct {
 
 /*
  * The viewport structure elements have 2 bits of fraction, necessary
- * to accomodate the sub-pixel positioning scaling for the hardware.
+ * to accommodate the sub-pixel positioning scaling for the hardware.
  * This can also be exploited to handle odd-sized viewports.
  *
  * Accounting for these fractional bits, using the default projection
@@ -3277,6 +3278,32 @@ typedef union Gfx {
 
 #define __gDPSetTileSizeInterp(pkt, t, uls, ult, lrs, lrt) \
     gDPLoadTileGeneric(pkt, G_SETTILESIZE_INTERP, t, uls, ult, lrs, lrt)
+
+/*
+ * Tile size interpolated at draw time between two endpoints using the
+ * interpreter's mInterpolationT (0 = previous game tick, 1 = current tick).
+ */
+#define __gDPSetTileSizeLerpCoord(g, w, coord) \
+    _DW({                                      \
+        float _f = (coord);                    \
+        (g).words.w = *(uint32_t*)&_f;         \
+    })
+
+#define __gDPSetTileSizeLerp(pkt, t, uls0, ult0, lrs0, lrt0, uls1, ult1, lrs1, lrt1) \
+    _DW({                                                                            \
+        Gfx* _g = (Gfx*)(pkt);                                                       \
+                                                                                     \
+        _g[0].words.w0 = _SHIFTL(G_SETTILESIZE_LERP, 24, 8);                         \
+        _g[0].words.w1 = _SHIFTL(t, 24, 3);                                          \
+        __gDPSetTileSizeLerpCoord(_g[1], w0, uls0);                                  \
+        __gDPSetTileSizeLerpCoord(_g[1], w1, ult0);                                  \
+        __gDPSetTileSizeLerpCoord(_g[2], w0, lrs0);                                  \
+        __gDPSetTileSizeLerpCoord(_g[2], w1, lrt0);                                  \
+        __gDPSetTileSizeLerpCoord(_g[3], w0, uls1);                                  \
+        __gDPSetTileSizeLerpCoord(_g[3], w1, ult1);                                  \
+        __gDPSetTileSizeLerpCoord(_g[4], w0, lrs1);                                  \
+        __gDPSetTileSizeLerpCoord(_g[4], w1, lrt1);                                  \
+    })
 #define gDPSetTileSize(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gsDPSetTileSize(t, uls, ult, lrs, lrt) gsDPLoadTileGeneric(G_SETTILESIZE, t, uls, ult, lrs, lrt)
 #define gDPLoadTile(pkt, t, uls, ult, lrs, lrt) gDPLoadTileGeneric(pkt, G_LOADTILE, t, uls, ult, lrs, lrt)

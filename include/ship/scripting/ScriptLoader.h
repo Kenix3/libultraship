@@ -10,6 +10,7 @@
 #include <string>
 #include <optional>
 #include <functional>
+#include <filesystem>
 #include <memory>
 
 namespace Ship {
