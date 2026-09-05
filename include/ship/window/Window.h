@@ -217,6 +217,15 @@ class Window : public Component {
      * override this to return backend-specific names such as "OpenGL", "Metal", or "DirectX 11".
      */
     virtual std::string GetWindowBackendName();
+    /**
+     * @brief Resolves a backend name (as produced by GetWindowBackendName) back to its ID.
+     * Subclasses that override GetWindowBackendName should override this with the reverse
+     * mapping. Used to recover saved configs when backend IDs are renumbered between
+     * versions: the stored name identifies the backend even when the stored ID has gone
+     * stale. Returns -1 when the name is unknown.
+     * @param name Backend name to resolve.
+     */
+    virtual int32_t GetWindowBackendIdByName(const std::string& name);
     /** @brief Returns the list of backends available on this platform. */
     std::shared_ptr<std::vector<int32_t>> GetAvailableWindowBackends();
     /**
@@ -274,10 +283,15 @@ class Window : public Component {
     /** @brief Caches this Window on the MouseStateManager. */
     void OnInit(const nlohmann::json& initArgs) override;
     /**
-     * @brief Records the active graphics backend. Called by subclass constructors.
-     * @param backend The backend ID in use.
+     * @brief Sets the active window backend. Persists the choice (ID and name) to the
+     * config by default; pass persist = false for startup resolution, so that reading
+     * an existing config never rewrites it. Only a deliberate backend change should
+     * persist: a resolve-and-rewrite on launch is what allowed stale-ID bugs to
+     * permanently overwrite the user's saved renderer.
+     * @param backend Backend ID to make active.
+     * @param persist Whether to write the choice back to the config.
      */
-    void SetWindowBackend(int32_t backend);
+    void SetWindowBackend(int32_t backend, bool persist = true);
     /**
      * @brief Adds a backend to the list of backends available on this platform.
      * @param backend Backend ID to mark as available.

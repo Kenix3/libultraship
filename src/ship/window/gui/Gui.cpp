@@ -151,6 +151,12 @@ void Gui::ImGuiWMInit() {
 }
 
 void Gui::ShutDownImGui(Ship::Window* window) {
+    // A Gui belonging to a window that was constructed but never initialized
+    // has no ImGui context to tear down; DestroyContext on a null context
+    // crashes. Window::~Window calls this unconditionally.
+    if (ImGui::GetCurrentContext() == nullptr) {
+        return;
+    }
     ImGuiWMShutdown();
     ImGuiBackendShutdown();
     ImGui::DestroyContext();

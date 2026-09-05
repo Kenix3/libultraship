@@ -37,6 +37,7 @@ add_executable(libultraship_tests
     connected_physical_device_manager_tests.cpp
     gfx_sdl_window_tests.cpp
     rumble_mapping_factory_tests.cpp
+    window_backend_migration_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)
