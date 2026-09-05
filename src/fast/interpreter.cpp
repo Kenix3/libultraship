@@ -1291,9 +1291,11 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             Flush();
             mRapi->SelectTextureFb(fbIt->second);
             mRdp->textures_changed[i] = false;
+            mRdp->fb_texture_selected = true;
             return;
         }
     }
+    mRdp->fb_texture_selected = false;
 
     if (origAddr == nullptr) {
         // Try the other TMEM slot -- some multi-tile setups only load one slot
@@ -2030,6 +2032,17 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
             tex_width[i] = line_size;
 
+            {
+                const RawTexMetadata* imgMeta =
+                    &mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
+                uint32_t imgFlags = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags;
+                if (!mRdp->fb_texture_selected && (imgFlags & TEX_FLAG_LOAD_AS_IMG) != 0 && imgMeta->orig_width > 0 &&
+                    imgMeta->orig_height > 0) {
+                    tex_width[i] = imgMeta->orig_width;
+                    tex_height[i] = imgMeta->orig_height;
+                }
+            }
+
             tex_width2[i] = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].uls, mRdp->texture_tile[tile].lrs);
             tex_height2[i] = GetTileSizeFromCoordinates(mRdp->texture_tile[tile].ult, mRdp->texture_tile[tile].lrt);
 
@@ -2658,6 +2671,7 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr;
+    mRdp->fb_texture_selected = false;
     // fprintf(stderr, "GfxDpLoadBlock: line_size = 0x%x; orig = 0x%x; bpp=%d; lrs=%d\n", size_bytes,
     // orig_size_bytes,
     //         mRdp->texture_to_load.siz, lrs);
@@ -2731,6 +2745,7 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr + start_offset_bytes;
+    mRdp->fb_texture_selected = false;
 
     const std::string_view texPath =
         mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
@@ -3160,6 +3175,8 @@ void Interpreter::Gfxs2dexBgCopy(F3DuObjBg* bg) {
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
+        rawTexMetadata.orig_width = tex->OrigWidth;
+        rawTexMetadata.orig_height = tex->OrigHeight;
         rawTexMetadata.h_byte_scale = tex->HByteScale;
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
@@ -3197,6 +3214,8 @@ void Interpreter::Gfxs2dexBg1cyc(F3DuObjBg* bg) {
         texFlags = tex->Flags;
         rawTexMetadata.width = tex->Width;
         rawTexMetadata.height = tex->Height;
+        rawTexMetadata.orig_width = tex->OrigWidth;
+        rawTexMetadata.orig_height = tex->OrigHeight;
         rawTexMetadata.h_byte_scale = tex->HByteScale;
         rawTexMetadata.v_pixel_scale = tex->VPixelScale;
         rawTexMetadata.type = tex->Type;
@@ -4041,6 +4060,8 @@ bool gfx_set_timg_handler_rdp(F3DGfx** cmd0) {
             texFlags = tex->Flags;
             rawTexMetdata.width = tex->Width;
             rawTexMetdata.height = tex->Height;
+            rawTexMetdata.orig_width = tex->OrigWidth;
+            rawTexMetdata.orig_height = tex->OrigHeight;
             rawTexMetdata.h_byte_scale = tex->HByteScale;
             rawTexMetdata.v_pixel_scale = tex->VPixelScale;
             rawTexMetdata.type = tex->Type;
@@ -4077,6 +4098,8 @@ bool gfx_set_timg_otr_hash_handler_custom(F3DGfx** cmd0) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
         rawTexMetadata.height = texture->Height;
+        rawTexMetadata.orig_width = texture->OrigWidth;
+        rawTexMetadata.orig_height = texture->OrigHeight;
         rawTexMetadata.h_byte_scale = texture->HByteScale;
         rawTexMetadata.v_pixel_scale = texture->VPixelScale;
         rawTexMetadata.type = texture->Type;
@@ -4133,6 +4156,8 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
         texFlags = texture->Flags;
         rawTexMetadata.width = texture->Width;
         rawTexMetadata.height = texture->Height;
+        rawTexMetadata.orig_width = texture->OrigWidth;
+        rawTexMetadata.orig_height = texture->OrigHeight;
         rawTexMetadata.h_byte_scale = texture->HByteScale;
         rawTexMetadata.v_pixel_scale = texture->VPixelScale;
         rawTexMetadata.type = texture->Type;
@@ -4263,6 +4288,7 @@ bool gfx_set_timg_fb_handler_custom(F3DGfx** cmd0) {
     gfx->mRapi->SelectTextureFb((uint32_t)cmd->words.w1);
     gfx->mRdp->textures_changed[0] = false;
     gfx->mRdp->textures_changed[1] = false;
+    gfx->mRdp->fb_texture_selected = true;
     return false;
 }
 
