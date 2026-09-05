@@ -570,6 +570,25 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
     }
 }
 
+// Invalidate cache entries whose key references the given palette DRAM addr.
+// Note: skips the free_texture_ids recycle by design — Metal's deferred
+// command encoder would otherwise let earlier draws sample the later draw's
+// replaceRegion'd content when a texture_id is reused.
+void Interpreter::TextureCacheDeleteByPalette(const uint8_t* palAddr) {
+    for (auto it = mTextureCache.map.begin(); it != mTextureCache.map.end();) {
+        if (it->first.palette_addrs[0] == palAddr || it->first.palette_addrs[1] == palAddr) {
+            for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+                if (mRenderingState.mTextures[j] == &*it)
+                    mRenderingState.mTextures[j] = nullptr;
+            }
+            mTextureCache.lru.erase(it->second.lru_location);
+            it = mTextureCache.map.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 // Pick the per-line byte width for texture decode. Prefer the DRAM stride from
 // loaded_texture when it looks like real per-line info (differs from total size).
 // Fall back to the TMEM tile stride when loaded sizes match total (LoadBlock with
@@ -4150,6 +4169,80 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 
+// G_SETTIMG_PAL: Expose palette_staging data as a texture source
+bool gfx_set_timg_pal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint8_t tile = C0(8, 8);
+    uint8_t palSlot = C0(0, 8);
+
+    if (palSlot > 1 || gfx->mRdp->palettes[palSlot] == nullptr) {
+        SPDLOG_WARN("G_SETTIMG_PAL: invalid palSlot={} or null palette", palSlot);
+        return false;
+    }
+
+    uint32_t tmemIndex = gfx->mRdp->texture_tile[tile].tmem_index;
+
+    // Use palette_dram_addr (the game-side pointer) as the texture address.
+    // Cache key uniqueness: palette_dram_addr changes per sprite, preventing
+    // stale texture cache hits (palette_staging is always the same pointer).
+    const uint8_t* texAddr = gfx->mRdp->palette_dram_addr[palSlot] != nullptr ? gfx->mRdp->palette_dram_addr[palSlot]
+                                                                              : gfx->mRdp->palettes[palSlot];
+    uint32_t lineSizeBytes = gfx->mRdp->texture_tile[tile].line_size_bytes;
+    if (lineSizeBytes == 0) {
+        lineSizeBytes = 256;
+    }
+
+    gfx->TextureCacheDelete(texAddr);
+    if (gfx->mRdp->palettes[palSlot] != texAddr) {
+        gfx->TextureCacheDelete(gfx->mRdp->palettes[palSlot]);
+    }
+
+    gfx->mRdp->loaded_texture[tmemIndex].addr = texAddr;
+    gfx->mRdp->loaded_texture[tmemIndex].size_bytes = lineSizeBytes;
+    gfx->mRdp->loaded_texture[tmemIndex].orig_size_bytes = lineSizeBytes;
+    // GetEffectiveLineSize() falls back to tile.line_size_bytes when size,
+    // line_size, and full_image_line_size are all equal — the tile stride is
+    // configured for palette indexing, not raw-texel sampling, so that fallback
+    // would produce garbage. The +1 on full_image_line_size is a tag that
+    // trips the "line differs from total" check; it only affects the equality
+    // test, never actual reads.
+    gfx->mRdp->loaded_texture[tmemIndex].line_size_bytes = lineSizeBytes;
+    gfx->mRdp->loaded_texture[tmemIndex].full_image_line_size_bytes = lineSizeBytes + 1;
+    gfx->mRdp->loaded_texture[tmemIndex].tex_flags = 0;
+    gfx->mRdp->loaded_texture[tmemIndex].raw_tex_metadata = {};
+    gfx->mRdp->loaded_texture[tmemIndex].masked = false;
+    gfx->mRdp->loaded_texture[tmemIndex].blended = false;
+    gfx->mRdp->textures_changed[0] = true;
+    gfx->mRdp->textures_changed[1] = true;
+
+    return false;
+}
+
+/// G_INVAL_TEX_BY_PAL: invalidate texture-cache entries whose key references
+// the given palette DRAM address. Emit this in the command stream whenever a
+// shared palette buffer gets rewritten between draws — without it, a later
+// draw that shares a texture bitmap with an earlier draw hits the cached GPU
+// upload baked with the earlier palette content.
+bool gfx_inval_tex_by_pal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    const uint8_t* palAddr = (const uint8_t*)(uintptr_t)cmd->words.w1;
+    if (palAddr != nullptr) {
+        gfx->TextureCacheDeleteByPalette(palAddr);
+    }
+    return false;
+}
+
+bool gfx_set_strict_decal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    gfx->Flush();
+    gfx->mRapi->SetStrictDecal(cmd->words.w1 != 0);
+    return false;
+}
+
 bool gfx_set_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     Interpreter* gfx = mInstance.lock().get();
@@ -4201,6 +4294,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     bool bswap = C0(8, 1);
+    bool toI8 = C0(9, 1);
     ++(*cmd0);
     cmd = *cmd0;
     // Specifying the upper left origin value is unused and unsupported at the renderer level
@@ -4220,6 +4314,16 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
         }
     }
 #endif
+
+    if (toI8) {
+        uint8_t* dst = (uint8_t*)rgba16Buffer;
+        size_t count = (size_t)width * height;
+        for (size_t i = 0; i < count; i++) {
+            uint16_t px = rgba16Buffer[i];
+            uint8_t r5 = (px >> 11) & 0x1F;
+            dst[i] = (r5 << 3) | (r5 >> 2); // 5-bit → 8-bit
+        }
+    }
 
     return false;
 }
@@ -4750,12 +4854,15 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
+    { OTR_G_SETTIMG_PAL, { "G_SETTIMG_PAL", gfx_set_timg_pal_handler_custom } },    // G_SETTIMG_PAL (0x41)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
     { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
     { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
     { RDP_G_TRI1_WIDE, { "G_TRI1_WIDE", gfx_tri1_handler_f3dex2 } },                   // RDP_G_TRI1_WIDE (-17)
+    { OTR_G_INVAL_TEX_BY_PAL, { "G_INVAL_TEX_BY_PAL", gfx_inval_tex_by_pal_handler_custom } },
+    { OTR_G_SET_STRICT_DECAL, { "G_SET_STRICT_DECAL", gfx_set_strict_decal_handler_custom } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {

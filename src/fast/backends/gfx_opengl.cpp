@@ -636,6 +636,10 @@ void GfxRenderingAPIOGL::SetZmodeDecal(bool zmode_decal) {
     mCurrentZmodeDecal = zmode_decal;
 }
 
+void GfxRenderingAPIOGL::SetStrictDecal(bool on) {
+    mCurrentStrictDecal = on;
+}
+
 void GfxRenderingAPIOGL::SetViewport(int x, int y, int width, int height) {
     glViewport(x, y, width, height);
 }
@@ -657,14 +661,18 @@ void GfxRenderingAPIOGL::SetUseAlpha(bool use_alpha) {
 }
 
 void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
-    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask) {
+    if (mCurrentDepthTest != mLastDepthTest || mCurrentDepthMask != mLastDepthMask ||
+        mCurrentStrictDecal != mLastStrictDecal || mCurrentZmodeDecal != mLastZmodeDecal) {
         mLastDepthTest = mCurrentDepthTest;
         mLastDepthMask = mCurrentDepthMask;
+        mLastStrictDecal = mCurrentStrictDecal;
 
         if (mCurrentDepthTest || mLastDepthMask) {
             glEnable(GL_DEPTH_TEST);
             glDepthMask(mLastDepthMask ? GL_TRUE : GL_FALSE);
-            glDepthFunc(mCurrentDepthTest ? (mCurrentZmodeDecal ? GL_LEQUAL : GL_LESS) : GL_ALWAYS);
+            glDepthFunc(mCurrentDepthTest
+                            ? (mCurrentZmodeDecal ? (mCurrentStrictDecal ? GL_EQUAL : GL_LEQUAL) : GL_LESS)
+                            : GL_ALWAYS);
         } else {
             glDisable(GL_DEPTH_TEST);
         }
@@ -672,7 +680,7 @@ void GfxRenderingAPIOGL::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, size
 
     if (mCurrentZmodeDecal != mLastZmodeDecal) {
         mLastZmodeDecal = mCurrentZmodeDecal;
-        if (mCurrentZmodeDecal) {
+        if (mCurrentZmodeDecal && !mCurrentStrictDecal) {
             // SSDB = SlopeScaledDepthBias 120 leads to -2 at 240p which is the same as N64 mode which has very little
             // fighting
             const int n64modeFactor = 120;
