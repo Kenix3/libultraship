@@ -116,6 +116,8 @@ Interpreter::Interpreter() {
     mRsp = new RSP();
     mRdp = new RDP();
     mBufVbo = new float[MAX_TRI_BUFFER * (32 * 3)];
+    memset(mBatchSlotForHistory, -1, sizeof(mBatchSlotForHistory));
+    memset(mPaletteRingTexture, 0xFF, sizeof(mPaletteRingTexture));
 }
 
 Interpreter::~Interpreter() {
@@ -138,10 +140,151 @@ static constexpr float N64_PRIM_DEPTH_MAX = 32767.0f;
 void Interpreter::Flush() {
     if (mBufVboLen > 0) {
         mRapi->SetCurrentPrimDepth((float)mRdp->prim_depth / N64_PRIM_DEPTH_MAX);
+        LatchCombinerUniforms();
+        mRapi->SetTransformUniforms(mTransform);
         mRapi->DrawTriangles(mBufVbo, mBufVboLen, mBufVboNumTris);
         mBufVboLen = 0;
         mBufVboNumTris = 0;
+        // Palette slots are assigned per batch; the next batch starts empty
+        memset(mBatchSlotForHistory, -1, sizeof(mBatchSlotForHistory));
+        mBatchMtxCount = 0;
     }
+}
+
+// Record a model-view-projection matrix (with the widescreen aspect scale folded
+// into its x output column) in the history ring. Entries stay valid long enough
+// for any vertex still in the RSP pool to be drawn; the ring is far deeper than
+// any realistic number of matrix loads within a vertex pool's lifetime.
+uint8_t Interpreter::AppendMtxHistory(const float m[4][4], float aspectScale) {
+    uint8_t slot = mMtxHistoryHead;
+    mMtxHistoryHead = (mMtxHistoryHead + 1) % MTX_HISTORY_SIZE;
+    for (int i = 0; i < 4; i++) {
+        mMtxHistory[slot][i][0] = m[i][0] * aspectScale;
+        mMtxHistory[slot][i][1] = m[i][1];
+        mMtxHistory[slot][i][2] = m[i][2];
+        mMtxHistory[slot][i][3] = m[i][3];
+    }
+    if (mMtxIdentityValid && slot == mMtxIdentityEntry) {
+        mMtxIdentityValid = false;
+    }
+    if (mMtxCurrentValid && slot == mMtxHistoryCurrent) {
+        mMtxCurrentValid = false;
+    }
+    // A new entry at this slot invalidates any palette mapping that pointed here
+    if (mBatchSlotForHistory[slot] >= 0) {
+        Flush();
+    }
+    return slot;
+}
+
+// Rectangle and s2dex paths write final clip coordinates directly into the
+// vertex pool; they reference an identity palette entry so the vertex shader
+// passes them through unchanged.
+uint8_t Interpreter::GetIdentityMtxSlot() {
+    if (!mMtxIdentityValid) {
+        static const float identity[4][4] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
+        mMtxIdentityEntry = AppendMtxHistory(identity, 1.0f);
+        mMtxIdentityValid = true;
+    }
+    return mMtxIdentityEntry;
+}
+
+// The color-combiner formula runs on the GPU; this latches its constant operands
+// (prim, env, chroma key, convert K, fog/grayscale colors) from the RDP registers
+// for the batch that is about to be drawn. Register writes mid-batch flush first
+// (FlushIfRegisterChanges), so the values here apply to every queued triangle.
+void Interpreter::LatchCombinerUniforms() {
+    if (mPendingCombiner == nullptr) {
+        return;
+    }
+
+    CombinerUniforms u = {};
+
+    const uint8_t blend_src = mRdp->other_mode_l >> 30;
+    const bool use_blend_color = blend_src == G_BL_CLR_BL;
+    const RGBA& fog_reg = use_blend_color ? mRdp->blend_color : mRdp->fog_color;
+    u.fog_color[0] = fog_reg.r / 255.0f;
+    u.fog_color[1] = fog_reg.g / 255.0f;
+    u.fog_color[2] = fog_reg.b / 255.0f;
+    u.fog_color[3] = 1.0f;
+
+    u.grayscale_color[0] = mRdp->grayscale_color.r / 255.0f;
+    u.grayscale_color[1] = mRdp->grayscale_color.g / 255.0f;
+    u.grayscale_color[2] = mRdp->grayscale_color.b / 255.0f;
+    u.grayscale_color[3] = mRdp->grayscale_color.a / 255.0f; // lerp factor
+
+    // Vertex-pipeline constants latched in GfxSpTri1 for the pending batch
+    memcpy(u.uv_transform, mUvTransform, sizeof(u.uv_transform));
+    memcpy(u.texture_clamp, mTextureClamp, sizeof(u.texture_clamp));
+    memcpy(u.fog_params, mFogParams, sizeof(u.fog_params));
+    memcpy(u.palette_params, mPaletteParams, sizeof(u.palette_params));
+    memcpy(u.lod_params, mLodParams, sizeof(u.lod_params));
+
+    for (int j = 0; j < 6; j++) {
+        for (int k = 0; k < 2; k++) {
+            RGBA* color;
+            RGBA tmp;
+            switch (mPendingCombiner->shader_input_mapping[k][j]) {
+                    // Note: CCMUX constants and ACMUX constants used here have the
+                    // same value, which is why this works (except LOD fraction,
+                    // which never reaches the input mapping).
+                case G_CCMUX_PRIMITIVE:
+                    color = &mRdp->prim_color;
+                    break;
+                case G_CCMUX_ENVIRONMENT:
+                    color = &mRdp->env_color;
+                    break;
+                case G_CCMUX_PRIMITIVE_ALPHA: {
+                    tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_ENV_ALPHA: {
+                    tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_PRIM_LOD_FRAC: {
+                    tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_KEY_CENTER:
+                    color = &mRdp->key_center;
+                    break;
+                case G_CCMUX_KEY_SCALE:
+                    color = &mRdp->key_scale;
+                    break;
+                case G_CCMUX_CONVERT_K4: {
+                    tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
+                    color = &tmp;
+                    break;
+                }
+                case G_CCMUX_CONVERT_K5: {
+                    tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
+                    color = &tmp;
+                    break;
+                }
+                case G_ACMUX_PRIM_LOD_FRAC:
+                    tmp.a = mRdp->prim_lod_fraction;
+                    color = &tmp;
+                    break;
+                default:
+                    memset(&tmp, 0, sizeof(tmp));
+                    color = &tmp;
+                    break;
+            }
+            if (k == 0) {
+                u.inputs[j][0] = color->r / 255.0f;
+                u.inputs[j][1] = color->g / 255.0f;
+                u.inputs[j][2] = color->b / 255.0f;
+            } else {
+                u.inputs[j][3] = color->a / 255.0f;
+            }
+        }
+    }
+
+    mRapi->SetCombinerUniforms(u);
 }
 
 ShaderProgram* Interpreter::LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1) {
@@ -202,6 +345,7 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
     uint64_t shaderId1 = key.options;
     uint8_t shaderInputMapping[2][7] = { { 0 } };
     bool usedTextures[2]{};
+    bool usedShade = false;
     for (uint32_t i = 0; i < 2 && (i == 0 || is2Cyc); i++) {
         uint32_t rgbA = (key.combine_mode >> (i * 28)) & 0xf;
         uint32_t rgbB = (key.combine_mode >> (i * 28 + 4)) & 0xf;
@@ -339,18 +483,34 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                     case G_CCMUX_NOISE:
                         val = SHADER_NOISE;
                         break;
+                    case G_CCMUX_LOD_FRACTION:
+                        // With G_TL_LOD the fragment shader computes the real
+                        // per-pixel LOD fraction; otherwise the RDP register
+                        // reads as 1.0 (matching the previous CPU behavior).
+                        val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
+                        break;
+                    case G_CCMUX_SHADE:
+                        // Shade is the only per-vertex combiner source; it gets the
+                        // dedicated SHADER_INPUT_7 slot (a varying, not a uniform).
+                        val = SHADER_INPUT_7;
+                        usedShade = true;
+                        break;
                     case G_CCMUX_PRIMITIVE:
                     case G_CCMUX_PRIMITIVE_ALPHA:
                     case G_CCMUX_PRIM_LOD_FRAC:
-                    case G_CCMUX_SHADE:
                     case G_CCMUX_ENVIRONMENT:
                     case G_CCMUX_ENV_ALPHA:
-                    case G_CCMUX_LOD_FRACTION:
                     case G_CCMUX_KEY_CENTER:
                     case G_CCMUX_KEY_SCALE:
                     case G_CCMUX_CONVERT_K4:
                     case G_CCMUX_CONVERT_K5:
                         if (inputNumber[c[i][0][j]] == 0) {
+                            // Constant sources become uniform slots 1..6. More than 6
+                            // distinct constants can't happen with real combine modes;
+                            // reuse the last slot if it somehow does.
+                            if (nextInputNumber > SHADER_INPUT_6) {
+                                nextInputNumber = SHADER_INPUT_6;
+                            }
                             shaderInputMapping[0][nextInputNumber - 1] = c[i][0][j];
                             inputNumber[c[i][0][j]] = nextInputNumber++;
                         }
@@ -400,8 +560,15 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                             val = SHADER_COMBINED;
                             break;
                         }
-                        c[i][1][j] = G_CCMUX_LOD_FRACTION;
-                        [[fallthrough]]; // for G_ACMUX_LOD_FRACTION
+                        // LOD_FRACTION in the C slot: computed in the fragment
+                        // shader when G_TL_LOD is active, constant 1.0 otherwise.
+                        val = (key.options & SHADER_OPT(TEX_LOD)) ? SHADER_LOD_FRAC : SHADER_1;
+                        break;
+                    case G_ACMUX_SHADE:
+                        // Shade alpha rides the same dedicated varying as shade color
+                        val = SHADER_INPUT_7;
+                        usedShade = true;
+                        break;
                     case G_ACMUX_1:
                         // case G_ACMUX_PRIM_LOD_FRAC: same numerical value
                         if (j != 2) {
@@ -410,9 +577,11 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
                         }
                         [[fallthrough]]; // for G_ACMUX_PRIM_LOD_FRAC
                     case G_ACMUX_PRIMITIVE:
-                    case G_ACMUX_SHADE:
                     case G_ACMUX_ENVIRONMENT:
                         if (inputNumber[c[i][1][j]] == 0) {
+                            if (nextInputNumber > SHADER_INPUT_6) {
+                                nextInputNumber = SHADER_INPUT_6;
+                            }
                             shaderInputMapping[1][nextInputNumber - 1] = c[i][1][j];
                             inputNumber[c[i][1][j]] = nextInputNumber++;
                         }
@@ -423,10 +592,18 @@ void Interpreter::GenerateCC(ColorCombiner* comb, const ColorCombinerKey& key) {
             }
         }
     }
+    // In MIP_LOD mode TEXEL1 samples the next mip level of texture 0, so the
+    // second texture slot is never bound.
+    if ((key.options & SHADER_OPT(MIP_LOD)) && usedTextures[1]) {
+        usedTextures[0] = true;
+        usedTextures[1] = false;
+    }
+
     comb->shader_id0 = shaderId0;
     comb->shader_id1 = shaderId1;
     comb->usedTextures[0] = usedTextures[0];
     comb->usedTextures[1] = usedTextures[1];
+    comb->usedShade = usedShade;
     // comb->prg = gfx_lookup_or_create_mShaderProgram(shader_id0, shader_id1);
     memcpy(comb->shader_input_mapping, shaderInputMapping, sizeof(shaderInputMapping));
 }
@@ -475,6 +652,67 @@ std::shared_ptr<Ship::IResource> Interpreter::ResolveResourceCached(const char* 
         mResolvedResourceCache[path] = res;
     }
     return res;
+}
+
+// FNV-1a over the TLUT staging (both halves), tracking null halves distinctly
+static uint64_t HashTlutContent(const RDP* rdp) {
+    uint64_t h = 1469598103934665603ull;
+    for (int half = 0; half < 2; half++) {
+        const uint8_t* p = rdp->palettes[half];
+        h = (h ^ (p != nullptr ? 0x55u : 0xAAu)) * 1099511628211ull;
+        if (p == nullptr) {
+            continue;
+        }
+        for (int b = 0; b < 256; b++) {
+            h = (h ^ p[b]) * 1099511628211ull;
+        }
+    }
+    return h;
+}
+
+uint32_t Interpreter::AcquirePaletteTexture() {
+    if (mRdp->palette_texture_dirty) {
+        mCurrentPaletteHash = HashTlutContent(mRdp);
+        mRdp->palette_texture_dirty = false;
+    }
+
+    auto it = mPaletteSlotByHash.find(mCurrentPaletteHash);
+    if (it != mPaletteSlotByHash.end()) {
+        return mPaletteRingTexture[it->second];
+    }
+
+    // New TLUT content: the upload below rebinds texture slot 6, so draw any
+    // queued triangles first (they were packed against the previous palette).
+    Flush();
+
+    // Take the next ring slot (recycled slots are many rebuilds old, so no
+    // queued draw still references their content)
+    const size_t slot = mPaletteRingNext++ % PALETTE_RING_SIZE;
+    if (mPaletteRingTexture[slot] == 0xFFFFFFFF) {
+        mPaletteRingTexture[slot] = mRapi->NewTexture();
+    } else {
+        mPaletteSlotByHash.erase(mPaletteRingHash[slot]);
+    }
+    mPaletteRingHash[slot] = mCurrentPaletteHash;
+    mPaletteSlotByHash[mCurrentPaletteHash] = slot;
+
+    uint8_t palBuf[256 * 4];
+    for (int e = 0; e < 256; e++) {
+        const uint8_t* half = mRdp->palettes[e / 128];
+        if (half == nullptr) {
+            palBuf[4 * e + 0] = palBuf[4 * e + 1] = palBuf[4 * e + 2] = palBuf[4 * e + 3] = 0;
+            continue;
+        }
+        uint16_t col16 = (half[(e % 128) * 2] << 8) | half[(e % 128) * 2 + 1];
+        palBuf[4 * e + 0] = SCALE_5_8(col16 >> 11);
+        palBuf[4 * e + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+        palBuf[4 * e + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+        palBuf[4 * e + 3] = (col16 & 1) ? 255 : 0;
+    }
+    mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, mPaletteRingTexture[slot]);
+    mRapi->UploadTexture(palBuf, 256, 1);
+    mRapi->SetSamplerParameters(SHADER_PALETTE_TEXTURE, false, G_TX_CLAMP, G_TX_CLAMP);
+    return mPaletteRingTexture[slot];
 }
 
 void Interpreter::TextureCacheClear() {
@@ -566,6 +804,25 @@ void Interpreter::TextureCacheDelete(const uint8_t* origAddr) {
         }
         if (!again) {
             break;
+        }
+    }
+}
+
+// Invalidate cache entries whose key references the given palette DRAM addr.
+// Note: skips the free_texture_ids recycle by design — Metal's deferred
+// command encoder would otherwise let earlier draws sample the later draw's
+// replaceRegion'd content when a texture_id is reused.
+void Interpreter::TextureCacheDeleteByPalette(const uint8_t* palAddr) {
+    for (auto it = mTextureCache.map.begin(); it != mTextureCache.map.end();) {
+        if (it->first.palette_addrs[0] == palAddr || it->first.palette_addrs[1] == palAddr) {
+            for (int j = 0; j < SHADER_MAX_TEXTURES; j++) {
+                if (mRenderingState.mTextures[j] == &*it)
+                    mRenderingState.mTextures[j] = nullptr;
+            }
+            mTextureCache.lru.erase(it->second.lru_location);
+            it = mTextureCache.map.erase(it);
+        } else {
+            ++it;
         }
     }
 }
@@ -669,7 +926,7 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
@@ -741,7 +998,7 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
             i++;
         }
     }
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
@@ -787,7 +1044,7 @@ void Interpreter::ImportTextureIA4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
@@ -830,7 +1087,7 @@ void Interpreter::ImportTextureIA8(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
@@ -881,7 +1138,7 @@ void Interpreter::ImportTextureIA16(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
@@ -934,7 +1191,7 @@ void Interpreter::ImportTextureI4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
@@ -975,7 +1232,7 @@ void Interpreter::ImportTextureI8(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
@@ -997,13 +1254,16 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
     uint32_t palIdx = mRdp->texture_tile[tile].palette; // 0-15
 
-    const uint8_t* palette;
+    const bool indexed = mImportIndexed;
+    const uint8_t* palette = nullptr;
 
-    if (mRdp->palettes[palIdx / 8] == nullptr) {
-        SPDLOG_WARN("CI4: null palette slot {} for palIdx={}", palIdx / 8, palIdx);
-        return;
+    if (!indexed) {
+        if (mRdp->palettes[palIdx / 8] == nullptr) {
+            SPDLOG_WARN("CI4: null palette slot {} for palIdx={}", palIdx / 8, palIdx);
+            return;
+        }
+        palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
     }
-    palette = mRdp->palettes[palIdx / 8] + (palIdx % 8) * 16 * 2;
 
     uint32_t baseLineSizeBytes = GetEffectiveLineSize(lineSizeBytes, fullImageLineSizeBytes, sizeBytes,
                                                       mRdp->texture_tile[tile].line_size_bytes);
@@ -1056,6 +1316,15 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
             uint32_t srcPixelIdx = y * (fullImageLineSizeBytes * 2) + x;
             uint8_t byte = addr[srcPixelIdx / 2];
             uint8_t idx = (byte >> (4 - (srcPixelIdx % 2) * 4)) & 0xf;
+            if (indexed) {
+                // Raw nibble; the palette bank and lookup are applied in the shader
+                mTexUploadBuffer[4 * i + 0] = idx;
+                mTexUploadBuffer[4 * i + 1] = 0;
+                mTexUploadBuffer[4 * i + 2] = 0;
+                mTexUploadBuffer[4 * i + 3] = 255;
+                i++;
+                continue;
+            }
             uint16_t col16 = (palette[idx * 2] << 8) | palette[idx * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
             uint8_t r = col16 >> 11;
@@ -1069,7 +1338,7 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
@@ -1090,7 +1359,8 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
     uint32_t lineSizeBytes = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].line_size_bytes;
 
-    if (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr) {
+    const bool indexed = mImportIndexed;
+    if (!indexed && (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr)) {
         SPDLOG_WARN("CI8: null palette (pal0={}, pal1={})", static_cast<const void*>(mRdp->palettes[0]),
                     static_cast<const void*>(mRdp->palettes[1]));
         return;
@@ -1099,6 +1369,14 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     for (uint32_t i = 0, j = 0; i < sizeBytes; j += fullImageLineSizeBytes - lineSizeBytes) {
         for (uint32_t k = 0; k < lineSizeBytes; i++, k++, j++) {
             uint8_t idx = addr[j];
+            if (indexed) {
+                // Raw index; the palette lookup is applied in the shader
+                mTexUploadBuffer[4 * i + 0] = idx;
+                mTexUploadBuffer[4 * i + 1] = 0;
+                mTexUploadBuffer[4 * i + 2] = 0;
+                mTexUploadBuffer[4 * i + 3] = 255;
+                continue;
+            }
             uint16_t col16 = (mRdp->palettes[idx / 128][(idx % 128) * 2] << 8) |
                              mRdp->palettes[idx / 128][(idx % 128) * 2 + 1]; // Big endian load
             uint8_t a = col16 & 1;
@@ -1151,7 +1429,7 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
         height = tile_h;
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::ImportTextureImg(int tile, bool importReplacement) {
@@ -1268,6 +1546,299 @@ void Interpreter::ImportTextureRaw(int tile, bool importReplacement) {
     mRapi->UploadTexture(mTexUploadBuffer, uploadWidth, uploadHeight);
 }
 
+const RDP::TmemLoadEntry* Interpreter::FindTmemLoad(uint16_t tmemWord) const {
+    // Scan newest-first so overlapping loads resolve to the most recent one
+    for (size_t k = 0; k < RDP::TMEM_JOURNAL_SIZE; k++) {
+        size_t idx = (mRdp->tmem_load_head + RDP::TMEM_JOURNAL_SIZE - 1 - k) % RDP::TMEM_JOURNAL_SIZE;
+        const RDP::TmemLoadEntry& entry = mRdp->tmem_loads[idx];
+        if (entry.dram_addr != nullptr && tmemWord >= entry.tmem_word &&
+            tmemWord < (uint32_t)entry.tmem_word + entry.size_words) {
+            return &entry;
+        }
+    }
+    return nullptr;
+}
+
+static uint32_t TileWidthPx(const RDP* rdp, uint32_t tile) {
+    return (uint32_t)(int32_t)((rdp->texture_tile[tile].lrs - rdp->texture_tile[tile].uls + 4) / 4);
+}
+
+static uint32_t TileHeightPx(const RDP* rdp, uint32_t tile) {
+    return (uint32_t)(int32_t)((rdp->texture_tile[tile].lrt - rdp->texture_tile[tile].ult + 4) / 4);
+}
+
+// Detect a usable mip pyramid starting at baseTile. Returns the number of extra
+// levels beyond the base that can be decoded and uploaded (0 = no mipmapping).
+uint8_t Interpreter::DetectMipChain(uint32_t baseTile) const {
+    if ((mRdp->other_mode_l & G_TL_LOD) == 0) {
+        return 0;
+    }
+    if ((mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) != G_CYC_2CYCLE) {
+        return 0;
+    }
+    if (mRsp->texture_level == 0 || baseTile >= 8) {
+        return 0;
+    }
+
+    const auto& base = mRdp->texture_tile[baseTile];
+    const auto& loaded = mRdp->loaded_texture[base.tmem_index];
+    // Raw/IMG-flagged and scaled (HD replacement) textures don't follow N64 TMEM
+    // layout, so mip levels can't be located by TMEM offsets.
+    if ((loaded.tex_flags & (TEX_FLAG_LOAD_AS_RAW | TEX_FLAG_LOAD_AS_IMG)) != 0) {
+        return 0;
+    }
+    if (loaded.raw_tex_metadata.h_byte_scale != 1 || loaded.raw_tex_metadata.v_pixel_scale != 1) {
+        return 0;
+    }
+
+    const uint32_t baseW = TileWidthPx(mRdp, baseTile);
+    const uint32_t baseH = TileHeightPx(mRdp, baseTile);
+    if (baseW == 0 || baseH == 0) {
+        return 0;
+    }
+
+    const RDP::TmemLoadEntry* baseEntry = FindTmemLoad(base.tmem);
+    if (baseEntry == nullptr) {
+        return 0;
+    }
+
+    // Upper mip tiles often have stale/unset size registers (the RDP derives
+    // their coordinates by shifting), so dimensions are derived by halving the
+    // base tile; the tile's line stride and the TMEM journal validate the chain.
+    uint8_t levels = 0;
+    uint32_t prevLine = base.line_size_bytes;
+    uint32_t w = baseW;
+    uint32_t h = baseH;
+    uint16_t prevTmem = base.tmem;
+    for (uint32_t l = 1; l <= mRsp->texture_level && baseTile + l < 8; l++) {
+        const auto& t = mRdp->texture_tile[baseTile + l];
+        if (t.fmt != base.fmt || t.siz != base.siz || t.line_size_bytes == 0) {
+            break;
+        }
+        // Real pyramids place each level at a strictly higher TMEM address.
+        // Multi-tile effects (e.g. Paper Mario's sprite shading) alias the SAME
+        // data with a second tile at the same address / different palette —
+        // those are two independent texels, not mip levels.
+        if (t.tmem <= prevTmem) {
+            break;
+        }
+        if (base.fmt == G_IM_FMT_CI && t.palette != base.palette) {
+            break;
+        }
+        // A real mip level's line is at most half the previous one (min one
+        // 64-bit word); equal-size tiles are separate textures, not a pyramid.
+        if (t.line_size_bytes > std::max(prevLine / 2, 8u)) {
+            break;
+        }
+        w = std::max(w >> 1, 1u);
+        h = std::max(h >> 1, 1u);
+        const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
+        if (entry == nullptr || !entry->linear) {
+            break;
+        }
+        // A genuine pyramid lives in one DRAM raster: every level's data must
+        // sit shortly after the base level's. This rejects stale tile state
+        // (e.g. a leftover LOD tile pointing at some other texture's load).
+        const uint8_t* levelAddr = entry->dram_addr + ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        if (levelAddr < baseEntry->dram_addr || levelAddr > baseEntry->dram_addr + 8192) {
+            break;
+        }
+        // The level's data must fit inside the recorded load
+        uint32_t strideBytes = t.line_size_bytes * (t.siz == G_IM_SIZ_32b ? 2u : 1u);
+        uint32_t offsetBytes = ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        if (offsetBytes + strideBytes * h > (uint32_t)entry->size_words * 8) {
+            break;
+        }
+        levels++;
+        prevLine = t.line_size_bytes;
+        prevTmem = t.tmem;
+    }
+    return levels;
+}
+
+// Decode one tile-shaped block of N64 texel data into RGBA32. Rows are
+// strideBytes apart in src (TMEM line stride; LoadBlock data is packed at the
+// same stride). Returns false for unsupported formats.
+static bool DecodeTileToRgba32(uint8_t fmt, uint8_t siz, const uint8_t* src, uint32_t strideBytes, uint32_t width,
+                               uint32_t height, const uint8_t* const palettes[2], uint8_t paletteIndex, uint8_t* dst) {
+    uint32_t i = 0;
+    if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_16b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint16_t col16 = (row[2 * x] << 8) | row[2 * x + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_32b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                dst[4 * i + 0] = row[4 * x + 0];
+                dst[4 * i + 1] = row[4 * x + 1];
+                dst[4 * i + 2] = row[4 * x + 2];
+                dst[4 * i + 3] = row[4 * x + 3];
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_4b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t part = (row[x / 2] >> (4 - (x % 2) * 4)) & 0xf;
+                uint8_t intensity = SCALE_3_8(part >> 1);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = (part & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_8b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = SCALE_4_8(row[x] >> 4);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = SCALE_4_8(row[x] & 0xf);
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_16b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                dst[4 * i + 0] = row[2 * x];
+                dst[4 * i + 1] = row[2 * x];
+                dst[4 * i + 2] = row[2 * x];
+                dst[4 * i + 3] = row[2 * x + 1];
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_4b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = SCALE_4_8((row[x / 2] >> (4 - (x % 2) * 4)) & 0xf);
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = intensity;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_8b) {
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t intensity = row[x];
+                dst[4 * i + 0] = intensity;
+                dst[4 * i + 1] = intensity;
+                dst[4 * i + 2] = intensity;
+                dst[4 * i + 3] = intensity;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_CI && siz == G_IM_SIZ_4b) {
+        const uint8_t* palette = palettes[paletteIndex / 8];
+        if (palette == nullptr) {
+            return false;
+        }
+        palette += (paletteIndex % 8) * 16 * 2;
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t idx = (row[x / 2] >> (4 - (x % 2) * 4)) & 0xf;
+                uint16_t col16 = (palette[idx * 2] << 8) | palette[idx * 2 + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    if (fmt == G_IM_FMT_CI && siz == G_IM_SIZ_8b) {
+        if (palettes[0] == nullptr || palettes[1] == nullptr) {
+            return false;
+        }
+        for (uint32_t y = 0; y < height; y++) {
+            const uint8_t* row = src + y * strideBytes;
+            for (uint32_t x = 0; x < width; x++, i++) {
+                uint8_t idx = row[x];
+                const uint8_t* pal = palettes[idx / 128];
+                uint16_t col16 = (pal[(idx % 128) * 2] << 8) | pal[(idx % 128) * 2 + 1];
+                dst[4 * i + 0] = SCALE_5_8(col16 >> 11);
+                dst[4 * i + 1] = SCALE_5_8((col16 >> 6) & 0x1f);
+                dst[4 * i + 2] = SCALE_5_8((col16 >> 1) & 0x1f);
+                dst[4 * i + 3] = (col16 & 1) ? 255 : 0;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+// Routes base-level uploads: when a mip chain is being imported, the base level
+// must announce the total level count so backends can allocate the full chain.
+void Interpreter::UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) {
+    if (mCurrentMipExtraLevels > 0) {
+        mRapi->UploadTextureMip(rgba32Buf, width, height, 0, mCurrentMipExtraLevels + 1u);
+    } else {
+        mRapi->UploadTexture(rgba32Buf, width, height);
+    }
+}
+
+// Decode and upload mip levels 1..N of the pyramid rooted at baseTile.
+// DetectMipChain has already validated the tile descriptors and TMEM journal.
+void Interpreter::UploadMipChain(uint32_t baseTile) {
+    uint32_t totalLevels = mCurrentMipExtraLevels + 1u;
+    uint32_t width = TileWidthPx(mRdp, baseTile);
+    uint32_t height = TileHeightPx(mRdp, baseTile);
+    // Upper mip tiles often carry a stale/unset palette field (games only set it
+    // on the render tile); all levels of a pyramid share the base tile's bank.
+    const uint8_t basePalette = mRdp->texture_tile[baseTile].palette;
+    for (uint32_t l = 1; l <= mCurrentMipExtraLevels; l++) {
+        uint32_t tile = baseTile + l;
+        const auto& t = mRdp->texture_tile[tile];
+        const RDP::TmemLoadEntry* entry = FindTmemLoad(t.tmem);
+        if (entry == nullptr || !entry->linear) {
+            return;
+        }
+        const uint8_t* src = entry->dram_addr + ((uint32_t)t.tmem - entry->tmem_word) * 8;
+        // Dimensions derived by halving the base (upper tile size registers are
+        // unreliable); stride comes from the tile's own line setting.
+        width = std::max(width >> 1, 1u);
+        height = std::max(height >> 1, 1u);
+        uint32_t strideBytes = t.line_size_bytes;
+        if (t.siz == G_IM_SIZ_32b) {
+            // RGBA32 tiles store the TMEM-interleaved stride (half of the DRAM stride)
+            strideBytes *= 2;
+        }
+        if (width == 0 || height == 0 || strideBytes == 0) {
+            return;
+        }
+        if (!DecodeTileToRgba32(t.fmt, t.siz, src, strideBytes, width, height, mRdp->palettes, basePalette,
+                                mTexUploadBuffer)) {
+            return;
+        }
+        mRapi->UploadTextureMip(mTexUploadBuffer, width, height, l, totalLevels);
+    }
+}
+
 void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
     uint8_t fmt = mRdp->texture_tile[tile].fmt;
     uint8_t siz = mRdp->texture_tile[tile].siz;
@@ -1331,6 +1902,15 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
         }
     } else {
         key = { origAddr, {}, fmt, siz, paletteIndex, origSizeBytes };
+    }
+    key.mip_levels = mCurrentMipExtraLevels;
+    if (mImportIndexed) {
+        // Index textures don't depend on palette contents: the palette lookup
+        // happens in the shader, so TLUT swaps reuse the same cache entry.
+        key.palette_addrs[0] = nullptr;
+        key.palette_addrs[1] = nullptr;
+        key.palette_index = 0;
+        key.indexed = 1;
     }
 
     if (TextureCacheLookup(i, key)) {
@@ -1410,6 +1990,10 @@ void Interpreter::ImportTexture(int i, int tile, bool importReplacement) {
             SPDLOG_ERROR("Invalid texture format. Fmt = {}", fmt);
             break;
     }
+
+    if (mCurrentMipExtraLevels > 0) {
+        UploadMipChain(tile);
+    }
 }
 
 void Interpreter::ImportTextureMask(int i, int tile) {
@@ -1470,7 +2054,7 @@ void Interpreter::ImportTextureMask(int i, int tile) {
         }
     }
 
-    mRapi->UploadTexture(mTexUploadBuffer, width, height);
+    UploadBaseTexture(mTexUploadBuffer, width, height);
 }
 
 void Interpreter::NormalizeVector(float v[3]) {
@@ -1559,6 +2143,8 @@ void Interpreter::GfxSpMatrix(uint8_t parameters, const int32_t* addr) {
         mRsp->lights_changed = 1;
     }
     MatrixMul(mRsp->MP_matrix, mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1], mRsp->P_matrix);
+    // The next vertex load captures the new MP matrix into the history ring
+    mMtxCurrentValid = false;
 }
 
 void Interpreter::GfxSpPopMatrix(uint32_t count) {
@@ -1572,6 +2158,7 @@ void Interpreter::GfxSpPopMatrix(uint32_t count) {
         }
     }
     mRsp->lights_changed = true;
+    mMtxCurrentValid = false;
 }
 
 float Interpreter::AdjXForAspectRatio(float x) const {
@@ -1600,6 +2187,16 @@ void Interpreter::AdjustWidthHeightForScale(uint32_t& width, uint32_t& height, u
 }
 
 void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vertices) {
+    // The position transform runs in the vertex shader: capture the current
+    // model-view-projection (with the widescreen aspect scale folded in) in the
+    // matrix history once per matrix/aspect change and tag each vertex with it.
+    const float aspectScale = AdjXForAspectRatio(1.0f);
+    if (!mMtxCurrentValid || aspectScale != mMtxCurrentAspect) {
+        mMtxHistoryCurrent = AppendMtxHistory(mRsp->MP_matrix, aspectScale);
+        mMtxCurrentAspect = aspectScale;
+        mMtxCurrentValid = true;
+    }
+
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const F3DVtx_t* v = &vertices[i].v;
         const F3DVtx_tn* vn = &vertices[i].n;
@@ -1609,131 +2206,31 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
             return;
         }
 
-        float x = v->ob[0] * mRsp->MP_matrix[0][0] + v->ob[1] * mRsp->MP_matrix[1][0] +
-                  v->ob[2] * mRsp->MP_matrix[2][0] + mRsp->MP_matrix[3][0];
-        float y = v->ob[0] * mRsp->MP_matrix[0][1] + v->ob[1] * mRsp->MP_matrix[1][1] +
-                  v->ob[2] * mRsp->MP_matrix[2][1] + mRsp->MP_matrix[3][1];
-        float z = v->ob[0] * mRsp->MP_matrix[0][2] + v->ob[1] * mRsp->MP_matrix[1][2] +
-                  v->ob[2] * mRsp->MP_matrix[2][2] + mRsp->MP_matrix[3][2];
-        float w = v->ob[0] * mRsp->MP_matrix[0][3] + v->ob[1] * mRsp->MP_matrix[1][3] +
-                  v->ob[2] * mRsp->MP_matrix[2][3] + mRsp->MP_matrix[3][3];
-
-        float world_pos[3] = { 0.0 };
-        if (mRsp->geometry_mode & G_LIGHTING_POSITIONAL) {
-            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
-            world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
-            world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
-            world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
-        }
-
-        x = AdjXForAspectRatio(x);
+        d->x = v->ob[0];
+        d->y = v->ob[1];
+        d->z = v->ob[2];
+        d->w = 1.0f;
+        d->mtx_slot = mMtxHistoryCurrent;
 
         short U = v->tc[0] * mRsp->texture_scaling_factor.s >> 16;
         short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
 
         if (mRsp->geometry_mode & G_LIGHTING) {
+            // Lighting and texgen now run in the vertex shader. The light/lookat
+            // direction coefficients are still computed here (they depend on the
+            // modelview matrix at vertex-load time) and are passed as uniforms.
             if (mRsp->lights_changed) {
                 for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
                     CalculateNormalDir(&mRsp->current_lights[i].l, mRsp->current_lights_coeffs[i]);
                 }
-                /*static const Light_t lookat_x = {{0, 0, 0}, 0, {0, 0, 0}, 0, {127, 0, 0}, 0};
-                static const Light_t lookat_y = {{0, 0, 0}, 0, {0, 0, 0}, 0, {0, 127, 0}, 0};*/
                 CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
                 CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
                 mRsp->lights_changed = false;
             }
 
-            int r = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[0];
-            int g = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[1];
-            int b = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[2];
-
-            for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
-                float intensity = 0;
-                if ((mRsp->geometry_mode & G_LIGHTING_POSITIONAL) && (mRsp->current_lights[i].p.unk3 != 0)) {
-                    // Calculate distance from the light to the vertex
-                    float dist_vec[3] = { mRsp->current_lights[i].p.pos[0] - world_pos[0],
-                                          mRsp->current_lights[i].p.pos[1] - world_pos[1],
-                                          mRsp->current_lights[i].p.pos[2] - world_pos[2] };
-                    float dist_sq =
-                        dist_vec[0] * dist_vec[0] + dist_vec[1] * dist_vec[1] +
-                        dist_vec[2] * dist_vec[2] * 2; // The *2 comes from GLideN64, unsure of why it does it
-                    float dist = sqrt(dist_sq);
-
-                    // Transform distance vector (which acts as a direction light vector) into model's space
-                    float light_model[3];
-                    TransposedMatrixMul(light_model, dist_vec,
-                                        mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
-
-                    // Calculate intensity for each axis using standard formula for intensity
-                    float light_intensity[3];
-                    for (int light_i = 0; light_i < 3; light_i++) {
-                        light_intensity[light_i] = 4.0f * light_model[light_i] / dist_sq;
-                        light_intensity[light_i] = std::clamp(light_intensity[light_i], -1.0f, 1.0f);
-                    }
-
-                    // Adjust intensity based on surface normal and sum up total
-                    float total_intensity =
-                        light_intensity[0] * vn->n[0] + light_intensity[1] * vn->n[1] + light_intensity[2] * vn->n[2];
-                    total_intensity = std::clamp(total_intensity, -1.0f, 1.0f);
-
-                    // Attenuate intensity based on attenuation values.
-                    // Example formula found at https://ogldev.org/www/tutorial20/tutorial20.html
-                    // Specific coefficients for MM's microcode sourced from GLideN64
-                    // https://github.com/gonetz/GLideN64/blob/3b43a13a80dfc2eb6357673440b335e54eaa3896/src/gSP.cpp#L636
-                    float distf = floorf(dist);
-                    float attenuation = (distf * mRsp->current_lights[i].p.unk7 * 2.0f +
-                                         distf * distf * mRsp->current_lights[i].p.unkE / 8.0f) /
-                                            (float)0xFFFF +
-                                        1.0f;
-                    intensity = total_intensity / attenuation;
-                } else {
-                    intensity += vn->n[0] * mRsp->current_lights_coeffs[i][0];
-                    intensity += vn->n[1] * mRsp->current_lights_coeffs[i][1];
-                    intensity += vn->n[2] * mRsp->current_lights_coeffs[i][2];
-                    intensity /= 127.0f;
-                }
-                if (intensity > 0.0f) {
-                    r += intensity * mRsp->current_lights[i].l.col[0];
-                    g += intensity * mRsp->current_lights[i].l.col[1];
-                    b += intensity * mRsp->current_lights[i].l.col[2];
-                }
-            }
-
-            d->color.r = r > 255 ? 255 : r;
-            d->color.g = g > 255 ? 255 : g;
-            d->color.b = b > 255 ? 255 : b;
-
-            if (mRsp->geometry_mode & G_TEXTURE_GEN) {
-                float dotx = 0, doty = 0;
-                dotx += vn->n[0] * mRsp->current_lookat_coeffs[0][0];
-                dotx += vn->n[1] * mRsp->current_lookat_coeffs[0][1];
-                dotx += vn->n[2] * mRsp->current_lookat_coeffs[0][2];
-                doty += vn->n[0] * mRsp->current_lookat_coeffs[1][0];
-                doty += vn->n[1] * mRsp->current_lookat_coeffs[1][1];
-                doty += vn->n[2] * mRsp->current_lookat_coeffs[1][2];
-
-                dotx /= 127.0f;
-                doty /= 127.0f;
-
-                dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
-                doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
-
-                if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
-                    // Not sure exactly what formula we should use to get accurate values
-                    /*dotx = (2.906921f * dotx * dotx + 1.36114f) * dotx;
-                    doty = (2.906921f * doty * doty + 1.36114f) * doty;
-                    dotx = (dotx + 1.0f) / 4.0f;
-                    doty = (doty + 1.0f) / 4.0f;*/
-                    dotx = acosf(-dotx) /* M_PI */ * 0.159155f;
-                    doty = acosf(-doty) /* M_PI */ * 0.159155f;
-                } else {
-                    dotx = (dotx + 1.0f) / 4.0f;
-                    doty = (doty + 1.0f) / 4.0f;
-                }
-
-                U = (int32_t)(dotx * mRsp->texture_scaling_factor.s);
-                V = (int32_t)(doty * mRsp->texture_scaling_factor.t);
-            }
+            d->normal[0] = vn->n[0];
+            d->normal[1] = vn->n[1];
+            d->normal[2] = vn->n[2];
         } else {
             d->color.r = v->cn[0];
             d->color.g = v->cn[1];
@@ -1743,47 +2240,13 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         d->u = U;
         d->v = V;
 
-        // trivial clip rejection
-        d->clip_rej = 0;
-        if (x < -w) {
-            d->clip_rej |= 1; // CLIP_LEFT
-        }
-        if (x > w) {
-            d->clip_rej |= 2; // CLIP_RIGHT
-        }
-        if (y < -w) {
-            d->clip_rej |= 4; // CLIP_BOTTOM
-        }
-        if (y > w) {
-            d->clip_rej |= 8; // CLIP_TOP
-        }
-        // if (z < -w) d->clip_rej |= 16; // CLIP_NEAR
-        if (z > w) {
-            d->clip_rej |= 32; // CLIP_FAR
-        }
+        // Clip rejection and backface culling are handled by the GPU now (it
+        // clips natively, and face culling is set per draw from the geometry
+        // mode), so no per-vertex clip flags are computed here.
 
-        d->x = x;
-        d->y = y;
-        d->z = z;
-        d->w = w;
-
-        if (mRsp->geometry_mode & G_FOG) {
-            if (fabsf(w) < 0.001f) {
-                // To avoid division by zero
-                w = 0.001f;
-            }
-
-            float winv = 1.0f / w;
-            if (winv < 0.0f) {
-                winv = std::numeric_limits<int16_t>::max();
-            }
-
-            float fog_z = z * winv * mRsp->fog_mul + mRsp->fog_offset;
-            fog_z = Ship::Math::clamp(fog_z, 0.0f, 255.0f);
-            d->color.a = fog_z; // Use alpha variable to store fog factor
-        } else {
-            d->color.a = v->cn[3];
-        }
+        // The fog factor is computed in the vertex shader (from clip-space z/w and
+        // the fog_mul/fog_offset uniforms); the alpha slot keeps the vertex alpha.
+        d->color.a = v->cn[3];
     }
 }
 
@@ -1798,56 +2261,63 @@ void Interpreter::GfxSpModifyVertex(uint16_t vtx_idx, uint8_t where, uint32_t va
     v->v = t;
 }
 
+// Cheap pre-parse of a combine mode for SHADE references, used to decide whether
+// the GPU lighting path is needed before the full combiner is generated. May
+// report shade for slots that GenerateCC later normalizes away (harmless: it
+// only creates an extra shader variant), but never misses a real reference.
+static bool CombineModeUsesShade(uint64_t combine_mode, bool is2Cyc) {
+    for (uint32_t i = 0; i < (is2Cyc ? 2u : 1u); i++) {
+        uint32_t rgbA = (combine_mode >> (i * 28)) & 0xf;
+        uint32_t rgbB = (combine_mode >> (i * 28 + 4)) & 0xf;
+        uint32_t rgbC = (combine_mode >> (i * 28 + 8)) & 0x1f;
+        uint32_t rgbD = (combine_mode >> (i * 28 + 13)) & 7;
+        uint32_t alphaA = (combine_mode >> (i * 28 + 16)) & 7;
+        uint32_t alphaB = (combine_mode >> (i * 28 + 16 + 3)) & 7;
+        uint32_t alphaC = (combine_mode >> (i * 28 + 16 + 6)) & 7;
+        uint32_t alphaD = (combine_mode >> (i * 28 + 16 + 9)) & 7;
+        if (rgbA == G_CCMUX_SHADE || rgbB == G_CCMUX_SHADE || rgbC == G_CCMUX_SHADE || rgbD == G_CCMUX_SHADE ||
+            rgbC == G_CCMUX_SHADE_ALPHA || alphaA == G_ACMUX_SHADE || alphaB == G_ACMUX_SHADE ||
+            alphaC == G_ACMUX_SHADE || alphaD == G_ACMUX_SHADE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx, bool is_rect) {
     struct LoadedVertex* v1 = &mRsp->loaded_vertices[vtx1_idx];
     struct LoadedVertex* v2 = &mRsp->loaded_vertices[vtx2_idx];
     struct LoadedVertex* v3 = &mRsp->loaded_vertices[vtx3_idx];
     struct LoadedVertex* v_arr[3] = { v1, v2, v3 };
 
-    // if (rand()%2) return;
-
-    if (v1->clip_rej & v2->clip_rej & v3->clip_rej) {
-        // The whole triangle lies outside the visible area
-        return;
-    }
-
     const uint32_t cull_both = get_attr(CULL_BOTH);
     const uint32_t cull_front = get_attr(CULL_FRONT);
     const uint32_t cull_back = get_attr(CULL_BACK);
 
-    if ((mRsp->geometry_mode & cull_both) != 0) {
-        float dx1 = v1->x / (v1->w) - v2->x / (v2->w);
-        float dy1 = v1->y / (v1->w) - v2->y / (v2->w);
-        float dx2 = v3->x / (v3->w) - v2->x / (v2->w);
-        float dy2 = v3->y / (v3->w) - v2->y / (v2->w);
-        float cross = dx1 * dy2 - dy1 * dx2;
-
-        if ((v1->w < 0) ^ (v2->w < 0) ^ (v3->w < 0)) {
-            // If one vertex lies behind the eye, negating cross will give the correct result.
-            // If all vertices lie behind the eye, the triangle will be rejected anyway.
-            cross = -cross;
-        }
-
-        // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
-        // so apply it regardless of the active microcode handler.
-        if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
-            cross = -cross;
-        }
-
-        auto cull_type = mRsp->geometry_mode & cull_both;
-
-        if (cull_type == cull_front) {
-            if (cross <= 0) {
-                return;
-            }
-        } else if (cull_type == cull_back) {
-            if (cross >= 0) {
-                return;
-            }
-        } else if (cull_type == cull_both) {
-            // Why is this even an option?
-            return;
-        }
+    // Backface culling runs on the GPU rasterizer now. The keep-sign convention
+    // matches the RSP cross product C = (v1-v2) x (v3-v2) in pre-y-flip clip
+    // space: G_CULL_FRONT keeps C > 0, G_CULL_BACK keeps C < 0. Triangles with
+    // vertices behind the eye are handled by GPU clipping (more accurately than
+    // the old CPU sign heuristic).
+    int8_t cull_keep_sign = 0;
+    const uint32_t cull_type = mRsp->geometry_mode & cull_both;
+    if (cull_type == cull_both) {
+        // Why is this even an option?
+        return;
+    } else if (cull_type == cull_front) {
+        cull_keep_sign = 1;
+    } else if (cull_type == cull_back) {
+        cull_keep_sign = -1;
+    }
+    // G_EX_INVERT_CULLING is a LUS extension, not tied to a specific ucode,
+    // so apply it regardless of the active microcode handler.
+    if ((mRsp->extra_geometry_mode & G_EX_INVERT_CULLING) != 0) {
+        cull_keep_sign = -cull_keep_sign;
+    }
+    if (cull_keep_sign != mRenderingState.cull_keep_sign) {
+        Flush();
+        mRapi->SetCullMode(cull_keep_sign);
+        mRenderingState.cull_keep_sign = cull_keep_sign;
     }
 
     // depth_test is set when the fragment has a depth value to compare (either from vertex Z via
@@ -1941,7 +2411,7 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     if (!mShaderStack.empty()) {
         cc_options |= (mShaderStack.top() << SHADER_ID_SHIFT);
     } else {
-        cc_options |= -1 << SHADER_ID_SHIFT;
+        cc_options |= (uint64_t)0xFFFF << SHADER_ID_SHIFT;
     }
 
     if (mRdp->loaded_texture[0].masked) {
@@ -1957,11 +2427,80 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
         cc_options |= SHADER_OPT(TEXEL1_BLEND);
     }
 
+    // N64 texture LOD: when a real mip pyramid is described by the tiles, bind it
+    // as a GPU mip chain (MIP_LOD); LOD_FRACTION is then computed per-pixel in the
+    // fragment shader from UV derivatives (TEX_LOD).
+    uint8_t mipExtraLevels = DetectMipChain(mRdp->first_tile_index);
+    if (mRdp->other_mode_l & G_TL_LOD) {
+        cc_options |= SHADER_OPT(TEX_LOD);
+    }
+    if (mipExtraLevels > 0) {
+        cc_options |= SHADER_OPT(MIP_LOD);
+    }
+
+    // GPU lighting/texgen: the vertex shader computes the shade color from raw
+    // vertex normals and the RSP light state, and generates env-mapped UVs.
+    const bool lighting_geom = (mRsp->geometry_mode & G_LIGHTING) != 0;
+    const bool use_texgen = lighting_geom && (mRsp->geometry_mode & G_TEXTURE_GEN) != 0;
+    const bool lit_shade = lighting_geom && CombineModeUsesShade(mRdp->combine_mode, use_2cyc);
+    if (lit_shade || use_texgen) {
+        cc_options |= SHADER_OPT(LIGHTING);
+        if (lit_shade && (mRsp->geometry_mode & G_LIGHTING_POSITIONAL)) {
+            cc_options |= SHADER_OPT(POINT_LIGHTING);
+        }
+        if (use_texgen) {
+            cc_options |= SHADER_OPT(TEXGEN);
+            if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
+                cc_options |= SHADER_OPT(TEXGEN_LINEAR);
+            }
+        }
+    }
+
+    // GPU palettization: CI textures upload raw indices and the palette lookup
+    // (plus post-lookup bilinear/3-point filtering) runs in the fragment shader.
+    // The same index texture is reused across TLUT swaps. Mip chains, masked or
+    // blended textures, and HD/raw replacements fall back to CPU decoding.
+    bool palettized[2] = { false, false };
+    for (int i = 0; i < 2; i++) {
+        uint32_t pal_tile = mRdp->first_tile_index + i;
+        if (i == 1 && mRdp->first_tile_index >= 2) {
+            pal_tile = mRdp->first_tile_index;
+        }
+        const auto& pt = mRdp->texture_tile[pal_tile];
+        const auto& plt = mRdp->loaded_texture[pt.tmem_index];
+        if (pt.fmt != G_IM_FMT_CI || (pt.siz != G_IM_SIZ_4b && pt.siz != G_IM_SIZ_8b)) {
+            continue;
+        }
+        if (plt.masked || plt.blended || (plt.tex_flags & (TEX_FLAG_LOAD_AS_RAW | TEX_FLAG_LOAD_AS_IMG)) != 0 ||
+            plt.raw_tex_metadata.h_byte_scale != 1 || plt.raw_tex_metadata.v_pixel_scale != 1) {
+            continue;
+        }
+        if (i == 0 && mipExtraLevels > 0) {
+            continue;
+        }
+        if (pt.siz == G_IM_SIZ_4b) {
+            if (mRdp->palettes[pt.palette / 8] == nullptr) {
+                continue;
+            }
+        } else if (mRdp->palettes[0] == nullptr || mRdp->palettes[1] == nullptr) {
+            continue;
+        }
+        palettized[i] = true;
+        cc_options |= i == 0 ? SHADER_OPT(TEXEL0_PALETTE) : SHADER_OPT(TEXEL1_PALETTE);
+    }
+
     ColorCombinerKey key;
     key.combine_mode = mRdp->combine_mode;
     key.options = cc_options;
 
     ColorCombiner* comb = LookupOrCreateColorCombiner(key);
+
+    // Different combiners can share a shader program but map different RDP
+    // registers into the uniform slots; never mix them in one batch.
+    if (mPendingCombiner != comb) {
+        Flush();
+        mPendingCombiner = comb;
+    }
 
     uint32_t tm = 0;
     uint32_t tex_width[2], tex_height[2], tex_width2[2], tex_height2[2];
@@ -1970,16 +2509,44 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
     for (int i = 0; i < 2; i++) {
         uint32_t tile = mRdp->first_tile_index + i;
 
-        // No LOD support: force both slots to the base mip level.
         if (i == 1 && mRdp->first_tile_index >= 2) {
             tile = mRdp->first_tile_index;
+        }
+
+        // LOD safety net: when G_TL_LOD is on but no GPU mip chain could be
+        // built, TEXEL1 was meant to be the next mip of TEXEL0. If tile 1's
+        // TMEM data belongs to the same load as tile 0 (one pyramid), the
+        // tmem-index heuristic would bind an unrelated texture for it — sample
+        // tile 0 instead (the LOD fraction then blends identical texels).
+        if (i == 1 && tile != mRdp->first_tile_index && (mRdp->other_mode_l & G_TL_LOD) && mipExtraLevels == 0 &&
+            (mRdp->other_mode_h & (3U << G_MDSFT_CYCLETYPE)) == G_CYC_2CYCLE) {
+            const uint16_t baseTmem = mRdp->texture_tile[mRdp->first_tile_index].tmem;
+            const uint16_t lodTmem = mRdp->texture_tile[tile].tmem;
+            const RDP::TmemLoadEntry* e0 = FindTmemLoad(baseTmem);
+            const RDP::TmemLoadEntry* e1 = FindTmemLoad(lodTmem);
+            if (e0 != nullptr && e0 == e1 && lodTmem != baseTmem) {
+                tile = mRdp->first_tile_index;
+            }
         }
         effective_tile[i] = tile;
 
         if (comb->usedTextures[i]) {
+            // The mip/indexed variants of a texture live under different cache keys,
+            // so a mode change must re-run the import even when the tile data didn't change.
+            if (mRenderingState.mTextures[i] != nullptr &&
+                ((i == 0 && mRenderingState.mTextures[0]->first.mip_levels != mipExtraLevels) ||
+                 mRenderingState.mTextures[i]->first.indexed != (palettized[i] ? 1 : 0))) {
+                mRdp->textures_changed[i] = true;
+            }
             if (mRdp->textures_changed[i]) {
                 Flush();
+                // Only the base texture slot carries a mip chain; masks and
+                // replacements are always uploaded as single-level textures.
+                mCurrentMipExtraLevels = (i == 0) ? mipExtraLevels : 0;
+                mImportIndexed = palettized[i];
                 ImportTexture(i, tile, false);
+                mImportIndexed = false;
+                mCurrentMipExtraLevels = 0;
                 if (mRdp->loaded_texture[i].masked) {
                     ImportTextureMask(SHADER_FIRST_MASK_TEXTURE + i, tile);
                 }
@@ -2075,6 +2642,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             }
 
             bool linear_filter = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            if (palettized[i]) {
+                // Index textures must never be interpolated by the sampler;
+                // filtering happens in the shader after the palette lookup.
+                linear_filter = false;
+            }
             if (linear_filter != mRenderingState.mTextures[i]->second.linear_filter ||
                 cms != mRenderingState.mTextures[i]->second.cms || cmt != mRenderingState.mTextures[i]->second.cmt) {
                 Flush();
@@ -2090,6 +2662,18 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 mRenderingState.mTextures[i]->second.cmt = cmt;
             }
         }
+    }
+
+    // Bind the palette texture matching the current TLUT content. Palette
+    // textures are immutable once uploaded (see AcquirePaletteTexture), so the
+    // only flush needed is when the *binding* for queued triangles would change.
+    if (palettized[0] || palettized[1]) {
+        const uint32_t palTexture = AcquirePaletteTexture();
+        if (palTexture != mBoundPaletteTexture) {
+            Flush();
+            mBoundPaletteTexture = palTexture;
+        }
+        mRapi->SelectTexture(SHADER_PALETTE_TEXTURE, palTexture);
     }
 
     struct ShaderProgram* prg = comb->prg[tm];
@@ -2113,186 +2697,295 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
 
     mRapi->ShaderGetInfo(prg, &numInputs, usedTextures);
 
-    struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
+    // Highest LOD level the shader may address: the real chain depth in mip mode,
+    // otherwise whatever gsSPTexture advertised (derivative-based LOD fraction).
+    mRapi->SetCurrentMaxLod(mipExtraLevels > 0 ? (float)mipExtraLevels : (float)mRsp->texture_level);
 
-    for (int i = 0; i < 3; i++) {
-        float z = v_arr[i]->z, w = v_arr[i]->w;
-        if (clip_parameters.z_is_from_0_to_1) {
-            z = (z + w) / 2.0f;
+    // Latch lighting/texgen uniforms for the vertex shader. Light directions are
+    // model-space coefficients computed at vertex-load time (CalculateNormalDir);
+    // a change mid-batch flushes the queued triangles first.
+    if (cc_options & SHADER_OPT(LIGHTING)) {
+        LightingUniforms lu = {};
+        int numLights = mRsp->current_num_lights - 1;
+        if (numLights < 0) {
+            numLights = 0;
+        }
+        if (numLights > GFX_MAX_GPU_LIGHTS) {
+            numLights = GFX_MAX_GPU_LIGHTS;
+        }
+        lu.num_lights = numLights;
+
+        const int ambientIdx = mRsp->current_num_lights > 0 ? mRsp->current_num_lights - 1 : 0;
+        const F3DLight_t& ambient = mRsp->current_lights[ambientIdx].l;
+        lu.ambient[0] = ambient.col[0] / 255.0f;
+        lu.ambient[1] = ambient.col[1] / 255.0f;
+        lu.ambient[2] = ambient.col[2] / 255.0f;
+
+        const bool point_lighting = (cc_options & SHADER_OPT(POINT_LIGHTING)) != 0;
+        for (int i = 0; i < numLights; i++) {
+            const bool is_point = point_lighting && mRsp->current_lights[i].p.unk3 != 0;
+            lu.lights[i][0][0] = mRsp->current_lights[i].l.col[0] / 255.0f;
+            lu.lights[i][0][1] = mRsp->current_lights[i].l.col[1] / 255.0f;
+            lu.lights[i][0][2] = mRsp->current_lights[i].l.col[2] / 255.0f;
+            lu.lights[i][0][3] = is_point ? 1.0f : 0.0f;
+            lu.lights[i][1][0] = mRsp->current_lights_coeffs[i][0];
+            lu.lights[i][1][1] = mRsp->current_lights_coeffs[i][1];
+            lu.lights[i][1][2] = mRsp->current_lights_coeffs[i][2];
+            if (is_point) {
+                lu.lights[i][1][3] = (float)mRsp->current_lights[i].p.unk7; // kc
+                lu.lights[i][2][0] = (float)mRsp->current_lights[i].p.pos[0];
+                lu.lights[i][2][1] = (float)mRsp->current_lights[i].p.pos[1];
+                lu.lights[i][2][2] = (float)mRsp->current_lights[i].p.pos[2];
+                lu.lights[i][2][3] = (float)mRsp->current_lights[i].p.unkE; // kq
+            }
         }
 
-        mBufVbo[mBufVboLen++] = v_arr[i]->x;
-        mBufVbo[mBufVboLen++] = clip_parameters.invertY ? -v_arr[i]->y : v_arr[i]->y;
-        mBufVbo[mBufVboLen++] = z;
-        mBufVbo[mBufVboLen++] = w;
+        if (cc_options & SHADER_OPT(TEXGEN)) {
+            lu.lookat_x[0] = mRsp->current_lookat_coeffs[0][0];
+            lu.lookat_x[1] = mRsp->current_lookat_coeffs[0][1];
+            lu.lookat_x[2] = mRsp->current_lookat_coeffs[0][2];
+            lu.lookat_y[0] = mRsp->current_lookat_coeffs[1][0];
+            lu.lookat_y[1] = mRsp->current_lookat_coeffs[1][1];
+            lu.lookat_y[2] = mRsp->current_lookat_coeffs[1][2];
 
+            // Fold the entire CPU UV pipeline (gsSPTexture scale, tile shift, tile
+            // origin, bilerp half-texel, texture size normalize) into a linear
+            // transform per texture: uv = dot * scale + offset.
+            const bool bilerp_half = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
+            for (int t = 0; t < 2; t++) {
+                if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
+                    continue;
+                }
+                uint32_t tile = effective_tile[t];
+                float scale[2] = { (float)mRsp->texture_scaling_factor.s / 32.0f,
+                                   (float)mRsp->texture_scaling_factor.t / 32.0f };
+                const int shift_amount[2] = { mRdp->texture_tile[tile].shifts, mRdp->texture_tile[tile].shiftt };
+                for (int axis = 0; axis < 2; axis++) {
+                    if (shift_amount[axis] != 0) {
+                        if (shift_amount[axis] <= 10) {
+                            scale[axis] /= (float)(1 << shift_amount[axis]);
+                        } else {
+                            scale[axis] *= (float)(1 << (16 - shift_amount[axis]));
+                        }
+                    }
+                }
+                const float half = bilerp_half ? 0.5f : 0.0f;
+                lu.texgen[t][0] = scale[0] / (float)tex_width[t];
+                lu.texgen[t][1] = (half - mRdp->texture_tile[tile].uls / 4.0f) / (float)tex_width[t];
+                lu.texgen[t][2] = scale[1] / (float)tex_height[t];
+                lu.texgen[t][3] = (half - mRdp->texture_tile[tile].ult / 4.0f) / (float)tex_height[t];
+            }
+        }
+
+        if (point_lighting) {
+            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
+            for (int row = 0; row < 3; row++) {
+                lu.mv_rows[row][0] = mtx[row][0];
+                lu.mv_rows[row][1] = mtx[row][1];
+                lu.mv_rows[row][2] = mtx[row][2];
+            }
+            // Columns (incl. translation) let the VS derive the world-space
+            // position from the object-space vertex position.
+            for (int col = 0; col < 3; col++) {
+                lu.mv_cols[col][0] = mtx[0][col];
+                lu.mv_cols[col][1] = mtx[1][col];
+                lu.mv_cols[col][2] = mtx[2][col];
+                lu.mv_cols[col][3] = mtx[3][col];
+            }
+        }
+
+        if (memcmp(&lu, &mLatchedLighting, sizeof(LightingUniforms)) != 0) {
+            Flush();
+            mLatchedLighting = lu;
+        }
+        mRapi->SetLightingUniforms(lu);
+    }
+
+    // Per-draw vertex-pipeline constants: the UV tile transform and clamp bounds
+    // are folded into uniforms (the vertex shader applies uv = raw * scale +
+    // offset), and the fog factor source is selected here. A change mid-batch
+    // flushes the queued triangles, same as the other uniform latches.
+    {
+        float uvTransform[2][4] = {};
+        float texClamp[2][4] = {};
+        const bool bilerp_half = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT && !is_rect;
+        for (int t = 0; t < 2; t++) {
+            if (!usedTextures[t] || tex_width[t] == 0 || tex_height[t] == 0) {
+                uvTransform[t][0] = uvTransform[t][2] = 1.0f;
+                // Never leave clamp bounds at zero: if this shader variant has
+                // clamp bits set, a zero bound collapses every UV to one texel.
+                texClamp[t][0] = 1.0e6f;
+                texClamp[t][1] = 1.0e6f;
+                continue;
+            }
+            uint32_t uv_tile = effective_tile[t];
+            float scale[2] = { 1.0f, 1.0f };
+            const int shift_amount[2] = { mRdp->texture_tile[uv_tile].shifts, mRdp->texture_tile[uv_tile].shiftt };
+            for (int axis = 0; axis < 2; axis++) {
+                if (shift_amount[axis] != 0) {
+                    if (shift_amount[axis] <= 10) {
+                        scale[axis] /= (float)(1 << shift_amount[axis]);
+                    } else {
+                        scale[axis] *= (float)(1 << (16 - shift_amount[axis]));
+                    }
+                }
+            }
+            const float half = bilerp_half ? 0.5f : 0.0f;
+            uvTransform[t][0] = scale[0] / (float)tex_width[t];
+            uvTransform[t][1] = (half - mRdp->texture_tile[uv_tile].uls / 4.0f) / (float)tex_width[t];
+            uvTransform[t][2] = scale[1] / (float)tex_height[t];
+            uvTransform[t][3] = (half - mRdp->texture_tile[uv_tile].ult / 4.0f) / (float)tex_height[t];
+            texClamp[t][0] = (tex_width2[t] - 0.5f) / (float)tex_width[t];
+            texClamp[t][1] = (tex_height2[t] - 0.5f) / (float)tex_height[t];
+        }
+
+        float fogParams[4] = {};
+        if (use_fog) {
+            if (use_blend_color) {
+                // Shroud/blend mode: constant factor from the fog alpha register
+                fogParams[2] = mRdp->fog_color.a / 255.0f;
+                fogParams[3] = 1.0f;
+            } else if (mRsp->geometry_mode & G_FOG) {
+                // Computed in the vertex shader from clip-space z/w
+                fogParams[0] = (float)mRsp->fog_mul;
+                fogParams[1] = (float)mRsp->fog_offset;
+                fogParams[3] = 0.0f;
+            } else {
+                // Fog blender without G_FOG: legacy behavior used the vertex alpha
+                fogParams[3] = 2.0f;
+            }
+        }
+
+        // N64 LOD parameters: resolution scale for the UV derivatives, the
+        // prim_lod_min clamp, and the texture detail mode (clamp/sharpen/detail)
+        float lodParams[4] = {};
+        {
+            float resScale = 1.0f;
+            if (mFbActive && mActiveFrameBuffer != mFrameBuffers.end()) {
+                const FBInfo& fb = mActiveFrameBuffer->second;
+                if (fb.resize && fb.orig_height != 0) {
+                    resScale = (float)fb.applied_height / (float)fb.orig_height;
+                }
+            } else if (mNativeDimensions.height != 0) {
+                resScale = (float)mCurDimensions.height / (float)mNativeDimensions.height;
+            }
+            lodParams[0] = resScale;
+            lodParams[1] = mRdp->prim_lod_min / 256.0f;
+            lodParams[2] = (float)((mRdp->other_mode_h >> G_MDSFT_TEXTDETAIL) & 3);
+        }
+
+        // Palette bank offset + post-lookup filter mode for CI index textures
+        float paletteParams[2][4] = {};
+        if (palettized[0] || palettized[1]) {
+            const bool pal_linear = (mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT;
+            const FilteringMode fm = mRapi->GetTextureFilter();
+            const float mode = (!pal_linear || fm == FILTER_NONE) ? 0.0f : (fm == FILTER_THREE_POINT ? 2.0f : 1.0f);
+            for (int t = 0; t < 2; t++) {
+                if (!palettized[t]) {
+                    continue;
+                }
+                const auto& ptile = mRdp->texture_tile[effective_tile[t]];
+                paletteParams[t][0] = ptile.siz == G_IM_SIZ_4b ? (float)(ptile.palette * 16) : 0.0f;
+                paletteParams[t][1] = mode;
+            }
+        }
+
+        if (memcmp(uvTransform, mUvTransform, sizeof(uvTransform)) != 0 ||
+            memcmp(texClamp, mTextureClamp, sizeof(texClamp)) != 0 ||
+            memcmp(fogParams, mFogParams, sizeof(fogParams)) != 0 ||
+            memcmp(paletteParams, mPaletteParams, sizeof(paletteParams)) != 0 ||
+            memcmp(lodParams, mLodParams, sizeof(lodParams)) != 0) {
+            Flush();
+            memcpy(mUvTransform, uvTransform, sizeof(uvTransform));
+            memcpy(mTextureClamp, texClamp, sizeof(texClamp));
+            memcpy(mFogParams, fogParams, sizeof(fogParams));
+            memcpy(mPaletteParams, paletteParams, sizeof(paletteParams));
+            memcpy(mLodParams, lodParams, sizeof(lodParams));
+        }
+    }
+
+    // Per-batch y inversion for the vertex shader (z convention is per-backend
+    // and lives in the shader templates).
+    struct GfxClipParameters clip_parameters = mRapi->GetClipParameters();
+    const float y_scale = clip_parameters.invertY ? -1.0f : 1.0f;
+    if (y_scale != mTransform.y_scale[0] && mBufVboNumTris > 0) {
+        Flush();
+    }
+    mTransform.y_scale[0] = y_scale;
+
+    // Map the triangle's matrix-history entries onto the per-draw palette,
+    // flushing if the palette is full (the batch restarts with empty slots).
+    uint8_t mtx_slots[3];
+    for (int attempt = 0; attempt < 2; attempt++) {
+        bool flushed = false;
+        for (int k = 0; k < 3; k++) {
+            const uint8_t h = v_arr[k]->mtx_slot;
+            int8_t slot = mBatchSlotForHistory[h];
+            if (slot < 0) {
+                if (mBatchMtxCount == GFX_MTX_PALETTE_SIZE) {
+                    Flush();
+                    flushed = true;
+                    break;
+                }
+                slot = (int8_t)mBatchMtxCount++;
+                mBatchSlotForHistory[h] = slot;
+                memcpy(mTransform.mtx_palette[slot], mMtxHistory[h], sizeof(mTransform.mtx_palette[slot]));
+            }
+            mtx_slots[k] = (uint8_t)slot;
+        }
+        if (!flushed) {
+            break;
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        // Object-space position (or clip-space + identity matrix for rects);
+        // the vertex shader applies the palette matrix, y flip and z convention.
+        mBufVbo[mBufVboLen++] = v_arr[i]->x;
+        mBufVbo[mBufVboLen++] = v_arr[i]->y;
+        mBufVbo[mBufVboLen++] = v_arr[i]->z;
+        mBufVbo[mBufVboLen++] = v_arr[i]->w;
+        mBufVbo[mBufVboLen++] = (float)mtx_slots[i];
+
+        // Raw RSP texture coordinates: the tile shift/origin/bilerp/size pipeline
+        // runs in the vertex shader via the per-draw uv_transform uniforms, and
+        // the clamp bounds are uniforms too.
         for (int t = 0; t < 2; t++) {
             if (!usedTextures[t]) {
                 continue;
             }
-            float u = v_arr[i]->u / 32.0f;
-            float v = v_arr[i]->v / 32.0f;
-
-            uint32_t uv_tile = effective_tile[t];
-            int shifts = mRdp->texture_tile[uv_tile].shifts;
-            int shiftt = mRdp->texture_tile[uv_tile].shiftt;
-            if (shifts != 0) {
-                if (shifts <= 10) {
-                    u /= 1 << shifts;
-                } else {
-                    u *= 1 << (16 - shifts);
-                }
-            }
-            if (shiftt != 0) {
-                if (shiftt <= 10) {
-                    v /= 1 << shiftt;
-                } else {
-                    v *= 1 << (16 - shiftt);
-                }
-            }
-
-            u -= mRdp->texture_tile[uv_tile].uls / 4.0f;
-            v -= mRdp->texture_tile[uv_tile].ult / 4.0f;
-
-            if ((mRdp->other_mode_h & (3U << G_MDSFT_TEXTFILT)) != G_TF_POINT) {
-                // Linear filter adds 0.5f to the coordinates
-                if (!is_rect) {
-                    u += 0.5f;
-                    v += 0.5f;
-                }
-            }
-
-            mBufVbo[mBufVboLen++] = u / tex_width[t];
-            mBufVbo[mBufVboLen++] = v / tex_height[t];
-
-            bool clampS = tm & (1 << 2 * t);
-            bool clampT = tm & (1 << 2 * t + 1);
-
-            if (clampS) {
-                mBufVbo[mBufVboLen++] = (tex_width2[t] - 0.5f) / tex_width[t];
-            }
-
-            if (clampT) {
-                mBufVbo[mBufVboLen++] = (tex_height2[t] - 0.5f) / tex_height[t];
-            }
+            mBufVbo[mBufVboLen++] = v_arr[i]->u / 32.0f;
+            mBufVbo[mBufVboLen++] = v_arr[i]->v / 32.0f;
         }
 
-        if (use_fog) {
-            if (use_blend_color) {
-                // Shroud/blend mode: blend toward blend_color using fog alpha as factor
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->blend_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.a / 255.0f;
+        // The fog factor is derived in the vertex shader (fog_params uniform);
+        // nothing fog-related is packed per vertex anymore.
+
+        // Grayscale color and all constant combiner inputs (prim, env, keys, K4/K5,
+        // prim LOD fraction) are per-draw uniforms latched in LatchCombinerUniforms.
+        // Shade is the only combiner source that still varies per vertex: it is
+        // either the vertex color, or — under G_LIGHTING — the raw vertex normal
+        // that the vertex shader turns into a lit color (and texgen UVs).
+        const bool normals_in_shade = (cc_options & SHADER_OPT(LIGHTING)) != 0;
+        if (comb->usedShade || normals_in_shade) {
+            if (normals_in_shade) {
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[0];
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[1];
+                mBufVbo[mBufVboLen++] = (float)v_arr[i]->normal[2];
             } else {
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.r / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.g / 255.0f;
-                mBufVbo[mBufVboLen++] = mRdp->fog_color.b / 255.0f;
-                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f; // fog factor (not alpha)
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.r / 255.0f;
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.g / 255.0f;
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.b / 255.0f;
+            }
+            if (use_alpha) {
+                // Raw vertex alpha; the standard-fog "shade alpha = 1.0" override
+                // is applied in the vertex shader based on the fog mode.
+                mBufVbo[mBufVboLen++] = v_arr[i]->color.a / 255.0f;
             }
         }
 
-        if (use_grayscale) {
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.r / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.g / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.b / 255.0f;
-            mBufVbo[mBufVboLen++] = mRdp->grayscale_color.a / 255.0f; // lerp interpolation factor (not alpha)
-        }
-
-        for (int j = 0; j < numInputs; j++) {
-            RGBA* color;
-            RGBA tmp;
-            for (int k = 0; k < 1 + (use_alpha ? 1 : 0); k++) {
-                switch (comb->shader_input_mapping[k][j]) {
-                        // Note: CCMUX constants and ACMUX constants used here have same value, which is why this works
-                        // (except LOD fraction).
-                    case G_CCMUX_PRIMITIVE:
-                        color = &mRdp->prim_color;
-                        break;
-                    case G_CCMUX_SHADE:
-                        color = &v_arr[i]->color;
-                        break;
-                    case G_CCMUX_ENVIRONMENT:
-                        color = &mRdp->env_color;
-                        break;
-                    case G_CCMUX_PRIMITIVE_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp->prim_color.a;
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_ENV_ALPHA: {
-                        tmp.r = tmp.g = tmp.b = mRdp->env_color.a;
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_PRIM_LOD_FRAC: {
-                        tmp.r = tmp.g = tmp.b = mRdp->prim_lod_fraction;
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_LOD_FRACTION: {
-                        if (mRdp->other_mode_l & G_TL_LOD) {
-                            // "Hack" that works for Bowser - Peach painting
-                            float distance_frac = (v1->w - 3000.0f) / 3000.0f;
-                            if (distance_frac < 0.0f) {
-                                distance_frac = 0.0f;
-                            }
-                            if (distance_frac > 1.0f) {
-                                distance_frac = 1.0f;
-                            }
-                            tmp.r = tmp.g = tmp.b = tmp.a = distance_frac * 255.0f;
-                        } else {
-                            tmp.r = tmp.g = tmp.b = tmp.a = 255.0f;
-                        }
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_KEY_CENTER:
-                        color = &mRdp->key_center;
-                        break;
-                    case G_CCMUX_KEY_SCALE:
-                        color = &mRdp->key_scale;
-                        break;
-                    case G_CCMUX_CONVERT_K4: {
-                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[4];
-                        color = &tmp;
-                        break;
-                    }
-                    case G_CCMUX_CONVERT_K5: {
-                        tmp.r = tmp.g = tmp.b = mRdp->convert_k[5];
-                        color = &tmp;
-                        break;
-                    }
-                    case G_ACMUX_PRIM_LOD_FRAC:
-                        tmp.a = mRdp->prim_lod_fraction;
-                        color = &tmp;
-                        break;
-                    default:
-                        memset(&tmp, 0, sizeof(tmp));
-                        color = &tmp;
-                        break;
-                }
-                if (k == 0) {
-                    mBufVbo[mBufVboLen++] = color->r / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->g / 255.0f;
-                    mBufVbo[mBufVboLen++] = color->b / 255.0f;
-                } else {
-                    if (use_fog && !use_blend_color && color == &v_arr[i]->color) {
-                        // Shade alpha is 100% for standard fog, blend color mode preserves
-                        // it since fog alpha is the blend factor
-                        mBufVbo[mBufVboLen++] = 1.0f;
-                    } else {
-                        mBufVbo[mBufVboLen++] = color->a / 255.0f;
-                    }
-                }
-            }
-        }
-
-        // struct RGBA *color = &v_arr[i]->color;
-        // mBufVbo[mBufVboLen++] = color->r / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->g / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->b / 255.0f;
-        // mBufVbo[mBufVboLen++] = color->a / 255.0f;
+        // The world-space position for point lighting is derived in the vertex
+        // shader from the object-space position and the modelview columns.
     }
 
     if (++mBufVboNumTris == MAX_TRI_BUFFER) {
@@ -2469,11 +3162,12 @@ void Interpreter::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t dat
 void Interpreter::GfxSpTexture(uint16_t sc, uint16_t tc, uint8_t level, uint8_t tile, uint8_t on) {
     mRsp->texture_scaling_factor.s = sc;
     mRsp->texture_scaling_factor.t = tc;
-    if (mRdp->first_tile_index != tile) {
+    if (mRdp->first_tile_index != tile || mRsp->texture_level != level) {
         mRdp->textures_changed[0] = true;
         mRdp->textures_changed[1] = true;
     }
 
+    mRsp->texture_level = level;
     mRdp->first_tile_index = tile;
 }
 
@@ -2550,6 +3244,9 @@ void Interpreter::GfxDpSetTileSize(uint8_t tile, uint16_t uls, uint16_t ult, uin
 
 void Interpreter::GfxDpLoadTlut(uint8_t tile, uint32_t high_index) {
     SUPPORT_CHECK(mRdp->texture_to_load.siz == G_IM_SIZ_16b);
+
+    // The GPU palette texture mirrors the TLUT staging; rebuild it lazily
+    mRdp->palette_texture_dirty = true;
 
     uint16_t tmem = mRdp->texture_tile[tile].tmem;
     const uint8_t* src = mRdp->texture_to_load.addr;
@@ -2662,6 +3359,16 @@ void Interpreter::GfxDpLoadBlock(uint8_t tile, uint32_t uls, uint32_t ult, uint3
     // orig_size_bytes,
     //         mRdp->texture_to_load.siz, lrs);
 
+    // Record the load in the TMEM journal (LoadBlock copies are linear in DRAM)
+    {
+        RDP::TmemLoadEntry& entry = mRdp->tmem_loads[mRdp->tmem_load_head];
+        entry.tmem_word = mRdp->texture_tile[tile].tmem;
+        entry.size_words = (orig_size_bytes + 7) / 8;
+        entry.dram_addr = mRdp->texture_to_load.addr;
+        entry.linear = true;
+        mRdp->tmem_load_head = (mRdp->tmem_load_head + 1) % RDP::TMEM_JOURNAL_SIZE;
+    }
+
     const std::string_view texPath =
         mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
             ? GetBaseTexturePath(mRdp->texture_to_load.raw_tex_metadata.resource->GetInitData()->Identifier.GetPath())
@@ -2731,6 +3438,19 @@ void Interpreter::GfxDpLoadTile(uint8_t tile, uint32_t uls, uint32_t ult, uint32
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].tex_flags = mRdp->texture_to_load.tex_flags;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata = mRdp->texture_to_load.raw_tex_metadata;
     mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].addr = mRdp->texture_to_load.addr + start_offset_bytes;
+
+    // Record the load in the TMEM journal. A LoadTile covering the full image
+    // width is contiguous in DRAM (rows are adjacent) — Paper Mario loads its
+    // mip levels this way via gDPLoadMultiTile. Sub-rect loads are strided and
+    // stay non-linear, so the mip importer cannot address into them.
+    {
+        RDP::TmemLoadEntry& entry = mRdp->tmem_loads[mRdp->tmem_load_head];
+        entry.tmem_word = mRdp->texture_tile[tile].tmem;
+        entry.size_words = (orig_size_bytes + 7) / 8;
+        entry.dram_addr = mRdp->texture_to_load.addr + start_offset_bytes;
+        entry.linear = tile_line_size_bytes == full_image_line_size_bytes;
+        mRdp->tmem_load_head = (mRdp->tmem_load_head + 1) % RDP::TMEM_JOURNAL_SIZE;
+    }
 
     const std::string_view texPath =
         mRdp->texture_to_load.raw_tex_metadata.resource != nullptr
@@ -2803,7 +3523,16 @@ static inline int16_t sign_extend_9(uint32_t v) {
     return (int16_t)((v & 0x100) ? (int32_t)(v | 0xFFFFFE00u) : (int32_t)v);
 }
 
+// Combiner constants are uniforms latched at flush time, so a register write
+// that would change the value mid-batch has to flush the pending triangles first.
+void Interpreter::FlushIfRegisterChanges(const RGBA& reg, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (mBufVboNumTris > 0 && (reg.r != r || reg.g != g || reg.b != b || reg.a != a)) {
+        Flush();
+    }
+}
+
 void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->grayscale_color, r, g, b, a);
     mRdp->grayscale_color.r = r;
     mRdp->grayscale_color.g = g;
     mRdp->grayscale_color.b = b;
@@ -2811,6 +3540,7 @@ void Interpreter::GfxDpSetGrayscaleColor(uint8_t r, uint8_t g, uint8_t b, uint8_
 }
 
 void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->env_color, r, g, b, a);
     mRdp->env_color.r = r;
     mRdp->env_color.g = g;
     mRdp->env_color.b = b;
@@ -2818,7 +3548,12 @@ void Interpreter::GfxDpSetEnvColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (mBufVboNumTris > 0 && (mRdp->prim_lod_fraction != l || mRdp->prim_lod_min != m)) {
+        Flush();
+    }
+    FlushIfRegisterChanges(mRdp->prim_color, r, g, b, a);
     mRdp->prim_lod_fraction = l;
+    mRdp->prim_lod_min = m;
     mRdp->prim_color.r = r;
     mRdp->prim_color.g = g;
     mRdp->prim_color.b = b;
@@ -2826,6 +3561,7 @@ void Interpreter::GfxDpSetPrimColor(uint8_t m, uint8_t l, uint8_t r, uint8_t g, 
 }
 
 void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->fog_color, r, g, b, a);
     mRdp->fog_color.r = r;
     mRdp->fog_color.g = g;
     mRdp->fog_color.b = b;
@@ -2833,6 +3569,7 @@ void Interpreter::GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 void Interpreter::GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    FlushIfRegisterChanges(mRdp->blend_color, r, g, b, a);
     mRdp->blend_color.r = r;
     mRdp->blend_color.g = g;
     mRdp->blend_color.b = b;
@@ -2878,25 +3615,32 @@ void Interpreter::GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_
     struct LoadedVertex* lr = &mRsp->loaded_vertices[MAX_VERTICES + 2];
     struct LoadedVertex* ur = &mRsp->loaded_vertices[MAX_VERTICES + 3];
 
+    // Final clip coordinates pass through the identity palette entry
+    const uint8_t identity_slot = GetIdentityMtxSlot();
+
     ul->x = ulxf;
     ul->y = ulyf;
     ul->z = -1.0f;
     ul->w = 1.0f;
+    ul->mtx_slot = identity_slot;
 
     ll->x = ulxf;
     ll->y = lryf;
     ll->z = -1.0f;
     ll->w = 1.0f;
+    ll->mtx_slot = identity_slot;
 
     lr->x = lrxf;
     lr->y = lryf;
     lr->z = -1.0f;
     lr->w = 1.0f;
+    lr->mtx_slot = identity_slot;
 
     ur->x = lrxf;
     ur->y = ulyf;
     ur->z = -1.0f;
     ur->w = 1.0f;
+    ur->mtx_slot = identity_slot;
 
     // The coordinates for texture rectangle shall bypass the viewport setting
     struct XYWidthHeight default_viewport;
@@ -3740,6 +4484,14 @@ bool gfx_dl_handler_common(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     F3DGfx* subGFX = (F3DGfx*)gfx->SegAddr(cmd->words.w1);
+
+    // Check for display-list substitution (e.g. interpolated snow particle DL).
+    if (gfx->mCurDlReplacements && !gfx->mCurDlReplacements->empty()) {
+        if (auto it = gfx->mCurDlReplacements->find((Gfx*)subGFX); it != gfx->mCurDlReplacements->end()) {
+            subGFX = (F3DGfx*)it->second;
+        }
+    }
+
     if (C0(16, 1) == 0) {
         // Push return address
         if (subGFX != nullptr) {
@@ -4150,6 +4902,80 @@ bool gfx_set_timg_otr_filepath_handler_custom(F3DGfx** cmd0) {
     return false;
 }
 
+// G_SETTIMG_PAL: Expose palette_staging data as a texture source
+bool gfx_set_timg_pal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+
+    uint8_t tile = C0(8, 8);
+    uint8_t palSlot = C0(0, 8);
+
+    if (palSlot > 1 || gfx->mRdp->palettes[palSlot] == nullptr) {
+        SPDLOG_WARN("G_SETTIMG_PAL: invalid palSlot={} or null palette", palSlot);
+        return false;
+    }
+
+    uint32_t tmemIndex = gfx->mRdp->texture_tile[tile].tmem_index;
+
+    // Use palette_dram_addr (the game-side pointer) as the texture address.
+    // Cache key uniqueness: palette_dram_addr changes per sprite, preventing
+    // stale texture cache hits (palette_staging is always the same pointer).
+    const uint8_t* texAddr = gfx->mRdp->palette_dram_addr[palSlot] != nullptr ? gfx->mRdp->palette_dram_addr[palSlot]
+                                                                              : gfx->mRdp->palettes[palSlot];
+    uint32_t lineSizeBytes = gfx->mRdp->texture_tile[tile].line_size_bytes;
+    if (lineSizeBytes == 0) {
+        lineSizeBytes = 256;
+    }
+
+    gfx->TextureCacheDelete(texAddr);
+    if (gfx->mRdp->palettes[palSlot] != texAddr) {
+        gfx->TextureCacheDelete(gfx->mRdp->palettes[palSlot]);
+    }
+
+    gfx->mRdp->loaded_texture[tmemIndex].addr = texAddr;
+    gfx->mRdp->loaded_texture[tmemIndex].size_bytes = lineSizeBytes;
+    gfx->mRdp->loaded_texture[tmemIndex].orig_size_bytes = lineSizeBytes;
+    // GetEffectiveLineSize() falls back to tile.line_size_bytes when size,
+    // line_size, and full_image_line_size are all equal — the tile stride is
+    // configured for palette indexing, not raw-texel sampling, so that fallback
+    // would produce garbage. The +1 on full_image_line_size is a tag that
+    // trips the "line differs from total" check; it only affects the equality
+    // test, never actual reads.
+    gfx->mRdp->loaded_texture[tmemIndex].line_size_bytes = lineSizeBytes;
+    gfx->mRdp->loaded_texture[tmemIndex].full_image_line_size_bytes = lineSizeBytes + 1;
+    gfx->mRdp->loaded_texture[tmemIndex].tex_flags = 0;
+    gfx->mRdp->loaded_texture[tmemIndex].raw_tex_metadata = {};
+    gfx->mRdp->loaded_texture[tmemIndex].masked = false;
+    gfx->mRdp->loaded_texture[tmemIndex].blended = false;
+    gfx->mRdp->textures_changed[0] = true;
+    gfx->mRdp->textures_changed[1] = true;
+
+    return false;
+}
+
+/// G_INVAL_TEX_BY_PAL: invalidate texture-cache entries whose key references
+// the given palette DRAM address. Emit this in the command stream whenever a
+// shared palette buffer gets rewritten between draws — without it, a later
+// draw that shares a texture bitmap with an earlier draw hits the cached GPU
+// upload baked with the earlier palette content.
+bool gfx_inval_tex_by_pal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    const uint8_t* palAddr = (const uint8_t*)(uintptr_t)cmd->words.w1;
+    if (palAddr != nullptr) {
+        gfx->TextureCacheDeleteByPalette(palAddr);
+    }
+    return false;
+}
+
+bool gfx_set_strict_decal_handler_custom(F3DGfx** cmd0) {
+    Interpreter* gfx = mInstance.lock().get();
+    F3DGfx* cmd = *cmd0;
+    gfx->Flush();
+    gfx->mRapi->SetStrictDecal(cmd->words.w1 != 0);
+    return false;
+}
+
 bool gfx_set_fb_handler_custom(F3DGfx** cmd0) {
     F3DGfx* cmd = *cmd0;
     Interpreter* gfx = mInstance.lock().get();
@@ -4201,6 +5027,7 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
     uint16_t* rgba16Buffer = (uint16_t*)cmd->words.w1;
     int fbId = C0(0, 8);
     bool bswap = C0(8, 1);
+    bool toI8 = C0(9, 1);
     ++(*cmd0);
     cmd = *cmd0;
     // Specifying the upper left origin value is unused and unsupported at the renderer level
@@ -4220,6 +5047,16 @@ bool gfx_read_fb_handler_custom(F3DGfx** cmd0) {
         }
     }
 #endif
+
+    if (toI8) {
+        uint8_t* dst = (uint8_t*)rgba16Buffer;
+        size_t count = (size_t)width * height;
+        for (size_t i = 0; i < count; i++) {
+            uint16_t px = rgba16Buffer[i];
+            uint8_t r5 = (px >> 11) & 0x1F;
+            dst[i] = (r5 << 3) | (r5 >> 2); // 5-bit → 8-bit
+        }
+    }
 
     return false;
 }
@@ -4418,6 +5255,9 @@ bool gfx_set_key_r_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    if (gfx->mBufVboNumTris > 0 && (gfx->mRdp->key_center.r != C1(8, 8) || gfx->mRdp->key_scale.r != C1(0, 8))) {
+        gfx->Flush();
+    }
     gfx->mRdp->key_center.r = C1(8, 8);
     gfx->mRdp->key_scale.r = C1(0, 8);
     return false;
@@ -4428,6 +5268,10 @@ bool gfx_set_key_gb_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    if (gfx->mBufVboNumTris > 0 && (gfx->mRdp->key_center.g != C1(24, 8) || gfx->mRdp->key_scale.g != C1(16, 8) ||
+                                    gfx->mRdp->key_center.b != C1(8, 8) || gfx->mRdp->key_scale.b != C1(0, 8))) {
+        gfx->Flush();
+    }
     gfx->mRdp->key_center.g = C1(24, 8);
     gfx->mRdp->key_scale.g = C1(16, 8);
     gfx->mRdp->key_center.b = C1(8, 8);
@@ -4441,6 +5285,10 @@ bool gfx_set_convert_handler_rdp(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
+    // K4/K5 feed the combiner uniforms; conservatively flush before changing them
+    if (gfx->mBufVboNumTris > 0) {
+        gfx->Flush();
+    }
     gfx->mRdp->convert_k[0] = sign_extend_9(C0(13, 9));
     gfx->mRdp->convert_k[1] = sign_extend_9(C0(4, 9));
     // k2 is split across w0 and w1
@@ -4750,12 +5598,15 @@ static constexpr UcodeHandler otrHandlers = {
     { OTR_G_REGBLENDEDTEX,
       { "G_REGBLENDEDTEX", gfx_register_blended_texture_handler_custom } },         // G_REGBLENDEDTEX (0x3f)
     { OTR_G_SETINTENSITY, { "G_SETINTENSITY", gfx_set_intensity_handler_custom } }, // G_SETINTENSITY (0x40)
+    { OTR_G_SETTIMG_PAL, { "G_SETTIMG_PAL", gfx_set_timg_pal_handler_custom } },    // G_SETTIMG_PAL (0x41)
     { OTR_G_MOVEMEM_HASH, { "OTR_G_MOVEMEM_HASH", gfx_movemem_handler_otr } },      // OTR_G_MOVEMEM_HASH
     { OTR_G_PUSH_SHADER, { "G_PUSH_SHADER", gfx_push_shader } },
     { OTR_G_POP_SHADER, { "G_POP_SHADER", gfx_pop_shader } },
     { RDP_G_LOADBLOCK_WIDE, { "G_LOADBLOCK_WIDE", gfx_load_block_wide_handler_rdp } }, // RDP_G_LOADBLOCK_WIDE (-15)
     { RDP_G_VTX_WIDE, { "G_VTX_WIDE", gfx_vtx_handler_f3dex2 } },                      // RDP_G_VTX_WIDE (-16)
     { RDP_G_TRI1_WIDE, { "G_TRI1_WIDE", gfx_tri1_handler_f3dex2 } },                   // RDP_G_TRI1_WIDE (-17)
+    { OTR_G_INVAL_TEX_BY_PAL, { "G_INVAL_TEX_BY_PAL", gfx_inval_tex_by_pal_handler_custom } },
+    { OTR_G_SET_STRICT_DECAL, { "G_SET_STRICT_DECAL", gfx_set_strict_decal_handler_custom } },
 };
 
 static constexpr UcodeHandler f3dex2Handlers = {
@@ -4962,6 +5813,7 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
+    mMtxCurrentValid = false;
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
@@ -5173,13 +6025,15 @@ void Interpreter::RunGuiOnly() {
     }
 }
 
-void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements) {
+void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements,
+                      const std::unordered_map<Gfx*, Gfx*>& dl_replacements) {
     SpReset();
 
     mGetPixelDepthPending.clear();
     mGetPixelDepthCached.clear();
 
     mCurMtxReplacements = &mtx_replacements;
+    mCurDlReplacements = &dl_replacements;
 
     mRapi->UpdateFramebufferParameters(0, mGfxCurrentWindowDimensions.width, mGfxCurrentWindowDimensions.height, 1,
                                        false, true, true, !mRendersToFb);
@@ -5454,6 +6308,12 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
     cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
     cc_features->opt_prim_depth = (shader_id1 & SHADER_OPT(PRIM_DEPTH)) != 0;
+    cc_features->opt_tex_lod = (shader_id1 & SHADER_OPT(TEX_LOD)) != 0;
+    cc_features->opt_mip_lod = (shader_id1 & SHADER_OPT(MIP_LOD)) != 0;
+    cc_features->opt_lighting = (shader_id1 & SHADER_OPT(LIGHTING)) != 0;
+    cc_features->opt_point_lighting = (shader_id1 & SHADER_OPT(POINT_LIGHTING)) != 0;
+    cc_features->opt_texgen = (shader_id1 & SHADER_OPT(TEXGEN)) != 0;
+    cc_features->opt_texgen_linear = (shader_id1 & SHADER_OPT(TEXGEN_LINEAR)) != 0;
 
     cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
@@ -5467,14 +6327,20 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->used_blend[0] = false;
     cc_features->used_blend[1] = false;
     cc_features->numInputs = 0;
+    cc_features->uses_lod_frac = false;
+    cc_features->opt_shade = false;
 
     for (int c = 0; c < 2; c++) {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 4; j++) {
-                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_7) {
+                // INPUT_1..6 are per-draw uniform slots; INPUT_7 is the shade varying
+                if (cc_features->c[c][i][j] >= SHADER_INPUT_1 && cc_features->c[c][i][j] <= SHADER_INPUT_6) {
                     if (cc_features->c[c][i][j] > cc_features->numInputs) {
                         cc_features->numInputs = cc_features->c[c][i][j];
                     }
+                }
+                if (cc_features->c[c][i][j] == SHADER_INPUT_7) {
+                    cc_features->opt_shade = true;
                 }
                 if (cc_features->c[c][i][j] == SHADER_TEXEL0 || cc_features->c[c][i][j] == SHADER_TEXEL0A) {
                     cc_features->usedTextures[0] = true;
@@ -5488,8 +6354,18 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
                         cc_features->usedTextures[0] = true;
                     }
                 }
+                if (cc_features->c[c][i][j] == SHADER_LOD_FRAC) {
+                    cc_features->uses_lod_frac = true;
+                }
             }
         }
+    }
+
+    // In MIP_LOD mode TEXEL1 reads the next mip level of texture 0; the second
+    // texture slot is never bound (mirrors GenerateCC).
+    if (cc_features->opt_mip_lod && cc_features->usedTextures[1]) {
+        cc_features->usedTextures[0] = true;
+        cc_features->usedTextures[1] = false;
     }
 
     for (int c = 0; c < 2; c++) {
@@ -5516,6 +6392,9 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
         cc_features->used_blend[1] = true;
     }
 
+    cc_features->used_palette[0] = cc_features->usedTextures[0] && (shader_id1 & SHADER_OPT(TEXEL0_PALETTE)) != 0;
+    cc_features->used_palette[1] = cc_features->usedTextures[1] && (shader_id1 & SHADER_OPT(TEXEL1_PALETTE)) != 0;
+
     cc_features->shader_id = Fast::ShaderIdUnmask(shader_id1);
 }
 
@@ -5531,8 +6410,10 @@ extern "C" void gfx_texture_cache_clear() {
 
 extern "C" void gfx_shader_cache_clear() {
     auto instance = Fast::mInstance.lock().get();
+    instance->Flush();
     instance->mColorCombinerPool.clear();
     instance->mPrevCombiner = Fast::mInstance.lock().get()->mColorCombinerPool.end();
+    instance->mPendingCombiner = nullptr;
     instance->mRenderingState.mShaderProgram = nullptr;
     instance->mRapi->ClearShaderCache();
 }

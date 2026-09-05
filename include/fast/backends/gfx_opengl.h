@@ -51,6 +51,26 @@ struct ShaderProgram {
     GLint texture_width_location;
     GLint texture_height_location;
     GLint texture_filtering_location;
+    GLint lod_max_location;
+    GLint combiner_inputs_location;
+    GLint fog_color_location;
+    GLint grayscale_color_location;
+    GLint ambient_location;
+    GLint num_lights_location;
+    GLint lights_location;
+    GLint mv_rows_location;
+    GLint lookat_x_location;
+    GLint lookat_y_location;
+    GLint texgen0_location;
+    GLint texgen1_location;
+    GLint uv_transform_location;
+    GLint tex_clamp_location;
+    GLint fog_params_location;
+    GLint mtx_palette_location;
+    GLint y_scale_location;
+    GLint mv_cols_location;
+    GLint palette_params_location;
+    GLint lod_params_location;
 };
 
 /**
@@ -72,6 +92,8 @@ struct TextureInfo {
     uint16_t width;
     uint16_t height;
     uint16_t filtering;
+    // Total mip levels uploaded (0/1 = base level only)
+    uint8_t mip_levels;
 };
 
 /**
@@ -98,10 +120,13 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     uint32_t NewTexture() override;
     void SelectTexture(int tile, uint32_t textureId) override;
     void UploadTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height) override;
+    void UploadTextureMip(const uint8_t* rgba32Buf, uint32_t width, uint32_t height, uint32_t level,
+                          uint32_t totalLevels) override;
     void SetSamplerParameters(int sampler, bool linear_filter, uint32_t cms, uint32_t cmt) override;
     void SetDepthTestAndMask(bool depth_test, bool z_upd) override;
     void SetCurrentPrimDepth(float depth) override;
     void SetZmodeDecal(bool decal) override;
+    void SetStrictDecal(bool on) override;
     void SetViewport(int x, int y, int width, int height) override;
     void SetScissor(int x, int y, int width, int height) override;
     void SetUseAlpha(bool useAlpha) override;
@@ -148,7 +173,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     int8_t mLastBlendEnabled = -1;
     int8_t mLastScissorEnabled = -1;
 
-    std::map<std::pair<uint64_t, uint32_t>, ShaderProgram> mShaderProgramPool;
+    std::map<std::pair<uint64_t, uint64_t>, ShaderProgram> mShaderProgramPool;
     ShaderProgram* mCurrentShaderProgram;
     ShaderProgram* mLastLoadedShader = nullptr;
 
@@ -168,6 +193,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     GLuint mPixelDepthRb = 0;
     GLuint mPixelDepthFb = 0;
     size_t mPixelDepthRbSize = 0;
+    bool mLastCullYFlipped = false;
 };
 
 } // namespace Fast
