@@ -49,8 +49,7 @@ class CountingEventAction : public EventAction {
 // Derived action type for template filtering.
 class SpecialAction : public CountingEventAction {
   public:
-    SpecialAction(EventID eventId, std::shared_ptr<Tickable> tickable)
-        : CountingEventAction(eventId, tickable) {
+    SpecialAction(EventID eventId, std::shared_ptr<Tickable> tickable) : CountingEventAction(eventId, tickable) {
     }
 };
 
@@ -117,7 +116,9 @@ TEST(TickableTest, ActionListOrderedByEventID) {
     for (size_t i = 1; i < list->size(); i++) {
         auto* ea = dynamic_cast<EventAction*>((*list)[i].get());
         auto* eb = dynamic_cast<EventAction*>((*list)[i - 1].get());
-        if (ea && eb) { EXPECT_TRUE(ea->GetEventId() >= eb->GetEventId()); }
+        if (ea && eb) {
+            EXPECT_TRUE(ea->GetEventId() >= eb->GetEventId());
+        }
     }
 }
 
@@ -217,12 +218,11 @@ TEST(TickableTest, EventActionCppCallbackDispatchesDirectly) {
     int runCount = 0;
     EventID lastEventId = static_cast<EventID>(-1);
 
-    auto action = std::make_shared<EventAction>(
-        kTickEvent, t, [&](EventID eventId, uintptr_t callbackPointerData) {
-            runCount++;
-            lastEventId = eventId;
-            return callbackPointerData == 0;
-        });
+    auto action = std::make_shared<EventAction>(kTickEvent, t, [&](EventID eventId, uintptr_t callbackPointerData) {
+        runCount++;
+        lastEventId = eventId;
+        return callbackPointerData == 0;
+    });
 
     t->GetActionList().Add(action);
     t->Tick(kTickEvent);
@@ -235,8 +235,8 @@ TEST(TickableTest, EventActionRawCallbackDispatchesDirectly) {
     auto t = std::make_shared<TestTickableObj>();
     RawCallbackState state{};
 
-    auto action = std::make_shared<EventAction>(
-        kDrawEvent, t, reinterpret_cast<uintptr_t>(&RawEventActionCallback), reinterpret_cast<uintptr_t>(&state));
+    auto action = std::make_shared<EventAction>(kDrawEvent, t, reinterpret_cast<uintptr_t>(&RawEventActionCallback),
+                                                reinterpret_cast<uintptr_t>(&state));
 
     t->GetActionList().Add(action);
     t->Tick(kDrawEvent);
@@ -256,8 +256,9 @@ TEST(TickableTest, EventActionCallbackGettersAndSetters) {
     EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(0));
 
     action->SetCallback(EventActionCppCallback([](EventID, uintptr_t callbackPointerData) {
-        return callbackPointerData == static_cast<uintptr_t>(123);
-    }), static_cast<uintptr_t>(123));
+                            return callbackPointerData == static_cast<uintptr_t>(123);
+                        }),
+                        static_cast<uintptr_t>(123));
     EXPECT_TRUE(action->HasCallback());
     EXPECT_TRUE(action->GetHasCppCallback());
     EXPECT_FALSE(action->GetHasRawCallback());
@@ -284,8 +285,3 @@ TEST(TickableTest, EventActionCallbackGettersAndSetters) {
     EXPECT_TRUE(std::holds_alternative<std::monostate>(action->GetCallback()));
     EXPECT_EQ(action->GetCallbackPointerData(), static_cast<uintptr_t>(0));
 }
-
-
-
-
-

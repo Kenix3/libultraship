@@ -620,7 +620,8 @@ TEST(ComponentLifecycleTest, ContextCanBeDestroyedAfterAddingMainComponents) {
         weakContext = context;
 
         context->GetChildren().Add(std::make_shared<Ship::Config>("test.cfg"));
-        context->GetChildren().Add(std::make_shared<Ship::ConsoleVariable>(context->GetChildren().GetFirst<Ship::Config>()));
+        context->GetChildren().Add(
+            std::make_shared<Ship::ConsoleVariable>(context->GetChildren().GetFirst<Ship::Config>()));
         context->GetChildren().Add(std::make_shared<Ship::ThreadPool>(1));
         context->GetChildren().Add(std::make_shared<Ship::CrashHandler>());
         context->GetChildren().Add(std::make_shared<Ship::Console>());
