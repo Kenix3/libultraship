@@ -11,6 +11,7 @@
 #include "fast/backends/gfx_dxgi.h"
 #include "fast/backends/gfx_opengl.h"
 #include "fast/backends/gfx_metal.h"
+#include "fast/backends/gfx_vulkan.h"
 #include "fast/backends/gfx_direct3d_common.h"
 #include "fast/backends/gfx_direct3d11.h"
 #include "fast/backends/gfx_window_manager_api.h"
@@ -191,6 +192,15 @@ void Fast3dWindow::InitWindowManager() {
                                                      GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
             break;
 #endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            mWindowManagerApi =
+                new GfxWindowBackendSDL(GetConfig(), GetContext()->GetChildren().GetFirst<Ship::FileDrop>(),
+                                        GetConsoleVariables(), std::dynamic_pointer_cast<Fast::Fast3dGui>(GetGui()));
+            mRenderingApi = new GfxRenderingAPIVK(GetConsoleVariables(),
+                                                  GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
+            break;
+#endif
         default:
             SPDLOG_ERROR("Could not load the correct rendering backend");
             break;
@@ -199,10 +209,6 @@ void Fast3dWindow::InitWindowManager() {
 
 void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
     mInterpreter->GetCurrentRenderingAPI()->SetTextureFilter(filteringMode);
-}
-
-void Fast3dWindow::EnableSRGBMode() {
-    mInterpreter->mRapi->SetSrgbMode();
 }
 
 void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {
@@ -229,7 +235,8 @@ bool Fast3dWindow::IsFrameReady() {
     return mWindowManagerApi->IsFrameReady();
 }
 
-bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
+bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
+                                              const std::unordered_map<Gfx*, Gfx*>& dlReplacements) {
     // Skip dropped frames
     if (!IsFrameReady()) {
         return false;
@@ -243,7 +250,7 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
     // Setup game framebuffers to match available window space
     mInterpreter->StartFrame();
     // Execute the games gfx commands
-    mInterpreter->Run(commands, mtxReplacements);
+    mInterpreter->Run(commands, mtxReplacements, dlReplacements);
     // Renders the game frame buffer to the final window and finishes the GUI
     gui->EndDraw();
     // Finalize swap buffers
@@ -463,6 +470,10 @@ std::string Fast3dWindow::GetWindowBackendName() {
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
             return "Metal";
+#endif
+#ifdef ENABLE_VULKAN
+        case WindowBackend::FAST3D_SDL_VULKAN:
+            return "Vulkan";
 #endif
         default:
             return "";

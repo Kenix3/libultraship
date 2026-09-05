@@ -1,1 +1,1 @@
-sdl3 libpng glew ninja libzip nlohmann-json tinyxml2 spdlog
+sdl3 libpng glew ninja libzip nlohmann-json tinyxml2 spdlog vulkan-headers vulkan-loader shaderc

@@ -1,1 +1,1 @@
-libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev libtinyxml2-dev libspdlog-dev tcc libtcc-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev
+libpng-dev libglew-dev libzip-dev zipcmp zipmerge ziptool ninja-build nlohmann-json3-dev libtinyxml2-dev libspdlog-dev tcc libtcc-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libvulkan-dev libshaderc-dev
