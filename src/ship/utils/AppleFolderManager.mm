@@ -37,6 +37,11 @@ const char * FolderManager::getMainBundlePath() {
     return [bundlePath UTF8String];
 }
 
+const char* FolderManager::getExecutableDirectory() {
+    NSString *executablePath = [[NSBundle mainBundle] executablePath];
+    return [[executablePath stringByDeletingLastPathComponent] fileSystemRepresentation];
+}
+
 const char * FolderManager::pathForDirectory(SearchPathDirectory directory, SearchPathDomainMask domainMask) {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSArray *URLs = [fileManager URLsForDirectory:(NSSearchPathDirectory)directory inDomains:domainMask];

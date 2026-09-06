@@ -96,6 +96,12 @@ class FolderManager {
     const char* getMainBundlePath();
 
     /**
+     * @brief Returns the path to the directory containing the application's executable.
+     * @return Null-terminated UTF-8 path (valid for the lifetime of this FolderManager).
+     */
+    const char* getExecutableDirectory();
+
+    /**
      * @brief Returns the first path for the given directory and domain mask.
      * @param directory  Standard directory constant (e.g. NSApplicationSupportDirectory).
      * @param domainMask Domain(s) to search (e.g. NSUserDomainMask).

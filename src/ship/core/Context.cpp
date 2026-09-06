@@ -379,7 +379,18 @@ std::string Context::LocateFileAcrossAppDirs(const std::string& path, const std:
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
-    // app install dir
+#ifdef __APPLE__
+    // app executable directory
+    {
+        FolderManager folderManager;
+        fpath = std::string(folderManager.getExecutableDirectory()) + "/" + path;
+        if (std::filesystem::exists(fpath)) {
+            return fpath;
+        }
+    }
+#endif
+
+    // app resource directory
     fpath = GetPathRelativeToAppBundle(path);
     if (std::filesystem::exists(fpath)) {
         return fpath;
