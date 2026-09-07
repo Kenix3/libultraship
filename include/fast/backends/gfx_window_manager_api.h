@@ -42,13 +42,13 @@ class GfxWindowBackend {
     virtual bool IsFullscreen() = 0;
 
   protected:
-    void (*mOnFullscreenChanged)(bool isNowFullscreen);
-    bool (*mOnKeyDown)(int scancode);
-    bool (*mOnKeyUp)(int scancode);
-    bool (*mOnMouseButtonDown)(int btn);
-    bool (*mOnMouseButtonUp)(int btn);
+    void (*mOnFullscreenChanged)(bool isNowFullscreen) = nullptr;
+    bool (*mOnKeyDown)(int scancode) = nullptr;
+    bool (*mOnKeyUp)(int scancode) = nullptr;
+    bool (*mOnMouseButtonDown)(int btn) = nullptr;
+    bool (*mOnMouseButtonUp)(int btn) = nullptr;
     uint32_t mTargetFps = 60;
-    bool mFullScreen;
+    bool mFullScreen = false;
     bool mIsRunning = true;
     bool mVsyncEnabled = true;
 };
