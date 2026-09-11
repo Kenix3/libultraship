@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <vector>
 #include <stack>
+#include <array>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -16,6 +18,7 @@
 #include "fast/types.h"
 #include "fast/ucodehandlers.h"
 #include "backends/gfx_rendering_api.h"
+#include <prism/processor.h>
 #include "fast/debug/GfxDebugger.h"
 
 #include "fast/resource/type/Texture.h"
@@ -63,7 +66,8 @@ enum {
     SHADER_TEXEL1A,
     SHADER_1,
     SHADER_COMBINED,
-    SHADER_NOISE
+    SHADER_NOISE,
+    SHADER_LOD_FRAC
 };
 
 #ifdef __cplusplus
@@ -85,7 +89,15 @@ enum class ShaderOpts {
     TEXEL0_BLEND,
     TEXEL1_BLEND,
     PRIM_DEPTH,
-    PRISM_SHADER, // 16-bit width
+    TEX_LOD,        // G_TL_LOD: LOD_FRACTION comes from per-pixel UV derivatives
+    MIP_LOD,        // a real mip pyramid is bound to TEXEL0; TEXEL1 = next mip level
+    LIGHTING,       // shade color computed in the vertex shader from normals + lights
+    POINT_LIGHTING, // point (positional) lights are present; needs world pos + MV rows
+    TEXGEN,         // UVs generated in the vertex shader from normals (env mapping)
+    TEXGEN_LINEAR,  // acos-based texgen variant
+    TEXEL0_PALETTE, // TEXEL0 is a CI index texture; palette lookup in the shader
+    TEXEL1_PALETTE, // TEXEL1 is a CI index texture; palette lookup in the shader
+    PRISM_SHADER,   // 16-bit width
     MAX
 };
 
@@ -102,10 +114,11 @@ struct ColorCombinerKey {
 #endif
 };
 
-#define SHADER_MAX_TEXTURES 6
+#define SHADER_MAX_TEXTURES 7
 #define SHADER_FIRST_TEXTURE 0
 #define SHADER_FIRST_MASK_TEXTURE 2
 #define SHADER_FIRST_REPLACEMENT_TEXTURE 4
+#define SHADER_PALETTE_TEXTURE 6
 
 struct CCFeatures {
     int c[2][2][4];
@@ -118,7 +131,16 @@ struct CCFeatures {
     bool opt_invisible;
     bool opt_grayscale;
     bool opt_prim_depth;
+    bool opt_tex_lod;   // LOD_FRACTION computed from per-pixel UV derivatives
+    bool opt_mip_lod;   // TEXEL0 carries a real mip pyramid; TEXEL1 = next mip level
+    bool uses_lod_frac; // any combiner slot references SHADER_LOD_FRAC
+    bool opt_shade;     // combiner reads the per-vertex shade color (SHADER_INPUT_7)
+    bool opt_lighting;  // shade computed in the vertex shader from normals + lights
+    bool opt_point_lighting;
+    bool opt_texgen;
+    bool opt_texgen_linear;
     bool usedTextures[2];
+    bool used_palette[2]; // texel is a CI index texture; palette lookup in the shader
     bool used_masks[2];
     bool used_blend[2];
     bool clamp[2][2];
@@ -141,8 +163,13 @@ class GfxWindowBackend;
 class Fast3dWindow;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 17;
-constexpr int16_t ShaderIdUnmask(int id) {
+constexpr size_t SHADER_ID_SHIFT = 25;
+// The 16-bit custom shader id is packed into the combiner options immediately
+// after the ShaderOpts flags; adding a ShaderOpt past PRISM_SHADER would
+// silently overlap the id field.
+static_assert(static_cast<size_t>(ShaderOpts::PRISM_SHADER) == SHADER_ID_SHIFT,
+              "ShaderOpts grew into the shader-id bitfield (see SHADER_ID_SHIFT)");
+constexpr int16_t ShaderIdUnmask(uint64_t id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
 
@@ -190,6 +217,12 @@ struct TextureCacheKey {
     uint8_t fmt, siz;
     uint8_t palette_index;
     uint32_t size_bytes;
+    // Number of mip levels uploaded for this texture (0 or 1 = just the base level).
+    // Part of the key so the same data uploaded with/without a mip chain doesn't collide.
+    uint8_t mip_levels;
+    // 1 = uploaded as a CI index texture (palette applied in the shader). Indexed
+    // entries do not key on palette contents, which is what makes TLUT swaps free.
+    uint8_t indexed;
 
     bool operator==(const TextureCacheKey&) const noexcept = default;
 
@@ -221,10 +254,16 @@ struct RGBA {
 };
 
 struct LoadedVertex {
+    // Object-space position (w normally 1). The vertex shader transforms it with
+    // the matrix-palette entry selected by mtx_slot. Rectangle/s2dex paths store
+    // final clip coordinates here and reference the identity palette entry.
     float x, y, z, w;
     float u, v;
     struct RGBA color;
-    uint8_t clip_rej;
+    // Raw signed vertex normal (when G_LIGHTING); consumed by the vertex shader
+    int8_t normal[3];
+    // Index into the interpreter's matrix history captured at vertex-load time
+    uint8_t mtx_slot;
 };
 
 struct RawTexMetadata {
@@ -260,6 +299,9 @@ struct RSP {
         // U0.16
         uint16_t s, t;
     } texture_scaling_factor;
+
+    // Max mip level from gsSPTexture (number of mip levels - 1). 0 = no mipmapping.
+    uint8_t texture_level;
 
     struct LoadedVertex loaded_vertices[MAX_VERTICES + 4];
 };
@@ -304,6 +346,22 @@ struct RDP {
         uint8_t tmem_index; // 0 or 1 for offset 0 kB or offset 2 kB, respectively
     } texture_tile[8];
     bool textures_changed[2];
+    // Set when a TLUT load changes the palette staging; the GPU palette texture
+    // is rebuilt lazily on the next palettized draw.
+    bool palette_texture_dirty;
+
+    // Journal of recent TMEM loads so mip-pyramid tiles can be mapped back to their
+    // DRAM source even when each level was loaded with its own LoadBlock command.
+    // Only linear loads (LoadBlock) are recorded; LoadTile loads are strided in DRAM
+    // and are marked non-linear so the mip importer can skip them.
+    static constexpr size_t TMEM_JOURNAL_SIZE = 32;
+    struct TmemLoadEntry {
+        uint16_t tmem_word;       // TMEM start, in 64-bit words
+        uint16_t size_words;      // length in 64-bit words
+        const uint8_t* dram_addr; // DRAM source of the load
+        bool linear;              // true when DRAM data is contiguous (LoadBlock)
+    } tmem_loads[TMEM_JOURNAL_SIZE];
+    uint8_t tmem_load_head; // next slot to write (circular)
 
     uint8_t first_tile_index;
 
@@ -312,6 +370,8 @@ struct RDP {
     bool grayscale;
 
     uint8_t prim_lod_fraction;
+    // Minimum LOD clamp from gsDPSetPrimColor's m parameter (sharpen/detail modes)
+    uint8_t prim_lod_min;
     uint16_t prim_depth;
     struct RGBA env_color, prim_color, fog_color, blend_color, fill_color, grayscale_color;
 
@@ -350,7 +410,11 @@ struct ColorCombiner {
     uint64_t shader_id0;
     uint64_t shader_id1;
     bool usedTextures[2];
+    // Combiner reads the per-vertex shade color (mapped to SHADER_INPUT_7)
+    bool usedShade;
     struct ShaderProgram* prg[16];
+    // Which RDP register feeds each constant input slot ([0] = color, [1] = alpha).
+    // Slots are limited to SHADER_INPUT_1..6; consumed by FillCombinerUniforms.
     uint8_t shader_input_mapping[2][7];
 };
 
@@ -358,6 +422,8 @@ struct RenderingState {
     uint8_t depth_test_and_mask; // 1: depth test, 2: depth mask
     bool decal_mode;
     bool alpha_blend;
+    // GPU backface culling: sign of the kept RSP cross product (0 = no culling)
+    int8_t cull_keep_sign;
     struct XYWidthHeight viewport, scissor;
     struct ShaderProgram* mShaderProgram;
     TextureCacheNode* mTextures[SHADER_MAX_TEXTURES];
@@ -394,7 +460,8 @@ class Interpreter {
     GfxRenderingAPI* GetCurrentRenderingAPI();
     void StartFrame();
     void RunGuiOnly();
-    void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements);
+    void Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_replacements,
+             const std::unordered_map<Gfx*, Gfx*>& dl_replacements);
     void EndFrame();
     void HandleWindowEvents();
     bool IsFrameReady();
@@ -405,6 +472,48 @@ class Interpreter {
     int CreateFrameBuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                           uint8_t resize, bool forceFixedAspect = false);
     void SetFrameBuffer(int fb, float noiseScale);
+    struct PostPass {
+        int id;
+        std::string path;
+        std::string pack;
+        bool enabled;
+    };
+    struct ShaderSettings {
+        std::string path;
+        std::string pack;
+        std::vector<prism::SettingDecl> decls;
+        // Current values; scalar types use [0], colors use [0..2]
+        std::unordered_map<std::string, std::array<float, 4>> values;
+    };
+
+    // ---- Post-processing chain ----
+    // Each registered pass is a prism shader template applied as a fullscreen
+    // step over the game image at the end of the frame (first pass samples the
+    // game framebuffer, later passes sample the previous pass). Returns a
+    // handle for UnregisterPostPass. Thread-safe; takes effect next frame.
+    int RegisterPostPass(const char* o2rShaderPath);
+    void UnregisterPostPass(int id);
+    void ClearPostPasses();
+    bool HasPostPasses();
+    // Snapshot for UI display; enable state edited via SetPostPassEnabled.
+    std::vector<PostPass> GetPostPasses();
+    void SetPostPassEnabled(int id, bool enabled);
+    // Settings registry for UI display (render thread only).
+    const std::map<size_t, ShaderSettings>& GetShaderSettingsRegistry() {
+        return mShaderSettings;
+    }
+    // Updates a setting, persists it to CVars and recompiles all shaders.
+    // Scalar types pass the value in components[0]; colors use [0..2].
+    void SetShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]);
+    // Updates the stored value only (used while a slider/picker is being
+    // dragged so the widget tracks the drag); commit with SetShaderSettingValue.
+    void UpdateShaderSettingValue(size_t shaderId, const std::string& var, const float components[4]);
+
+    // Write one register of the custom uniform file (uCustom in shader
+    // templates). Flushes the pending batch when the value changes so the
+    // new value only affects subsequent draws. Registers 0-1 are engine
+    // built-ins (see CustomUniforms); games use 2..GFX_NUM_CUSTOM_UNIFORMS-1.
+    void SetCustomUniform(uint8_t idx, const float values[4]);
     void CopyFrameBuffer(int fb_dst_id, int fb_src_id, bool copyOnce, bool* hasCopiedPtr);
     void ResetFrameBuffer();
     void AdjustPixelDepthCoordinates(float& x, float& y);
@@ -426,6 +535,11 @@ class Interpreter {
 
     // private: TODO make these private
     void Flush();
+    // Fill the combiner-constant uniforms for the pending batch from RDP state
+    // and hand them to the rendering backend.
+    void LatchCombinerUniforms();
+    // Flush pending triangles when a combiner-visible RDP register is about to change.
+    void FlushIfRegisterChanges(const RGBA& reg, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     ShaderProgram* LookupOrCreateShaderProgram(uint64_t id0, uint64_t id1);
     ColorCombiner* LookupOrCreateColorCombiner(const ColorCombinerKey& key);
     void ShaderCacheClear();
@@ -433,6 +547,7 @@ class Interpreter {
     std::shared_ptr<Ship::IResource> ResolveResourceCached(const char* path);
     bool TextureCacheLookup(int i, const TextureCacheKey& key);
     void TextureCacheDelete(const uint8_t* origAddr);
+    void TextureCacheDeleteByPalette(const uint8_t* palAddr);
     void ImportTextureRgba16(int tile, bool importReplacement);
     void ImportTextureRgba32(int tile, bool importReplacement);
     void ImportTextureIA4(int tile, bool importReplacement);
@@ -446,6 +561,12 @@ class Interpreter {
     void ImportTextureImg(int tile, bool importReplacement);
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
+    // Mipmapping support: detect a usable mip pyramid in the tile descriptors,
+    // route base-level uploads, and decode/upload the extra levels.
+    uint8_t DetectMipChain(uint32_t baseTile) const;
+    void UploadBaseTexture(const uint8_t* rgba32Buf, uint32_t width, uint32_t height);
+    void UploadMipChain(uint32_t baseTile);
+    const RDP::TmemLoadEntry* FindTmemLoad(uint16_t tmemWord) const;
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
 
     /**
@@ -522,8 +643,63 @@ class Interpreter {
     GfxTextureCache mTextureCache{};
     std::unordered_map<const void*, std::shared_ptr<Ship::IResource>> mResolvedResourceCache;
     bool mResolvedResourceCacheEnabled = false;
+    // Extra mip levels (beyond the base) for the texture import in progress.
+    // Set around ImportTexture calls in GfxSpTri1; 0 everywhere else.
+    uint8_t mCurrentMipExtraLevels{};
     std::map<ColorCombinerKey, ColorCombiner> mColorCombinerPool; // color_combiner_pool;
     std::map<ColorCombinerKey, ColorCombiner>::iterator mPrevCombiner = mColorCombinerPool.end();
+    // Combiner the currently batched triangles were packed with; its input mapping
+    // selects which RDP registers feed the combiner uniforms at flush time.
+    ColorCombiner* mPendingCombiner = nullptr;
+    // Last lighting/texgen uniforms handed to the backend; a change mid-batch
+    // forces a flush so queued triangles keep their values.
+    LightingUniforms mLatchedLighting{};
+    // Per-draw vertex-pipeline constants (UV transform, clamp bounds, fog factor
+    // source), latched in GfxSpTri1 with the same flush-on-change rule and copied
+    // into the combiner uniforms at flush time.
+    float mUvTransform[2][4]{};
+    float mTextureClamp[2][4]{};
+    float mFogParams[4]{};
+    float mLodParams[4]{};
+
+    // GPU vertex transform: history of recent model-view-projection matrices
+    // (aspect scale folded in) captured at vertex-load time. Each LoadedVertex
+    // references an entry; GfxSpTri1 maps the referenced entries onto the small
+    // per-draw matrix palette uploaded to the vertex shader.
+    static constexpr size_t MTX_HISTORY_SIZE = 64;
+    float mMtxHistory[MTX_HISTORY_SIZE][4][4]{};
+    uint8_t mMtxHistoryHead = 0;
+    uint8_t mMtxHistoryCurrent = 0;
+    bool mMtxCurrentValid = false;
+    float mMtxCurrentAspect = 1.0f;
+    uint8_t mMtxIdentityEntry = 0;
+    bool mMtxIdentityValid = false;
+    // Per-batch mapping from history entry -> palette slot (-1 = not in palette)
+    int8_t mBatchSlotForHistory[MTX_HISTORY_SIZE]{};
+    uint8_t mBatchMtxCount = 0;
+    TransformUniforms mTransform{};
+
+    uint8_t AppendMtxHistory(const float m[4][4], float aspectScale);
+    uint8_t GetIdentityMtxSlot();
+
+    // GPU palettization: the import in progress uploads raw CI indices instead of
+    // decoded colors (palette lookup happens in the fragment shader).
+    bool mImportIndexed = false;
+    // Palette textures are versioned by TLUT content and never mutated once
+    // uploaded: backends queue draw commands (Metal executes at end of frame),
+    // so rewriting a bound palette would retroactively recolor earlier draws.
+    // A content-hash ring caches one immutable 256-entry texture per TLUT.
+    static constexpr size_t PALETTE_RING_SIZE = 128;
+    uint32_t mPaletteRingTexture[PALETTE_RING_SIZE];
+    uint64_t mPaletteRingHash[PALETTE_RING_SIZE]{};
+    size_t mPaletteRingNext = 0;
+    std::unordered_map<uint64_t, size_t> mPaletteSlotByHash;
+    uint64_t mCurrentPaletteHash = 0;
+    uint32_t mBoundPaletteTexture = 0xFFFFFFFF;
+    // Returns the texture id for the current TLUT content, uploading it if new
+    uint32_t AcquirePaletteTexture();
+    // Per-draw palette parameters: x = palette bank entry offset, y = filter mode
+    float mPaletteParams[2][4]{};
     uint8_t* mTexUploadBuffer = nullptr;
 
     GfxDimensions mGfxCurrentWindowDimensions{}; // gfx_current_window_dimensions;
@@ -564,29 +740,79 @@ class Interpreter {
     std::unordered_map<uintptr_t, int> mFbTextures; // CPU addr -> GPU FB id
 
     const std::unordered_map<Mtx*, MtxF>* mCurMtxReplacements;
+    const std::unordered_map<Gfx*, Gfx*>* mCurDlReplacements;
     bool mMarkerOn; // This was originally a debug feature. Now it seems to control s2dex?
-    std::unordered_map<size_t, const char*> mShaders;
+    // Registered custom shader templates (id -> o2r path). Paths are owned
+    // copies: ids live in compiled-pipeline cache keys for the whole session.
+    std::unordered_map<size_t, std::string> mShaders;
 
     typedef size_t ShaderId;
     std::stack<ShaderId> mShaderStack;
-    size_t mShadersIndex;
+    size_t mShadersIndex = 0;
+    CustomUniforms mCustomUniforms{};
+    uint32_t mCustomFrameCount = 0;
+    double mCustomTimeSeconds = 0.0;
+
+    // Post-processing chain state (see RegisterPostPass)
+    std::vector<PostPass> mPostPasses;
+    std::mutex mPostPassMutex;
+
+    // Tweakable shader settings discovered from @setting(...) directives at
+    // compile time (see gfx_register_shader_settings). Values are baked into
+    // the generated shader source; edits recompile via gfx_shader_cache_clear.
+    std::map<size_t, ShaderSettings> mShaderSettings;
+
+    // Per-display-list shader mapping ("materials" in the shader-pack
+    // manifest): o2r DL path -> shader template path. Scopes are cmd_stack
+    // depths at which a mapped shader was pushed; popped on the matching ENDDL.
+    std::unordered_map<std::string, std::string> mMaterialShaders;
+    std::unordered_map<std::string, std::string> mShaderPackNames;
+    std::vector<size_t> mDlShaderScopes;
+    void ApplyMaterialShader(const char* dlistPath);
+    void PopMaterialShaderScopes();
+    int mPostPassNextId = 1;
+    int mPostPassFb[2] = { -1, -1 }; // ping-pong targets, created lazily
+    bool mPostManifestChecked = false;
+    // Registers (or finds) a custom shader template path, returning its id for
+    // the combiner key. Shared by G_PUSH_SHADER and the post-process chain.
+    size_t RegisterShaderPath(const char* path);
+    // Executes the registered passes over the game framebuffer; returns the
+    // rapi framebuffer id holding the final image, or -1 when nothing ran.
+    int RunPostPasses();
+    void LoadPostPassManifest();
     int mInterpolationIndex;
     int mInterpolationIndexTarget;
     // Interpolation factor for the current rendered frame within a game tick:
     // 0 = previous tick, 1 = current tick. Set by the port before each
     // DrawAndRunGraphicsCommands call, like mInterpolationIndex.
     float mInterpolationT = 1.0f;
+    int mInterpolationTotal;
+    float mInterpolationFrac;
+    // N64 RGB framebuffer dither (G_CD_*), applied per-draw in the fragment shader.
+    // Cached once per frame from the gEnhancements.Graphics.DitherNoise CVar.
+    bool mRgbDitherEnabled = true;
 };
 
 void gfx_set_target_ucode(UcodeHandlers ucode);
+const char* gfx_get_current_ucode_name();
 void gfx_push_current_dir(char* path);
 int32_t gfx_check_image_signature(const char* imgData);
 const char* gfx_get_shader(int16_t id);
+
+// Shader-pack settings plumbing used by the backend shader builders:
+// register the @setting declarations discovered while processing a template,
+// and fetch the current values pre-formatted as prism context items.
+void gfx_register_shader_settings(int16_t shaderId, const std::vector<prism::SettingDecl>& decls);
+std::vector<std::pair<std::string, prism::ContextTypes>> gfx_get_shader_setting_values(int16_t shaderId);
 const char* GfxGetOpcodeName(int8_t opcode);
 
 } // namespace Fast
 
 extern "C" void gfx_texture_cache_clear();
+extern "C" void gfx_set_custom_uniform(uint8_t idx, const float values[4]);
+extern "C" int gfx_register_post_pass(const char* o2rShaderPath);
+extern "C" void gfx_unregister_post_pass(int id);
+extern "C" void gfx_clear_post_passes();
 extern "C" void gfx_shader_cache_clear();
 extern "C" int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                                       uint8_t resize, bool forceFixedAspect = false);

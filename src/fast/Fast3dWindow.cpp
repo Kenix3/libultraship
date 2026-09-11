@@ -201,10 +201,6 @@ void Fast3dWindow::SetTextureFilter(FilteringMode filteringMode) {
     mInterpreter->GetCurrentRenderingAPI()->SetTextureFilter(filteringMode);
 }
 
-void Fast3dWindow::EnableSRGBMode() {
-    mInterpreter->mRapi->SetSrgbMode();
-}
-
 void Fast3dWindow::SetRendererUCode(UcodeHandlers ucode) {
     gfx_set_target_ucode(ucode);
 }
@@ -229,7 +225,8 @@ bool Fast3dWindow::IsFrameReady() {
     return mWindowManagerApi->IsFrameReady();
 }
 
-bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements) {
+bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
+                                              const std::unordered_map<Gfx*, Gfx*>& dlReplacements) {
     // Skip dropped frames
     if (!IsFrameReady()) {
         return false;
@@ -243,7 +240,7 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
     // Setup game framebuffers to match available window space
     mInterpreter->StartFrame();
     // Execute the games gfx commands
-    mInterpreter->Run(commands, mtxReplacements);
+    mInterpreter->Run(commands, mtxReplacements, dlReplacements);
     // Renders the game frame buffer to the final window and finishes the GUI
     gui->EndDraw();
     // Finalize swap buffers
