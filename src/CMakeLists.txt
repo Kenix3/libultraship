@@ -9,6 +9,11 @@ set_target_properties(libultraship PROPERTIES ENABLE_EXPORTS TRUE)
 set_target_properties(libultraship PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 option(USE_OPENGLES "Enable GLES3" OFF)
+# Target GLES 2.0 / GLSL ES 1.00 instead of GLES 3.0. Implies USE_OPENGLES.
+option(USE_OPENGLES2 "Enable GLES2" OFF)
+if (USE_OPENGLES2)
+    set(USE_OPENGLES ON)
+endif()
 option(GFX_DEBUG_DISASSEMBLER "Enable libgfxd" OFF)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -156,8 +161,13 @@ endif()
 
 if (USE_OPENGLES)
     if (CMAKE_SYSTEM_NAME STREQUAL "Android")
-        find_library(OPENGLES_LIBRARY GLESv3)
-        target_link_libraries(libultraship PRIVATE GLESv3)
+        if (USE_OPENGLES2)
+            find_library(OPENGLES_LIBRARY GLESv2)
+            target_link_libraries(libultraship PRIVATE GLESv2)
+        else()
+            find_library(OPENGLES_LIBRARY GLESv3)
+            target_link_libraries(libultraship PRIVATE GLESv3)
+        endif()
     elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
         target_link_libraries(libultraship PRIVATE OpenGL::GLES2)
     else()
@@ -261,6 +271,7 @@ else()
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         SPDLOG_ACTIVE_LEVEL=${SPDLOG_MIN_CUTOFF}
         $<$<BOOL:${USE_OPENGLES}>:USE_OPENGLES>
+        $<$<BOOL:${USE_OPENGLES2}>:USE_OPENGLES2>
         $<$<BOOL:${GFX_DEBUG_DISASSEMBLER}>:GFX_DEBUG_DISASSEMBLER>
     )
 endif()

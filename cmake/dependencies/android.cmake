@@ -72,3 +72,11 @@ if (NOT ${libzip_FOUND})
 endif()
 
 target_link_libraries(ImGui PUBLIC SDL3::SDL3)
+
+# ImGui has no Android auto-detect, so the ES dialect has to be named here or its
+# desktop path compiles in and calls entry points GLES does not export.
+if (USE_OPENGLES2)
+    add_compile_definitions(IMGUI_IMPL_OPENGL_ES2)
+else()
+    add_compile_definitions(IMGUI_IMPL_OPENGL_ES3)
+endif()

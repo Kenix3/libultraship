@@ -28,6 +28,41 @@
 
 namespace Fast {
 
+#ifdef USE_OPENGLES2
+// GLES 2.0 has no sized colour formats: glTexImage2D requires internalformat to
+// equal format. Packed depth/stencil comes from OES_packed_depth_stencil, and
+// there is a single framebuffer binding point rather than a read/draw pair.
+#define GL_RGBA8 GL_RGBA
+#define GL_RGB8 GL_RGB
+#define GL_READ_FRAMEBUFFER GL_FRAMEBUFFER
+#define GL_DRAW_FRAMEBUFFER GL_FRAMEBUFFER
+#ifndef GL_DEPTH24_STENCIL8
+#define GL_DEPTH24_STENCIL8 GL_DEPTH24_STENCIL8_OES
+#endif
+#endif
+
+// GLES 2.0 has no combined depth/stencil attachment point, so a packed
+// renderbuffer is attached to both points instead.
+static void AttachDepthStencil(GLuint rbo) {
+#ifdef USE_OPENGLES2
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+#else
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+#endif
+}
+
+// Multisampled renderbuffers are not in GLES 2.0. mMaxMsaaLevel is pinned to 1
+// there, which makes every caller single-sampled; this only has to compile.
+static void RenderbufferStorageMsaa(GLsizei samples, GLenum format, GLsizei width, GLsizei height) {
+#ifdef USE_OPENGLES2
+    (void)samples;
+    glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+#else
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, format, width, height);
+#endif
+}
+
 // Cached for free-function include-loader callbacks passed to the prism processor via a raw
 // function pointer (prism::IncludeFunc); lambdas with captures cannot be used there.
 static std::shared_ptr<Ship::ResourceManager> sOGLResourceManager;
@@ -82,6 +117,14 @@ void GfxRenderingAPIOGL::SetPerDrawUniforms() {
 
         GLint height[2] = { textures[mCurrentTextureIds[0]].height, textures[mCurrentTextureIds[1]].height };
         glUniform1iv(mCurrentShaderProgram->texture_height_location, 2, height);
+    }
+
+    if (mCurrentShaderProgram->usedTextures[2] || mCurrentShaderProgram->usedTextures[3]) {
+        GLint width[2] = { textures[mCurrentTextureIds[2]].width, textures[mCurrentTextureIds[3]].width };
+        glUniform1iv(mCurrentShaderProgram->mask_width_location, 2, width);
+
+        GLint height[2] = { textures[mCurrentTextureIds[2]].height, textures[mCurrentTextureIds[3]].height };
+        glUniform1iv(mCurrentShaderProgram->mask_height_location, 2, height);
     }
 }
 
@@ -291,21 +334,40 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
 #ifdef __APPLE__
         { "GLSL_VERSION", "#version 410 core" },
         { "attr", "in" },
+        { "frag_depth", "gl_FragDepth" },
         { "opengles", false },
+        { "opengles2", false },
+        { "frag_out", true },
         { "core_opengl", true },
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
+#elif defined(USE_OPENGLES2)
+        { "GLSL_VERSION", "#version 100\n#extension GL_EXT_frag_depth : enable\nprecision mediump float;" },
+        { "attr", "varying" },
+        { "frag_depth", "gl_FragDepthEXT" },
+        { "opengles", true },
+        { "opengles2", true },
+        { "frag_out", false },
+        { "core_opengl", false },
+        { "texture", "texture2D" },
+        { "vOutColor", "gl_FragColor" },
 #elif defined(USE_OPENGLES)
         { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
         { "attr", "in" },
+        { "frag_depth", "gl_FragDepth" },
         { "opengles", true },
+        { "opengles2", false },
+        { "frag_out", true },
         { "core_opengl", false },
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
 #else
         { "GLSL_VERSION", "#version 130" },
         { "attr", "varying" },
+        { "frag_depth", "gl_FragDepth" },
         { "opengles", false },
+        { "opengles2", false },
+        { "frag_out", false },
         { "core_opengl", false },
         { "texture", "texture2D" },
         { "vOutColor", "gl_FragColor" },
@@ -362,17 +424,26 @@ static std::string BuildVsShader(const CCFeatures& cc_features) {
                                      { "GLSL_VERSION", "#version 410 core" },
                                      { "attr", "in" },
                                      { "out", "out" },
-                                     { "opengles", false }
+                                     { "opengles", false },
+                                     { "opengles2", false }
+#elif defined(USE_OPENGLES2)
+                                     { "GLSL_VERSION", "#version 100" },
+                                     { "attr", "attribute" },
+                                     { "out", "varying" },
+                                     { "opengles", true },
+                                     { "opengles2", true }
 #elif defined(USE_OPENGLES)
                                      { "GLSL_VERSION", "#version 300 es" },
                                      { "attr", "in" },
                                      { "out", "out" },
-                                     { "opengles", true }
+                                     { "opengles", true },
+                                     { "opengles2", false }
 #else
                                      { "GLSL_VERSION", "#version 110" },
                                      { "attr", "attribute" },
                                      { "out", "varying" },
-                                     { "opengles", false }
+                                     { "opengles", false },
+                                     { "opengles2", false }
 #endif
     };
     processor.populate(mContext);
@@ -514,6 +585,8 @@ ShaderProgram* GfxRenderingAPIOGL::CreateAndLoadNewShader(uint64_t shader_id0, u
     prg->texture_width_location = glGetUniformLocation(shader_program, "texture_width");
     prg->texture_height_location = glGetUniformLocation(shader_program, "texture_height");
     prg->texture_filtering_location = glGetUniformLocation(shader_program, "texture_filtering");
+    prg->mask_width_location = glGetUniformLocation(shader_program, "mask_width");
+    prg->mask_height_location = glGetUniformLocation(shader_program, "mask_height");
 
     LoadShader(prg);
 
@@ -721,7 +794,7 @@ void GfxRenderingAPIOGL::Init() {
     glGenBuffers(1, &mOpenglVbo);
     glBindBuffer(GL_ARRAY_BUFFER, mOpenglVbo);
 
-#if defined(__APPLE__) || defined(USE_OPENGLES)
+#if defined(__APPLE__) || (defined(USE_OPENGLES) && !defined(USE_OPENGLES2))
     glGenVertexArrays(1, &mOpenglVao);
     glBindVertexArray(mOpenglVao);
 #endif
@@ -741,12 +814,17 @@ void GfxRenderingAPIOGL::Init() {
 
     glGenFramebuffers(1, &mPixelDepthFb);
     glBindFramebuffer(GL_FRAMEBUFFER, mPixelDepthFb);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mPixelDepthRb);
+    AttachDepthStencil(mPixelDepthRb);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     mPixelDepthRbSize = 1;
 
+#ifdef USE_OPENGLES2
+    // Multisampled renderbuffers are not core in GLES 2.0.
+    mMaxMsaaLevel = 1;
+#else
     glGetIntegerv(GL_MAX_SAMPLES, &mMaxMsaaLevel);
+#endif
 
     sOGLResourceManager = mResourceManager;
 }
@@ -817,7 +895,7 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
             } else {
                 glBindRenderbuffer(GL_RENDERBUFFER, fb.clrbufMsaa);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_RGB8, width, height);
+                RenderbufferStorageMsaa(msaa_level, GL_RGB8, width, height);
                 glBindRenderbuffer(GL_RENDERBUFFER, 0);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fb.clrbufMsaa);
             }
@@ -829,15 +907,15 @@ void GfxRenderingAPIOGL::UpdateFramebufferParameters(int fb_id, uint32_t width, 
             if (msaa_level <= 1) {
                 glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
             } else {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_DEPTH24_STENCIL8, width, height);
+                RenderbufferStorageMsaa(msaa_level, GL_DEPTH24_STENCIL8, width, height);
             }
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
         }
 
         if (!fb.has_depth_buffer && has_depth_buffer) {
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.rbo);
+            AttachDepthStencil(fb.rbo);
         } else if (fb.has_depth_buffer && !has_depth_buffer) {
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+            AttachDepthStencil(0);
         }
     }
 
@@ -892,6 +970,101 @@ void GfxRenderingAPIOGL::ClearDepthRegion(int x, int y, int w, int h) {
     }
 }
 
+#ifdef USE_OPENGLES2
+// GLES 2.0 has no glBlitFramebuffer, so a framebuffer copy is done by drawing the
+// source colour attachment over the destination as a textured quad.
+void GfxRenderingAPIOGL::EnsureBlitProgram() {
+    if (mBlitProgram != 0) {
+        return;
+    }
+
+    static const char* vsSrc = "#version 100\n"
+                               "attribute vec2 aPos;\n"
+                               "attribute vec2 aUv;\n"
+                               "varying vec2 vUv;\n"
+                               "void main() { vUv = aUv; gl_Position = vec4(aPos, 0.0, 1.0); }\n";
+    static const char* fsSrc = "#version 100\n"
+                               "precision mediump float;\n"
+                               "uniform sampler2D uTex;\n"
+                               "varying vec2 vUv;\n"
+                               "void main() { gl_FragColor = texture2D(uTex, vUv); }\n";
+
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vsSrc, nullptr);
+    glCompileShader(vs);
+
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fsSrc, nullptr);
+    glCompileShader(fs);
+
+    mBlitProgram = glCreateProgram();
+    glAttachShader(mBlitProgram, vs);
+    glAttachShader(mBlitProgram, fs);
+    glBindAttribLocation(mBlitProgram, 0, "aPos");
+    glBindAttribLocation(mBlitProgram, 1, "aUv");
+    glLinkProgram(mBlitProgram);
+
+    GLint linked = 0;
+    glGetProgramiv(mBlitProgram, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        char log[512] = {};
+        glGetProgramInfoLog(mBlitProgram, sizeof(log) - 1, nullptr, log);
+        SPDLOG_ERROR("GLES2 framebuffer blit program failed to link: {}", log);
+    }
+
+    mBlitTexLocation = glGetUniformLocation(mBlitProgram, "uTex");
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+}
+
+void GfxRenderingAPIOGL::BlitFramebufferAsQuad(GLuint dstFbo, GLuint srcTex, float u0, float v0, float u1, float v1,
+                                               int dstX0, int dstY0, int dstX1, int dstY1) {
+    EnsureBlitProgram();
+
+    const GLfloat quad[] = {
+        -1.0f, -1.0f, u0, v0, 1.0f, -1.0f, u1, v0, -1.0f, 1.0f, u0, v1, 1.0f, 1.0f, u1, v1,
+    };
+
+    glBindFramebuffer(GL_FRAMEBUFFER, dstFbo);
+    glViewport(dstX0, dstY0, dstX1 - dstX0, dstY1 - dstY0);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    // Depth writes are still live with the depth test off, and would otherwise
+    // stamp the quad into the destination depth buffer.
+    glDepthMask(GL_FALSE);
+
+    glUseProgram(mBlitProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, srcTex);
+    glUniform1i(mBlitTexLocation, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mOpenglVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STREAM_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+
+    // Every piece of GL state this renderer caches has just been invalidated.
+    mLastLoadedShader = nullptr;
+    mLastActiveTexture = -1;
+    mLastBlendEnabled = -1;
+    mLastScissorEnabled = -1;
+    mLastDepthTest = -1;
+    mLastDepthMask = -1;
+    for (auto& tex : mLastBoundTextures) {
+        tex = 0;
+    }
+}
+#endif
+
 void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_source) {
     FramebufferOGL& fb_dst = mFrameBuffers[fb_id_target];
     FramebufferOGL& fb_src = mFrameBuffers[fb_id_source];
@@ -904,8 +1077,13 @@ void GfxRenderingAPIOGL::ResolveMSAAColorBuffer(int fb_id_target, int fb_id_sour
         glDisable(GL_SCISSOR_TEST);
     }
 
+#ifdef USE_OPENGLES2
+    // Multisampling is unavailable here, so this is a straight copy.
+    BlitFramebufferAsQuad(fb_dst.fbo, fb_src.clrbuf, 0.0f, 0.0f, 1.0f, 1.0f, 0, 0, fb_dst.width, fb_dst.height);
+#else
     glBlitFramebuffer(0, 0, fb_src.width, fb_src.height, 0, 0, fb_dst.width, fb_dst.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
+#endif
     glBindFramebuffer(GL_FRAMEBUFFER, mCurrentFrameBuffer);
 
     if (mLastScissorEnabled != 1) {
@@ -971,16 +1149,30 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
             fb_resolve = mFrameBuffers[fb_resolve_id];
         }
 
+#ifdef USE_OPENGLES2
+        BlitFramebufferAsQuad(fb_resolve.fbo, src.clrbuf, 0.0f, 0.0f, 1.0f, 1.0f, 0, 0, src.width, src.height);
+#else
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_resolve.fbo);
 
         glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, src.width, src.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+#endif
 
         // Switch source buffer to the resolved sample
         fb_src_id = fb_resolve_id;
         src = fb_resolve;
     }
 
+#ifdef USE_OPENGLES2
+    // glReadBuffer does not exist either; sampling the colour attachment as a
+    // texture is the equivalent, and the source rectangle becomes texture
+    // coordinates. A y flip is expressed by v0 > v1.
+    const float invW = src.width > 0 ? 1.0f / (float)src.width : 0.0f;
+    const float invH = src.height > 0 ? 1.0f / (float)src.height : 0.0f;
+    BlitFramebufferAsQuad(dst.fbo, src.clrbuf, srcX0 * invW, srcY0 * invH, srcX1 * invW, srcY1 * invH, dstX0, dstY0,
+                          dstX1, dstY1);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
+#else
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst.fbo);
 
@@ -996,6 +1188,7 @@ void GfxRenderingAPIOGL::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX0
     glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffers[mCurrentFrameBuffer].fbo);
 
     glReadBuffer(GL_BACK);
+#endif
 
     if (mLastScissorEnabled != 1) {
         mLastScissorEnabled = 1;
@@ -1054,12 +1247,17 @@ GfxRenderingAPIOGL::GetPixelDepth(int fb_id, const std::set<std::pair<float, flo
             glGenRenderbuffers(1, &mPixelDepthRb);
             glBindRenderbuffer(GL_RENDERBUFFER, mPixelDepthRb);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, coordinates.size(), 1);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mPixelDepthRb);
+            AttachDepthStencil(mPixelDepthRb);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
             mPixelDepthRbSize = coordinates.size();
         }
 
+        // The blit exists only to stage depth for the glReadPixels below, which no
+        // GLES version supports for GL_DEPTH_STENCIL. GLES 2.0 also has no
+        // glBlitFramebuffer, so the staging is skipped and the zeroed values are
+        // returned, matching what GLES 3 already produces here.
+#ifndef USE_OPENGLES2
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPixelDepthFb);
 
@@ -1080,6 +1278,7 @@ GfxRenderingAPIOGL::GetPixelDepth(int fb_id, const std::set<std::pair<float, flo
         }
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mPixelDepthFb);
+#endif
         std::vector<uint32_t> depth_stencil_values(coordinates.size());
 #ifndef USE_OPENGLES // not supported on gles. Runs fine without it, but this may cause issues
         glReadPixels(0, 0, coordinates.size(), 1, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, depth_stencil_values.data());

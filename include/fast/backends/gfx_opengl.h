@@ -27,7 +27,12 @@ class ResourceManager;
 #include <GL/glew.h>
 #elif USE_OPENGLES
 #include <SDL3/SDL.h>
+#ifdef USE_OPENGLES2
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else
 #include <GLES3/gl3.h>
+#endif
 #else
 #include <SDL3/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
@@ -51,6 +56,8 @@ struct ShaderProgram {
     GLint texture_width_location;
     GLint texture_height_location;
     GLint texture_filtering_location;
+    GLint mask_width_location;
+    GLint mask_height_location;
 };
 
 /**
@@ -153,7 +160,7 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     ShaderProgram* mLastLoadedShader = nullptr;
 
     GLuint mOpenglVbo = 0;
-#if defined(__APPLE__) || defined(USE_OPENGLES)
+#if defined(__APPLE__) || (defined(USE_OPENGLES) && !defined(USE_OPENGLES2))
     GLuint mOpenglVao;
 #endif
 
@@ -165,6 +172,14 @@ class GfxRenderingAPIOGL final : public GfxRenderingAPI {
     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
 
     GLint mMaxMsaaLevel = 1;
+#ifdef USE_OPENGLES2
+    // GLES 2.0 has no glBlitFramebuffer; framebuffer copies go through a quad.
+    GLuint mBlitProgram = 0;
+    GLint mBlitTexLocation = -1;
+    void EnsureBlitProgram();
+    void BlitFramebufferAsQuad(GLuint dstFbo, GLuint srcTex, float u0, float v0, float u1, float v1, int dstX0,
+                               int dstY0, int dstX1, int dstY1);
+#endif
     GLuint mPixelDepthRb = 0;
     GLuint mPixelDepthFb = 0;
     size_t mPixelDepthRbSize = 0;

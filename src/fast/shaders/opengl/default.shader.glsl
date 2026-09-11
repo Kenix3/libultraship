@@ -75,11 +75,11 @@
         @end
         gl_Position = aVtxPos;
         @if(opengles)
-            gl_Position.z *= 0.3f;
+            gl_Position.z *= 0.3;
         @end
     }
 @else
-    @if(core_opengl || opengles)
+    @if(frag_out)
     out vec4 vOutColor;
     @end
 
@@ -128,6 +128,8 @@
     uniform int texture_width[2];
     uniform int texture_height[2];
     uniform int texture_filtering[2];
+    uniform int mask_width[2];
+    uniform int mask_height[2];
 
     #define TEX_OFFSET(off) @{texture}(tex, texCoord - off / texSize)
     #define WRAP(x, low, high) clamp((x), (low), (high))
@@ -141,7 +143,7 @@
         bvec3 cutoff = lessThan(linearRGB.rgb, vec3(0.0031308));
         vec3 higher = vec3(1.055)*pow(linearRGB.rgb, vec3(1.0/2.4)) - vec3(0.055);
         vec3 lower = linearRGB.rgb * vec3(12.92);
-        return vec4(mix(higher, lower, cutoff), linearRGB.a);
+        return vec4(mix(higher, lower, vec3(cutoff)), linearRGB.a);
     }
 
     vec4 filter3point(in sampler2D tex, in vec2 texCoord, in vec2 texSize) {
@@ -163,6 +165,7 @@
     }
 
     #define TEX_SIZE(tex) vec2(texture_width[tex], texture_height[tex])
+    #define MASK_SIZE(tex) vec2(mask_width[tex], mask_height[tex])
 
     void main() {
         @for(i in 0..2)
@@ -187,11 +190,7 @@
                 vec4 texVal@{i} = hookTexture2D(@{i}, uTex@{i}, vTexCoordAdj@{i}, texSize@{i});
 
                 @if(o_masks[i])
-                    @if(opengles) 
-                        vec2 maskSize@{i} = vec2(textureSize(uTexMask@{i}, 0));
-                    @else 
-                        vec2 maskSize@{i} = textureSize(uTexMask@{i}, 0);
-                    @end
+                    vec2 maskSize@{i} = MASK_SIZE(@{i});
 
                     vec4 maskVal@{i} = hookTexture2D(@{i}, uTexMask@{i}, vTexCoordAdj@{i}, maskSize@{i});
 
@@ -291,7 +290,7 @@
         @end
 
         @if(o_prim_depth)
-            gl_FragDepth = prim_depth;
+            @{frag_depth} = prim_depth;
         @end
     }
 @end
