@@ -168,6 +168,16 @@ endif()
 
 target_link_libraries(libultraship PUBLIC prism monocypher)
 
+if (LUS_ENABLE_VULKAN)
+    target_compile_definitions(libultraship PUBLIC ENABLE_VULKAN)
+    target_link_libraries(libultraship PUBLIC Vulkan::Vulkan)
+    if(TARGET Vulkan::shaderc_shared)
+        target_link_libraries(libultraship PUBLIC Vulkan::shaderc_shared)
+    elseif(TARGET Vulkan::shaderc_combined)
+        target_link_libraries(libultraship PUBLIC Vulkan::shaderc_combined)
+    endif()
+endif()
+
 if(ENABLE_SCRIPTING)
     target_compile_definitions(libultraship PUBLIC ENABLE_SCRIPTING)
     if(ENABLE_TCC_COMPILER)

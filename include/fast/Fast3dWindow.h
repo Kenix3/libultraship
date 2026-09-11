@@ -28,6 +28,7 @@ enum WindowBackend {
     FAST3D_DXGI_DX11 = 1,
     FAST3D_SDL_OPENGL = 2,
     FAST3D_SDL_METAL = 3,
+    FAST3D_SDL_VULKAN = 4,
 };
 
 /**
@@ -106,8 +107,8 @@ class Fast3dWindow : public Ship::Window {
     uint16_t GetPixelDepth(float x, float y);
     void SetTextureFilter(FilteringMode filteringMode);
     void SetRendererUCode(UcodeHandlers ucode);
-    void EnableSRGBMode();
-    bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements);
+    bool DrawAndRunGraphicsCommands(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements,
+                                    const std::unordered_map<Gfx*, Gfx*>& dlReplacements);
 
     std::weak_ptr<Interpreter> GetInterpreterWeak() const;
 
