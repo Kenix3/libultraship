@@ -129,6 +129,12 @@ class Fast3dWindow : public Ship::Window {
     GfxWindowBackend* mWindowManagerApi;
     std::shared_ptr<Interpreter> mInterpreter = nullptr;
     std::shared_ptr<Ship::ConsoleVariable> mConsoleVariables;
+
+  public:
+    /** @brief Injects the ConsoleVariable dependency created after this window. */
+    void SetConsoleVariables(std::shared_ptr<Ship::ConsoleVariable> consoleVariables) {
+        mConsoleVariables = std::move(consoleVariables);
+    }
     mutable std::shared_ptr<Ship::ControlDeck> mControlDeck;
     std::shared_ptr<GfxDebugger> mGfxDebugger;
 

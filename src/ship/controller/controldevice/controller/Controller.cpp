@@ -89,6 +89,41 @@ void Controller::SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
     }
 }
 
+void Controller::SetConsoleVariable(std::shared_ptr<ConsoleVariable> consoleVariable) {
+    mConsoleVariable = consoleVariable;
+    for (auto& [bitmask, button] : mButtons) {
+        button->SetConsoleVariable(consoleVariable);
+    }
+    if (mLeftStick != nullptr) {
+        mLeftStick->SetConsoleVariable(consoleVariable);
+    }
+    if (mRightStick != nullptr) {
+        mRightStick->SetConsoleVariable(consoleVariable);
+    }
+    if (mGyro != nullptr) {
+        mGyro->SetConsoleVariable(consoleVariable);
+    }
+    if (mRumble != nullptr) {
+        mRumble->SetConsoleVariable(consoleVariable);
+    }
+    if (mLED != nullptr) {
+        mLED->SetConsoleVariable(consoleVariable);
+    }
+}
+
+void Controller::SetWindow(std::shared_ptr<Window> window) {
+    mWindow = window;
+    for (auto& [bitmask, button] : mButtons) {
+        button->SetWindow(window);
+    }
+    if (mLeftStick != nullptr) {
+        mLeftStick->SetWindow(window);
+    }
+    if (mRightStick != nullptr) {
+        mRightStick->SetWindow(window);
+    }
+}
+
 bool Controller::HasConfig() {
     const std::string hasConfigCvarKey =
         StringHelper::Sprintf(CVAR_PREFIX_CONTROLLERS ".Port%d.HasConfig", mPortIndex + 1);

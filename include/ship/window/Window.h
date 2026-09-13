@@ -303,6 +303,17 @@ class Window : public Component {
     // Hold a reference to Config because Window has a Save function called on Context destructor, where the singleton
     // is no longer available.
     std::shared_ptr<Config> mConfig;
+
+  public:
+    /**
+     * @brief Injects the Config dependency after construction.
+     *
+     * Context::CreateDefaultInstance() takes a caller-constructed Window and creates Config
+     * afterwards, so the dependency cannot be supplied to the constructor.
+     */
+    void SetConfig(std::shared_ptr<Config> config) {
+        mConfig = std::move(config);
+    }
     int32_t mFullscreenScancode;
     int32_t mMouseCaptureScancode;
 };

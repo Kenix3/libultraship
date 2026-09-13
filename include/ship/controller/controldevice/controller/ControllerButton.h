@@ -29,6 +29,14 @@ class ControllerButton {
     void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
         mControlDeck = std::move(controlDeck);
     }
+    /** @brief Injects the ConsoleVariable component. */
+    void SetConsoleVariable(std::shared_ptr<ConsoleVariable> consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    }
+    /** @brief Injects the Window component. */
+    void SetWindow(std::shared_ptr<Window> window) {
+        mWindow = std::move(window);
+    }
     /**
      * @brief Constructs a ControllerButton for a specific port and bitmask.
      * @param portIndex       Zero-based port index.

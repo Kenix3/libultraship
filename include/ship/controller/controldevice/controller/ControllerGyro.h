@@ -21,6 +21,10 @@ class ControllerGyro {
     void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck) {
         mControlDeck = std::move(controlDeck);
     }
+    /** @brief Injects the ConsoleVariable component. */
+    void SetConsoleVariable(std::shared_ptr<ConsoleVariable> consoleVariable) {
+        mConsoleVariable = std::move(consoleVariable);
+    }
     /**
      * @brief Constructs a ControllerGyro for the given port.
      * @param portIndex Zero-based port index.

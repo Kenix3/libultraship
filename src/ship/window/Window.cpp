@@ -1,4 +1,5 @@
 #include "ship/window/Window.h"
+#include "ship/config/Config.h"
 #include "ship/window/gui/Gui.h"
 #include <string>
 #include <fstream>
@@ -40,6 +41,15 @@ Window::~Window() {
 
 void Window::OnInit(const nlohmann::json& initArgs) {
     Component::OnInit(initArgs);
+
+    // A port may construct its Window and hand it to Context::CreateDefaultInstance(), which
+    // creates Config afterwards, so there is nothing to inject at construction time.
+    if (mConfig == nullptr) {
+        auto context = GetFirstInParents<Context>();
+        if (context != nullptr) {
+            mConfig = context->GetFirstInChildren<Config>();
+        }
+    }
     // Mark the window as initialized before adding GUI to prevent access during GUI initialization
     MarkInitialized();
 

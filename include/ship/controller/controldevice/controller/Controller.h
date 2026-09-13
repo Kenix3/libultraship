@@ -39,6 +39,10 @@ class Controller : public ControlDevice {
   public:
     /** @brief Injects the owning ControlDeck into this controller and all of its subsystems. */
     void SetControlDeck(std::shared_ptr<ControlDeck> controlDeck);
+    /** @brief Injects the ConsoleVariable component into this controller and all of its subsystems. */
+    void SetConsoleVariable(std::shared_ptr<ConsoleVariable> consoleVariable);
+    /** @brief Injects the Window component into this controller and all of its subsystems. */
+    void SetWindow(std::shared_ptr<Window> window);
     /**
      * @brief Constructs a Controller for the given port with a set of button bitmasks.
      * @param portIndex       Zero-based port index.

@@ -1,4 +1,5 @@
 #include "ship/core/Context.h"
+#include "fast/Fast3dWindow.h"
 #include "ship/bridge/Bridge.h"
 #include "ship/core/TickableComponent.h"
 #include <cstring>
@@ -129,7 +130,20 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     size_t threadCount = std::max(1, (int32_t)(std::thread::hardware_concurrency() - reservedThreadCount - 1));
 
     // ---- Console Variables ----
-    shared->GetChildren().Add(std::make_shared<ConsoleVariable>(config));
+    auto consoleVariables = std::make_shared<ConsoleVariable>(config);
+    shared->GetChildren().Add(consoleVariables);
+
+    // The caller built its Window and ControlDeck before these existed, so inject them now.
+    if (auto win = std::dynamic_pointer_cast<Window>(window)) {
+        win->SetConfig(config);
+    }
+    if (auto fastWin = std::dynamic_pointer_cast<Fast::Fast3dWindow>(window)) {
+        fastWin->SetConsoleVariables(consoleVariables);
+    }
+    if (auto deck = std::dynamic_pointer_cast<ControlDeck>(controlDeck)) {
+        deck->SetConsoleVariables(consoleVariables);
+        deck->SetWindow(std::dynamic_pointer_cast<Window>(window));
+    }
 
     // ---- Thread Pool ----
     auto threadPool = std::make_shared<ThreadPool>(threadCount);
