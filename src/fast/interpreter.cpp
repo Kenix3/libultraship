@@ -2427,7 +2427,10 @@ void Interpreter::GfxSpMovewordF3dex2(uint8_t index, uint16_t offset, uintptr_t 
             mRsp->fog_offset = (int16_t)data;
             break;
         case G_MW_SEGMENT: {
-            int segNumber = offset / 4;
+            // offset arrives as a full 16-bit field, so an unmasked offset / 4 indexes far past
+            // mSegmentPointers. The RSP's segment number is 4 bits; wrap like it does, as the
+            // G_MW_SEGMENT_INTERP case below already does.
+            int segNumber = (offset / 4) % MAX_SEGMENT_POINTERS;
             mSegmentPointers[segNumber] = data;
         } break;
         case G_MW_SEGMENT_INTERP: {
@@ -2453,7 +2456,10 @@ void Interpreter::GfxSpMovewordF3d(uint8_t index, uint16_t offset, uintptr_t dat
             mRsp->fog_offset = (int16_t)data;
             break;
         case G_MW_SEGMENT: {
-            int segNumber = offset / 4;
+            // offset arrives as a full 16-bit field, so an unmasked offset / 4 indexes far past
+            // mSegmentPointers. The RSP's segment number is 4 bits; wrap like it does, as the
+            // G_MW_SEGMENT_INTERP case below already does.
+            int segNumber = (offset / 4) % MAX_SEGMENT_POINTERS;
             mSegmentPointers[segNumber] = data;
         } break;
         case G_MW_SEGMENT_INTERP: {
@@ -3255,7 +3261,9 @@ void Interpreter::Gfxs2dexRecyCopy(F3DuObjSprite* spr) {
 void* Interpreter::SegAddr(uintptr_t w1) {
     // Segmented?
     if (w1 & 1) {
-        uint32_t segNum = (uint32_t)(w1 >> 24);
+        // Same 4-bit field: w1 is a uintptr_t, so an unmasked shift can index thousands of
+        // entries past the table.
+        uint32_t segNum = (uint32_t)(w1 >> 24) % MAX_SEGMENT_POINTERS;
 
         uint32_t offset = w1 & 0x00FFFFFE;
 
