@@ -1,5 +1,7 @@
 #include "ship/core/Context.h"
 #include "ship/bridge/Bridge.h"
+#include "libultraship/bridge/UltraBridge.h"
+#include "fast/debug/GfxDebugger.h"
 #include "ship/core/TickableComponent.h"
 #include <cstring>
 #include <iostream>
@@ -176,6 +178,12 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
     auto audio = std::make_shared<Audio>(audioSettings, config);
     shared->GetChildren().Add(audio);
 
+    // ---- Bridge ----
+    // The C bridge caches are populated from this component; without it every
+    // bridge accessor keeps returning null and the plain C API is dead.
+    shared->GetChildren().Add(std::make_shared<LUS::UltraBridge>());
+    shared->GetChildren().Add(std::make_shared<Fast::GfxDebugger>());
+
     // ---- Events ----
     shared->GetChildren().Add(std::make_shared<Events>());
 
@@ -189,6 +197,10 @@ std::shared_ptr<Context> Context::CreateDefaultInstance(const std::string& name,
         std::unordered_map<std::string, std::string>{}, 1, "-g -Wl", std::vector<std::string>{},
         std::vector<std::string>{}, std::vector<std::string>{}, resourceManager));
 #endif
+
+    // Components reach each other through the bridge during Init, so the caches have to
+    // be live before the first Init call; they are refreshed again once Init is done.
+    UpdateBridgeCachesIfPresent(shared);
 
     // ---- Init all components that need it ----
     try {
