@@ -5358,7 +5358,10 @@ uint16_t Interpreter::GetPixelDepth(float x, float y) {
     mGetPixelDepthCached.merge(res);
     mGetPixelDepthPending.clear();
 
-    return mGetPixelDepthCached.find(std::make_pair(x, y))->second;
+    // A backend that answers for fewer coordinates than it was asked about would otherwise be
+    // dereferenced past the end here.
+    auto it = mGetPixelDepthCached.find(std::make_pair(x, y));
+    return it != mGetPixelDepthCached.end() ? it->second : 0;
 }
 
 void gfx_push_current_dir(char* path) {
