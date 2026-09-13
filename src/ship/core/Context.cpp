@@ -246,6 +246,9 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 
 Context::Context(std::string name, std::string shortName)
     : Component(std::move(name)), mShortName(std::move(shortName)), mInitTime(std::chrono::steady_clock::now()) {
+    // The root has no initialization work of its own, but children reach it through
+    // RequireDependency<Context>, which rejects a component that was never initialized.
+    MarkInitialized();
 }
 
 const std::string& Context::GetShortName() const {
