@@ -9,6 +9,7 @@
 #include <string>
 #include "gfx_rendering_api.h"
 #include "d3d11.h"
+#include <wrl/client.h>
 #include "d3dcompiler.h"
 
 namespace Ship {

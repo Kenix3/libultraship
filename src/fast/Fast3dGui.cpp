@@ -33,6 +33,10 @@
 #endif
 
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+// imgui deliberately omits its own WndProcHandler declaration to keep <windows.h> out of the
+// header, so the copy below - and the Win32 types it names - needs it here.
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 

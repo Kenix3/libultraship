@@ -8,6 +8,7 @@
 #include <functional>
 
 #include <dxgi1_2.h>
+#include <wrl/client.h>
 
 namespace Ship {
 class Config;

@@ -7,6 +7,7 @@
 #include <queue>
 #if defined(__APPLE__)
 #include <pwd.h>
+#include <unistd.h>
 #endif
 #include "ship/install_config.h"
 #include "ship/config/ConsoleVariable.h"
