@@ -87,6 +87,7 @@ class Fast3dGui : public Ship::Gui {
      * @brief Loads an image from an archive path and caches it under the given name.
      * @param name Path/texture name used to reference the texture in GetTextureByName().
      * @param path Virtual resource path of the source image.
+     * @param palettePath Virtual resource path of the palette.
      * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
      */
     void LoadGuiTexture(const std::string& name, const std::string& path, const std::string& palettePath = "",
@@ -96,6 +97,7 @@ class Fast3dGui : public Ship::Gui {
      * @brief Loads an image from an archive path and caches it under the given name.
      * @param name Path/texture name used to reference the texture in GetTextureByName().
      * @param path Virtual resource path of the source image.
+     * @param palettePath Virtual resource path of the palette.
      * @param tint RGBA tint multiplied over the image (use ImVec4(1,1,1,1) for no tint).
      */
     void LoadGuiTexture(const std::string& name, const Fast::Texture& tex, const std::string& palettePath = "",
