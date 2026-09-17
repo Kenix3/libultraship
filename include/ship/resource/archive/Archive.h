@@ -66,7 +66,7 @@ class Archive : public std::enable_shared_from_this<Archive> {
      * @brief Constructs an Archive for the given filesystem path.
      * @param path Absolute or relative path to the archive file or directory.
      */
-    Archive(const std::string& path, std::shared_ptr<ResourceManager> resourceManager = nullptr,
+    Archive(const std::string& path, std::shared_ptr<ResourceManager> resourceManager,
             std::shared_ptr<Keystore> keystore = nullptr);
     ~Archive();
 

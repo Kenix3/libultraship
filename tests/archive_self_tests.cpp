@@ -19,7 +19,7 @@ class TestArchive final : public Ship::Archive {
     explicit TestArchive(const std::string& path = "ram://arch",
                          const std::unordered_map<std::string, std::string>& files = {},
                          const std::string& manifest = R"({"name":"TestArchive","code_version":1})")
-        : Ship::Archive(path), mFiles(files), mManifest(manifest) {
+        : Ship::Archive(path, nullptr), mFiles(files), mManifest(manifest) {
     }
 
     bool Open() override {
