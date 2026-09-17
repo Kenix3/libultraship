@@ -120,7 +120,7 @@ void Fast3dWindow::OnInit(const nlohmann::json& initArgs) {
     InitWindowManager();
     mGfxDebugger = std::make_shared<GfxDebugger>();
     mInterpreter->SetGfxDebugger(mGfxDebugger);
-    const std::string& windowTitle = GetContext() != nullptr ? GetContext()->GetShortName() : GetName();
+    const std::string& windowTitle = GetContext() != nullptr ? GetContext()->GetName() : GetName();
     mInterpreter->Init(mWindowManagerApi, mRenderingApi, windowTitle.c_str(), isFullscreen, width, height, posX, posY,
                        GetConsoleVariables(), GetContext()->GetChildren().GetFirst<Ship::ResourceManager>());
     mWindowManagerApi->SetFullscreenChangedCallback(OnFullscreenChanged);
