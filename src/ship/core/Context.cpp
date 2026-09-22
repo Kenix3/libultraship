@@ -1,6 +1,7 @@
 #include "ship/core/Context.h"
 #include "ship/bridge/Bridge.h"
 #include "ship/core/TickableComponent.h"
+#include <clocale>
 #include <cstring>
 #include <iostream>
 #include <algorithm>
@@ -246,6 +247,13 @@ std::shared_ptr<Context> Context::CreateInstance(const std::string& name, const 
 
 Context::Context(std::string name, std::string shortName)
     : Component(std::move(name)), mShortName(std::move(shortName)), mInitTime(std::chrono::steady_clock::now()) {
+#ifdef _WIN32
+    // Allow non-ascii characters in paths on Windows.
+    // Windows decodes narrow paths with the ANSI code page unless the C locale's
+    // ctype category is UTF-8, so without this any non-ASCII character in the
+    // install path makes those lookups fail.
+    std::setlocale(LC_CTYPE, ".UTF8");
+#endif
 }
 
 const std::string& Context::GetShortName() const {
