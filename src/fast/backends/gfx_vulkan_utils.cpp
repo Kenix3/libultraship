@@ -432,13 +432,27 @@ DeviceSelection PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
             "Failed to enumerate Vulkan physical devices");
 
     for (VkPhysicalDevice physicalDevice : physicalDevices) {
+        VkPhysicalDeviceProperties properties = {};
+        vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+        SPDLOG_INFO("Found device: {} (API {}.{}.{})", properties.deviceName, VK_VERSION_MAJOR(properties.apiVersion),
+                    VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
+    }
+
+    for (VkPhysicalDevice physicalDevice : physicalDevices) {
         QueueFamilyIndices queueFamilies;
+        VkPhysicalDeviceProperties properties = {};
+        vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
         if (IsDeviceSuitable(physicalDevice, surface, &queueFamilies)) {
-            VkPhysicalDeviceProperties properties = {};
-            vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+            // XXX: local hack to force selection of discrete NVIDIA GPU
+            // if (std::strstr(properties.deviceName, "NVIDIA") == nullptr) {
+            //     continue;
+            // }
+
             SPDLOG_INFO("Selected Vulkan device: {} (API {}.{}.{})", properties.deviceName,
                         VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion),
                         VK_VERSION_PATCH(properties.apiVersion));
+
             return { physicalDevice, queueFamilies };
         }
     }
