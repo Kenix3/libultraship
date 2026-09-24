@@ -14,7 +14,7 @@ LUS uses an asset loading system where data is stored separately from the execut
 - [API Reference](https://kenix3.github.io/libultraship/api/) - Doxygen-generated API documentation
 
 ## Contributing
-LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/shipofharkinian).
+LUS accepts any and all contributions. You can interact with the project via PRs, issues, email (kenixwhisperwind@gmail.com), or [Discord](https://discord.gg/harbourmasters).
 Please see [CONTRIBUTING.md](https://github.com/Kenix3/libultraship/blob/main/CONTRIBUTING.md) file for more information.
 
 ## Versioning
