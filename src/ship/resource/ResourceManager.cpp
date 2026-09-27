@@ -3,6 +3,7 @@
 #include "ship/resource/File.h"
 #include "ship/resource/archive/Archive.h"
 #include <algorithm>
+#include <utility>
 #include <thread>
 #include "ship/utils/StringHelper.h"
 #include "ship/utils/Utils.h"
@@ -70,6 +71,30 @@ ResourceManager::~ResourceManager() {
     SPDLOG_INFO("destruct ResourceManager");
 }
 
+void ResourceManager::SetResourcePathResolver(ResourcePathResolver resolver) {
+    mResourcePathResolver = std::move(resolver);
+}
+
+std::string ResourceManager::ResolveResourcePath(const std::string& filePath) {
+    if (!mResourcePathResolver || mArchiveManager == nullptr) {
+        return filePath;
+    }
+
+    const auto resolvedPath = mResourcePathResolver(filePath);
+    if (resolvedPath.empty() || resolvedPath == filePath) {
+        return filePath;
+    }
+
+    // A resolver may map only a subset of resources.
+    // Fall back to the original path when the resolved resource does not exist.
+    if (!mArchiveManager->HasFile(resolvedPath)) {
+        return filePath;
+    }
+
+    SPDLOG_TRACE("Resolved resource path {} -> {}", filePath, resolvedPath);
+    return resolvedPath;
+}
+
 bool ResourceManager::IsLoaded() {
     return mArchiveManager != nullptr && mArchiveManager->IsLoaded();
 }
@@ -104,6 +129,13 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     if (OtrSignatureCheck(identifier.Path.c_str())) {
         const auto newFilePath = identifier.Path.substr(7);
         return LoadResourceProcess({ newFilePath, identifier.Owner, identifier.Parent }, false, initData);
+    }
+
+    if (!loadExact) {
+        const auto resolvedPath = ResolveResourcePath(identifier.Path);
+        if (resolvedPath != identifier.Path) {
+            return LoadResourceProcess({ resolvedPath, identifier.Owner, identifier.Parent }, false, initData);
+        }
     }
 
     // Cache the starts_with check to avoid repeated string comparisons
@@ -204,6 +236,13 @@ ResourceManager::LoadResourceAsync(const ResourceIdentifier& identifier, bool lo
     if (OtrSignatureCheck(identifier.Path.c_str())) {
         auto newFilePath = identifier.Path.substr(7);
         return LoadResourceAsync({ newFilePath, identifier.Owner, identifier.Parent }, loadExact, priority);
+    }
+
+    if (!loadExact) {
+        const auto resolvedPath = ResolveResourcePath(identifier.Path);
+        if (resolvedPath != identifier.Path) {
+            return LoadResourceAsync({ resolvedPath, identifier.Owner, identifier.Parent }, false, priority, initData);
+        }
     }
 
     // Check the cache before queueing the job.
