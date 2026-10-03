@@ -111,15 +111,17 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "And
                 endif()
                 message(STATUS "Vulkan rendering backend enabled (shaderc_shared)")
             elseif(Vulkan_shaderc_combined_LIBRARY)
-                if(NOT TARGET Vulkan::shaderc_combined)
-                    foreach(_lib glslang MachineIndependent GenericCodeGen OSDependent OGLCompiler
-                                 SPVRemapper HLSL SPIRV SPIRV-Tools-opt SPIRV-Tools SPIRV-Tools-link)
-                        find_library(_lus_shaderc_dep_${_lib} NAMES ${_lib})
-                        if(_lus_shaderc_dep_${_lib})
-                            list(APPEND _lus_shaderc_deps "${_lus_shaderc_dep_${_lib}}")
-                        endif()
-                    endforeach()
+                # Some distro packages ship a shaderc_combined that does not bundle glslang/SPIRV-Tools,
+                # so always resolve them, even when FindVulkan already created the target.
+                foreach(_lib glslang MachineIndependent GenericCodeGen OSDependent OGLCompiler
+                             SPVRemapper HLSL SPIRV SPIRV-Tools-opt SPIRV-Tools SPIRV-Tools-link)
+                    find_library(_lus_shaderc_dep_${_lib} NAMES ${_lib})
+                    if(_lus_shaderc_dep_${_lib})
+                        list(APPEND _lus_shaderc_deps "${_lus_shaderc_dep_${_lib}}")
+                    endif()
+                endforeach()
 
+                if(NOT TARGET Vulkan::shaderc_combined)
                     add_library(Vulkan::shaderc_combined INTERFACE IMPORTED GLOBAL)
                     if(_lus_shaderc_deps AND NOT APPLE)
                         set_property(TARGET Vulkan::shaderc_combined PROPERTY INTERFACE_LINK_LIBRARIES
@@ -127,6 +129,14 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "And
                     else()
                         set_property(TARGET Vulkan::shaderc_combined PROPERTY INTERFACE_LINK_LIBRARIES
                             "${Vulkan_shaderc_combined_LIBRARY}" ${_lus_shaderc_deps})
+                    endif()
+                elseif(_lus_shaderc_deps)
+                    # Target came from FindVulkan; its imported library is emitted first, so the deps follow it.
+                    if(APPLE)
+                        set_property(TARGET Vulkan::shaderc_combined APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${_lus_shaderc_deps})
+                    else()
+                        set_property(TARGET Vulkan::shaderc_combined APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+                            -Wl,--start-group ${_lus_shaderc_deps} -Wl,--end-group)
                     endif()
                 endif()
                 message(STATUS "Vulkan rendering backend enabled (shaderc_combined + glslang/SPIRV-Tools)")
