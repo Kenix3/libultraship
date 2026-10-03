@@ -414,9 +414,25 @@ if(NOT TARGET libtcc)
         )
 
         find_program(GNU_MAKE_PROGRAM NAMES make gmake REQUIRED)
+
+        # tcc emits .eh_frame sections without relocations for some libtcc1 objects on aarch64, so
+        # every FDE gets pc_begin 0 and GNU ld fails with "overlapping FDEs". tcc-compiled runtime
+        # code needs no unwind tables, so drop them (and restore the archive index).
+        set(_tcc1_post_build)
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+            find_program(_tcc1_strip NAMES ${CMAKE_STRIP} strip)
+            find_program(_tcc1_ranlib NAMES ${CMAKE_RANLIB} ranlib)
+            if(_tcc1_strip AND _tcc1_ranlib)
+                set(_tcc1_post_build
+                    COMMAND ${_tcc1_strip} -R .eh_frame "${tinycc_SOURCE_DIR}/libtcc1.a"
+                    COMMAND ${_tcc1_ranlib} "${tinycc_SOURCE_DIR}/libtcc1.a")
+            endif()
+        endif()
+
         add_custom_command(
             OUTPUT "${tinycc_SOURCE_DIR}/libtcc1.a"
             COMMAND ${GNU_MAKE_PROGRAM} -C "${tinycc_SOURCE_DIR}/lib"
+            ${_tcc1_post_build}
             DEPENDS
                 tcc_native_bin
                 libtcc
