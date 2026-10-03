@@ -752,7 +752,7 @@ std::vector<uint8_t> Fast3dGui::GetRdpTexturePalette() {
     std::vector<uint8_t> texBuffer;
     texBuffer.reserve(16 * 16 * 4);
 
-    // CI8 palette: 256 entries, RGBA16 (RGBA5551)
+    // Write the CI8 palette array into the buffer
     for (int32_t i = 0; i < 256; i++) {
         uint8_t b1 = paletteData[i * 2 + 0];
         uint8_t b2 = paletteData[i * 2 + 1];
