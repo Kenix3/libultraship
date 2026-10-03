@@ -241,12 +241,12 @@ class BitConverter {
         switch (firstByte) {
             case 0x37: // v64
                 for (size_t pos = 0; pos < (romSize / 2); pos++) {
-                    ((uint16_t*)rom)[pos] = ToUInt16BE(rom, pos * 2);
+                    ((uint16_t*)rom)[pos] = ToUInt16BE(rom, static_cast<int32_t>(pos * 2));
                 }
                 break;
             case 0x40: // n64
                 for (size_t pos = 0; pos < (romSize / 4); pos++) {
-                    ((uint32_t*)rom)[pos] = ToUInt32BE(rom, pos * 4);
+                    ((uint32_t*)rom)[pos] = ToUInt32BE(rom, static_cast<int32_t>(pos * 4));
                 }
                 break;
             case 0x80: // z64

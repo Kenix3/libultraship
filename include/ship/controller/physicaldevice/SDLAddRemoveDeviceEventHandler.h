@@ -13,8 +13,8 @@ class Window;
  *
  * SDLAddRemoveDeviceEventHandler is registered as a GuiWindow solely so it
  * participates in the update loop. It does not draw any UI; instead its
- * UpdateElement() polls SDL events and forwards device connection/disconnection
- * notifications to the ConnectedPhysicalDeviceManager.
+ * UpdateElement() polls SDL events and forwards device changes to
+ * the ConnectedPhysicalDeviceManager.
  */
 class SDLAddRemoveDeviceEventHandler : public GuiWindow {
   public:

@@ -23,7 +23,7 @@
 function(lus_setup_tcc_runtime TARGET_NAME)
     cmake_parse_arguments(PARSE_ARGV 1 LUS_TCC "" "RESOURCES_DIR" "")
 
-    if(NOT ENABLE_SCRIPTING)
+    if(NOT ENABLE_SCRIPTING OR NOT ENABLE_TCC_COMPILER)
         return()
     endif()
 

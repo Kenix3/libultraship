@@ -1,0 +1,23 @@
+name: Docs CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-ci.yml"
+      - ".github/workflows/docs-build.yml"
+      - ".github/workflows/pages.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "docs-ci-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/docs-build.yml
+    with:
+      configure_pages: false

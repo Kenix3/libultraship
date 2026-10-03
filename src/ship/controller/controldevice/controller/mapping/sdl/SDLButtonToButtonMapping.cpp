@@ -23,7 +23,7 @@ void SDLButtonToButtonMapping::UpdatePad(CONTROLLERBUTTONS_T& padButtons) {
 
     for (const auto& [instanceId, gamepad] :
          mControlDeck->GetConnectedPhysicalDeviceManager()->GetConnectedSDLGamepadsForPort(mPortIndex)) {
-        if (SDL_GameControllerGetButton(gamepad, mControllerButton)) {
+        if (SDL_GetGamepadButton(gamepad, mControllerButton)) {
             padButtons |= mBitmask;
             return;
         }

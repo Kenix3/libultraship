@@ -4,9 +4,9 @@
 #include "ship/core/Context.h"
 #include "ship/config/ConsoleVariable.h"
 #if __APPLE__
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 #else
-#include <SDL2/SDL_events.h>
+#include <SDL3/SDL_events.h>
 #endif
 #include <spdlog/spdlog.h>
 #include "ship/utils/StringHelper.h"

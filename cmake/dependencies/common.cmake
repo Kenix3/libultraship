@@ -30,10 +30,10 @@ target_sources(ImGui
 target_sources(ImGui
     PRIVATE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
 )
 
-target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 
 # ========= StormLib =============
 if(INCLUDE_MPQ_SUPPORT)
@@ -153,7 +153,7 @@ target_include_directories(monocypher PUBLIC
 )
 
 #=========== libtcc ===========
-if(ENABLE_SCRIPTING)
+if(ENABLE_SCRIPTING AND ENABLE_TCC_COMPILER)
 
 FetchContent_Declare(
     tinycc
@@ -167,7 +167,7 @@ if(NOT TARGET libtcc)
         message(STATUS "Configuring TinyCC to generate config.h...")
         if(WIN32)
             execute_process(
-                COMMAND cmd /c build-tcc.bat -c cl
+                COMMAND cmd /c [[.\build-tcc.bat]] -c cl
                 WORKING_DIRECTORY "${tinycc_SOURCE_DIR}/win32"
                 RESULT_VARIABLE tcc_config_result
             )
@@ -187,6 +187,19 @@ if(NOT TARGET libtcc)
             message(STATUS "iOS target detected: Disabling CONFIG_CODESIGN...")
             file(APPEND "${tinycc_SOURCE_DIR}/config.h" "\n/* Force disable code signing for iOS cross-compilation */\n#undef CONFIG_CODESIGN\n")
         endif()
+    endif()
+
+    # config.h (included before tcc.h's per-arch auto-detect) hardcodes the host
+    # codegen target, so it applies to every -arch slice. On a universal build that
+    # leaves the non-host slice a non-native cross-compiler with no runtime
+    # (tcc_relocate is compiled out), which breaks linking. Strip the codegen target
+    # so each slice selects its own from __x86_64__/__aarch64__; TCC_TARGET_MACHO and
+    # the CONFIG_* defines are kept.
+    if(APPLE AND EXISTS "${tinycc_SOURCE_DIR}/config.h")
+        file(READ "${tinycc_SOURCE_DIR}/config.h" _tcc_cfg)
+        string(REGEX REPLACE "#define TCC_TARGET_(I386|X86_64|ARM64|ARM|RISCV64|C67) [^\n]*\n" "" _tcc_cfg "${_tcc_cfg}")
+        file(WRITE "${tinycc_SOURCE_DIR}/config.h" "${_tcc_cfg}")
+        unset(_tcc_cfg)
     endif()
 
     if(CMAKE_CROSSCOMPILING)

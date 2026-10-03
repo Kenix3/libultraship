@@ -1,0 +1,25 @@
+title: libultraship
+description: >-
+  A library providing reimplementations of libultra (N64 SDK) functions
+  for modern hardware. Enables PC ports of N64 games.
+
+theme: just-the-docs
+
+url: "https://kenix3.github.io"
+baseurl: "/libultraship"
+
+aux_links:
+  GitHub: "https://github.com/Kenix3/libultraship"
+
+aux_links_new_tab: true
+
+nav_external_links:
+  - title: API Reference
+    url: api/index.html
+    hide_icon: false
+
+# Exclude source files Jekyll should not process
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - "*.gemspec"

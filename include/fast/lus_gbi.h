@@ -74,6 +74,7 @@ constexpr int8_t RDP_G_SETTARGETINTERPINDEX = OPCODE(0x46);
 constexpr int8_t RDP_G_LOADBLOCK_WIDE = OPCODE(0x47);
 constexpr int8_t RDP_G_VTX_WIDE = OPCODE(0x48);
 constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
+constexpr int8_t RDP_G_SETTILESIZE_LERP = OPCODE(0x4a);
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -134,6 +135,9 @@ constexpr int8_t RDP_G_TRI1_WIDE = OPCODE(0x49);
 
 /* macros for command parsing: */
 #define GDMACMD(x) (x)
+#ifdef GIMMCMD
+#undef GIMMCMD
+#endif
 #define GIMMCMD(x) = OPCODE(G_IMMFIRST - (x))
 #define GRDPCMD(x) (0xff - (x))
 
@@ -900,7 +904,7 @@ typedef struct F3DuSprite_t {
     short SourceImageOffsetT;
     /* 20 bytes for above */
 
-    /* padding to bring structure size to 64 bit allignment */
+    /* padding to bring structure size to 64 bit alignment */
     char dummy[4];
 
 } F3DuSprite_t;
@@ -909,7 +913,7 @@ typedef union {
     F3DuSprite_t s;
 
     /* Need to make sure this is 64 bit aligned */
-    long long int force_structure_allignment[3];
+    long long int force_structure_alignment[3];
 } F3DuSprite;
 
 /*
@@ -945,7 +949,7 @@ typedef struct {
 
 /*
  * The viewport structure elements have 2 bits of fraction, necessary
- * to accomodate the sub-pixel positioning scaling for the hardware.
+ * to accommodate the sub-pixel positioning scaling for the hardware.
  * This can also be exploited to handle odd-sized viewports.
  *
  * Accounting for these fractional bits, using the default projection

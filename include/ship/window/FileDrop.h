@@ -36,7 +36,7 @@ class FileDrop : public Component {
      * @brief Records a file path as having been dropped onto the window.
      * @param path Path of the dropped file (ownership is not taken).
      */
-    void SetDroppedFile(char* path);
+    void SetDroppedFile(const char* path);
 
     /** @brief Clears the current dropped-file state. */
     void ClearDroppedFile();
