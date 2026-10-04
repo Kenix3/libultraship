@@ -208,6 +208,15 @@ class ResourceManager : public Component {
     size_t UnloadResource(const std::string& filePath);
 
     /**
+     * @brief Inserts a runtime-built resource into the cache so LoadResource[Process] returns it by
+     *        path, without any backing archive file. Used for textures synthesized at runtime.
+     *        Evict with UnloadResource(filePath).
+     * @param filePath Virtual path the resource will be retrievable under.
+     * @param resource The resource to cache.
+     */
+    void CacheExternalResource(const std::string& filePath, std::shared_ptr<IResource> resource);
+
+    /**
      * @brief Writes raw data into an archive and optionally evicts the stale cache entry.
      * @param identifier Identifier of the resource to write.
      * @param data       Raw bytes to write.
@@ -416,6 +425,16 @@ class ResourceManager : public Component {
                                                                            bool loadExact = false);
 
     std::shared_ptr<IResource> GetCachedResource(std::variant<ResourceLoadError, std::shared_ptr<IResource>> cacheLine);
+
+    /**
+     * @brief Resolves the `.meta` beside this identifier, if its target should load instead.
+     *
+     * The real asset at the identifier and the `.meta`'s target are both ranked by the archive
+     * holding them, and the higher one loads. A tie goes to the `.meta`.
+     *
+     * @return Init data whose Identifier names the file to load, or nullptr if no `.meta` wins.
+     */
+    std::shared_ptr<ResourceInitData> ResolveMetaAlias(const ResourceIdentifier& identifier);
 
   private:
     std::unordered_map<ResourceIdentifier, std::variant<ResourceLoadError, std::shared_ptr<IResource>>,

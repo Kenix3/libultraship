@@ -32,8 +32,8 @@ target_sources(ImGui
 target_include_directories(ImGui PRIVATE ${metalcpp_SOURCE_DIR})
 target_compile_definitions(ImGui PUBLIC IMGUI_IMPL_METAL_CPP)
 
-find_package(SDL2 REQUIRED)
-target_link_libraries(ImGui PUBLIC SDL2::SDL2)
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3)
+target_link_libraries(ImGui PUBLIC SDL3::SDL3)
 
 find_package(GLEW REQUIRED)
 target_link_libraries(ImGui PUBLIC ${OPENGL_opengl_LIBRARY} GLEW::GLEW)

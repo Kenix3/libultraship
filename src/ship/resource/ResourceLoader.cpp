@@ -209,47 +209,41 @@ std::shared_ptr<ResourceInitData> ResourceLoader::ReadResourceInitData(const std
 
     initData->Type = resourceManager->GetResourceLoader()->GetResourceType(parsed["type"]);
     initData->ResourceVersion = parsed["version"];
+    initData->IsCustom = parsed.value("isCustom", false);
 
     return initData;
+}
+
+// Position File::BufferOffset at the resource body. A currently-headed binary resource keeps an OTR
+// header ahead of its body; when init data was supplied externally (a caller or a `.meta`) rather
+// than parsed from that header, skip past it. Headerless buffers (a shader, or any asset once
+// Kenix3/libultraship#1160 removes the header) have no valid byte order / matching type and are left
+// at offset 0. Remove this and its call sites along with the header under #1160.
+static void SetBufferOffset(const std::shared_ptr<File>& file, const std::shared_ptr<ResourceInitData>& initData) {
+    if (file == nullptr || initData->Format != RESOURCE_FORMAT_BINARY || file->Buffer->size() < OTR_HEADER_SIZE) {
+        return;
+    }
+    auto reader = std::make_shared<BinaryReader>(std::make_shared<MemoryStream>(file->Buffer));
+    auto byteOrder = (Endianness)reader->ReadInt8();
+    if (byteOrder != Endianness::Little && byteOrder != Endianness::Big) {
+        return;
+    }
+    reader->SetEndianness(byteOrder);
+    reader->ReadInt8(); // isCustom
+    reader->ReadInt8(); // reserved
+    reader->ReadInt8(); // reserved
+    if (reader->ReadUInt32() == initData->Type) {
+        file->BufferOffset = OTR_HEADER_SIZE;
+    }
 }
 
 std::shared_ptr<IResource> ResourceLoader::LoadResource(const ResourceIdentifier& identifier,
                                                         std::shared_ptr<File> fileToLoad,
                                                         std::shared_ptr<ResourceInitData> initData) {
-    const auto filePath = ResolveIdentifierPath(identifier, mResourceManager);
-
-    if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File not loaded");
-        return nullptr;
-    }
-
-    if (initData == nullptr) {
-        auto resourceManager = mResourceManager;
-        if (resourceManager == nullptr) {
-            SPDLOG_ERROR("Failed to load resource {}: no ResourceManager available", filePath);
-            return nullptr;
-        }
-
-        if (!filePath.empty()) {
-            auto metaFilePath = filePath + ".meta";
-            auto metaFileToLoad = resourceManager->LoadFileProcess(metaFilePath);
-
-            if (metaFileToLoad != nullptr) {
-                auto initDataFromMetaFile = ReadResourceInitData(filePath, metaFileToLoad);
-
-                auto metadataIdentifier = initDataFromMetaFile->Identifier;
-                metadataIdentifier.SetOwner(identifier.GetOwner());
-                metadataIdentifier.SetParent(identifier.GetParent());
-                initDataFromMetaFile->Identifier = metadataIdentifier;
-
-                fileToLoad = resourceManager->LoadFileProcess(metadataIdentifier);
-                initData = initDataFromMetaFile;
-            } else {
-                initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-            }
-        } else {
-            initData = ReadResourceInitDataLegacy(filePath, fileToLoad);
-        }
+    bool legacyInitData = false;
+    if (initData == nullptr && fileToLoad != nullptr) {
+        initData = ReadResourceInitDataLegacy(ResolveIdentifierPath(identifier, mResourceManager), fileToLoad);
+        legacyInitData = true;
     }
 
     if (initData == nullptr) {
@@ -278,6 +272,9 @@ std::shared_ptr<IResource> ResourceLoader::LoadResource(const ResourceIdentifier
 
     switch (initData->Format) {
         case RESOURCE_FORMAT_BINARY:
+            if (!legacyInitData) {
+                SetBufferOffset(fileToLoad, initData);
+            }
             fileToLoad->Reader = CreateBinaryReader(fileToLoad, initData);
             break;
         case RESOURCE_FORMAT_XML:

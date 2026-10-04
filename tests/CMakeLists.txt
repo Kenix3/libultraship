@@ -28,11 +28,15 @@ add_executable(libultraship_tests
     sound_matrix_decoder_tests.cpp
     path_file_helper_tests.cpp
     archive_resource_tests.cpp
+    archive_resource_meta_resolution_tests.cpp
     glob_tests.cpp
     splittext_tests.cpp
     path_diskfile_tests.cpp
     resource_type_tests.cpp
     archive_self_tests.cpp
+    connected_physical_device_manager_tests.cpp
+    gfx_sdl_window_tests.cpp
+    rumble_mapping_factory_tests.cpp
 )
 
 if(ENABLE_SCRIPTING)

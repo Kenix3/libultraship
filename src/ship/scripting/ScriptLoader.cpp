@@ -9,10 +9,13 @@
 #include <optional>
 #include <sstream>
 #include <string_view>
+#ifndef DISABLE_TCC_COMPILER
 #include <libtcc.h>
+#endif
 #include <memory>
 #include <queue>
 #include <unordered_map>
+#include <filesystem>
 
 namespace Ship {
 std::optional<std::vector<uint8_t>> LoadFromO2R(const std::string& path,
@@ -119,7 +122,6 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
     Scripting::LibraryLoader loader;
 
     const auto& binaries = info.Binaries;
-    const std::string temp = loader.GenerateTempFile();
 
     if (binaries.contains(std::string(platform))) {
         const std::string& path = binaries.at(std::string(platform));
@@ -128,8 +130,19 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to load platform-specific binary: " + path);
         }
 
+        // Prebuilt platform binary: written to a temp file and loaded through the
+        // platform dynamic linker. These are real shared libraries the mod author
+        // shipped (and can code-sign), so the loader path is unavoidable here.
+        const std::string temp = loader.GenerateTempFile();
         loader.WriteToTempFile(*data);
+        loader.Init(temp);
     } else if (!info.Main.empty()) {
+#ifdef DISABLE_TCC_COMPILER
+        SPDLOG_WARN("ScriptLoader: '{}' ships C sources but the TCC compiler is disabled; provide a prebuilt "
+                    "binary for this platform",
+                    info.Name);
+        return;
+#else
         const auto data = LoadFromO2R(info.Main, archive);
         if (!data.has_value()) {
             throw std::runtime_error("Failed to load main script: " + info.Main);
@@ -140,12 +153,19 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             throw std::runtime_error("Failed to create TCCState");
         }
 
-        tcc_set_error_func(s, nullptr, [](void* opaque, const char* msg) {
+        std::string errorLog;
+
+        tcc_set_error_func(s, &errorLog, [](void* opaque, const char* msg) {
             std::string_view sv(msg);
             if (sv.find("warning") != std::string_view::npos) {
                 SPDLOG_WARN("Compiler: {}", msg);
             } else if (sv.find("error") != std::string_view::npos || sv.find("fatal") != std::string_view::npos) {
                 SPDLOG_ERROR("Compiler: {}", msg);
+                auto* log = static_cast<std::string*>(opaque);
+                if (!log->empty()) {
+                    log->push_back('\n');
+                }
+                *log += msg;
             } else {
                 SPDLOG_INFO("Compiler: {}", msg);
             }
@@ -158,7 +178,22 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
         }
 
         tcc_set_options(s, mBuildOptions.c_str());
-        tcc_set_output_type(s, TCC_OUTPUT_DLL);
+
+        // Tell TCC where its own includes and libtcc1.a live.
+        // We look for a library path whose parent has an "include" sibling
+        // (the canonical .tcc/ root layout).
+        for (const auto& libPath : mLibraryPaths) {
+            auto tccRoot = std::filesystem::path(libPath).parent_path();
+            if (std::filesystem::exists(tccRoot / "include")) {
+                tcc_set_lib_path(s, tccRoot.string().c_str());
+                break;
+            }
+        }
+
+        // Compile into memory rather than emitting a shared library: the code is
+        // JIT-relocated in-process (see InitInMemory below), so no executable is
+        // written to disk.
+        tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
         for (const std::string& includePath : mIncludePaths) {
             if (!std::filesystem::exists(includePath)) {
@@ -221,17 +256,23 @@ void ScriptLoader::Compile(const std::shared_ptr<Archive>& archive) {
             std::string sourceCode = lineFixer + std::string(buf->begin(), buf->end());
             if (tcc_compile_string(s, sourceCode.c_str()) == -1) {
                 tcc_delete(s);
-                throw std::runtime_error("TCC Error in " + safePath);
+                throw std::runtime_error(errorLog.empty() ? "TCC Error in " + safePath : errorLog);
             }
         }
 
-        if (tcc_output_file(s, temp.c_str()) == -1) {
+        // Relocate the compiled unit into executable memory and hand ownership of
+        // the TCCState to the loader. No shared library is written to disk and
+        // neither dlopen() nor LoadLibrary() is called, which avoids the
+        // "drop an executable to disk and load it" pattern antivirus flags.
+        try {
+            loader.InitInMemory(s);
+        } catch (...) {
             tcc_delete(s);
-            throw std::runtime_error("Failed to output compiled code for " + temp);
+            throw;
         }
+#endif // DISABLE_TCC_COMPILER
     }
 
-    loader.Init(temp);
     mLoadedScripts[info.Name] = loader;
 };
 

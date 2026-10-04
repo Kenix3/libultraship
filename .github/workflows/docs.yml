@@ -39,17 +39,19 @@ jobs:
 
       - name: Install Jekyll dependencies
         run: |
-          cd docs
+          cd docs/doxygen
           bundle install
 
       - name: Generate Doxygen API docs
         run: doxygen Doxyfile
 
       - name: Build Jekyll site
+        working-directory: docs/doxygen
         run: |
-          cd docs
           bundle exec jekyll build \
-            --destination ../_site
+            --source .. \
+            --config _config.yml \
+            --destination ../../_site
 
       - name: Copy Doxygen output into site
         run: cp -r doxygen_out/html _site/api

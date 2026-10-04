@@ -1,6 +1,7 @@
 ---
 title: Overview
 nav_order: 1
+permalink: /
 ---
 
 # libultraship
@@ -18,7 +19,9 @@ LUS uses an asset loading system where data is stored separately from the execut
 | [Fast3D Renderer](fast-renderer) | Overview of the Fast3D display-list renderer. |
 | [Contributing](contributing) | How to contribute code, formatting guidelines, and CI troubleshooting. |
 | [Code of Conduct](code-of-conduct) | Community standards for contributors. |
+| [Versioning](versioning) | Epoch semantic versioning policy and epoch maintenance strategy. |
 | [API Reference](api/) | Doxygen-generated documentation for all public classes and functions. |
+| [Epoch 2 Migration Plan](migration/EPOCH-2) | Migration checklist and architecture notes for upgrading ports to epoch 2. |
 
 ## Contributing
 
@@ -27,7 +30,11 @@ Please see the [Contributing](contributing) page for more information.
 
 ## Versioning
 
-We use semantic versioning. We have defined the API as: every C linkage function, variable, struct, class, public class method, or enum included from `libultraship.h`.
+We use [epoch semantic versioning](https://antfu.me/posts/epoch-semver). For the new epoch, versioning scope includes everything that is public within the Ship namespace.
+
+This replaces the previous epoch rule that treated every C linkage function, variable, struct, class, public class method, or enum included from libultraship.h as part of the versioned API.
+
+See [Versioning](versioning) for details.
 
 ## Building
 
@@ -107,7 +114,7 @@ LUS makes use of the following third party libraries and resources:
 - [Fast3D](https://github.com/Kenix3/libultraship/blob/main/src/fast/LICENSE.txt) (MIT) render display lists.
 - [prism-processor](https://github.com/KiritoDv/prism-processor/blob/main/LICENSE) (MIT) shader preprocessor.
 - [ImGui](https://github.com/ocornut/imgui/blob/master/LICENSE.txt) (MIT) display UI.
-  - [SDL2](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) windowing and input backend.
+  - [SDL3](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) windowing and input backend.
   - [glew](https://github.com/nigels-com/glew/blob/master/LICENSE.txt) (modified BSD-3-Clause and MIT) OpenGL extension loading backend (Windows/macOS).
   - [metal-cpp](https://github.com/briaguya-ai/single-header-metal-cpp/blob/macOS13_iOS16/LICENSE) (Apache 2.0) Apple Metal rendering backend (macOS/iOS).
 - [StormLib](https://github.com/ladislav-zezula/StormLib/blob/master/LICENSE) (MIT) create and read `.mpq` compatible archive files.
@@ -122,7 +129,7 @@ LUS makes use of the following third party libraries and resources:
 - [stb](https://github.com/nothings/stb/blob/master/LICENSE) (MIT) image conversion.
 - [thread-pool](https://github.com/bshoshany/thread-pool/blob/master/LICENSE.txt) (MIT) thread pool for the resource manager.
 - [tinyxml2](https://github.com/leethomason/tinyxml2/blob/master/LICENSE.txt) (zlib) parse XML files for resource loaders.
-- [sdl2](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) window manager, controllers, and audio player.
+- [SDL3](https://github.com/libsdl-org/SDL/blob/main/LICENSE.txt) (zlib) window manager, controllers, and audio player.
 - [glob_match](https://github.com/torvalds/linux/blob/d1bd5fa07667fcc3e38996ec42aef98761f23039/lib/glob.c) (Dual MIT/GPL) Glob pattern matching.
 - [libgfxd](https://github.com/glankk/libgfxd/blob/master/LICENSE) (MIT) display list disassembler.
 - [libtcc](https://repo.or.cz/tinycc.git/blob/HEAD:/COPYING) (LGPL-2.1) C compiler used for the script system.

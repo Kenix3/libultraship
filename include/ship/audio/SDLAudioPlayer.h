@@ -1,15 +1,13 @@
 #pragma once
 #include "AudioPlayer.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 namespace Ship {
 /**
- * @brief AudioPlayer implementation backed by SDL2's audio subsystem.
+ * @brief AudioPlayer implementation backed by SDL3's audio subsystem.
  *
- * SDLAudioPlayer uses `SDL_OpenAudioDevice` to open a platform audio output, then
- * pushes interleaved PCM samples in DoPlay(). It supports both stereo and 6-channel
- * (5.1) output depending on the AudioChannelsSetting configured in AudioPlayer.
- *
+ * SDLAudioPlayer opens the platform output with `SDL_OpenAudioDeviceStream` and queues PCM in DoPlay().
+ * It supports stereo and 6-channel output according to the configured AudioChannelsSetting.
  * This backend is available on all platforms that Ship supports.
  */
 class SDLAudioPlayer final : public AudioPlayer {
@@ -49,7 +47,7 @@ class SDLAudioPlayer final : public AudioPlayer {
     void DoPlay(const uint8_t* buf, size_t len) override;
 
   private:
-    SDL_AudioDeviceID mDevice = 0; ///< Handle to the opened SDL audio device.
-    int32_t mNumChannels = 2;      ///< Number of output channels (2 for stereo, 6 for 5.1).
+    SDL_AudioStream* mStream = nullptr; ///< Stream bound to the opened SDL audio device.
+    int32_t mNumChannels = 2;           ///< Number of output channels (2 for stereo, 6 for 5.1).
 };
 } // namespace Ship

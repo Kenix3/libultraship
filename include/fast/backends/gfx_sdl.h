@@ -13,19 +13,19 @@ namespace Fast {
 class Fast3dGui;
 
 /**
- * @brief SDL2 implementation of the Fast3D window/input backend.
+ * @brief SDL implementation of the Fast3D window/input backend.
  *
  * Handles window creation, input polling, fullscreen transitions, framerate
  * pacing, and callback forwarding to the renderer/runtime.
  */
-class GfxWindowBackendSDL2 final : public GfxWindowBackend {
+class GfxWindowBackendSDL final : public GfxWindowBackend {
   public:
     /** @brief Constructs the backend with optional shared engine dependencies. */
-    GfxWindowBackendSDL2(std::shared_ptr<Ship::Config> config = nullptr,
-                         std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
-                         std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
-                         std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
-    ~GfxWindowBackendSDL2() override;
+    GfxWindowBackendSDL(std::shared_ptr<Ship::Config> config = nullptr,
+                        std::shared_ptr<Ship::FileDrop> fileDrop = nullptr,
+                        std::shared_ptr<Ship::ConsoleVariable> consoleVariable = nullptr,
+                        std::shared_ptr<Fast::Fast3dGui> fast3dGui = nullptr);
+    ~GfxWindowBackendSDL() override;
 
     /** @name GfxWindowBackend implementation */
     /** @{ */
@@ -74,10 +74,10 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
     void OnMouseButtonUp(int btn) const;
     void SyncFramerateWithTime() const;
 
-    SDL_Window* mWnd;
-    SDL_Rect mCursorClip;
-    SDL_GLContext mCtx;
-    SDL_Renderer* mRenderer;
+    SDL_Window* mWnd = nullptr;
+    SDL_Rect mCursorClip{};
+    SDL_GLContext mCtx = nullptr;
+    SDL_Renderer* mRenderer = nullptr;
     int mSdlToLusTable[512];
     float mMouseWheelX = 0.0f;
     float mMouseWheelY = 0.0f;

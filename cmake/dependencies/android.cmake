@@ -1,16 +1,17 @@
 include(FetchContent)
 
-#=================== SDL2 ===================
-find_package(SDL2 QUIET)
-if (NOT ${SDL2_FOUND})
+#=================== SDL3 ===================
+find_package(SDL3 QUIET)
+if (NOT ${SDL3_FOUND})
     FetchContent_Declare(
-        SDL2
-    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-    GIT_TAG release-2.32.10
+        SDL3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.4.12
+        OVERRIDE_FIND_PACKAGE
     )
-    message("SDL2 not found. Downloading now...")
-    FetchContent_MakeAvailable(SDL2)
-    message("SDL2 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl2-src)
+    message("SDL3 not found. Downloading now...")
+    FetchContent_MakeAvailable(SDL3)
+    message("SDL3 downloaded to " ${FETCHCONTENT_BASE_DIR}/sdl3-src)
 endif()
 
 #=================== nlohmann-json ===================
@@ -70,4 +71,4 @@ if (NOT ${libzip_FOUND})
     list(APPEND ADDITIONAL_LIB_INCLUDES ${libzip_SOURCE_DIR}/lib ${libzip_BINARY_DIR})
 endif()
 
-target_link_libraries(ImGui PUBLIC SDL2::SDL2)
+target_link_libraries(ImGui PUBLIC SDL3::SDL3)

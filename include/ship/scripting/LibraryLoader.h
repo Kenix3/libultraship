@@ -64,6 +64,24 @@ class LibraryLoader {
     void Init(const std::string& path);
 
     /**
+     * @brief Relocates an in-memory TCC compilation unit and takes ownership of it.
+     *
+     * Used for scripts compiled from source at runtime: instead of writing a
+     * shared library to disk and handing it to the platform dynamic linker
+     * (the "drop and load" pattern that antivirus heuristics flag), the code is
+     * JIT-relocated in-process directly from the TCCState via tcc_relocate().
+     * Nothing is written to disk and neither dlopen() nor LoadLibrary() is called.
+     *
+     * @param tccState An opaque TCCState* that has already had its sources
+     *                 compiled (tcc_compile_string). This LibraryLoader takes
+     *                 ownership: the state is kept alive because it owns the
+     *                 executable memory, and freed (tcc_delete) by Unload().
+     * @throws std::runtime_error if relocation fails.
+     * @note Only available when built with the TCC compiler (not DISABLE_TCC_COMPILER).
+     */
+    void InitInMemory(void* tccState);
+
+    /**
      * @brief Resolves an exported symbol from the loaded library.
      * @param name The symbol name to look up.
      * @return Pointer to the symbol, or nullptr if not found or no library is loaded.
@@ -83,5 +101,8 @@ class LibraryLoader {
   private:
     LibraryHandle_t mHandle;
     std::string mTempFile;
+    // Owned TCCState for in-memory JIT scripts; null for file-loaded libraries.
+    // maybe_unused: referenced only in TCC-enabled builds (not DISABLE_TCC_COMPILER).
+    [[maybe_unused]] void* mTccState = nullptr;
 };
 } // namespace Ship::Scripting

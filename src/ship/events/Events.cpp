@@ -112,12 +112,15 @@ void Events::CallEvent(const EventID id, IEvent* event, const char* file, const 
         return;
     }
 
+// For performance reasons the Event Debugger tool should not be compiled in release mode
+#ifdef _DEBUG
     auto& info = registry->Callers[std::string(key)];
     if (info.Path == nullptr) {
         info.Path = file;
         info.Line = line;
     }
     info.Count++;
+#endif
 }
 
 const Events::DispatchContext* Events::GetActiveDispatchContext() const {

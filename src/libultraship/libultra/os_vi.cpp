@@ -2,7 +2,7 @@
 
 extern "C" {
 
-Uint32 __lusViCallback(Uint32 interval, void* param) {
+Uint32 __lusViCallback(void* userdata, SDL_TimerID timerId, Uint32 interval) {
     __OSEventState* es = &__osEventStateTab[OS_EVENT_VI];
 
     if (es && es->queue) {
