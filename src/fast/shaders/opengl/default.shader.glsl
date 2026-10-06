@@ -133,8 +133,12 @@
     #define WRAP(x, low, high) clamp((x), (low), (high))
 
     float random(in vec3 value) {
-        float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));
-        return fract(sin(random) * 143758.5453);
+        uvec3 v = uvec3(ivec3(value));
+        uint h = v.x * 1597334677u ^ v.y * 3812015801u ^ v.z * 2654435761u;
+        h ^= h >> 16u; h *= 2246822519u;
+        h ^= h >> 13u; h *= 3266489917u;
+        h ^= h >> 16u;
+        return float(h >> 8u) * (1.0 / 16777216.0);
     }
 
     vec4 fromLinear(vec4 linearRGB){

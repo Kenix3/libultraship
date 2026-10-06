@@ -296,7 +296,7 @@ std::string GfxRenderingAPIOGL::BuildFsShader(const CCFeatures& cc_features) {
         { "texture", "texture" },
         { "vOutColor", "vOutColor" },
 #elif defined(USE_OPENGLES)
-        { "GLSL_VERSION", "#version 300 es\nprecision mediump float;" },
+        { "GLSL_VERSION", "#version 300 es\nprecision highp float;\nprecision highp int;" },
         { "attr", "in" },
         { "opengles", true },
         { "core_opengl", false },
