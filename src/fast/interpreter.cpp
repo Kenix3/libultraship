@@ -638,12 +638,10 @@ void Interpreter::ImportTextureRgba16(int tile, bool importReplacement) {
     if (maskH != 0 && (1u << maskH) >= tile_h && (1u << maskH) < height) {
         height = 1u << maskH;
     }
-    // HD replacement textures must still clamp to the rendered tile region
-    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
-    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -715,12 +713,10 @@ void Interpreter::ImportTextureRgba32(int tile, bool importReplacement) {
     if (maskH != 0 && (1u << maskH) >= tile_h && (1u << maskH) < height) {
         height = 1u << maskH;
     }
-    // HD replacement textures must still clamp to the rendered tile region
-    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
-    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1029,12 +1025,10 @@ void Interpreter::ImportTextureCi4(int tile, bool importReplacement) {
     if (maskH != 0 && (1u << maskH) >= tile_h && (1u << maskH) < height) {
         height = 1u << maskH;
     }
-    // HD replacement textures must still clamp to the rendered tile region
-    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
-    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1131,12 +1125,10 @@ void Interpreter::ImportTextureCi8(int tile, bool importReplacement) {
     if (maskH != 0 && (1u << maskH) >= tile_h && (1u << maskH) < height) {
         height = 1u << maskH;
     }
-    // HD replacement textures must still clamp to the rendered tile region
-    bool isHd = metadata->h_byte_scale != 1 || metadata->v_pixel_scale != 1;
-    if ((isHd || pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
+    if ((pyramidLike || clampS) && tile_w > 0 && tile_w < width) {
         width = tile_w;
     }
-    if ((isHd || pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
+    if ((pyramidLike || clampT) && tile_h > 0 && tile_h < height) {
         height = tile_h;
     }
 
@@ -1984,7 +1976,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
             uint32_t tex_size_bytes;
             uint32_t line_size;
-            if ((loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0) {
+            const bool usesLoadedSizes =
+                (loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0;
+            if (usesLoadedSizes) {
                 line_size = loaded_line_size;
                 tex_size_bytes = loaded_size;
             } else {
@@ -2022,8 +2016,12 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
             // are close to rendered pixels (mipmap), not when much bigger (window scroll).
             const RawTexMetadata& triMeta = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
-            bool pyrLike = IsPyramidLike(tex_width[i], tex_height[i], tex_width2[i], tex_height2[i],
-                                         triMeta.h_byte_scale, triMeta.v_pixel_scale);
+            // loaded_texture sizes are scaled for HD replacements; the tile state and UVs are N64 texels
+            if (usesLoadedSizes && (triMeta.h_byte_scale != 1 || triMeta.v_pixel_scale != 1)) {
+                tex_width[i] = (uint32_t)lroundf(tex_width[i] / triMeta.h_byte_scale);
+                tex_height[i] = (uint32_t)lroundf(tex_height[i] / triMeta.v_pixel_scale);
+            }
+            bool pyrLike = IsPyramidLike(tex_width[i], tex_height[i], tex_width2[i], tex_height2[i], 1.0f, 1.0f);
             // Same wrap-period trim as the import paths. The >= tex_width2 guard skips a stale
             // mask left by an FB blit (the pause background), which would otherwise tile the FB.
             uint32_t maskW = mRdp->texture_tile[tile].masks;
@@ -2034,12 +2032,10 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             if (maskH != 0 && (1u << maskH) >= tex_height2[i] && (1u << maskH) < tex_height[i]) {
                 tex_height[i] = 1u << maskH;
             }
-            // HD replacements must clamp to the tile region
-            bool isHd = triMeta.h_byte_scale != 1 || triMeta.v_pixel_scale != 1;
-            if ((isHd || pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
+            if ((pyrLike || (cms & G_TX_CLAMP)) && tex_width2[i] > 0 && tex_width2[i] < tex_width[i]) {
                 tex_width[i] = tex_width2[i];
             }
-            if ((isHd || pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
+            if ((pyrLike || (cmt & G_TX_CLAMP)) && tex_height2[i] > 0 && tex_height2[i] < tex_height[i]) {
                 tex_height[i] = tex_height2[i];
             }
 
