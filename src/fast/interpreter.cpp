@@ -2017,9 +2017,11 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             // are close to rendered pixels (mipmap), not when much bigger (window scroll).
             const RawTexMetadata& triMeta = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
             // loaded_texture sizes are scaled for HD replacements; the tile state and UVs are N64 texels
-            if (usesLoadedSizes && (triMeta.h_byte_scale != 1 || triMeta.v_pixel_scale != 1)) {
-                tex_width[i] = (uint32_t)lroundf(tex_width[i] / triMeta.h_byte_scale);
-                tex_height[i] = (uint32_t)lroundf(tex_height[i] / triMeta.v_pixel_scale);
+            if (usesLoadedSizes) {
+                const float hbs = triMeta.h_byte_scale > 0.0f ? triMeta.h_byte_scale : 1.0f;
+                const float vps = triMeta.v_pixel_scale > 0.0f ? triMeta.v_pixel_scale : 1.0f;
+                tex_width[i] = (uint32_t)lroundf(tex_width[i] / hbs);
+                tex_height[i] = (uint32_t)lroundf(tex_height[i] / vps);
             }
             bool pyrLike = IsPyramidLike(tex_width[i], tex_height[i], tex_width2[i], tex_height2[i], 1.0f, 1.0f);
             // Same wrap-period trim as the import paths. The >= tex_width2 guard skips a stale
