@@ -42,7 +42,10 @@ void Context::DestroyInstance() {
 
 Context::~Context() {
     SPDLOG_TRACE("destruct context");
-    GetWindow()->SaveWindowToConfig();
+    // A context is built in stages, so an early exit can destroy one before every Init* has run.
+    if (mWindow != nullptr) {
+        mWindow->SaveWindowToConfig();
+    }
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
     mWindow = nullptr;
@@ -59,9 +62,13 @@ Context::~Context() {
     mScriptLoader = nullptr;
     mKeystore = nullptr;
 #endif
-    GetConfig()->Save();
+    if (mConfig != nullptr) {
+        mConfig->Save();
+    }
     mConfig = nullptr;
-    mLogger->flush();
+    if (mLogger != nullptr) {
+        mLogger->flush();
+    }
     mLogger = nullptr;
 #ifndef _DEBUG
     mLogThreadPool = nullptr;
