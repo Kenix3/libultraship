@@ -3714,11 +3714,27 @@ bool gfx_modify_vtx_handler_f3dex2(F3DGfx** cmd0) {
     return false;
 }
 
+static bool gfx_dl_target_is_resource_path(const F3DGfx* target) {
+    if (!gfx_check_image_signature((const char*)target)) {
+        return false;
+    }
+
+    static std::set<const F3DGfx*> reported;
+    if (reported.insert(target).second) {
+        SPDLOG_ERROR("Skipping dlist call that resolved to resource \"{}\"", (const char*)target);
+    }
+    return true;
+}
+
 // F3D, F3DEX, and F3DEX2 do the same thing but F3DEX2 has its own opcode number
 bool gfx_dl_handler_common(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
     F3DGfx* subGFX = (F3DGfx*)gfx->SegAddr(cmd->words.w1);
+    if (gfx_dl_target_is_resource_path(subGFX)) {
+        return false;
+    }
+
     if (C0(16, 1) == 0) {
         // Push return address
         if (subGFX != nullptr) {
@@ -3764,6 +3780,10 @@ bool gfx_dl_index_handler(F3DGfx** cmd0) {
     uintptr_t segAddr = (segNum << 24) | (index * sizeof(F3DGfx)) + 1;
 
     F3DGfx* subGFX = (F3DGfx*)gfx->SegAddr(segAddr);
+    if (gfx_dl_target_is_resource_path(subGFX)) {
+        return false;
+    }
+
     if (C0(16, 1) == 0) {
         // Push return address
         if (subGFX != nullptr) {
