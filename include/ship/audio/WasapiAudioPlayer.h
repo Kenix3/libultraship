@@ -6,6 +6,7 @@
 #include <wrl/client.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
+#include <atomic>
 #include <mutex>
 
 using namespace Microsoft::WRL;
@@ -111,10 +112,11 @@ class WasapiAudioPlayer : public AudioPlayer, public IMMNotificationClient {
     ComPtr<IAudioRenderClient> mRenderClient;      ///< WASAPI render client for writing PCM data.
     LONG mRefCount = 1;                            ///< IUnknown reference count.
     UINT32 mBufferFrameCount = 0;                  ///< Size of the WASAPI render buffer in frames.
-    bool mInitialized = false;                     ///< True after DoInit() succeeds.
+    std::atomic<bool> mInitialized{ false };       ///< True while the stream on the current default device is usable.
+    std::atomic<uint32_t> mDeviceGeneration{ 0 };  ///< Bumped on every default-device change.
     bool mStarted = false;                         ///< True after IAudioClient::Start() is called.
     int32_t mNumChannels = 2;                      ///< Number of output channels (2 or 6).
-    std::mutex mMutex;                             ///< Serialises DoPlay() and device-change callbacks.
+    std::mutex mMutex;                             ///< Serialises DoPlay(), Buffered() and DoClose().
 };
 } // namespace Ship
 #endif
