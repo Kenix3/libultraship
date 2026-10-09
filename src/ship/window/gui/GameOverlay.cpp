@@ -207,7 +207,13 @@ void GameOverlay::Draw() {
             const auto var = Ship::Context::GetRawInstance()->GetConsoleVariables()->Get(text);
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
+            if (var == nullptr) {
+                continue;
+            }
+
             switch (var->Type) {
+                case ConsoleVariableType::None:
+                    break;
                 case ConsoleVariableType::Float:
 
                     TextDraw(30, textY, true, color, "%s %.2f", text, var->Float);
@@ -228,7 +234,6 @@ void GameOverlay::Draw() {
                     break;
             }
 
-            free((void*)text);
             textY += 30;
         }
 
