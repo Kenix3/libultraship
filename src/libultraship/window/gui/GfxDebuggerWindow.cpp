@@ -522,6 +522,13 @@ void GfxDebuggerWindow::DrawDisasNode(const F3DGfx* cmd, std::vector<const F3DGf
                 break;
             }
 
+            case OTR_G_SETSCREENXOFFSET: {
+                const int32_t shiftQ4 = (int32_t)(uint32_t)cmd->words.w1;
+                nodeWithText(cmd0, fmt::format("G_SETSCREENXOFFSET: {}", (float)shiftQ4 / 4.0f));
+                cmd++;
+                break;
+            }
+
             case OTR_G_EXTRAGEOMETRYMODE: {
                 uint32_t setBits = (uint32_t)cmd->words.w1;
                 uint32_t clearBits = ~C0(0, 24);
