@@ -1578,6 +1578,32 @@ void Interpreter::AdjustWidthHeightForScale(uint32_t& width, uint32_t& height, u
 }
 
 void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx* vertices) {
+    // Pre calculate invariants out of the per-vertex loop.
+    // geometry_mode is constant for the duration of a single G_VTX command,
+    // and lights_changed is reset once per batch (not per vertex).
+    const bool has_lighting = mRsp->geometry_mode & G_LIGHTING;
+    const bool has_positional_lighting = has_lighting && (mRsp->geometry_mode & G_LIGHTING_POSITIONAL);
+    const bool has_texture_gen = has_lighting && (mRsp->geometry_mode & G_TEXTURE_GEN);
+    const bool has_texture_gen_linear = has_texture_gen && (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR);
+    const bool has_fog = mRsp->geometry_mode & G_FOG;
+
+    if (has_lighting && mRsp->lights_changed) {
+        for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
+            CalculateNormalDir(&mRsp->current_lights[i].l, mRsp->current_lights_coeffs[i]);
+        }
+        CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
+        CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
+        mRsp->lights_changed = false;
+    }
+
+    // Cache the ambient light color (last light) — same for every vertex in this call
+    const RGBA ambient_color{ .r = has_lighting ? mRsp->current_lights[mRsp->current_num_lights - 1].l.col[0] : 0,
+                              .g = has_lighting ? mRsp->current_lights[mRsp->current_num_lights - 1].l.col[1] : 0,
+                              .b = has_lighting ? mRsp->current_lights[mRsp->current_num_lights - 1].l.col[2] : 0 };
+
+    const float(*pos_light_mtx)[4] =
+        has_positional_lighting ? mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1] : nullptr;
+
     for (size_t i = 0; i < n_vertices; i++, dest_index++) {
         const F3DVtx_t* v = &vertices[i].v;
         const F3DVtx_tn* vn = &vertices[i].n;
@@ -1597,11 +1623,13 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
                   v->ob[2] * mRsp->MP_matrix[2][3] + mRsp->MP_matrix[3][3];
 
         float world_pos[3] = { 0.0 };
-        if (mRsp->geometry_mode & G_LIGHTING_POSITIONAL) {
-            float(*mtx)[4] = mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1];
-            world_pos[0] = v->ob[0] * mtx[0][0] + v->ob[1] * mtx[1][0] + v->ob[2] * mtx[2][0] + mtx[3][0];
-            world_pos[1] = v->ob[0] * mtx[0][1] + v->ob[1] * mtx[1][1] + v->ob[2] * mtx[2][1] + mtx[3][1];
-            world_pos[2] = v->ob[0] * mtx[0][2] + v->ob[1] * mtx[1][2] + v->ob[2] * mtx[2][2] + mtx[3][2];
+        if (has_positional_lighting) {
+            world_pos[0] = v->ob[0] * pos_light_mtx[0][0] + v->ob[1] * pos_light_mtx[1][0] +
+                           v->ob[2] * pos_light_mtx[2][0] + pos_light_mtx[3][0];
+            world_pos[1] = v->ob[0] * pos_light_mtx[0][1] + v->ob[1] * pos_light_mtx[1][1] +
+                           v->ob[2] * pos_light_mtx[2][1] + pos_light_mtx[3][1];
+            world_pos[2] = v->ob[0] * pos_light_mtx[0][2] + v->ob[1] * pos_light_mtx[1][2] +
+                           v->ob[2] * pos_light_mtx[2][2] + pos_light_mtx[3][2];
         }
 
         x = AdjXForAspectRatio(x);
@@ -1609,25 +1637,14 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         short U = v->tc[0] * mRsp->texture_scaling_factor.s >> 16;
         short V = v->tc[1] * mRsp->texture_scaling_factor.t >> 16;
 
-        if (mRsp->geometry_mode & G_LIGHTING) {
-            if (mRsp->lights_changed) {
-                for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
-                    CalculateNormalDir(&mRsp->current_lights[i].l, mRsp->current_lights_coeffs[i]);
-                }
-                /*static const Light_t lookat_x = {{0, 0, 0}, 0, {0, 0, 0}, 0, {127, 0, 0}, 0};
-                static const Light_t lookat_y = {{0, 0, 0}, 0, {0, 0, 0}, 0, {0, 127, 0}, 0};*/
-                CalculateNormalDir(&mRsp->lookat[0], mRsp->current_lookat_coeffs[0]);
-                CalculateNormalDir(&mRsp->lookat[1], mRsp->current_lookat_coeffs[1]);
-                mRsp->lights_changed = false;
-            }
-
-            int r = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[0];
-            int g = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[1];
-            int b = mRsp->current_lights[mRsp->current_num_lights - 1].l.col[2];
+        if (has_lighting) {
+            int r = ambient_color.r;
+            int g = ambient_color.g;
+            int b = ambient_color.b;
 
             for (int i = 0; i < mRsp->current_num_lights - 1; i++) {
                 float intensity = 0;
-                if ((mRsp->geometry_mode & G_LIGHTING_POSITIONAL) && (mRsp->current_lights[i].p.unk3 != 0)) {
+                if (has_positional_lighting && (mRsp->current_lights[i].p.unk3 != 0)) {
                     // Calculate distance from the light to the vertex
                     float dist_vec[3] = { mRsp->current_lights[i].p.pos[0] - world_pos[0],
                                           mRsp->current_lights[i].p.pos[1] - world_pos[1],
@@ -1639,8 +1656,7 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
 
                     // Transform distance vector (which acts as a direction light vector) into model's space
                     float light_model[3];
-                    TransposedMatrixMul(light_model, dist_vec,
-                                        mRsp->modelview_matrix_stack[mRsp->modelview_matrix_stack_size - 1]);
+                    TransposedMatrixMul(light_model, dist_vec, pos_light_mtx);
 
                     // Calculate intensity for each axis using standard formula for intensity
                     float light_intensity[3];
@@ -1681,7 +1697,7 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
             d->color.g = g > 255 ? 255 : g;
             d->color.b = b > 255 ? 255 : b;
 
-            if (mRsp->geometry_mode & G_TEXTURE_GEN) {
+            if (has_texture_gen) {
                 float dotx = 0, doty = 0;
                 dotx += vn->n[0] * mRsp->current_lookat_coeffs[0][0];
                 dotx += vn->n[1] * mRsp->current_lookat_coeffs[0][1];
@@ -1696,7 +1712,7 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
                 dotx = Ship::Math::clamp(dotx, -1.0f, 1.0f);
                 doty = Ship::Math::clamp(doty, -1.0f, 1.0f);
 
-                if (mRsp->geometry_mode & G_TEXTURE_GEN_LINEAR) {
+                if (has_texture_gen_linear) {
                     // Not sure exactly what formula we should use to get accurate values
                     /*dotx = (2.906921f * dotx * dotx + 1.36114f) * dotx;
                     doty = (2.906921f * doty * doty + 1.36114f) * doty;
@@ -1745,7 +1761,7 @@ void Interpreter::GfxSpVertex(size_t n_vertices, size_t dest_index, const F3DVtx
         d->z = z;
         d->w = w;
 
-        if (mRsp->geometry_mode & G_FOG) {
+        if (has_fog) {
             if (fabsf(w) < 0.001f) {
                 // To avoid division by zero
                 w = 0.001f;
