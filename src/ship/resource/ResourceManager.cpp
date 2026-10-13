@@ -263,6 +263,12 @@ ResourceManager::CheckCache(const ResourceIdentifier& identifier, bool loadExact
         if (std::holds_alternative<std::shared_ptr<IResource>>(altCacheResult)) {
             return altCacheResult;
         }
+
+        // If the alternate asset has not been attempted yet, report a miss so it gets loaded before the standard
+        // asset is used.
+        if (std::get<ResourceLoadError>(altCacheResult) == ResourceLoadError::NotCached) {
+            return ResourceLoadError::NotCached;
+        }
     }
 
     const std::lock_guard<std::mutex> lock(mMutex);
@@ -357,7 +363,8 @@ void ResourceManager::DirtyResources(const ResourceFilter& filter) {
         auto list = GetArchiveManager()->ListFiles(filter.IncludeMasks, filter.ExcludeMasks);
 
         for (const auto& key : *list.get()) {
-            auto resource = GetCachedResource({ key, filter.Owner, filter.Parent });
+            // The key is the exact path of a file, so we do not want to redirect to an alternate asset here.
+            auto resource = GetCachedResource({ key, filter.Owner, filter.Parent }, true);
             // If it's a resource, we will set the dirty flag, else we will just unload it.
             if (resource != nullptr) {
                 resource->Dirty();
