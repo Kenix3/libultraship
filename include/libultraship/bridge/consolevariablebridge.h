@@ -12,7 +12,7 @@
  * @brief Returns a shared pointer to the CVar with the given name, or nullptr if it does not exist.
  * @param name CVar name (e.g. "gMyOption").
  */
-std::shared_ptr<Ship::CVar> CVarGet(const char* name);
+Ship::CVar* CVarGet(const char* name);
 
 extern "C" {
 #endif
