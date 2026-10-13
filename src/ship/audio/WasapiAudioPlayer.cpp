@@ -123,7 +123,10 @@ int WasapiAudioPlayer::Buffered() {
     try {
         UINT32 padding;
         ThrowIfFailed(mClient->GetCurrentPadding(&padding));
-        return padding;
+        // Initialize may allocate a buffer smaller than the caller's target, which the
+        // padding could then never reach; report the target as met once the endpoint
+        // buffer is genuinely full, the same way an unusable device does below.
+        return padding >= mBufferFrameCount ? GetDesiredBuffered() : static_cast<int>(padding);
     } catch (const HResultException& e) {
         SPDLOG_ERROR("WasapiAudioPlayer::Buffered failed: {}", e.what());
         return GetDesiredBuffered();
@@ -155,7 +158,10 @@ void WasapiAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
         memcpy(data, buf, frames * mNumChannels * sizeof(int16_t));
         ThrowIfFailed(mRenderClient->ReleaseBuffer(frames, 0));
 
-        if (!mStarted && padding + frames > 1500) {
+        // Initialize may allocate a smaller buffer than it was asked for, so a fixed prefill
+        // target can exceed the whole buffer and the stream then never starts at all.
+        const UINT32 prefill = mBufferFrameCount / 2 < 1500 ? mBufferFrameCount / 2 : 1500;
+        if (!mStarted && padding + frames > prefill) {
             mStarted = true;
             ThrowIfFailed(mClient->Start());
         }
