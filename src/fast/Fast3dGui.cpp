@@ -320,12 +320,18 @@ void Fast3dGui::CalculateGameViewport() {
     mainPos.y -= mTemporaryWindowPos.y;
     ImVec2 size = ImGui::GetContentRegionAvail();
     const auto interpreter = mInterpreter.lock().get();
-    interpreter->mCurDimensions.width = (uint32_t)(size.x * mInterpreter.lock()->mCurDimensions.internal_mul);
-    interpreter->mCurDimensions.height = (uint32_t)(size.y * mInterpreter.lock()->mCurDimensions.internal_mul);
     interpreter->mGameWindowViewport.x = (int16_t)mainPos.x;
     interpreter->mGameWindowViewport.y = (int16_t)mainPos.y;
     interpreter->mGameWindowViewport.width = (int16_t)size.x;
     interpreter->mGameWindowViewport.height = (int16_t)size.y;
+
+    uint32_t eyeViewportWidth;
+    uint32_t eyeViewportHeight;
+    interpreter->GetStereoEyeViewportDimensions(&eyeViewportWidth, &eyeViewportHeight);
+    interpreter->mCurDimensions.width =
+        static_cast<uint32_t>(eyeViewportWidth * interpreter->mCurDimensions.internal_mul);
+    interpreter->mCurDimensions.height =
+        static_cast<uint32_t>(eyeViewportHeight * interpreter->mCurDimensions.internal_mul);
 
     if (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_ADVANCED_RESOLUTION ".Enabled",
                                                                            0)) {
@@ -344,13 +350,13 @@ void Fast3dGui::CalculateGameViewport() {
         }
         case 2: { // 240p Widescreen
             constexpr int vertRes = 240;
-            interpreter->mCurDimensions.width = vertRes * size.x / size.y;
+            interpreter->mCurDimensions.width = vertRes * eyeViewportWidth / eyeViewportHeight;
             interpreter->mCurDimensions.height = vertRes;
             break;
         }
         case 3: { // 480p Widescreen
             constexpr int vertRes = 480;
-            interpreter->mCurDimensions.width = vertRes * size.x / size.y;
+            interpreter->mCurDimensions.width = vertRes * eyeViewportWidth / eyeViewportHeight;
             interpreter->mCurDimensions.height = vertRes;
             break;
         }
@@ -375,6 +381,7 @@ void Fast3dGui::DrawGame() {
 
     ImVec2 mainPos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetContentRegionAvail();
+    const ImVec2 availableSize = size;
     ImVec2 pos = ImVec2(0, 0);
     const auto interpreter = mInterpreter.lock().get();
 
@@ -414,6 +421,21 @@ void Fast3dGui::DrawGame() {
                           float(interpreter->mCurDimensions.height) * factor);
         }
     }
+    const StereoMode stereoMode = interpreter->mStereoMode;
+    if (stereoMode != StereoMode::Off) {
+        const float packedAspect = interpreter->GetStereoPresentationAspectRatio();
+
+        float packedWidth = availableSize.x;
+        float packedHeight = packedWidth / packedAspect;
+        if (packedHeight > availableSize.y) {
+            packedHeight = availableSize.y;
+            packedWidth = packedHeight * packedAspect;
+        }
+
+        pos = ImVec2(floor((availableSize.x - packedWidth) * 0.5f), floor((availableSize.y - packedHeight) * 0.5f));
+        size = ImVec2(packedWidth, packedHeight);
+    }
+
     uintptr_t fb = Ship::Context::GetRawInstance()->GetWindow()->GetGfxFrameBuffer();
     if (fb) {
         ImGui::SetCursorPos(pos);
@@ -424,8 +446,6 @@ void Fast3dGui::DrawGame() {
 }
 
 void Fast3dGui::ApplyResolutionChanges() {
-    ImVec2 size = ImGui::GetContentRegionAvail();
-
     const float aspectRatioX = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetFloat(
         CVAR_PREFIX_ADVANCED_RESOLUTION ".AspectRatioX", 16.0f);
     const float aspectRatioY = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetFloat(
@@ -445,18 +465,20 @@ void Fast3dGui::ApplyResolutionChanges() {
     uint32_t newHeight;
     const auto interpreter = mInterpreter.lock().get();
     interpreter->GetCurDimensions(&newWidth, &newHeight);
+    uint32_t eyeViewportWidth;
+    uint32_t eyeViewportHeight;
+    interpreter->GetStereoEyeViewportDimensions(&eyeViewportWidth, &eyeViewportHeight);
 
     if (verticalResolutionToggle) { // Use fixed vertical resolution
         if (aspectRatioIsEnabled) {
             newWidth = uint32_t(float(verticalPixelCount / aspectRatioY) * aspectRatioX);
         } else {
-            newWidth = uint32_t(float(verticalPixelCount * size.x / size.y));
+            newWidth = uint32_t(float(verticalPixelCount * eyeViewportWidth / eyeViewportHeight));
         }
         newHeight = verticalPixelCount;
     } else { // Use the window's resolution
         if (aspectRatioIsEnabled) {
-            if (((float)interpreter->mGameWindowViewport.height / interpreter->mGameWindowViewport.width) <
-                (aspectRatioY / aspectRatioX)) {
+            if ((static_cast<float>(eyeViewportHeight) / eyeViewportWidth) < (aspectRatioY / aspectRatioX)) {
                 // when pillarboxed
                 newWidth = uint32_t(float(interpreter->mCurDimensions.height / aspectRatioY) * aspectRatioX);
             } else { // when letterboxed
@@ -485,6 +507,10 @@ void Fast3dGui::ApplyResolutionChanges() {
 
 int16_t Fast3dGui::GetIntegerScaleFactor() {
     const auto interpreter = mInterpreter.lock().get();
+    uint32_t eyeViewportWidth;
+    uint32_t eyeViewportHeight;
+    interpreter->GetStereoEyeViewportDimensions(&eyeViewportWidth, &eyeViewportHeight);
+
     if (!Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
             CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.FitAutomatically", 0)) {
         int16_t factor = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
@@ -492,14 +518,14 @@ int16_t Fast3dGui::GetIntegerScaleFactor() {
 
         if (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(
                 CVAR_PREFIX_ADVANCED_RESOLUTION ".IntegerScale.NeverExceedBounds", 1)) {
-            if (((float)interpreter->mGameWindowViewport.height / interpreter->mGameWindowViewport.width) <
+            if ((static_cast<float>(eyeViewportHeight) / eyeViewportWidth) <
                 ((float)interpreter->mCurDimensions.height / interpreter->mCurDimensions.width)) {
-                if ((uint32_t)factor > interpreter->mGameWindowViewport.height / interpreter->mCurDimensions.height) {
-                    factor = interpreter->mGameWindowViewport.height / interpreter->mCurDimensions.height;
+                if ((uint32_t)factor > eyeViewportHeight / interpreter->mCurDimensions.height) {
+                    factor = eyeViewportHeight / interpreter->mCurDimensions.height;
                 }
             } else {
-                if ((uint32_t)factor > interpreter->mGameWindowViewport.width / interpreter->mCurDimensions.width) {
-                    factor = interpreter->mGameWindowViewport.width / interpreter->mCurDimensions.width;
+                if ((uint32_t)factor > eyeViewportWidth / interpreter->mCurDimensions.width) {
+                    factor = eyeViewportWidth / interpreter->mCurDimensions.width;
                 }
             }
         }
@@ -511,11 +537,11 @@ int16_t Fast3dGui::GetIntegerScaleFactor() {
     } else {
         int16_t factor = 1;
 
-        if (((float)interpreter->mGameWindowViewport.height / interpreter->mGameWindowViewport.width) <
+        if ((static_cast<float>(eyeViewportHeight) / eyeViewportWidth) <
             ((float)interpreter->mCurDimensions.height / interpreter->mCurDimensions.width)) {
-            factor = interpreter->mGameWindowViewport.height / interpreter->mCurDimensions.height;
+            factor = eyeViewportHeight / interpreter->mCurDimensions.height;
         } else {
-            factor = interpreter->mGameWindowViewport.width / interpreter->mCurDimensions.width;
+            factor = eyeViewportWidth / interpreter->mCurDimensions.width;
         }
 
         factor += Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(

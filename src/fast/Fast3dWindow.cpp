@@ -322,6 +322,22 @@ void Fast3dWindow::SetMsaaLevel(uint32_t value) {
     mInterpreter->SetMsaaLevel(value);
 }
 
+void Fast3dWindow::SetStereoMode(int32_t mode) {
+    mInterpreter->SetStereoMode(mode);
+}
+
+void Fast3dWindow::SetStereoSeparation(float separation) {
+    mInterpreter->SetStereoSeparation(separation);
+}
+
+void Fast3dWindow::SetStereoConvergence(float convergence) {
+    mInterpreter->SetStereoConvergence(convergence);
+}
+
+void Fast3dWindow::SetStereoUiDepth(float uiDepth) {
+    mInterpreter->SetStereoUiDepth(uiDepth);
+}
+
 void Fast3dWindow::SetFullscreen(bool isFullscreen) {
     // Save current window position before fullscreening
     SaveWindowToConfig();
