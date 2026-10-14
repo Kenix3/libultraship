@@ -210,6 +210,17 @@ struct TextureCacheMapIter {
     TextureCacheMap::iterator it;
 };
 
+// Everything a tile needs to name a texture, with no GPU state touched and no cache entry made.
+struct TextureBinding {
+    TextureCacheKey key;
+    const uint8_t* origAddr; // source address, after the empty-TMEM-slot fallback
+    const uint8_t* fbAddr;   // address the framebuffer-mirror lookup reads, null when replacing
+    uint32_t tmemIndex;
+    uint32_t texFlags;
+    uint8_t fmt, siz;
+    bool fellBackToOtherTmem;
+};
+
 struct RGBA {
     uint8_t r, g, b, a;
 };
@@ -434,6 +445,8 @@ class Interpreter {
     void ImportTextureCi8(int tile, bool importReplacement);
     void ImportTextureRaw(int tile, bool importReplacement);
     void ImportTextureImg(int tile, bool importReplacement);
+    bool BuildTextureBinding(int tile, bool importReplacement, TextureBinding& binding);
+    bool TextureBindingUnchanged(int i, int tile);
     void ImportTexture(int i, int tile, bool importReplacement);
     void ImportTextureMask(int i, int tile);
     void CalculateNormalDir(const F3DLight_t*, float coeffs[3]);
