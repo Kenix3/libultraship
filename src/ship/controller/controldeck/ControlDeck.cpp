@@ -38,6 +38,12 @@ void ControlDeck::Init(uint8_t* controllerBits) {
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::Mouse);
         mPorts[0]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
     }
+
+    for (uint8_t port = 1; port < 4; port++) {
+        if (!mPorts[port]->GetConnectedController()->HasConfig()) {
+            mPorts[port]->GetConnectedController()->AddDefaultMappings(PhysicalDeviceType::SDLGamepad);
+        }
+    }
 }
 
 bool ControlDeck::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
