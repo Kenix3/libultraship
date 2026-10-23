@@ -1225,7 +1225,9 @@ void InputEditorWindow::DrawDeviceToggles(uint8_t portIndex) {
         };
         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
         ImGui::SameLine();
+        ImGui::PushID(instanceId);
         ImGui::Button(StringHelper::Sprintf("%s %s (SDL)", ICON_FA_GAMEPAD, name.c_str()).c_str());
+        ImGui::PopID();
         ImGui::PopStyleColor();
         ImGui::PopStyleColor();
         ImGui::PopItemFlag();
