@@ -25,15 +25,24 @@ void WasapiAudioPlayer::ThrowIfFailed(HRESULT res) {
 }
 
 WasapiAudioPlayer::~WasapiAudioPlayer() {
-    DoClose();
-
     if (mDeviceEnumerator) {
         mDeviceEnumerator->UnregisterEndpointNotificationCallback(this);
         mDeviceEnumerator.Reset();
     }
+
+    DoClose();
 }
 
 bool WasapiAudioPlayer::SetupStream() {
+    const uint32_t generation = mDeviceGeneration.load(std::memory_order_acquire);
+
+    // Dropping a running client without stopping it leaves the old endpoint streaming.
+    if (mClient) {
+        mClient->Stop();
+        mRenderClient.Reset();
+        mClient.Reset();
+    }
+
     try {
         ThrowIfFailed(mDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &mDevice));
         ThrowIfFailed(mDevice->Activate(IID_IAudioClient, CLSCTX_ALL, nullptr, IID_PPV_ARGS_Helper(&mClient)));
@@ -77,13 +86,14 @@ bool WasapiAudioPlayer::SetupStream() {
         ThrowIfFailed(mClient->GetService(IID_PPV_ARGS(&mRenderClient)));
 
         mStarted = false;
-        mInitialized = true;
+        // A device change during setup leaves this stream on the old endpoint, so discard it.
+        mInitialized.store(generation == mDeviceGeneration.load(std::memory_order_acquire), std::memory_order_release);
     } catch (const HResultException& e) {
         SPDLOG_ERROR("WasapiAudioPlayer::SetupStream failed: {}", e.what());
         return false;
     }
 
-    return true;
+    return mInitialized.load(std::memory_order_acquire);
 }
 
 bool WasapiAudioPlayer::DoInit() {
@@ -109,7 +119,7 @@ void WasapiAudioPlayer::DoClose() {
     mRenderClient.Reset();
     mClient.Reset();
     mDevice.Reset();
-    mInitialized = false;
+    mInitialized.store(false, std::memory_order_release);
     mStarted = false;
 }
 
@@ -177,9 +187,10 @@ HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDeviceRemoved(LPCWSTR pwstrDevice
 HRESULT STDMETHODCALLTYPE WasapiAudioPlayer::OnDefaultDeviceChanged(EDataFlow flow, ERole role,
                                                                     LPCWSTR pwstrDefaultDeviceId) {
     if (flow == eRender && role == eConsole) {
-        // This callback runs on a separate thread, so we need to protect mInitialized
-        std::lock_guard<std::mutex> lock(mMutex);
-        mInitialized = false;
+        // Taking mMutex here deadlocks: DoPlay() holds it across MMDevice calls that cannot
+        // complete until this callback returns.
+        mDeviceGeneration.fetch_add(1, std::memory_order_acq_rel);
+        mInitialized.store(false, std::memory_order_release);
     }
     return S_OK;
 }
