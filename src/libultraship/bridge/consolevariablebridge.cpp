@@ -1,7 +1,7 @@
 #include "libultraship/bridge/consolevariablebridge.h"
 #include "ship/Context.h"
 
-std::shared_ptr<Ship::CVar> CVarGet(const char* name) {
+Ship::CVar* CVarGet(const char* name) {
     return Ship::Context::GetRawInstance()->GetConsoleVariables()->Get(name);
 }
 
