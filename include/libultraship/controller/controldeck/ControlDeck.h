@@ -57,6 +57,9 @@ class ControlDeck final : public Ship::ControlDeck {
      */
     OSContPad* GetPads();
 
+    /** @brief Returns the gamepad keys mapped to port 1's N64 buttons. */
+    Ship::OnScreenKeyboardBindings GetOnScreenKeyboardBindings() override;
+
     /**
      * @brief Reads each connected controller and writes the result to the game's pad buffer.
      *

@@ -50,6 +50,26 @@ int8_t SDLAxisDirectionToButtonMapping::GetMappingType() {
     return MAPPING_TYPE_GAMEPAD;
 }
 
+ImGuiKey SDLAxisDirectionToButtonMapping::GetGamepadKey() {
+    const bool positive = mAxisDirection == POSITIVE;
+    switch (mControllerAxis) {
+        case SDL_CONTROLLER_AXIS_LEFTX:
+            return positive ? ImGuiKey_GamepadLStickRight : ImGuiKey_GamepadLStickLeft;
+        case SDL_CONTROLLER_AXIS_LEFTY:
+            return positive ? ImGuiKey_GamepadLStickDown : ImGuiKey_GamepadLStickUp;
+        case SDL_CONTROLLER_AXIS_RIGHTX:
+            return positive ? ImGuiKey_GamepadRStickRight : ImGuiKey_GamepadRStickLeft;
+        case SDL_CONTROLLER_AXIS_RIGHTY:
+            return positive ? ImGuiKey_GamepadRStickDown : ImGuiKey_GamepadRStickUp;
+        case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+            return ImGuiKey_GamepadL2;
+        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+            return ImGuiKey_GamepadR2;
+        default:
+            return ImGuiKey_None;
+    }
+}
+
 std::string SDLAxisDirectionToButtonMapping::GetButtonMappingId() {
     return StringHelper::Sprintf("P%d-B%d-SDLA%d-AD%s", mPortIndex, mBitmask, mControllerAxis,
                                  mAxisDirection == 1 ? "P" : "N");

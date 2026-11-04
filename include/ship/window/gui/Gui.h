@@ -13,6 +13,7 @@
 #include "ship/controller/physicaldevice/SDLAddRemoveDeviceEventHandler.h"
 #include "ship/window/gui/IconsFontAwesome4.h"
 #include "ship/window/gui/GameOverlay.h"
+#include "ship/window/gui/OnScreenKeyboard.h"
 #include "ship/window/gui/StatsWindow.h"
 #include "ship/window/gui/FileBrowserWindow.h"
 #include "ship/window/gui/GuiWindow.h"
@@ -27,7 +28,7 @@ class Window;
  * Gui is the central hub for the in-game overlay system. It:
  * - Initialises the ImGui backend for the active graphics API.
  * - Maintains a registry of named GuiWindow instances and draws them each frame.
- * - Owns the GameOverlay, GuiMenuBar, and optional full-screen "menu" window.
+ * - Owns the GameOverlay, OnScreenKeyboard, GuiMenuBar, and optional full-screen "menu" window.
  *
  * Obtain the instance from Window::GetGui().
  */
@@ -115,6 +116,9 @@ class Gui {
 
     /** @brief Returns the GameOverlay instance used for on-screen text and notifications. */
     std::shared_ptr<GameOverlay> GetGameOverlay();
+
+    /** @brief Returns the OnScreenKeyboard instance. */
+    std::shared_ptr<OnScreenKeyboard> GetOnScreenKeyboard();
 
     /**
      * @brief Sets the main application menu bar.
@@ -238,6 +242,7 @@ class Gui {
     std::string mImGuiIniPath;
     std::string mImGuiLogPath;
     std::shared_ptr<GameOverlay> mGameOverlay;
+    std::shared_ptr<OnScreenKeyboard> mOnScreenKeyboard;
     std::shared_ptr<GuiMenuBar> mMenuBar;
     std::shared_ptr<GuiWindow> mMenu;
 };

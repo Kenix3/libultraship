@@ -22,6 +22,7 @@ namespace Ship {
 
 Gui::Gui(std::vector<std::shared_ptr<GuiWindow>> guiWindows) : mNeedsConsoleVariableSave(false) {
     mGameOverlay = std::make_shared<GameOverlay>();
+    mOnScreenKeyboard = std::make_shared<OnScreenKeyboard>();
 
     for (auto& guiWindow : guiWindows) {
         AddGuiWindow(guiWindow);
@@ -105,6 +106,7 @@ void Gui::Init() {
     GetGuiWindow("Console")->Init();
     GetGuiWindow("FileBrowser")->Init();
     GetGameOverlay()->Init();
+    GetOnScreenKeyboard()->Init();
 
     Context::GetRawInstance()->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
         std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
@@ -252,6 +254,8 @@ void Gui::DrawMenu() {
             ->Dispatch("reset");
     }
 
+    GetOnScreenKeyboard()->Update();
+
     if (GetMenuBar()) {
         GetMenuBar()->Update();
         GetMenuBar()->Draw();
@@ -373,6 +377,10 @@ std::shared_ptr<GuiWindow> Gui::GetGuiWindow(const std::string& name) {
 
 std::shared_ptr<GameOverlay> Gui::GetGameOverlay() {
     return mGameOverlay;
+}
+
+std::shared_ptr<OnScreenKeyboard> Gui::GetOnScreenKeyboard() {
+    return mOnScreenKeyboard;
 }
 
 void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {

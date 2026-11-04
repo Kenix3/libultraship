@@ -20,6 +20,10 @@ int8_t ControllerButtonMapping::GetMappingType() {
     return MAPPING_TYPE_UNKNOWN;
 }
 
+ImGuiKey ControllerButtonMapping::GetGamepadKey() {
+    return ImGuiKey_None;
+}
+
 void ControllerButtonMapping::SetPortIndex(uint8_t portIndex) {
     mPortIndex = portIndex;
 }
