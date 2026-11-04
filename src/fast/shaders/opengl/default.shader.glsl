@@ -130,7 +130,7 @@
     uniform int texture_filtering[2];
 
     #define TEX_OFFSET(off) @{texture}(tex, texCoord - off / texSize)
-    #define WRAP(x, low, high) mod((x)-(low), (high)-(low)) + (low)
+    #define WRAP(x, low, high) mix((x), mod((x)-(low), (high)-(low)) + (low), step((high), (x)) + 1.0 - step((low), (x)))
 
     float random(in vec3 value) {
         float random = dot(sin(value), vec3(12.9898, 78.233, 37.719));
