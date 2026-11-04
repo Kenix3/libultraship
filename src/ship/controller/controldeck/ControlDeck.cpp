@@ -1,5 +1,7 @@
 #include "ship/controller/controldeck/ControlDeck.h"
 
+#include <map>
+
 #include "ship/Context.h"
 #include "ship/controller/controldevice/controller/Controller.h"
 #include "ship/utils/StringHelper.h"
@@ -132,5 +134,30 @@ std::string ControlDeck::GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask) {
     }
 
     return mButtonNames[bitmask];
+}
+
+OnScreenKeyboardBindings ControlDeck::GetOnScreenKeyboardBindings() {
+    return OnScreenKeyboardBindings();
+}
+
+OnScreenKeyboardBinding ControlDeck::GetGamepadBinding(uint8_t port, CONTROLLERBUTTONS_T bitmask) {
+    OnScreenKeyboardBinding binding;
+    auto buttons = GetControllerByPort(port)->GetAllButtons();
+    auto button = buttons.find(bitmask);
+    if (button == buttons.end()) {
+        return binding;
+    }
+
+    // Sorted so a button on two inputs always reads the same
+    const auto mappings = button->second->GetAllButtonMappings();
+    const std::map<std::string, std::shared_ptr<ControllerButtonMapping>> sorted(mappings.begin(), mappings.end());
+    for (auto& [id, mapping] : sorted) {
+        const ImGuiKey key = mapping->GetGamepadKey();
+        if (key != ImGuiKey_None) {
+            binding.Keys.push_back(key);
+            binding.Label += (binding.Label.empty() ? "" : "/") + mapping->GetPhysicalInputName();
+        }
+    }
+    return binding;
 }
 } // namespace Ship

@@ -30,6 +30,9 @@ class SDLAxisDirectionToButtonMapping final : public ControllerButtonMapping, pu
     /** @brief Returns the mapping type identifier. */
     int8_t GetMappingType() override;
 
+    /** @brief Returns the ImGui gamepad key for the bound axis and direction. */
+    ImGuiKey GetGamepadKey() override;
+
     /** @brief Returns the unique string identifier for this mapping. */
     std::string GetButtonMappingId() override;
 

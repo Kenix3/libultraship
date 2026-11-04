@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <imgui.h>
 #include <string>
 
 #include "ControllerInputMapping.h"
@@ -52,6 +53,12 @@ class ControllerButtonMapping : virtual public ControllerInputMapping {
      * @return The mapping type as a MAPPING_TYPE constant.
      */
     virtual int8_t GetMappingType();
+
+    /**
+     * @brief Returns the ImGui gamepad key this mapping reads.
+     * @return The gamepad key, or ImGuiKey_None if this mapping doesn't read a gamepad.
+     */
+    virtual ImGuiKey GetGamepadKey();
 
     /**
      * @brief Sets the controller port index for this mapping.

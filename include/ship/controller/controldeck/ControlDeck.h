@@ -7,6 +7,7 @@
 #include "ship/controller/physicaldevice/ConnectedPhysicalDeviceManager.h"
 #include "ship/controller/physicaldevice/GlobalSDLDeviceSettings.h"
 #include "ship/controller/controldevice/controller/mapping/ControllerDefaultMappings.h"
+#include "ship/window/gui/OnScreenKeyboard.h"
 
 namespace Ship {
 
@@ -126,6 +127,12 @@ class ControlDeck {
      */
     std::string GetButtonNameForBitmask(CONTROLLERBUTTONS_T bitmask);
 
+    /**
+     * @brief Returns the gamepad keys that control the OnScreenKeyboard.
+     * @return The default bindings. Override to follow a game's buttons.
+     */
+    virtual OnScreenKeyboardBindings GetOnScreenKeyboardBindings();
+
   protected:
     /**
      * @brief Returns true if *all* registered blockers have blocked game input.
@@ -134,6 +141,14 @@ class ControlDeck {
      * zeroed or real pad data to the game.
      */
     bool AllGameInputBlocked();
+
+    /**
+     * @brief Returns the ImGui gamepad keys a button is mapped to, and their names.
+     * @param port    Zero-based port index.
+     * @param bitmask Single-bit button bitmask.
+     * @return The binding, without any mappings that don't read a gamepad.
+     */
+    OnScreenKeyboardBinding GetGamepadBinding(uint8_t port, CONTROLLERBUTTONS_T bitmask);
 
     std::vector<std::shared_ptr<ControlPort>> mPorts = {}; ///< One entry per controller port.
 

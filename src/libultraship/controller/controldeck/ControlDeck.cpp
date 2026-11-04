@@ -45,6 +45,23 @@ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks)
 ControlDeck::ControlDeck() : ControlDeck(std::vector<CONTROLLERBUTTONS_T>()) {
 }
 
+Ship::OnScreenKeyboardBindings ControlDeck::GetOnScreenKeyboardBindings() {
+    Ship::OnScreenKeyboardBindings bindings;
+    bindings.Type = GetGamepadBinding(0, BTN_A);
+    bindings.Remove = GetGamepadBinding(0, BTN_B);
+    bindings.Shift = GetGamepadBinding(0, BTN_CUP);
+    bindings.Space = GetGamepadBinding(0, BTN_CDOWN);
+    bindings.CursorLeft = GetGamepadBinding(0, BTN_L);
+    bindings.CursorRight = GetGamepadBinding(0, BTN_R);
+    bindings.Language = GetGamepadBinding(0, BTN_Z);
+    bindings.Done = GetGamepadBinding(0, BTN_START);
+    bindings.Up = GetGamepadBinding(0, BTN_DUP);
+    bindings.Down = GetGamepadBinding(0, BTN_DDOWN);
+    bindings.Left = GetGamepadBinding(0, BTN_DLEFT);
+    bindings.Right = GetGamepadBinding(0, BTN_DRIGHT);
+    return bindings;
+}
+
 OSContPad* ControlDeck::GetPads() {
     return mPads;
 }
