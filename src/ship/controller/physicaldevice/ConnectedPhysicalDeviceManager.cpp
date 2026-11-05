@@ -100,8 +100,12 @@ void ConnectedPhysicalDeviceManager::RefreshConnectedSDLGamepads() {
         mConnectedSDLGamepads[instanceId] = gamepad;
         mConnectedSDLGamepadNames[instanceId] = gamepadName;
 
-        for (uint8_t port = 1; port < 4; port++) {
-            mIgnoredInstanceIds[port].insert(instanceId);
+        for (uint8_t port = 0; port < 4; port++) {
+            if (i != port) {
+                mIgnoredInstanceIds[port].insert(instanceId);
+            } else {
+                mIgnoredInstanceIds[port].erase(instanceId);
+            }
         }
     }
 }
