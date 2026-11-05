@@ -155,6 +155,8 @@ std::shared_ptr<IResource> ResourceManager::LoadResourceProcess(const ResourceId
     auto file = LoadFileProcess(identifier.Path);
     if (file == nullptr && !mArchiveManager->HasFile(identifier.Path + ".meta")) {
         SPDLOG_TRACE("Failed to load resource file at path {}", identifier.Path);
+        // Pool threads miss concurrently, and an unguarded insert can rehash under another thread's lookup.
+        const std::lock_guard<std::mutex> lock(mMutex);
         mResourceCache[identifier] = ResourceLoadError::NotFound;
         return nullptr;
     }
@@ -417,9 +419,13 @@ size_t ResourceManager::UnloadResource(const ResourceIdentifier& identifier) {
     std::variant<ResourceLoadError, std::shared_ptr<IResource>> value = nullptr;
     size_t ret = 0;
     // We can only erase the resource if we have any resources for that owner.
-    if (mResourceCache.contains(identifier)) {
+    {
         const std::lock_guard<std::mutex> lock(mMutex);
-        mResourceCache.erase(identifier);
+        auto it = mResourceCache.find(identifier);
+        if (it != mResourceCache.end()) {
+            value = std::move(it->second);
+            mResourceCache.erase(it);
+        }
     }
 
     return ret;
