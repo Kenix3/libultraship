@@ -237,6 +237,7 @@ struct RSP {
 
     float MP_matrix[4][4];
     float P_matrix[4][4];
+    bool projection_is_perspective;
 
     F3DLight_t lookat[2];
     F3DLight current_lights[MAX_LIGHTS + 1];
@@ -363,11 +364,35 @@ struct FBInfo {
     uint32_t native_width, native_height;   // Max "native" size of the screen, used for up-scaling
     bool resize;                            // Scale to match the viewport
     bool forceFixedAspect;                  // Preserve aspect ratio even if resize is true
+    int stereo_right_fb{};                  // Lazily-created persistent target for the right-eye replay
 };
 
 struct MaskedTextureEntry {
     uint8_t* mask;
     uint8_t* replacementData;
+};
+
+enum class StereoMode : int32_t {
+    Off = 0,
+    HalfSBS = 1,
+    FullSBS = 2,
+    HalfTAB = 3,
+    FullTAB = 4,
+};
+
+enum class StereoEye : int8_t {
+    Mono = 0,
+    Left = -1,
+    Right = 1,
+};
+
+struct StereoLayout {
+    uint32_t eye_width;
+    uint32_t eye_height;
+    uint32_t output_width;
+    uint32_t output_height;
+    int32_t content_x;
+    int32_t content_y;
 };
 
 class Interpreter {
@@ -412,7 +437,13 @@ class Interpreter {
     void SetNativeDimensions(float width, float height);
     void SetResolutionMultiplier(float multiplier);
     void SetMsaaLevel(uint32_t level);
+    void SetStereoMode(int32_t mode);
+    void SetStereoSeparation(float separation);
+    void SetStereoConvergence(float convergence);
+    void SetStereoUiDepth(float uiDepth);
     void GetCurDimensions(uint32_t* width, uint32_t* height);
+    void GetStereoEyeViewportDimensions(uint32_t* width, uint32_t* height) const;
+    float GetStereoPresentationAspectRatio() const;
 
     // private: TODO make these private
     void Flush();
@@ -470,7 +501,7 @@ class Interpreter {
     void GfxDpSetFogColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     void GfxDpSetBlendColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     void GfxDpSetFillColor(uint32_t pickedColor);
-    void GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry);
+    void GfxDrawRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, bool applyStereoUiDepth = true);
     void GfxDpTextureRectangle(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls,
                                int16_t ult, int16_t dsdx, int16_t dtdy, bool flip);
     void GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_t ulx, int32_t uly, int16_t uls, int16_t ult,
@@ -492,6 +523,21 @@ class Interpreter {
     void CalcAndSetViewport(const F3DVp_t* viewport);
 
     void SpReset();
+    void RunCommandPass(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtxReplacements, StereoEye eye,
+                        bool enableDebugger);
+    StereoLayout GetStereoLayout() const;
+    void ClearStereoOutput();
+    void ComposeStereoEye(StereoEye eye);
+    void InvalidateReplayBindings();
+    int GetFramebufferForCurrentEye(int fb) const;
+    void ApplyStereoToClipCoordinates(float& x, float w) const;
+    float GetStereoUiOffset() const;
+    float GetStereoBackgroundOffset() const;
+    bool IsStereoEnabled() const;
+    bool IsStereoPass() const;
+    bool IsStereoSideBySide() const;
+    bool IsHalfStereoMode() const;
+    bool ShouldSuppressFramebufferReadback() const;
     void* SegAddr(uintptr_t w1);
 
     static const char* CCMUXtoStr(uint32_t ccmux);
@@ -541,6 +587,13 @@ class Interpreter {
 
     int mGameFb{};             // game_framebuffer;
     int mGameFbMsaaResolved{}; // game_framebuffer_msaa_resolved;
+    int mStereoOutputFb{};
+
+    StereoMode mStereoMode = StereoMode::Off;
+    StereoEye mStereoEye = StereoEye::Mono;
+    float mStereoSeparation = 20.0f;
+    float mStereoConvergence = 20.0f;
+    float mStereoUiDepth = 0.0f;
 
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;

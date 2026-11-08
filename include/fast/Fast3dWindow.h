@@ -58,6 +58,10 @@ class Fast3dWindow : public Ship::Window {
     bool CanDisableVerticalSync() override;
     void SetResolutionMultiplier(float multiplier) override;
     void SetMsaaLevel(uint32_t value) override;
+    void SetStereoMode(int32_t mode) override;
+    void SetStereoSeparation(float separation) override;
+    void SetStereoConvergence(float convergence) override;
+    void SetStereoUiDepth(float uiDepth) override;
     void SetFullscreen(bool isFullscreen) override;
     bool IsFullscreen() override;
     bool IsRunning() override;

@@ -1017,7 +1017,7 @@ void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX
 
     // We can't region copy a multi-sample texture to a single sample texture
     if (fb_src.msaa_level <= 1) {
-        mContext->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_src.texture.Get(), 0, &region);
+        mContext->CopySubresourceRegion(td_dst.texture.Get(), 0, dstX0, dstY0, 0, td_src.texture.Get(), 0, &region);
     } else {
         // Setup a temporary texture
         TextureData td_resolved;
@@ -1042,7 +1042,7 @@ void GfxRenderingAPIDX11::CopyFramebuffer(int fb_dst_id, int fb_src_id, int srcX
         // Resolve multi-sample to temporary
         mContext->ResolveSubresource(td_resolved.texture.Get(), 0, td_src.texture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
         // Then copy the region to the destination
-        mContext->CopySubresourceRegion(td_dst.texture.Get(), dstX0, dstY0, 0, 0, td_resolved.texture.Get(), 0,
+        mContext->CopySubresourceRegion(td_dst.texture.Get(), 0, dstX0, dstY0, 0, td_resolved.texture.Get(), 0,
                                         &region);
     }
 }
