@@ -61,28 +61,28 @@
 #endif
 
 /* Buttons */
-#define BTN_CRIGHT 0x00001
-#define BTN_CLEFT 0x00002
-#define BTN_CDOWN 0x00004
-#define BTN_CUP 0x00008
-#define BTN_R 0x00010
-#define BTN_L 0x00020
-#define BTN_DRIGHT 0x00100
-#define BTN_DLEFT 0x00200
-#define BTN_DDOWN 0x00400
-#define BTN_DUP 0x00800
-#define BTN_START 0x01000
-#define BTN_Z 0x02000
-#define BTN_B 0x04000
-#define BTN_A 0x08000
-#define BTN_STICKLEFT 0x10000
-#define BTN_STICKRIGHT 0x20000
-#define BTN_STICKDOWN 0x40000
-#define BTN_STICKUP 0x80000
-#define BTN_VSTICKUP 0x100000
-#define BTN_VSTICKDOWN 0x200000
-#define BTN_VSTICKLEFT 0x400000
-#define BTN_VSTICKRIGHT 0x800000
+#define BTN_CRIGHT 0x00001u
+#define BTN_CLEFT 0x00002u
+#define BTN_CDOWN 0x00004u
+#define BTN_CUP 0x00008u
+#define BTN_R 0x00010u
+#define BTN_L 0x00020u
+#define BTN_DRIGHT 0x00100u
+#define BTN_DLEFT 0x00200u
+#define BTN_DDOWN 0x00400u
+#define BTN_DUP 0x00800u
+#define BTN_START 0x01000u
+#define BTN_Z 0x02000u
+#define BTN_B 0x04000u
+#define BTN_A 0x08000u
+#define BTN_STICKLEFT 0x10000u
+#define BTN_STICKRIGHT 0x20000u
+#define BTN_STICKDOWN 0x40000u
+#define BTN_STICKUP 0x80000u
+#define BTN_VSTICKUP 0x100000u
+#define BTN_VSTICKDOWN 0x200000u
+#define BTN_VSTICKLEFT 0x400000u
+#define BTN_VSTICKRIGHT 0x800000u
 
 typedef struct {
     /* 0x00 */ int32_t ram[15];
