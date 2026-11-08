@@ -13,9 +13,10 @@ typedef union {
     void* ptr;
 } OSMesg;
 
-#define OS_MESG_8(x) ((OSMesg){ .data8 = (x) })
-#define OS_MESG_16(x) ((OSMesg){ .data16 = (x) })
-#define OS_MESG_32(x) ((OSMesg){ .data32 = (x) })
+/* Write the full pointer width; receivers inspect the whole pointer, so undefined bytes matter. */
+#define OS_MESG_8(x) ((OSMesg){ .ptr = (void*)(uintptr_t)(u8)(x) })
+#define OS_MESG_16(x) ((OSMesg){ .ptr = (void*)(uintptr_t)(u16)(x) })
+#define OS_MESG_32(x) ((OSMesg){ .ptr = (void*)(uintptr_t)(u32)(x) })
 #define OS_MESG_PTR(x) ((OSMesg){ .ptr = (x) })
 
 #define osSendMesg8(queue, msg, flag) osSendMesg(queue, OS_MESG_8(msg), flag)
