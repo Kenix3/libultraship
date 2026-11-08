@@ -197,6 +197,7 @@
 #define G_SETTILESIZE_INTERP 0x45
 #define G_SETTARGETINTERPINDEX 0x46
 #define G_SETTILESIZE_LERP 0x4a
+#define G_SCROLL_TEXTURE 0x4b
 
 /*
  * The following commands are the "generated" RDP commands; the user
@@ -1932,6 +1933,20 @@ typedef union Gfx {
 
 #define gsImmp3(c, p0, p1, p2) \
     { _SHIFTL((c), 24, 8), (_SHIFTL((p0), 16, 16) | _SHIFTL((p1), 8, 8) | _SHIFTL((p2), 0, 8)) }
+
+#define gSPScrollTexture(pkt, tile, speedX, speedY)                                              \
+    _DW({                                                                                        \
+        Gfx* _g = (Gfx*)(pkt);                                                                   \
+                                                                                                 \
+        _g->words.w0 = _SHIFTL(G_SCROLL_TEXTURE, 24, 8) | _SHIFTL((tile), 0, 3);                 \
+        _g->words.w1 = _SHIFTL((uint16_t)(speedX), 16, 16) | _SHIFTL((uint16_t)(speedY), 0, 16); \
+    })
+
+#define gsSPScrollTexture(tile, speedX, speedY)                                      \
+    {                                                                                \
+        _SHIFTL(G_SCROLL_TEXTURE, 24, 8) | _SHIFTL((tile), 0, 3),                    \
+            _SHIFTL((uint16_t)(speedX), 16, 16) | _SHIFTL((uint16_t)(speedY), 0, 16) \
+    }
 
 #define gImmp21(pkt, c, p0, p1, dat)                                                       \
     _DW({                                                                                  \
