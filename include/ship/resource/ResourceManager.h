@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 #include <variant>
+#include <functional>
 #include "ship/resource/Resource.h"
 #include "ship/resource/ResourceLoader.h"
 #include "ship/resource/archive/Archive.h"
@@ -334,6 +335,16 @@ class ResourceManager {
     void SetAltAssetsEnabled(bool isEnabled);
 
     /**
+     * @brief Installs an optional logical-path resolver used before cache/archive lookup.
+     *
+     * Returning the original path (or an empty string) leaves the request unchanged.
+     * If the returned path does not exist in the mounted archives, ResourceManager
+     * automatically falls back to the original path.
+     */
+    using ResourcePathResolver = std::function<std::string(const std::string&)>;
+    void SetResourcePathResolver(ResourcePathResolver resolver);
+
+    /**
      * @brief Loads raw file bytes from the archive, bypassing resource deserialization.
      * @param identifier Exact resource identifier.
      * @return Loaded File with raw buffer, or nullptr on failure.
@@ -426,6 +437,10 @@ class ResourceManager {
     std::shared_ptr<BS::thread_pool> mThreadPool;
     std::mutex mMutex;
     bool mAltAssetsEnabled = false;
+    ResourcePathResolver mResourcePathResolver;
+
+    std::string ResolveResourcePath(const std::string& filePath);
+
     // Private information for which owner and archive are default.
     uintptr_t mDefaultCacheOwner = 0;
     std::shared_ptr<Archive> mDefaultCacheArchive = nullptr;
