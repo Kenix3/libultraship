@@ -83,8 +83,14 @@ class ConnectedPhysicalDeviceManager {
     void RefreshConnectedSDLGamepads();
 
   private:
+    const std::string* GetUniqueGamepadConfigId(int32_t instanceId) const;
+    void SetInstanceIdIgnoredForPort(uint8_t portIndex, int32_t instanceId, bool ignored);
+    void RestorePortSettings();
+
     std::unordered_map<int32_t, SDL_GameController*> mConnectedSDLGamepads;
     std::unordered_map<int32_t, std::string> mConnectedSDLGamepadNames;
+    std::unordered_map<int32_t, std::string> mGamepadConfigIds;
+    std::unordered_map<int32_t, std::unordered_map<uint8_t, bool>> mSessionPortOverrides;
     std::unordered_map<uint8_t, std::unordered_set<int32_t>> mIgnoredInstanceIds;
 };
 } // namespace Ship
