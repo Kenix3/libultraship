@@ -40,6 +40,63 @@ std::unordered_map<std::string, uint32_t> renderModes = {
     { "G_RM_ZB_XLU_SURF2", G_RM_ZB_XLU_SURF2 },
     { "G_RM_ZB_XLU_DECAL2", G_RM_ZB_XLU_DECAL2 },
     { "G_RM_ZB_CLD_SURF2", G_RM_ZB_CLD_SURF2 },
+    { "G_RM_AA_ZB_XLU_LINE", G_RM_AA_ZB_XLU_LINE },
+    { "G_RM_AA_ZB_XLU_LINE2", G_RM_AA_ZB_XLU_LINE2 },
+    { "G_RM_AA_ZB_DEC_LINE", G_RM_AA_ZB_DEC_LINE },
+    { "G_RM_AA_ZB_DEC_LINE2", G_RM_AA_ZB_DEC_LINE2 },
+    { "G_RM_AA_ZB_TEX_INTER", G_RM_AA_ZB_TEX_INTER },
+    { "G_RM_AA_ZB_TEX_INTER2", G_RM_AA_ZB_TEX_INTER2 },
+    { "G_RM_AA_ZB_SUB_SURF", G_RM_AA_ZB_SUB_SURF },
+    { "G_RM_AA_ZB_SUB_SURF2", G_RM_AA_ZB_SUB_SURF2 },
+    { "G_RM_AA_ZB_PCL_SURF", G_RM_AA_ZB_PCL_SURF },
+    { "G_RM_AA_ZB_PCL_SURF2", G_RM_AA_ZB_PCL_SURF2 },
+    { "G_RM_AA_ZB_OPA_TERR", G_RM_AA_ZB_OPA_TERR },
+    { "G_RM_AA_ZB_OPA_TERR2", G_RM_AA_ZB_OPA_TERR2 },
+    { "G_RM_AA_ZB_TEX_TERR", G_RM_AA_ZB_TEX_TERR },
+    { "G_RM_AA_ZB_TEX_TERR2", G_RM_AA_ZB_TEX_TERR2 },
+    { "G_RM_AA_ZB_SUB_TERR", G_RM_AA_ZB_SUB_TERR },
+    { "G_RM_AA_ZB_SUB_TERR2", G_RM_AA_ZB_SUB_TERR2 },
+};
+
+std::unordered_map<std::string, uint32_t> otherModeFlags = {
+    { "G_AD_PATTERN", G_AD_PATTERN },
+    { "G_AD_NOTPATTERN", G_AD_NOTPATTERN },
+    { "G_AD_NOISE", G_AD_NOISE },
+    { "G_AD_DISABLE", G_AD_DISABLE },
+    { "G_CD_MAGICSQ", G_CD_MAGICSQ },
+    { "G_CD_BAYER", G_CD_BAYER },
+    { "G_CD_NOISE", G_CD_NOISE },
+    { "G_CD_DISABLE", G_CD_DISABLE },
+    { "G_CD_ENABLE", G_CD_ENABLE },
+    { "G_CK_NONE", G_CK_NONE },
+    { "G_CK_KEY", G_CK_KEY },
+    { "G_TC_CONV", G_TC_CONV },
+    { "G_TC_FILTCONV", G_TC_FILTCONV },
+    { "G_TC_FILT", G_TC_FILT },
+    { "G_TF_POINT", G_TF_POINT },
+    { "G_TF_AVERAGE", G_TF_AVERAGE },
+    { "G_TF_BILERP", G_TF_BILERP },
+    { "G_TT_NONE", G_TT_NONE },
+    { "G_TT_RGBA16", G_TT_RGBA16 },
+    { "G_TT_IA16", G_TT_IA16 },
+    { "G_TL_TILE", G_TL_TILE },
+    { "G_TL_LOD", G_TL_LOD },
+    { "G_TD_CLAMP", G_TD_CLAMP },
+    { "G_TD_SHARPEN", G_TD_SHARPEN },
+    { "G_TD_DETAIL", G_TD_DETAIL },
+    { "G_TP_NONE", G_TP_NONE },
+    { "G_TP_PERSP", G_TP_PERSP },
+    { "G_CYC_1CYCLE", G_CYC_1CYCLE },
+    { "G_CYC_2CYCLE", G_CYC_2CYCLE },
+    { "G_CYC_COPY", G_CYC_COPY },
+    { "G_CYC_FILL", G_CYC_FILL },
+    { "G_PM_1PRIMITIVE", G_PM_1PRIMITIVE },
+    { "G_PM_NPRIMITIVE", G_PM_NPRIMITIVE },
+    { "G_AC_NONE", G_AC_NONE },
+    { "G_AC_THRESHOLD", G_AC_THRESHOLD },
+    { "G_AC_DITHER", G_AC_DITHER },
+    { "G_ZS_PIXEL", G_ZS_PIXEL },
+    { "G_ZS_PRIM", G_ZS_PRIM },
 };
 
 static Gfx GsSpVertexOtR2P1(char* filePathPtr) {
@@ -663,261 +720,18 @@ ResourceFactoryXMLDisplayListV0::ReadResource(std::shared_ptr<Ship::File> file,
                 cmdVal = G_SETOTHERMODE_L;
             }
 
-            // OTRTODO: There are so many more of these we haven't added in yet...
-            if (child->Attribute("G_AD_PATTERN", 0)) {
-                data |= G_AD_PATTERN;
-            }
-
-            if (child->Attribute("G_AD_NOTPATTERN", 0)) {
-                data |= G_AD_NOTPATTERN;
-            }
-
-            if (child->Attribute("G_AD_DISABLE", 0)) {
-                data |= G_AD_DISABLE;
-            }
-
-            if (child->Attribute("G_AD_NOISE", 0)) {
-                data |= G_AD_NOISE;
-            }
-
-            if (child->Attribute("G_CD_MAGICSQ", 0)) {
-                data |= G_CD_MAGICSQ;
-            }
-
-            if (child->Attribute("G_CD_BAYER", 0)) {
-                data |= G_CD_BAYER;
-            }
-
-            if (child->Attribute("G_CD_NOISE", 0)) {
-                data |= G_CD_NOISE;
-            }
-
-            if (child->Attribute("G_CK_NONE", 0)) {
-                data |= G_CK_NONE;
-            }
-
-            if (child->Attribute("G_CK_KEY", 0)) {
-                data |= G_CK_KEY;
-            }
-
-            if (child->Attribute("G_TC_CONV", 0)) {
-                data |= G_TC_CONV;
-            }
-
-            if (child->Attribute("G_TC_FILTCONV", 0)) {
-                data |= G_TC_FILTCONV;
-            }
-
-            if (child->Attribute("G_TC_FILT", 0)) {
-                data |= G_TC_FILT;
-            }
-
-            if (child->Attribute("G_TF_POINT", 0)) {
-                data |= G_TF_POINT;
-            }
-
-            if (child->Attribute("G_TF_AVERAGE", 0)) {
-                data |= G_TF_AVERAGE;
-            }
-
-            if (child->Attribute("G_TF_BILERP", 0)) {
-                data |= G_TF_BILERP;
-            }
-
-            if (child->Attribute("G_TL_TILE", 0)) {
-                data |= G_TL_TILE;
-            }
-
-            if (child->Attribute("G_TL_LOD", 0)) {
-                data |= G_TL_LOD;
-            }
-
-            if (child->Attribute("G_TD_CLAMP", 0)) {
-                data |= G_TD_CLAMP;
-            }
-
-            if (child->Attribute("G_TD_SHARPEN", 0)) {
-                data |= G_TD_SHARPEN;
-            }
-
-            if (child->Attribute("G_TD_DETAIL", 0)) {
-                data |= G_TD_DETAIL;
-            }
-
-            if (child->Attribute("G_TP_NONE", 0)) {
-                data |= G_TP_NONE;
-            }
-
-            if (child->Attribute("G_TP_PERSP", 0)) {
-                data |= G_TP_PERSP;
-            }
-
-            if (child->Attribute("G_CYC_1CYCLE", 0)) {
-                data |= G_CYC_1CYCLE;
-            }
-
-            if (child->Attribute("G_CYC_COPY", 0)) {
-                data |= G_CYC_COPY;
-            }
-
-            if (child->Attribute("G_CYC_FILL", 0)) {
-                data |= G_CYC_FILL;
-            }
-
-            if (child->Attribute("G_CYC_2CYCLE", 0)) {
-                data |= G_CYC_2CYCLE;
-            }
-
-            if (child->Attribute("G_PM_1PRIMITIVE", 0)) {
-                data |= G_PM_1PRIMITIVE;
-            }
-
-            if (child->Attribute("G_PM_NPRIMITIVE", 0)) {
-                data |= G_PM_NPRIMITIVE;
-            }
-
-            if (child->Attribute("G_RM_FOG_SHADE_A", 0)) {
-                data |= G_RM_FOG_SHADE_A;
-            }
-
-            if (child->Attribute("G_RM_FOG_PRIM_A", 0)) {
-                data |= G_RM_FOG_PRIM_A;
-            }
-
-            if (child->Attribute("G_RM_PASS", 0)) {
-                data |= G_RM_PASS;
-            }
-
-            if (child->Attribute("G_ZS_PIXEL", 0)) {
-                data |= G_ZS_PIXEL;
-            }
-
-            if (child->Attribute("G_ZS_PRIM", 0)) {
-                data |= G_ZS_PRIM;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF", 0)) {
-                data |= G_RM_AA_ZB_OPA_SURF;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0)) {
-                data |= G_RM_AA_ZB_OPA_SURF2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_SURF2", 0)) {
-                data |= G_RM_AA_ZB_OPA_SURF2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_SURF", 0)) {
-                data |= G_RM_AA_ZB_XLU_SURF;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_SURF2", 0)) {
-                data |= G_RM_AA_ZB_XLU_SURF2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL", 0)) {
-                data |= G_RM_AA_ZB_OPA_DECAL;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_DECAL2", 0)) {
-                data |= G_RM_AA_ZB_OPA_DECAL2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL", 0)) {
-                data |= G_RM_AA_ZB_XLU_DECAL;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_DECAL2", 0)) {
-                data |= G_RM_AA_ZB_XLU_DECAL2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_INTER", 0)) {
-                data |= G_RM_AA_ZB_OPA_INTER;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_INTER2", 0)) {
-                data |= G_RM_AA_ZB_OPA_INTER2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_INTER", 0)) {
-                data |= G_RM_AA_ZB_XLU_INTER;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_INTER2", 0)) {
-                data |= G_RM_AA_ZB_XLU_INTER2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_LINE", 0)) {
-                data |= G_RM_AA_ZB_XLU_LINE;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_XLU_LINE2", 0)) {
-                data |= G_RM_AA_ZB_XLU_LINE2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_DEC_LINE", 0)) {
-                data |= G_RM_AA_ZB_DEC_LINE;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_DEC_LINE2", 0)) {
-                data |= G_RM_AA_ZB_DEC_LINE2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE", 0)) {
-                data |= G_RM_AA_ZB_TEX_EDGE;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_EDGE2", 0)) {
-                data |= G_RM_AA_ZB_TEX_EDGE2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_INTER", 0)) {
-                data |= G_RM_AA_ZB_TEX_INTER;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_INTER2", 0)) {
-                data |= G_RM_AA_ZB_TEX_INTER2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_SUB_SURF", 0)) {
-                data |= G_RM_AA_ZB_SUB_SURF;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_SUB_SURF2", 0)) {
-                data |= G_RM_AA_ZB_SUB_SURF2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_PCL_SURF", 0)) {
-                data |= G_RM_AA_ZB_PCL_SURF;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_PCL_SURF2", 0)) {
-                data |= G_RM_AA_ZB_PCL_SURF2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_TERR", 0)) {
-                data |= G_RM_AA_ZB_OPA_TERR;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_OPA_TERR2", 0)) {
-                data |= G_RM_AA_ZB_OPA_TERR2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_TERR", 0)) {
-                data |= G_RM_AA_ZB_TEX_TERR;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_TEX_TERR2", 0)) {
-                data |= G_RM_AA_ZB_TEX_TERR2;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_SUB_TERR", 0)) {
-                data |= G_RM_AA_ZB_SUB_TERR;
-            }
-
-            if (child->Attribute("G_RM_AA_ZB_SUB_TERR2", 0)) {
-                data |= G_RM_AA_ZB_SUB_TERR2;
+            for (const tinyxml2::XMLAttribute* attr = child->FirstAttribute(); attr != nullptr; attr = attr->Next()) {
+                const std::string flag = attr->Name();
+                if (flag == "Cmd" || flag == "Sft" || flag == "Length") {
+                    continue;
+                }
+                if (auto it = otherModeFlags.find(flag); it != otherModeFlags.end()) {
+                    data |= it->second;
+                } else if (auto rm = renderModes.find(flag); rm != renderModes.end()) {
+                    data |= rm->second;
+                } else {
+                    printf("DisplayListXML: SetOtherMode has unknown flag %s\n", flag.c_str());
+                }
             }
 
             g = gsSPSetOtherMode(cmdVal, sft, length, data);
