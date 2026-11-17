@@ -2019,7 +2019,9 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
                 mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].full_image_line_size_bytes;
             uint32_t tex_size_bytes;
             uint32_t line_size;
-            if ((loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0) {
+            const bool usesLoadedSizes =
+                (loaded_line_size != loaded_size || loaded_full_line != loaded_size) && loaded_line_size > 0;
+            if (usesLoadedSizes) {
                 line_size = loaded_line_size;
                 tex_size_bytes = loaded_size;
             } else {
@@ -2057,8 +2059,14 @@ void Interpreter::GfxSpTri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t vtx3_idx
             // Same pyramid-like ratio gate as ImportTexture: only clamp when loaded pixels
             // are close to rendered pixels (mipmap), not when much bigger (window scroll).
             const RawTexMetadata& triMeta = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index].raw_tex_metadata;
-            bool pyrLike = IsPyramidLike(tex_width[i], tex_height[i], tex_width2[i], tex_height2[i],
-                                         triMeta.h_byte_scale, triMeta.v_pixel_scale);
+            // loaded_texture sizes are scaled for HD replacements; the tile state and UVs are N64 texels
+            if (usesLoadedSizes) {
+                const float hbs = triMeta.h_byte_scale > 0.0f ? triMeta.h_byte_scale : 1.0f;
+                const float vps = triMeta.v_pixel_scale > 0.0f ? triMeta.v_pixel_scale : 1.0f;
+                tex_width[i] = (uint32_t)lroundf(tex_width[i] / hbs);
+                tex_height[i] = (uint32_t)lroundf(tex_height[i] / vps);
+            }
+            bool pyrLike = IsPyramidLike(tex_width[i], tex_height[i], tex_width2[i], tex_height2[i], 1.0f, 1.0f);
             // Same wrap-period trim as the import paths. The >= tex_width2 guard skips a stale
             // mask left by an FB blit (the pause background), which would otherwise tile the FB.
             uint32_t maskW = mRdp->texture_tile[tile].masks;
@@ -2401,9 +2409,11 @@ void Interpreter::GfxSpMovememF3d(uint8_t index, uint8_t offset, const void* dat
         case F3DEX_G_MV_VIEWPORT:
             CalcAndSetViewport((const F3DVp_t*)data);
             break;
-        case F3DEX_G_MV_LOOKATY:
         case F3DEX_G_MV_LOOKATX:
-            memcpy(mRsp->lookat + (index - F3DEX_G_MV_LOOKATY) / 2, data, sizeof(F3DLight_t));
+            memcpy(mRsp->lookat + 0, data, sizeof(F3DLight_t));
+            break;
+        case F3DEX_G_MV_LOOKATY:
+            memcpy(mRsp->lookat + 1, data, sizeof(F3DLight_t));
             break;
         case F3DEX_G_MV_L0:
         case F3DEX_G_MV_L1:
@@ -3026,6 +3036,7 @@ void Interpreter::GfxDpImageRectangle(int32_t tile, int32_t w, int32_t h, int32_
     mRdp->texture_tile[tile].line_size_bytes = w << (mRdp->texture_tile[tile].siz >> 1);
 
     auto& loadtex = mRdp->loaded_texture[mRdp->texture_tile[tile].tmem_index];
+    loadtex.raw_tex_metadata = {};
     loadtex.full_image_line_size_bytes = loadtex.line_size_bytes = mRdp->texture_tile[tile].line_size_bytes;
     loadtex.size_bytes = loadtex.orig_size_bytes = loadtex.line_size_bytes * h;
 
@@ -3581,7 +3592,9 @@ bool gfx_pop_shader(F3DGfx** cmd0) {
     Interpreter* gfx = mInstance.lock().get();
     F3DGfx* cmd = *cmd0;
 
-    gfx->mShaderStack.pop();
+    if (!gfx->mShaderStack.empty()) {
+        gfx->mShaderStack.pop();
+    }
 
     return false;
 }
@@ -5015,6 +5028,9 @@ void Interpreter::SpReset() {
     mRsp->modelview_matrix_stack_size = 1;
     mRsp->current_num_lights = 2;
     mRsp->lights_changed = true;
+    // Transposed from the SDK basis on purpose: lookat[0] is LOOKATX and drives S.
+    // Only games that never send a lookat see these, and MK64 matches output with them.
+    // TODO: Use ucode DMEM defaults from hardware.
     mRsp->lookat[0].dir[0] = 0;
     mRsp->lookat[0].dir[1] = 127;
     mRsp->lookat[0].dir[2] = 0;
@@ -5421,7 +5437,9 @@ int32_t gfx_check_image_signature(const char* imgData) {
 #if UINTPTR_MAX > 0xFFFFFFFFu
     // On 64-bit: filter kernel/sentinel addresses. Upper bound covers all
     // user-space layouts (x86_64 47-bit canonical, ARM64 48-bit VA, etc.).
-    if (i > 0x0000FFFFFFFFFFFFull) {
+    // ARM64 Android heap pointers can carry a top-byte memory tag; the CPU
+    // ignores it when dereferencing, but the user-space range check must too.
+    if ((i & 0x00FFFFFFFFFFFFFFull) > 0x0000FFFFFFFFFFFFull) {
         return 0;
     }
 #endif
