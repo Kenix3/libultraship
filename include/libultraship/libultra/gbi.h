@@ -197,7 +197,7 @@
 #define G_SETTILESIZE_INTERP 0x45
 #define G_SETTARGETINTERPINDEX 0x46
 #define G_SETTILESIZE_LERP 0x4a
-#define G_SCROLL_TEXTURE 0x4b
+#define G_SCROLL_TEXTURE 0x4d
 
 /*
  * The following commands are the "generated" RDP commands; the user
