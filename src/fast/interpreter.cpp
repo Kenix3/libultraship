@@ -593,7 +593,6 @@ static int32_t GetRepeatPeriodFromTile(const RDP* rdp, uint8_t tile, bool isS, u
     const auto& textureTile = rdp->texture_tile[tile];
     const uint8_t mask = isS ? textureTile.masks : textureTile.maskt;
     const uint8_t mode = isS ? textureTile.cms : textureTile.cmt;
-    const uint8_t shift = isS ? textureTile.shifts : textureTile.shiftt;
 
     uint32_t period = tileSize;
     if (mask != 0) {
@@ -603,19 +602,7 @@ static int32_t GetRepeatPeriodFromTile(const RDP* rdp, uint8_t tile, bool isS, u
         period *= 2;
     }
 
-    int32_t shiftedPeriod = static_cast<int32_t>(period) << 2;
-    if (shift != 0) {
-        if (shift <= 10) {
-            shiftedPeriod <<= shift;
-        } else {
-            shiftedPeriod >>= (16 - shift);
-            if (shiftedPeriod <= 0) {
-                shiftedPeriod = 1;
-            }
-        }
-    }
-
-    return shiftedPeriod;
+    return static_cast<int32_t>(period) << 2;
 }
 
 static float WrapScrollCoordinate(int32_t value, int32_t period) {
