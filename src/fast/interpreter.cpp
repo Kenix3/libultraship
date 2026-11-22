@@ -4986,6 +4986,7 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
 
     mGameFb = mRapi->CreateFramebuffer();
     mGameFbMsaaResolved = mRapi->CreateFramebuffer();
+    mCrtFb = mRapi->CreateFramebuffer();
 
     mNativeDimensions.width = SCREEN_WIDTH;
     mNativeDimensions.height = SCREEN_HEIGHT;
@@ -5044,6 +5045,10 @@ bool Interpreter::ViewportMatchesRendererResolution() {
     // to avoid issues with retina scaling.
     return false;
 #else
+    // The CRT pass samples the game image, so it must be rendered off-screen
+    if (mCrtEnabled) {
+        return false;
+    }
     if (mCurDimensions.width == mGameWindowViewport.width && mCurDimensions.height == mGameWindowViewport.height) {
         return true;
     }
@@ -5059,6 +5064,7 @@ void Interpreter::StartFrame() {
         mCurDimensions.height = 1;
     }
     mCurDimensions.aspect_ratio = (float)mCurDimensions.width / (float)mCurDimensions.height;
+    mCrtEnabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_PREFIX_CRT ".Enabled", 0);
 
     // Update the framebuffer sizes when the viewport or native dimension changes
     if (mCurDimensions.width != mPrvDimensions.width || mCurDimensions.height != mPrvDimensions.height ||
@@ -5188,9 +5194,13 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
     currentDir = std::stack<std::string>();
 
     if (mRendersToFb) {
+        // Must run before drawing to the screen: Metal queues command buffers in first-draw order
+        const bool crtApplied = mCrtEnabled && ApplyCrtFilter();
         mRapi->StartDrawToFramebuffer(0, 1);
         mRapi->ClearFramebuffer(true, true);
-        if (mMsaaLevel > 1) {
+        if (crtApplied) {
+            mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mCrtFb);
+        } else if (mMsaaLevel > 1) {
             if (!ViewportMatchesRendererResolution()) {
                 mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
                 mGfxFrameBuffer = (uintptr_t)mRapi->GetFramebufferTextureId(mGameFbMsaaResolved);
@@ -5207,6 +5217,77 @@ void Interpreter::Run(Gfx* commands, const std::unordered_map<Mtx*, MtxF>& mtx_r
 
         assert(0 && "active framebuffer was never reset back to original");
     }
+}
+
+// Draws the finished game image through the CRT shader into mCrtFb, sized to the on-screen game image so
+// scanlines and the phosphor mask land on real display pixels (N64 Mode renders at 320x240).
+bool Interpreter::ApplyCrtFilter() {
+    if (mCrtWidth == 0 || mCrtHeight == 0) {
+        return false;
+    }
+    auto cvars = Ship::Context::GetRawInstance()->GetConsoleVariables();
+    const float params[4] = {
+        cvars->GetFloat(CVAR_PREFIX_CRT ".Scanlines", 0.6f),
+        cvars->GetFloat(CVAR_PREFIX_CRT ".Mask", 0.4f),
+        cvars->GetFloat(CVAR_PREFIX_CRT ".Curvature", 0.4f),
+        cvars->GetFloat(CVAR_PREFIX_CRT ".Aberration", 0.0f),
+    };
+    int src = mGameFb;
+    if (mMsaaLevel > 1) {
+        mRapi->ResolveMSAAColorBuffer(mGameFbMsaaResolved, mGameFb);
+        src = mGameFbMsaaResolved;
+    }
+
+    mRapi->UpdateFramebufferParameters(mCrtFb, mCrtWidth, mCrtHeight, 1, true, true, true, false);
+    mRapi->StartDrawToFramebuffer(mCrtFb, 1);
+    mRapi->ClearFramebuffer(true, true);
+    mRapi->SetViewport(0, 0, mCrtWidth, mCrtHeight);
+    mRapi->SetScissor(0, 0, mCrtWidth, mCrtHeight);
+    mRapi->SetDepthTestAndMask(false, false);
+    mRapi->SetZmodeDecal(false);
+    mRapi->SetUseAlpha(false);
+    // Invalidate cached state so the next frame re-applies whatever it needs
+    mRenderingState.depth_test_and_mask = 0;
+    mRenderingState.decal_mode = false;
+    mRenderingState.alpha_blend = false;
+    mRenderingState.viewport = {};
+    mRenderingState.scissor = {};
+    mRenderingState.mTextures[0] = nullptr;
+    mRdp->textures_changed[0] = true;
+
+    // Combiner: color = TEXEL0. The four CRT params ride in the grayscale vertex attribute.
+    const uint64_t id0 = (uint64_t)SHADER_TEXEL0 << 12 | (uint64_t)SHADER_TEXEL0 << 28;
+    const uint64_t id1 = SHADER_OPT(CRT) | SHADER_OPT(GRAYSCALE) | (~0ULL << SHADER_ID_SHIFT);
+    ShaderProgram* prg = LookupOrCreateShaderProgram(id0, id1);
+    if (prg != mRenderingState.mShaderProgram) {
+        mRapi->UnloadShader(mRenderingState.mShaderProgram);
+        mRapi->LoadShader(prg);
+        mRenderingState.mShaderProgram = prg;
+    }
+    mRapi->SelectTextureFb(src);
+    mRapi->SetSamplerParameters(0, true, G_TX_CLAMP, G_TX_CLAMP);
+
+    const GfxClipParameters clip = mRapi->GetClipParameters();
+    const float z = clip.z_is_from_0_to_1 ? 0.5f : 0.0f;
+    const float yf = clip.invertY ? -1.0f : 1.0f;
+    // x, y, u, v for two triangles covering the target
+    const float corners[6][4] = { { -1, 1, 0, 0 }, { -1, -1, 0, 1 }, { 1, 1, 1, 0 },
+                                  { 1, 1, 1, 0 },  { -1, -1, 0, 1 }, { 1, -1, 1, 1 } };
+    float vbo[6 * 10];
+    size_t n = 0;
+    for (const auto& c : corners) {
+        vbo[n++] = c[0];
+        vbo[n++] = c[1] * yf;
+        vbo[n++] = z;
+        vbo[n++] = 1.0f;
+        vbo[n++] = c[2];
+        vbo[n++] = c[3];
+        for (float p : params) {
+            vbo[n++] = p;
+        }
+    }
+    mRapi->DrawTriangles(vbo, n, 2);
+    return true;
 }
 
 void Interpreter::EndFrame() {
@@ -5428,6 +5509,7 @@ void gfx_cc_get_features(uint64_t shader_id0, uint64_t shader_id1, struct CCFeat
     cc_features->opt_invisible = (shader_id1 & SHADER_OPT(INVISIBLE)) != 0;
     cc_features->opt_grayscale = (shader_id1 & SHADER_OPT(GRAYSCALE)) != 0;
     cc_features->opt_prim_depth = (shader_id1 & SHADER_OPT(PRIM_DEPTH)) != 0;
+    cc_features->opt_crt = (shader_id1 & SHADER_OPT(CRT)) != 0;
 
     cc_features->clamp[0][0] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_S);
     cc_features->clamp[0][1] = shader_id1 & SHADER_OPT(TEXEL0_CLAMP_T);
