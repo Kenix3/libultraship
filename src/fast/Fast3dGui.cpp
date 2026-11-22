@@ -414,6 +414,11 @@ void Fast3dGui::DrawGame() {
                           float(interpreter->mCurDimensions.height) * factor);
         }
     }
+    // The CRT pass renders at the on-screen pixel size of the game image (applied next frame)
+    const ImVec2 fbScale = ImGui::GetIO().DisplayFramebufferScale;
+    interpreter->mCrtWidth = (uint32_t)(size.x * fbScale.x);
+    interpreter->mCrtHeight = (uint32_t)(size.y * fbScale.y);
+
     uintptr_t fb = Ship::Context::GetRawInstance()->GetWindow()->GetGfxFrameBuffer();
     if (fb) {
         ImGui::SetCursorPos(pos);

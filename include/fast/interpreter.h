@@ -80,6 +80,7 @@ enum class ShaderOpts {
     TEXEL0_BLEND,
     TEXEL1_BLEND,
     PRIM_DEPTH,
+    CRT,          // CRT post-process pass (params in the grayscale attribute)
     PRISM_SHADER, // 16-bit width
     MAX
 };
@@ -113,6 +114,7 @@ struct CCFeatures {
     bool opt_invisible;
     bool opt_grayscale;
     bool opt_prim_depth;
+    bool opt_crt;
     bool usedTextures[2];
     bool used_masks[2];
     bool used_blend[2];
@@ -135,7 +137,7 @@ class GfxRenderingAPI;
 class GfxWindowBackend;
 
 constexpr size_t MAX_SEGMENT_POINTERS = 16;
-constexpr size_t SHADER_ID_SHIFT = 17;
+constexpr size_t SHADER_ID_SHIFT = 18;
 constexpr int16_t ShaderIdUnmask(int id) {
     return (id >> SHADER_ID_SHIFT) & 0xFFFF;
 }
@@ -389,6 +391,7 @@ class Interpreter {
     void HandleWindowEvents();
     bool IsFrameReady();
     bool ViewportMatchesRendererResolution();
+    bool ApplyCrtFilter();
     int GetTargetFps();
     void SetTargetFps(int fps);
     void SetMaxFrameLatency(int latency);
@@ -541,6 +544,9 @@ class Interpreter {
 
     int mGameFb{};             // game_framebuffer;
     int mGameFbMsaaResolved{}; // game_framebuffer_msaa_resolved;
+    int mCrtFb{};
+    bool mCrtEnabled{};
+    uint32_t mCrtWidth{}, mCrtHeight{}; // on-screen size of the game image, set by Fast3dGui::DrawGame
 
     std::set<std::pair<float, float>> mGetPixelDepthPending; // get_pixel_depth_pending;
     std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> mGetPixelDepthCached; // get_pixel_depth_cached;
