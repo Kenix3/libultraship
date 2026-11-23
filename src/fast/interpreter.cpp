@@ -4400,14 +4400,14 @@ bool gfx_scroll_texture_handler_custom(F3DGfx** cmd0) {
     const int32_t tick = GfxGetCurrentGameTick();
 
     const float uls0 = WrapScrollCoordinate(static_cast<int32_t>(lroundf(textureTile.uls)) + tick * speedX, periodX);
-    const float ult0 = WrapScrollCoordinate(static_cast<int32_t>(lroundf(textureTile.ult)) + tick * speedY, periodY);
+    const float ult0 = WrapScrollCoordinate(static_cast<int32_t>(lroundf(textureTile.ult)) - tick * speedY, periodY);
     const float lrs0 = uls0 + tileSpanX;
     const float lrt0 = ult0 + tileSpanY;
 
     const float uls1 = uls0 + speedX;
-    const float ult1 = ult0 + speedY;
+    const float ult1 = ult0 - speedY;
     const float lrs1 = lrs0 + speedX;
-    const float lrt1 = lrt0 + speedY;
+    const float lrt1 = lrt0 - speedY;
 
     const float t = gfx->mInterpolationT;
     textureTile.uls = uls0 + t * (uls1 - uls0);
